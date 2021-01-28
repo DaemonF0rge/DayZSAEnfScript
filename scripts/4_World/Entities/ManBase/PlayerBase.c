@@ -7726,7 +7726,6 @@ class PlayerBase extends ManBase
 	//! tries to hide item in player's hands, some exceptions for various movement states
 	void TryHideItemInHands(bool hide, bool force = false)
 	{
-		//if ( !hide && ((!IsSwimming() && !IsSwimmingStarting() && !IsClimbingLadder() && !IsClimbingLadderStarting() && !IsInVehicle() && !IsInVehicleStarting()) || force) )
 		if ( !hide && ((!IsSwimming() && !IsClimbingLadder() && !IsInVehicle() && !AnimCommandCheck(HumanMoveCommandID.CommandSwim | HumanMoveCommandID.CommandLadder | HumanMoveCommandID.CommandVehicle)) || force) )
 		{
 			GetItemAccessor().HideItemInHands(false);

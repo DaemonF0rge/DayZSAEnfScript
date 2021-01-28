@@ -58,17 +58,23 @@ class AreaDamageTrigger extends Trigger
 
 			Object insObj = ins.GetObject();
 			float innerDist = (GetRadius(m_ExtentMin, m_ExtentMax) * 0.5) + 0.2;
-			if ( insObj && vector.DistanceSq(insObj.GetPosition(), GetPosition()) > (innerDist * innerDist) )
+			if ( insObj && ( !insObj.IsAlive() || vector.DistanceSq(insObj.GetPosition(), GetPosition()) > (innerDist * innerDist) ) )
 			{
-				if (g_Game.GetTime() - ins.timeStamp > 500)
+				int timeDiff = g_Game.GetTime() - ins.timeStamp;
+				if (timeDiff > 500)
 				{
 					//object left. Remove it
 					OnLeave(ins.GetObject());
 					m_insiders.Remove(n);
+					
 					continue;
 				}
+				else
+				{
+					//Print("" + this + " :: " + insObj + " :: " + timeDiff);
+				}
 			}
-			 
+			
 			n++;
 		}
 	}
@@ -115,7 +121,7 @@ class AreaDamageTrigger extends Trigger
 	{
 		super.OnEnter( obj );
 		
-
+		//Print(this);
 		if ( GetGame().IsServer() )
 		{
 			//obj.OnAreaDamageEnter();
@@ -131,6 +137,7 @@ class AreaDamageTrigger extends Trigger
 	override void OnLeave(Object obj)
 	{
 		super.OnLeave( obj );
+		//Print(this);
 
 		if ( GetGame().IsServer() )
 		{
@@ -139,7 +146,7 @@ class AreaDamageTrigger extends Trigger
 			if ( m_AreaDamageType )
 			{
 				
-				PrintToRPT("[DAMAGE TRIGGER LEAVE] " + this + " The following Object left : " + obj); 
+				//PrintToRPT("[DAMAGE TRIGGER LEAVE] " + this + " The following Object left : " + obj); 
 		 		m_AreaDamageType.OnLeave(obj);
 				//Print("On Leave called!");
 			}

@@ -18,16 +18,25 @@ class ItemBase extends InventoryItem
 	//ref map<string,string> 	m_ItemVarsString;
 	
 	int		m_VariablesMask;//this holds information about which vars have been changed from their default values
+	// Quantity
 	float 	m_VarQuantity;
+	int		m_VarQuantityInit;
+	int		m_VarQuantityMin;
+	int		m_VarQuantityMax;
+	int		m_Count;
+	float	m_VarStackMax;
 	float	m_StoreLoadedQuantity = -1;
+	// Temperature
 	float 	m_VarTemperature;
 	float 	m_VarTemperatureInit;
 	float 	m_VarTemperatureMin;
 	float 	m_VarTemperatureMax;
+	// Wet
 	float 	m_VarWet;
 	float 	m_VarWetInit;
 	float 	m_VarWetMin;
 	float 	m_VarWetMax;
+	//
 	float	m_HeatIsolation;
 	float 	m_ItemModelLength;
 	float 	m_ConfigWeight = -1;
@@ -46,6 +55,8 @@ class ItemBase extends InventoryItem
 	bool 	can_this_be_combined = false; //Check if item can be combined
 	bool 	m_CanThisBeSplit = false; //Check if item can be split
 	bool	m_IsStoreLoad = false;
+	bool	m_CanShowQuantity;
+	bool	m_HasQuantityBar;
 	string	m_SoundAttType;
 	// items color variables
 	int 	m_ColorComponentR;
@@ -133,6 +144,16 @@ class ItemBase extends InventoryItem
 	
 	void InitItemVariables()
 	{
+		m_VarQuantityInit = ConfigGetInt("varQuantityInit");
+		m_VarQuantity = m_VarQuantityInit;//should be by the CE, this is just a precaution
+		m_VarQuantityMin = ConfigGetInt("varQuantityMin");
+		m_VarQuantityMax = ConfigGetInt("varQuantityMax");
+		m_VarStackMax = ConfigGetFloat("varStackMax");
+		m_Count = ConfigGetInt("count");
+		
+		m_CanShowQuantity = ConfigGetBool("quantityShow");
+		m_HasQuantityBar = ConfigGetBool("quantityBar");
+		
 		m_VarTemperatureInit = ConfigGetFloat("varTemperatureInit");
 		m_VarTemperature = m_VarTemperatureInit;
 		m_VarTemperatureMin = ConfigGetFloat("varTemperatureMin");
@@ -144,7 +165,6 @@ class ItemBase extends InventoryItem
 		m_VarWetMax = ConfigGetFloat("varWetMax");
 		
 		m_VarLiquidType = GetLiquidTypeInit();
-		m_VarQuantity = GetQuantityInit();//should be by the CE, this is just a precaution
 		m_IsBeingPlaced = false;
 		m_IsHologram = false;
 		m_IsPlaceSound = false;
@@ -166,7 +186,7 @@ class ItemBase extends InventoryItem
 			m_ItemBehaviour = ConfigGetInt("itemBehaviour");
 		
 		//RegisterNetSyncVariableInt("m_VariablesMask");
-		if ( HasQuantity() ) RegisterNetSyncVariableFloat("m_VarQuantity", GetQuantityMin(), ConfigGetInt("varQuantityMax") );
+		if ( HasQuantity() ) RegisterNetSyncVariableFloat("m_VarQuantity", GetQuantityMin(), m_VarQuantityMax );
 		RegisterNetSyncVariableFloat("m_VarTemperature", GetTemperatureMin(),GetTemperatureMax() );
 		RegisterNetSyncVariableFloat("m_VarWet", GetWetMin(), GetWetMax(), 2 );
 		RegisterNetSyncVariableInt("m_VarLiquidType");
@@ -675,7 +695,7 @@ class ItemBase extends InventoryItem
 		*/
 		ItemBase item2 = ItemBase.Cast(entity2);
 		
-		if( GetGame().IsClient() )
+		if ( GetGame().IsClient() )
 		{
 			if (ScriptInputUserData.CanStoreInputUserData())
 			{
@@ -689,7 +709,7 @@ class ItemBase extends InventoryItem
 				ctx.Write(-1);
 				ctx.Send();
 				
-				if( IsCombineAll(item2, use_stack_max) )
+				if ( IsCombineAll(item2, use_stack_max) )
 				{
 					InventoryLocation il = new InventoryLocation;
 					item2.GetInventory().GetCurrentInventoryLocation(il);
@@ -698,7 +718,7 @@ class ItemBase extends InventoryItem
 				}
 			}
 		}
-		else if( !GetGame().IsMultiplayer() )
+		else if ( !GetGame().IsMultiplayer() )
 		{
 			CombineItems(item2, use_stack_max);
 		}
@@ -707,14 +727,12 @@ class ItemBase extends InventoryItem
 	bool IsLiquidPresent()
 	{
 		
-		if(GetLiquidType() != 0 && HasQuantity() ) return true;
-		else return false;
+		return ( GetLiquidType() != 0 && HasQuantity() );
 	}
 	
 	bool IsLiquidContainer()
 	{
-		if( ConfigGetFloat("liquidContainerType")!=0 ) return true;
-		else return false;
+		return ( ConfigGetFloat("liquidContainerType") != 0 );
 	}
 	
 	bool IsBloodContainer()
@@ -1126,7 +1144,7 @@ class ItemBase extends InventoryItem
 	override void OnWasAttached( EntityAI parent, int slot_id )
 	{
 		if ( HasQuantity() )
-			UpdateNetSyncVariableFloat( "m_VarQuantity", GetQuantityMin(), ConfigGetInt("varQuantityMax") );
+			UpdateNetSyncVariableFloat( "m_VarQuantity", GetQuantityMin(), m_VarQuantityMax );
 		
 		PlayAttachSound(InventorySlots.GetSlotName(slot_id));
 	}
@@ -1134,17 +1152,15 @@ class ItemBase extends InventoryItem
 	override void OnWasDetached( EntityAI parent, int slot_id )
 	{
 		if ( HasQuantity() )
-		{
-			UpdateNetSyncVariableFloat( "m_VarQuantity", GetQuantityMin(), ConfigGetInt("varQuantityMax") );
-		}
+			UpdateNetSyncVariableFloat( "m_VarQuantity", GetQuantityMin(), m_VarQuantityMax );
 		
 		//PlayDetachSound(InventorySlots.GetSlotName(slot_id));
 		
 		PlayerBase player = PlayerBase.Cast(parent);
 		if (player)
 		{
-			if( !GetGame().IsServer() )
-			return;
+			if ( !GetGame().IsServer() )
+				return;
 		}
 	}
 	
@@ -2947,16 +2963,17 @@ class ItemBase extends InventoryItem
 		InventoryLocation il = new InventoryLocation;
 		if (GetInventory())
 			GetInventory().GetCurrentInventoryLocation(il);
+		
 		int slot = il.GetSlot();
 		
 		if ( slot != -1 )
 			max = InventorySlots.GetStackMaxForSlotId( slot );
 		
 		if ( max <= 0 )
-			max = ConfigGetFloat("varStackMax");
+			max = m_VarStackMax;
 		
 		if ( max <= 0 )
-			max = ConfigGetInt("varQuantityMax");
+			max = m_VarQuantityMax;
 		
 		return max;
 	}
@@ -2966,32 +2983,27 @@ class ItemBase extends InventoryItem
 		float quantity_max = 0;
 		
 		if (attSlotID != -1)
-		{
 			quantity_max = InventorySlots.GetStackMaxForSlotId( attSlotID );
-		}
 		
-		if( quantity_max <= 0 )
-		{
-			quantity_max = ConfigGetFloat("varStackMax");
-		}
+		if ( quantity_max <= 0 )
+			quantity_max = m_VarStackMax;
 		
-		if( quantity_max <= 0 )
-		{
-			quantity_max = ConfigGetFloat("varQuantityMax");
-		}
+		if ( quantity_max <= 0 )
+			quantity_max = m_VarQuantityMax;
+
 		return quantity_max;
 	}
 	//----------------------------------------------------------------
 	int GetQuantityMin()
 	{
-		return ConfigGetInt("varQuantityMin");
+		return m_VarQuantityMin;
 	}
 	//----------------------------------------------------------------
 	int GetQuantityInit()
 	{
-		return ConfigGetInt("varQuantityInit");
+		return m_VarQuantityInit;
 	}
-	
+	//----------------------------------------------------------------
 	bool HasQuantity()
 	{
 		if( GetQuantityMax() - GetQuantityMin() == 0 )

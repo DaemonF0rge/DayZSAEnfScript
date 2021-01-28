@@ -97,7 +97,7 @@ class EmoteManager
 	bool 					m_ItemToBeCreated;
 	bool 					m_CancelEmote;
 	bool 					m_GestureInterruptInput;
-	protected bool			m_ItemToHands;
+	protected bool			m_ItemToHands; //deprecated
 	protected bool			m_ItemIsOn;
 	protected bool			m_MouseButtonPressed;
 	protected bool 			m_PlayerDies;
@@ -356,10 +356,7 @@ class EmoteManager
 	
 	void OnEmoteEnd()
 	{
-		if ( m_ItemToHands )
-		{
-			ShowItemInHands();
-		}
+		ShowItemInHands();
 		
 		if ( m_PlayerDies )
 		{
@@ -583,17 +580,21 @@ class EmoteManager
 	
 	protected void HideItemInHands()
 	{
-		m_Player.TryHideItemInHands(true);
 		m_item = m_Player.GetItemInHands();
-		
-		if (m_Callback && m_item)
-			m_ItemToHands = true;
+		if(m_Callback && m_item)
+		{
+			m_Player.TryHideItemInHands(true);
+			//m_ItemToHands = true;
+		}
 	}
 	
 	protected void ShowItemInHands()
 	{
-		m_Player.TryHideItemInHands(false);
-		m_ItemToHands = false;
+		if (m_item)
+		{
+			m_Player.TryHideItemInHands(false);
+		}
+		//m_ItemToHands = false;
 	}
 	
 	protected void CommitSuicide()
