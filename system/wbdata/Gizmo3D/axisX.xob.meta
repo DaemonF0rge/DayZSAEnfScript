@@ -1,0 +1,20 @@
+MetaFileClass {
+ Name "{A2AD89DBC11373F}system/wbdata/gizmo3d/axisx.xob"
+ Author "ander"
+ ChangeDate -1750343300
+ Configurations {
+  TXOResourceClass PC {
+   SourceFile "axisX.txo"
+   MaterialAssigns {
+    MaterialAssignClass {
+     SourceMaterial "system_wbdata_gizmo3D_gizmo3D"
+     AssignedMaterial "{58962187F9321A}system/wbdata/gizmo3D/gizmo3D.emat"
+    }
+   }
+  }
+  TXOResourceClass XBOX_ONE : PC {
+  }
+  TXOResourceClass PS4 : PC {
+  }
+ }
+}

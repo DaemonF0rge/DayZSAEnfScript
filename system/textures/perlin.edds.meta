@@ -1,0 +1,19 @@
+MetaFileClass {
+ Name "{5C2EE7CB6A3C911A}textures/perlin.png"
+ Author "1501"
+ ChangeDate -455350946
+ Configurations {
+  PNGResourceClass PC {
+   SourceFile "perlin.png"
+   Conversion RedGreenHQCompression
+   ContainsMips 1
+   GenerateMips 0
+  }
+  PNGResourceClass XBOX_ONE : PC {
+  }
+  PNGResourceClass PS4 : PC {
+  }
+  PNGResourceClass LINUX : PC {
+  }
+ }
+}

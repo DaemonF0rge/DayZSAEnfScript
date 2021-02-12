@@ -1,0 +1,14 @@
+MetaFileClass {
+ Name "{57CB21192E4EDA9}system/systemsmall.edds"
+ Author "fido"
+ ChangeDate -1525898888
+ Configurations {
+  TGAResourceClass PC {
+   SourceFile "systemsmall.tga"
+  }
+  TGAResourceClass XBOX_ONE : PC {
+  }
+  TGAResourceClass PS4 : PC {
+  }
+ }
+}

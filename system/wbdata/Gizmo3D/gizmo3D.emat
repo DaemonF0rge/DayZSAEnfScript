@@ -1,0 +1,4 @@
+material "system/wbdata/gizmo3D/gizmo3D": MatBasic
+{
+ Color "1.000000 1.000000 1.000000 1.000000"
+}

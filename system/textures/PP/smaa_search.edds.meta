@@ -1,0 +1,15 @@
+MetaFileClass  {
+ Name "{AFB85A90DBF4370D}system/textures/PP/smaa_search.dds"
+ Author "desktop-fg5fdqj"
+ ChangeDate -1954192560
+ Configurations {
+  DDSResourceClass PC {
+   SourceFile "smaa_search.dds"
+   Conversion RedHQCompression
+  }
+  DDSResourceClass XBOX_ONE : PC {
+  }
+  DDSResourceClass PS4 : PC {
+  }
+ }
+}

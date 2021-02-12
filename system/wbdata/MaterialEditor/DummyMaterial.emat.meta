@@ -1,0 +1,13 @@
+MetaFileClass {
+ Name "{176D378AD388FFF}system/wbdata/MaterialEditor/DummyMaterial.emat"
+ Author "fido"
+ ChangeDate -1542676104
+ Configurations {
+  EMATResourceClass PC {
+  }
+  EMATResourceClass XBOX_ONE : PC {
+  }
+  EMATResourceClass PS4 : PC {
+  }
+ }
+}

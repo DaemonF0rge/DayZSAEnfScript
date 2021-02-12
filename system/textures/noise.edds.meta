@@ -1,0 +1,14 @@
+MetaFileClass {
+ Name "{B1C7AEDC4645C8A}system/textures/noise.edds"
+ Author "miva"
+ ChangeDate -1986354801
+ Configurations {
+  DDSResourceClass PC {
+   SourceFile "noise.dds"
+  }
+  DDSResourceClass XBOX_ONE : PC {
+  }
+  DDSResourceClass PS4 : PC {
+  }
+ }
+}

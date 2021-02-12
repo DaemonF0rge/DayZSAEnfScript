@@ -1,0 +1,20 @@
+MetaFileClass {
+ Name "{FF35BE9795BA3797}system/wbdata/gizmo3d/sphere.xob"
+ Author "ander"
+ ChangeDate -1012145796
+ Configurations {
+  TXOResourceClass PC {
+   SourceFile "sphere.txo"
+   MaterialAssigns {
+    MaterialAssignClass {
+     SourceMaterial "system_wbdata_gizmo3D_gizmo3D"
+     AssignedMaterial "{58962187F9321A}system/wbdata/gizmo3D/gizmo3D.emat"
+    }
+   }
+  }
+  TXOResourceClass XBOX_ONE : PC {
+  }
+  TXOResourceClass PS4 : PC {
+  }
+ }
+}

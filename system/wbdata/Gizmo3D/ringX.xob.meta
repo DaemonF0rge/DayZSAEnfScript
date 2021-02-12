@@ -1,0 +1,20 @@
+MetaFileClass {
+ Name "{2CD572976B33A387}system/wbdata/gizmo3d/ringx.xob"
+ Author "ander"
+ ChangeDate -1314135684
+ Configurations {
+  TXOResourceClass PC {
+   SourceFile "ringX.txo"
+   MaterialAssigns {
+    MaterialAssignClass {
+     SourceMaterial "system_wbdata_gizmo3D_gizmo3D"
+     AssignedMaterial "{58962187F9321A}system/wbdata/gizmo3D/gizmo3D.emat"
+    }
+   }
+  }
+  TXOResourceClass XBOX_ONE : PC {
+  }
+  TXOResourceClass PS4 : PC {
+  }
+ }
+}

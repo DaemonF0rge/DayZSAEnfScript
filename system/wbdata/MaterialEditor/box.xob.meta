@@ -1,0 +1,20 @@
+MetaFileClass {
+ Name "{ACB91E36BBA882BC}system/wbdata/materialeditor/box.xob"
+ Author "ander"
+ ChangeDate -280731268
+ Configurations {
+  TXOResourceClass PC {
+   SourceFile "box.txo"
+   MaterialAssigns {
+    MaterialAssignClass {
+     SourceMaterial "system_wbdata_MaterialEditor_DummyMaterial"
+     AssignedMaterial "{176D378AD388FFF}system/wbdata/MaterialEditor/DummyMaterial.emat"
+    }
+   }
+  }
+  TXOResourceClass XBOX_ONE : PC {
+  }
+  TXOResourceClass PS4 : PC {
+  }
+ }
+}

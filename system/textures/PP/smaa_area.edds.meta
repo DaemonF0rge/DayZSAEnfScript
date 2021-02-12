@@ -1,0 +1,15 @@
+MetaFileClass  {
+ Name "{0DC6200A33E3EB5B}system/textures/PP/smaa_area.edds"
+ Author "desktop-fg5fdqj"
+ ChangeDate -1417321648
+ Configurations {
+  DDSResourceClass PC {
+   SourceFile "smaa_area.dds"
+   Conversion RedGreenHQCompression
+  }
+  DDSResourceClass XBOX_ONE : PC {
+  }
+  DDSResourceClass PS4 : PC {
+  }
+ }
+}

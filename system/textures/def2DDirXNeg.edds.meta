@@ -1,0 +1,14 @@
+MetaFileClass {
+ Name "{80D4CDC2F041FAEF}system/textures/def2DDirXNeg.edds"
+ Author "miva"
+ ChangeDate -1973165165
+ Configurations {
+  TGAResourceClass PC {
+   SourceFile "def2DDirXNeg.tga"
+  }
+  TGAResourceClass XBOX_ONE : PC {
+  }
+  TGAResourceClass PS4 : PC {
+  }
+ }
+}

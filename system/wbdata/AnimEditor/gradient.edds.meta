@@ -1,0 +1,14 @@
+MetaFileClass {
+ Name "{3F1DA9BC55A1AA5}System/wbdata/AnimEditor/gradient.edds"
+ Author "fido"
+ ChangeDate -752147927
+ Configurations {
+  DDSResourceClass PC {
+   SourceFile "gradient.dds"
+  }
+  DDSResourceClass XBOX_ONE : PC {
+  }
+  DDSResourceClass PS4 : PC {
+  }
+ }
+}

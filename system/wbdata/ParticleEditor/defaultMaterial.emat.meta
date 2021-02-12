@@ -1,0 +1,13 @@
+MetaFileClass {
+ Name "{735D641EBFC529}system/wbdata/ParticleEditor/defaultMaterial.emat"
+ Author "fido"
+ ChangeDate -1273716360
+ Configurations {
+  EMATResourceClass PC {
+  }
+  EMATResourceClass XBOX_ONE : PC {
+  }
+  EMATResourceClass PS4 : PC {
+  }
+ }
+}

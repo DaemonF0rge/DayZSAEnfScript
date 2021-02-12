@@ -1,0 +1,20 @@
+MetaFileClass {
+ Name "{2ABF52938B4FA46}system/wbdata/P3DExport/skeleton_human.xob"
+ Author "fido"
+ ChangeDate -502488712
+ Configurations {
+  TXOResourceClass PC {
+   SourceFile "skeleton_human.txo"
+   MaterialAssigns {
+    MaterialAssignClass {
+     SourceMaterial "Material"
+     AssignedMaterial "{15983AE1267E8}system/wbdata/p3dexport/skeleton_human_material.emat"
+    }
+   }
+  }
+  TXOResourceClass XBOX_ONE : PC {
+  }
+  TXOResourceClass PS4 : PC {
+  }
+ }
+}

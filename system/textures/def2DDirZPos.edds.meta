@@ -1,0 +1,14 @@
+MetaFileClass {
+ Name "{4537920626F5224F}system/textures/def2DDirZPos.edds"
+ Author "miva"
+ ChangeDate -1738284141
+ Configurations {
+  TGAResourceClass PC {
+   SourceFile "def2DDirZPos.tga"
+  }
+  TGAResourceClass XBOX_ONE : PC {
+  }
+  TGAResourceClass PS4 : PC {
+  }
+ }
+}

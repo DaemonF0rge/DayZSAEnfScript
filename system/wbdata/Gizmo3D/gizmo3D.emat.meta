@@ -1,0 +1,13 @@
+MetaFileClass {
+ Name "{58962187F9321A}system/wbdata/Gizmo3D/gizmo3D.emat"
+ Author "fido"
+ ChangeDate -2024513160
+ Configurations {
+  EMATResourceClass PC {
+  }
+  EMATResourceClass XBOX_ONE : PC {
+  }
+  EMATResourceClass PS4 : PC {
+  }
+ }
+}

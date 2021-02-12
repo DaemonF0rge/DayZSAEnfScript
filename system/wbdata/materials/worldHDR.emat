@@ -1,0 +1,11 @@
+material "system/wbdata/materials/worldHDR": GlowEffect
+{
+	VisiblePercent 95
+	TargetBrightness 0.25
+	SpeedDarkToBright 6.0
+	SpeedBrightToDark 2.0
+	BloomThreshold 0.5
+	BloomSteepness 4
+	BloomIntensity 0.75
+	ToneMapping Filmic
+}

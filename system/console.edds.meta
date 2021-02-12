@@ -1,0 +1,15 @@
+MetaFileClass {
+ Name "{584A588A4D1DFD5}system/console.edds"
+ Author "fido"
+ ChangeDate -880533127
+ Configurations {
+  TGAResourceClass PC {
+   SourceFile "console.tga"
+   TargetFormat EnfusionDDS_LZ4
+  }
+  TGAResourceClass XBOX_ONE : PC {
+  }
+  TGAResourceClass PS4 : PC {
+  }
+ }
+}
