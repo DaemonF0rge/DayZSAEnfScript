@@ -2,7 +2,9 @@ class VehicleBattery : ItemBase
 {
 	override bool CanPutAsAttachment( EntityAI parent )
 	{
-		if (!super.CanPutAsAttachment(parent)) {return false;}
+		if (!super.CanPutAsAttachment(parent)) 
+			return false;
+		
 		string obj_type = parent.GetType();
 		if ( parent.IsInherited(BatteryCharger) )
 		{
@@ -16,18 +18,26 @@ class VehicleBattery : ItemBase
 		return true;
 	}
 	
-	
-	override bool CanDetachAttachment ( EntityAI parent )
+	override bool CanDetachAttachment( EntityAI parent )
 	{
 		return true;
 	}
 	
-	override bool CanPutIntoHands ( EntityAI player ) 
+	override bool CanReceiveAttachment( EntityAI attachment, int slotId)
 	{
-		if( !super.CanPutIntoHands( parent ) )
+		if (GetCompEM().IsPlugged())
+			return false;
+		
+		return super.CanReceiveAttachment(attachment, slotId);;
+	}
+	
+	override bool CanPutIntoHands( EntityAI player ) 
+	{
+		if ( !super.CanPutIntoHands( parent ) )
 		{
 			return false;
 		}
+		
 		if ( HasEnergyManager() )
 		{
 			ItemBase powered_device = ItemBase.Cast( GetCompEM().GetPluggedDevice() ); // Should return metal wire or barbed wire attachment
@@ -70,6 +80,28 @@ class VehicleBattery : ItemBase
 		}
 	}
 	
+	override void OnMovedInsideCargo(EntityAI container)
+	{
+		super.OnMovedInsideCargo(container);
+		
+		if ( HasEnergyManager() )
+		{
+			ItemBase powered_device = ItemBase.Cast( GetCompEM().GetPluggedDevice() ); // Should return metal wire or barbed wire attachment
+			
+			if ( powered_device )
+			{
+				if ( powered_device.IsInherited( MetalWire ) )
+				{
+					powered_device.GetCompEM().UnplugAllDevices();
+				}
+				else
+				{
+					this.GetCompEM().UnplugAllDevices();
+				}
+			}
+		}
+	}
+	
 	override void SetActions()
 	{
 		super.SetActions();
@@ -77,7 +109,7 @@ class VehicleBattery : ItemBase
 		AddAction(ActionAttach);
 		AddAction(ActionAttachOnSelection);
 		AddAction(ActionDetach);
-		AddAction(ActionAttachPowerSourceToPanel);
+		//AddAction(ActionAttachPowerSourceToPanel); SHOULD NOT BE USED ANYMORE
 		AddAction(ActionPlugTargetIntoThis);
 	}
 	
@@ -150,6 +182,4 @@ class VehicleBattery : ItemBase
 			}
 		}
 	}
-	
-	
 }

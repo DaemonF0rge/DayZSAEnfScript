@@ -128,7 +128,6 @@ class PlayerBase extends ManBase
 	EPulseType						m_PulseType;
 	PlayerBase						m_CheckPulseLastTarget;
 	int 							m_ForceInjuryAnimMask;
-	//bool 							m_bProcessOpticsPreload;
 	//string 						m_sOpticsType;
 	bool 							m_HideHairAnimated;
 	string 							m_DecayedTexture;
@@ -2274,9 +2273,6 @@ class PlayerBase extends ManBase
 
 		}
 		m_AnimCommandStarting = HumanMoveCommandID.None;
-		
-		//ProcessLiftWeapon();
-		//ProcessOpticsPreload();
 	}
 	
 	bool m_ShowDbgUI = true;
@@ -2328,50 +2324,6 @@ class PlayerBase extends ManBase
 		
 		//SetOpticsPreload(false,item);
 	}
-	
-	/*void SetOpticsPreload(bool state, EntityAI item)
-	{
-		m_bProcessOpticsPreload = state;
-		if (state)
-		{
-			ItemOptics optics;
-			if (Weapon_Base.Cast(item))
-			{
-				optics = Weapon_Base.Cast(item).GetAttachedOptics();
-				
-			}
-			else if (ItemOptics.Cast(item))
-			{
-				optics = ItemOptics.Cast(item);
-			}
-			
-			if (optics)
-			{
-				string path = "cfgVehicles " + optics.GetType() + " OpticsInfo preloadOpticType";
-				string type_2d;
-				
-				if ( optics.m_2D_preload_type != "" )
-				{
-					m_sOpticsType = optics.m_2D_preload_type;
-				}
-				else
-					m_sOpticsType = optics.GetType();
-			}
-		}
-		else
-		{
-			m_sOpticsType = "";
-		}
-	}*/
-	
-	/*void ProcessOpticsPreload()
-	{
-		if (m_bProcessOpticsPreload && m_sOpticsType != "")
-		{
-			bool boo = GetGame().PreloadObject(m_sOpticsType,0.1);
-			//Print("attached optics found " + m_sOpticsType + " | " + boo);
-		}
-	}*/
 	
 	override void CommandHandler(float pDt, int pCurrentCommandID, bool pCurrentCommandFinished)	
 	{
@@ -3418,7 +3370,6 @@ class PlayerBase extends ManBase
 		if ( GetInstanceType() == DayZPlayerInstanceType.INSTANCETYPE_CLIENT )
 		{
 			m_Hud.Update( timeSlice );
-			//ProcessOpticsPreload();
 			m_Hud.ToggleHeatBufferPlusSign( m_HasHeatBuffer );
 		}
 	}
@@ -6724,7 +6675,10 @@ class PlayerBase extends ManBase
 			case DayZPlayerSyncJunctures.SJ_SHOCK :
 				DayZPlayerSyncJunctures.ReadShockParams(pCtx, m_CurrentShock);
 			break;
-			case DayZPlayerSyncJunctures.SJ_STAMINA :
+			case DayZPlayerSyncJunctures.SJ_STAMINA:
+				m_StaminaHandler.OnSyncJuncture(pJunctureID, pCtx);
+			break;
+			case DayZPlayerSyncJunctures.SJ_STAMINA_MISC:
 				m_StaminaHandler.OnSyncJuncture(pJunctureID, pCtx);
 			break;
 		}
@@ -7106,7 +7060,7 @@ class PlayerBase extends ManBase
 		}
 		return super.PredictiveTakeEntityToTargetInventory(target, flags, item);
 	}
-	
+
 	override bool PredictiveTakeEntityToInventory (FindInventoryLocationType flags, notnull EntityAI item)
 	{
 		bool can_detach;
@@ -7120,6 +7074,34 @@ class PlayerBase extends ManBase
 			return false;
 		}
 		return super.PredictiveTakeEntityToInventory(flags, item);
+	}
+	
+	override bool PredictiveTakeEntityToTargetAttachment (notnull EntityAI target, notnull EntityAI item)
+	{
+		Weapon_Base parentWpn = Weapon_Base.Cast(target);
+		Magazine mag = Magazine.Cast(item);
+		if (parentWpn && mag)
+		{
+			if( GetWeaponManager().CanAttachMagazine(parentWpn, mag) )
+				return GetWeaponManager().AttachMagazine(mag);
+
+			return false;
+		}
+		return super.PredictiveTakeEntityToTargetAttachment(target, item);
+	}
+	
+	override bool PredictiveTakeEntityToTargetAttachmentEx (notnull EntityAI target, notnull EntityAI item, int slot)
+	{
+		Weapon_Base parentWpn = Weapon_Base.Cast(target);
+		Magazine mag = Magazine.Cast(item);
+		if (parentWpn && mag)
+		{
+			if( target.CanReceiveAttachment(item,slot) && GetWeaponManager().CanAttachMagazine(parentWpn, mag) )
+				return GetWeaponManager().AttachMagazine(mag);
+
+			return false;
+		}
+		return super.PredictiveTakeEntityToTargetAttachmentEx(target, item,slot);
 	}
 	
 	override bool PredictiveTakeEntityToTargetCargo (notnull EntityAI target, notnull EntityAI item)

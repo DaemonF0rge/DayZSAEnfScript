@@ -31,14 +31,6 @@ class VSS_Base : RifleBoltFree_Base
 		return subCommand;
 	}
 	
-	override bool CanEnterIronsights()
-	{
-		ItemOptics optic = GetAttachedOptics();
-		if (optic/* && (KazuarOptic.Cast(optic) || KobraOptic.Cast(optic) ||...)*/) //seems to be ok with all compatible optics, can be tweaked by casting
-			return true;
-		return super.CanEnterIronsights();
-	}
-		
 	//Debug menu Spawn Ground Special
 	override void OnDebugSpawn()
 	{
@@ -51,4 +43,23 @@ class VSS_Base : RifleBoltFree_Base
 	}
 };
 
-class VSS : VSS_Base {};
+class VSS : VSS_Base
+{
+	override bool CanEnterIronsights()
+	{
+		ItemOptics optic = GetAttachedOptics();
+		if (optic && KobraOptic.Cast(optic))
+			return false;
+		return super.CanEnterIronsights();
+	}
+};
+class ASVAL : VSS_Base
+{
+	override bool CanEnterIronsights()
+	{
+		ItemOptics optic = GetAttachedOptics();
+		if (optic && M4_T3NRDSOptic.Cast(optic) || M68Optic.Cast(optic) || ReflexOptic.Cast(optic))
+			return false;
+		return super.CanEnterIronsights();
+	}
+};

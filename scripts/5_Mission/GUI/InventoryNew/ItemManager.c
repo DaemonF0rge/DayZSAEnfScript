@@ -16,12 +16,11 @@ class ItemManager
 	protected EntityAI					m_SelectedItem;
 	protected Container					m_SelectedContainer;
 	protected Widget					m_SelectedWidget;
-	protected ItemPreviewWidget			m_Ipw;
+	protected SlotsIcon					m_SelectedIcon;
 	
 	protected HandsPreview				m_HandsPreview;
 	
 	protected bool						m_ItemMicromanagmentMode;
-	protected bool						m_ItemMoving;
 	
 	protected Widget					m_LeftDropzone;
 	protected Widget					m_CenterDropzone;
@@ -46,16 +45,6 @@ class ItemManager
 			m_TooltipWidget			= GetGame().GetWorkspace().CreateWidgets("gui/layouts/inventory_new/day_z_inventory_new_tooltip.layout", root );
 		#endif
 		m_TooltipWidget.Show( false );
-	}
-	
-	void SetItemMoving( bool item_moving )
-	{
-		m_ItemMoving = item_moving;
-	}
-	
-	bool IsItemMoving()
-	{
-		return m_ItemMoving;
 	}
 	
 	void SetItemMicromanagmentMode( bool item_micromanagment_mode )
@@ -85,24 +74,25 @@ class ItemManager
 
 	Container GetSelectedContainer()
 	{
-		return m_SelectedContainer;
+		return m_SelectedContainer;	
 	}
 	
 	Widget GetSelectedWidget()
 	{
 		return m_SelectedWidget;
 	}
+	
+	SlotsIcon GetSelectedIcon()
+	{
+		return m_SelectedIcon;
+	}
 
-	void SetSelectedItem( EntityAI selected_item, Container selected_container, Widget selected_widget )
+	void SetSelectedItem( EntityAI selected_item, Container selected_container, Widget selected_widget, SlotsIcon selected_icon )
 	{
 		m_SelectedItem		= selected_item;
 		m_SelectedContainer	= selected_container;
 		m_SelectedWidget	= selected_widget;
-	}
-
-	void SetSelectedVicinityItem( ItemPreviewWidget ipw )
-	{
-		m_Ipw = ipw;
+		m_SelectedIcon		= selected_icon;
 	}
 
 	void ClearDefaultOpenStates()

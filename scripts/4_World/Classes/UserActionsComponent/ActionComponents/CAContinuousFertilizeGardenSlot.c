@@ -57,13 +57,13 @@ class CAContinuousFertilizeGardenSlot : CAContinuousQuantity
 			return UA_ERROR;
 		}
 		
-		if ( action_data.m_MainItem.GetQuantity() <= (m_SpentQuantity * m_TimeToComplete) )
+		if ( m_SpentQuantity >= m_ItemQuantity )
 		{
 			return UA_FINISHED;
 		}
 		else
 		{
-			if ( m_SpentQuantity < m_ItemQuantity )
+			if ( m_SpentQuantity <= m_ItemQuantity )
 			{
 				m_SpentQuantity += m_QuantityUsedPerSecond * action_data.m_Player.GetDeltaT();
 				float val = action_data.m_Player.GetSoftSkillsManager().AddSpecialtyBonus( m_SpentQuantity, m_Action.GetSpecialtyWeight(), true );
@@ -76,8 +76,6 @@ class CAContinuousFertilizeGardenSlot : CAContinuousQuantity
 				if (GetGame().IsServer())
 				{
 					action_data.m_MainItem.AddQuantity( -m_SpentQuantity );		
-					
-				//Print("Current quantity is : " + action_data.m_MainItem.GetQuantity());			
 				}
 				
 				garden_base.Fertilize( action_data.m_Player, action_data.m_MainItem, val, selection );
@@ -86,7 +84,6 @@ class CAContinuousFertilizeGardenSlot : CAContinuousQuantity
 			}
 			else
 			{
-				//Print(m_SlotFertilizerNeed);
 				CalcAndSetQuantity( action_data );
 				OnCompletePogress(action_data);
 				return UA_FINISHED;

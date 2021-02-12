@@ -50,7 +50,7 @@ class Attachments
 	
 	bool IsItemActive()
 	{
-		ItemBase item = ItemBase.Cast( GetFocusedEntity() );
+		ItemBase item = ItemBase.Cast( GetFocusedItem() );
 		if( !item )
 		{
 			return false;
@@ -60,7 +60,7 @@ class Attachments
 	
 	bool IsItemWithQuantityActive()
 	{
-		ItemBase item = ItemBase.Cast( GetFocusedEntity() );
+		ItemBase item = ItemBase.Cast( GetFocusedItem() );
 		if( !item )
 		{
 			return false;
@@ -83,7 +83,7 @@ class Attachments
 		if( m_Ics.Count() > 0 )
 			m_Ics.Get( 0 ).SetFocus( 0 );
 		
-		EntityAI focused_item = GetFocusedEntity();
+		EntityAI focused_item = GetFocusedItem();
 		if( focused_item )
 		{
 			float x, y;
@@ -103,7 +103,7 @@ class Attachments
 			m_Ics.Get( m_FocusedRow ).SetFocus( 0 );
 		}
 		
-		EntityAI focused_item = GetFocusedEntity();
+		EntityAI focused_item = GetFocusedItem();
 		if( focused_item )
 		{
 			float x, y;
@@ -133,7 +133,7 @@ class Attachments
 		return null;
 	}
 	
-	EntityAI GetFocusedEntity()
+	EntityAI GetFocusedItem()
 	{
 		SlotsIcon icon = GetFocusedIcon();
 		if( icon )
@@ -156,8 +156,9 @@ class Attachments
 	{
 		if( m_FocusedRow < m_Ics.Count() && !GetFocusedIcon().IsOutOfReach() )
 		{
-			ItemBase item = ItemBase.Cast( GetFocusedEntity() );
-			ItemManager.GetInstance().SetSelectedItem( item, null, m_Ics.Get( m_FocusedRow ).GetSlotIcon( m_FocusedColumn ).GetCursorWidget() );
+			ItemBase item = ItemBase.Cast( GetFocusedItem() );
+			SlotsIcon icon = GetFocusedIcon();
+			ItemManager.GetInstance().SetSelectedItem( item, null, icon.GetCursorWidget(), icon );
 			return true;
 		}
 		return false;
@@ -165,51 +166,62 @@ class Attachments
 	
 	bool Select()
 	{
-		EntityAI prev_item = EntityAI.Cast( GetFocusedEntity() );
+		SlotsIcon selected_slot = ItemManager.GetInstance().GetSelectedIcon();
+		EntityAI selected_item = ItemManager.GetInstance().GetSelectedItem();
+		SlotsIcon focused_slot = GetFocusedIcon();
+		EntityAI focused_item = GetFocusedItem();
 		Man player = GetGame().GetPlayer();
 		
-		if( ItemManager.GetInstance().IsItemMoving() )
+		if( focused_slot.IsReserved() || focused_item != selected_item && !(selected_slot && selected_slot.IsOutOfReach() ) )
 		{
-			EntityAI selected_item = ItemManager.GetInstance().GetSelectedItem();
-			if( selected_item && selected_item.GetInventory().CanRemoveEntity())
+			if( selected_item )
 			{
-				bool can_add = m_Entity.GetInventory().CanAddAttachment( selected_item );
-				if( can_add && !GetFocusedIcon().IsOutOfReach() )
+				if( selected_item.GetInventory().CanRemoveEntity() )
 				{
-					player.PredictiveTakeEntityToTargetAttachment(m_Entity, selected_item);
-					ItemManager.GetInstance().SetSelectedItem( null, null, null );
-					return true;
+					if( m_Entity.GetInventory().CanAddAttachmentEx( selected_item, focused_slot.GetSlotID() ) )
+					{
+						player.PredictiveTakeEntityToTargetAttachmentEx( m_Entity, selected_item, focused_slot.GetSlotID() );
+						ItemManager.GetInstance().SetSelectedItem( null, null, null, null );
+						return true;
+					
+					}
+					else if( m_Entity.GetInventory().CanAddAttachment( selected_item ) )
+					{
+						player.PredictiveTakeEntityToTargetAttachment(m_Entity, selected_item);
+						ItemManager.GetInstance().SetSelectedItem( null, null, null, null );
+						return true;
+					}
 				}
 			}
-		}
-		else
-		{
-			if ( prev_item && !GetFocusedIcon().IsOutOfReach() )
+			else
 			{
-				EntityAI item_in_hands = GetGame().GetPlayer().GetHumanInventory().GetEntityInHands();
-				InventoryLocation il = new InventoryLocation;
-				prev_item.GetInventory().GetCurrentInventoryLocation( il );
-				bool reachable = AttachmentsOutOfReach.IsAttachmentReachable( m_Entity, "", il.GetSlot() );
-				if( reachable && prev_item.GetInventory().CanRemoveEntity() )
+				if ( focused_item && !focused_slot.IsOutOfReach() )
 				{
-					if( item_in_hands && item_in_hands.GetInventory().CanRemoveEntity() )
+					EntityAI item_in_hands = GetGame().GetPlayer().GetHumanInventory().GetEntityInHands();
+					InventoryLocation il = new InventoryLocation;
+					focused_item.GetInventory().GetCurrentInventoryLocation( il );
+					bool reachable = AttachmentsOutOfReach.IsAttachmentReachable( m_Entity, "", il.GetSlot() );
+					if( reachable && focused_item.GetInventory().CanRemoveEntity() )
 					{
-						if( GameInventory.CanSwapEntitiesEx( item_in_hands, prev_item ) )
+						if( item_in_hands && item_in_hands.GetInventory().CanRemoveEntity() )
 						{
-							player.PredictiveSwapEntities( item_in_hands, prev_item );
-							return true;
+							if( GameInventory.CanSwapEntitiesEx( item_in_hands, focused_item ) )
+							{
+								player.PredictiveSwapEntities( item_in_hands, focused_item );
+								return true;
+							}
 						}
-					}
-					else
-					{
-						if( player.GetHumanInventory().CanAddEntityInHands( prev_item ) )
+						else
 						{
-							player.PredictiveTakeEntityToHands( prev_item );
-							return true;
+							if( player.GetHumanInventory().CanAddEntityInHands( focused_item ) )
+							{
+								player.PredictiveTakeEntityToHands( focused_item );
+								return true;
+							}
 						}
 					}
 				}
-			}		
+			}	
 		}
 		return false;
 	}
@@ -222,7 +234,7 @@ class Attachments
 	
 	bool CanCombine()
 	{
-		ItemBase ent = ItemBase.Cast( GetFocusedEntity() );
+		ItemBase ent = ItemBase.Cast( GetFocusedItem() );
 		ItemBase item_in_hands = ItemBase.Cast(	GetGame().GetPlayer().GetHumanInventory().GetEntityInHands() );
 		
 		return GetRecipeCount( false, ent, item_in_hands ) > 0;
@@ -230,7 +242,7 @@ class Attachments
 	
 	bool CanEquip()
 	{
-		EntityAI entity = ItemBase.Cast( GetFocusedEntity() );
+		EntityAI entity = ItemBase.Cast( GetFocusedItem() );
 		InventoryLocation il = new InventoryLocation;
 		if( !entity || entity.IsInherited( Magazine ) )
 		{
@@ -241,7 +253,7 @@ class Attachments
 	
 	bool Combine()
 	{
-		ItemBase ent = ItemBase.Cast( GetFocusedEntity() );
+		ItemBase ent = ItemBase.Cast( GetFocusedItem() );
 		ItemBase item_in_hands = ItemBase.Cast(	GetGame().GetPlayer().GetHumanInventory().GetEntityInHands() );
 		
 		if( ent && item_in_hands && ( item_in_hands.CanBeCombined( ent ) ) )
@@ -254,7 +266,7 @@ class Attachments
 	
 	bool EquipItem()
 	{
-		ItemBase entity = ItemBase.Cast( GetFocusedEntity() );
+		ItemBase entity = ItemBase.Cast( GetFocusedItem() );
 		if( entity && !entity.IsInherited( Magazine ) && !GetFocusedIcon().IsOutOfReach() )
 		{
 			if( entity.HasQuantity() )
@@ -273,7 +285,7 @@ class Attachments
 	
 	bool TransferItem()
 	{
-		EntityAI entity = GetFocusedEntity();
+		EntityAI entity = GetFocusedItem();
 		if( entity && !GetFocusedIcon().IsOutOfReach() )
 		{
 			GetGame().GetPlayer().PredictiveTakeEntityToInventory( FindInventoryLocationType.CARGO, entity );
@@ -284,7 +296,7 @@ class Attachments
 	
 	bool InspectItem()
 	{
-		EntityAI entity = GetFocusedEntity();
+		EntityAI entity = GetFocusedItem();
 		if( entity )
 		{
 			m_Parent.InspectItem( entity );
@@ -295,7 +307,7 @@ class Attachments
 	
 	bool TransferItemToVicinity()
 	{
-		ItemBase item = ItemBase.Cast(GetFocusedEntity());
+		ItemBase item = ItemBase.Cast(GetFocusedItem());
 		PlayerBase player = PlayerBase.Cast( GetGame().GetPlayer() );
 		if( item && !GetFocusedIcon().IsOutOfReach() )
 		{
@@ -399,7 +411,7 @@ class Attachments
 
 		m_Ics.Get( m_FocusedRow ).SetFocus( m_FocusedColumn );
 		
-		EntityAI focused_item = GetFocusedEntity();
+		EntityAI focused_item = GetFocusedItem();
 		if( focused_item )
 		{
 			float x, y;

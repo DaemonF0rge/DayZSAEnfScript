@@ -340,10 +340,7 @@ class PlayerContainer: CollapsibleContainer
 	override void SetNextActive()
 	{
 		ItemManager.GetInstance().HideTooltip( );
-		if( ItemManager.GetInstance().IsMicromanagmentMode() )
-		{
-			ItemManager.GetInstance().SetItemMoving( true );
-		}
+		
 		Container active = Container.Cast( m_OpenedContainers[m_ActiveIndex] );
 		if( !active.IsActive() )
 		{
@@ -415,11 +412,6 @@ class PlayerContainer: CollapsibleContainer
 
 	override void SetPreviousActive( bool force = false )
 	{
-		if( ItemManager.GetInstance().IsMicromanagmentMode() )
-		{
-			ItemManager.GetInstance().SetItemMoving( true );
-		}
-		
 		Container active = Container.Cast( m_OpenedContainers[m_ActiveIndex] );
 		if( !active.IsActive() )
 		{
@@ -825,12 +817,13 @@ class PlayerContainer: CollapsibleContainer
 		return false;
 	}
 	
-	EntityAI GetFocusedItem()
+	override EntityAI GetFocusedItem()
 	{
 		EntityAI item;
 		if( GetFocusedContainer() && ( GetFocusedContainer().IsInherited( ContainerWithCargo ) || GetFocusedContainer().IsInherited( ContainerWithCargoAndAttachments ) ) )
 		{
-			return GetFocusedContainer().GetFocusedEntity();
+			EntityAI e = GetFocusedContainer().GetFocusedItem();
+			return e;
 		}
 		else
 		{
@@ -868,10 +861,11 @@ class PlayerContainer: CollapsibleContainer
 		}
 		else
 		{
-			EntityAI item = GetSlotsIcon( m_FocusedRow, m_FocusedColumn ).GetEntity();
-			if( item )
+			SlotsIcon focused_slot = GetSlotsIcon( m_FocusedRow, m_FocusedColumn );
+			EntityAI item = focused_slot.GetEntity();
+			if( item && !focused_slot.IsReserved() )
 			{
-				ItemManager.GetInstance().SetSelectedItem( item, null, null );
+				ItemManager.GetInstance().SetSelectedItem( item, null, null, null );
 				return true;
 			}
 		}
@@ -886,53 +880,65 @@ class PlayerContainer: CollapsibleContainer
 		}
 		else
 		{
-			if( ItemManager.GetInstance().IsItemMoving() )
+			EntityAI selected_item = ItemManager.GetInstance().GetSelectedItem();
+			SlotsIcon focused_slot = GetSlotsIcon( m_FocusedRow, m_FocusedColumn );
+			EntityAI focused_item = focused_slot.GetEntity();
+			if( focused_slot.IsReserved() || focused_item != selected_item )
 			{
-				EntityAI selected_item = ItemManager.GetInstance().GetSelectedItem();
-				if( selected_item && selected_item.GetInventory().CanRemoveEntity() )
+				if( selected_item )
 				{
-					if( m_Player.GetInventory().CanRemoveAttachment( selected_item ) )
+					if(  selected_item.GetInventory().CanRemoveEntity() )
 					{
-						GetGame().GetPlayer().PredictiveTakeEntityToInventory( FindInventoryLocationType.ATTACHMENT, selected_item );
-						ItemManager.GetInstance().SetSelectedItem( null, null, null );
-						return true;
+						if( m_Player.GetInventory().CanAddAttachmentEx( selected_item, focused_slot.GetSlotID() ) )
+						{
+							m_Player.PredictiveTakeEntityAsAttachmentEx( selected_item, focused_slot.GetSlotID() );
+							ItemManager.GetInstance().SetSelectedItem( null, null, null, null );
+							return true;
+						
+						}
+						else if( m_Player.GetInventory().CanAddAttachment( selected_item ) )
+						{
+							m_Player.PredictiveTakeEntityToInventory( FindInventoryLocationType.ATTACHMENT, selected_item );
+							ItemManager.GetInstance().SetSelectedItem( null, null, null, null );
+							return true;
+						}
 					}
 				}
-			}
-			else
-			{
-				EntityAI item = GetSlotsIcon( m_FocusedRow, m_FocusedColumn ).GetEntity();
-				if( item && item.GetInventory().CanRemoveEntity() )
+				else
 				{
-					EntityAI item_in_hands = GetGame().GetPlayer().GetHumanInventory().GetEntityInHands();
-					if( item_in_hands && item_in_hands.GetInventory().CanRemoveEntity() )
+					
+					if( focused_item && focused_item.GetInventory().CanRemoveEntity() )
 					{
-						if( GameInventory.CanSwapEntitiesEx( item_in_hands, item ) )
+						EntityAI item_in_hands = m_Player.GetHumanInventory().GetEntityInHands();
+						if( item_in_hands && item_in_hands.GetInventory().CanRemoveEntity() )
 						{
-							GetGame().GetPlayer().PredictiveSwapEntities( item_in_hands, item );
-							return true;
+							if( GameInventory.CanSwapEntitiesEx( item_in_hands, focused_item ) )
+							{
+								m_Player.PredictiveSwapEntities( item_in_hands, focused_item );
+								return true;
+							}
+							else
+							{
+								InventoryLocation il_hands_dst = new InventoryLocation;
+								if( m_Player.GetHumanInventory().FindFreeLocationFor( item_in_hands, FindInventoryLocationType.ANY, il_hands_dst ) )
+								{
+									InventoryMode invMode = InventoryMode.PREDICTIVE;
+						
+									if ( m_Player.NeedInventoryJunctureFromServer(item_in_hands, item_in_hands.GetHierarchyParent(), il_hands_dst.GetParent()) || GetGame().GetPlayer().NeedInventoryJunctureFromServer(focused_item, focused_item.GetHierarchyParent(), GetGame().GetPlayer()) )
+										invMode = InventoryMode.JUNCTURE;
+									
+									m_Player.GetHumanInventory().ForceSwapEntities( invMode, focused_item, item_in_hands, il_hands_dst );
+									return true;
+								}
+							}
 						}
 						else
 						{
-							InventoryLocation il_hands_dst = new InventoryLocation;
-							if( GetGame().GetPlayer().GetHumanInventory().FindFreeLocationFor( item_in_hands, FindInventoryLocationType.ANY, il_hands_dst ) )
+							if( m_Player.GetHumanInventory().CanAddEntityInHands( focused_item ) )
 							{
-								InventoryMode invMode = InventoryMode.PREDICTIVE;
-					
-								if ( GetGame().GetPlayer().NeedInventoryJunctureFromServer(item_in_hands, item_in_hands.GetHierarchyParent(), il_hands_dst.GetParent()) || GetGame().GetPlayer().NeedInventoryJunctureFromServer(item, item.GetHierarchyParent(), GetGame().GetPlayer()) )
-									invMode = InventoryMode.JUNCTURE;
-								
-								GetGame().GetPlayer().GetHumanInventory().ForceSwapEntities( invMode, item, item_in_hands, il_hands_dst );
+								m_Player.PredictiveTakeEntityToHands( focused_item );
 								return true;
 							}
-						}
-					}
-					else
-					{
-						if( GetGame().GetPlayer().GetHumanInventory().CanAddEntityInHands( item ) )
-						{
-							GetGame().GetPlayer().PredictiveTakeEntityToHands( item );
-							return true;
 						}
 					}
 				}
@@ -1150,7 +1156,6 @@ class PlayerContainer: CollapsibleContainer
 		
 		if( m_Player.GetInventory().CanAddEntityToInventory( item, FindInventoryLocationType.CARGO | FindInventoryLocationType.ATTACHMENT ) && ( !m_Player.GetInventory().HasEntityInInventory( item ) ) || m_Player.GetHumanInventory().HasEntityInHands( item ) )
 		{
-			Print("HELLO");
 			m_Player.PredictiveTakeEntityToInventory( FindInventoryLocationType.CARGO | FindInventoryLocationType.ATTACHMENT, item );
 		}
 	}
@@ -1317,6 +1322,7 @@ class PlayerContainer: CollapsibleContainer
 		
 		receiver_item = slots_icon.GetEntity();
 		is_reserved = slots_icon.IsReserved();
+		InventoryLocation il;
 
 		if ( !ipw )
 		{
@@ -1381,16 +1387,17 @@ class PlayerContainer: CollapsibleContainer
 		}
 		else if (  m_Player.GetInventory().CanAddAttachment( item ) )
 		{
+			il = new InventoryLocation;
+			m_Player.GetInventory().FindFreeLocationFor( item, FindInventoryLocationType.ATTACHMENT, il );
 			float stackable = item.GetTargetQuantityMax(-1);
 		
 			if ( stackable == 0 || stackable >= item.GetQuantity() )
 			{
-				real_player.PredictiveTakeEntityToTargetAttachment( m_Player, item );
+				real_player.PredictiveTakeEntityToTargetAttachment( il.GetParent(), item );
 			}
 			else
 			{
-				InventoryLocation il = new InventoryLocation;
-				m_Player.GetInventory().FindFreeLocationFor( item, FindInventoryLocationType.ATTACHMENT, il );
+
 				ItemBase.Cast(item).SplitIntoStackMaxToInventoryLocationClient( il );
 			}
 		}

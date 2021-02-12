@@ -50,6 +50,7 @@ class ActionTogglePlaceObject: ActionSingleUseBase
 	override void Start( ActionData action_data ) //Setup on start of action
 	{
 		super.Start( action_data );
+		action_data.m_Player.SetLocalProjectionPosition(action_data.m_Target.GetCursorHitPos());
 		action_data.m_Player.TogglePlacingLocal();
 	}
 };

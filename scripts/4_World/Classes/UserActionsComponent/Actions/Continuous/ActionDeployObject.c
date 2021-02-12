@@ -139,7 +139,7 @@ class ActionDeployObject: ActionContinuousBase
 			else*/
 			if (action_data.m_Player.IsPlacingServer())
 			{
-				action_data.m_Player.GetHologramServer().EvaluateCollision();
+				action_data.m_Player.GetHologramServer().EvaluateCollision(action_data.m_MainItem);
 				if ( !action_data.m_Player.GetHologramServer().IsColliding() )
 				{
 					if ( action_data.m_MainItem.CanBePlaced(action_data.m_Player, action_data.m_Player.GetHologramServer().GetProjectionEntity().GetPosition()) )

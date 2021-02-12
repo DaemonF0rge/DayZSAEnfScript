@@ -112,8 +112,7 @@ class InventoryMenu extends UIScriptedMenu
 		}
 		
 		ItemManager.GetInstance().SetItemMicromanagmentMode( false );
-		ItemManager.GetInstance().SetItemMoving( false );
-		ItemManager.GetInstance().SetSelectedItem( null, null, null );
+		ItemManager.GetInstance().SetSelectedItem( null, null, null, null );
 
 		m_Inventory.Refresh();
 	}
@@ -142,8 +141,7 @@ class InventoryMenu extends UIScriptedMenu
 		}
 		
 		ItemManager.GetInstance().SetItemMicromanagmentMode( false );
-		ItemManager.GetInstance().SetItemMoving( false );
-		ItemManager.GetInstance().SetSelectedItem( null, null, null );
+		ItemManager.GetInstance().SetSelectedItem( null, null, null, null );
 		ItemManager.GetInstance().HideTooltip();
 	}
 	

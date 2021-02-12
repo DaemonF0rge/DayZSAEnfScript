@@ -12,12 +12,15 @@ class MetalWire extends ItemBase
 	
 	override bool CanPutAsAttachment( EntityAI parent )
 	{
-		if(!super.CanPutAsAttachment(parent)) {return false;}
+		if (!super.CanPutAsAttachment(parent))
+			return false;
+		
 		if ( parent.IsInherited(VehicleBattery) )
 		{
-			ItemBase battery_owner = ItemBase.Cast( parent.GetHierarchyParent() );
+			EntityAI battery_owner = EntityAI.Cast( parent.GetHierarchyParent() );
 			
-			if ( battery_owner  &&  battery_owner.IsInherited(BatteryCharger) ) // Battery Charger check here allows the Metal Wire to be attached on car battery directly from player's inventory (backpack)
+			// Check for Not player as if parent is not player, battery is already attached and should not receive new attachment
+			if ( battery_owner && !battery_owner.IsInherited(PlayerBase) )
 			{
 				return false;
 			}

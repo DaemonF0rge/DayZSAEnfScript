@@ -340,10 +340,6 @@ class ZombieContainer: CollapsibleContainer
 	override void SetNextActive()
 	{
 		ItemManager.GetInstance().HideTooltip( );
-		if( ItemManager.GetInstance().IsMicromanagmentMode() )
-		{
-			ItemManager.GetInstance().SetItemMoving( true );
-		}
 		
 		if( IsLastIndex() )
 		{
@@ -367,11 +363,6 @@ class ZombieContainer: CollapsibleContainer
 
 	override void SetPreviousActive( bool force = false )
 	{
-		if( ItemManager.GetInstance().IsMicromanagmentMode() )
-		{
-			ItemManager.GetInstance().SetItemMoving( true );
-		}
-		
 		if( IsFirstIndex() || force )
 		{
 			Container.Cast( GetParent() ).SetPreviousActive();
@@ -743,12 +734,12 @@ class ZombieContainer: CollapsibleContainer
 		super.CollapseButtonOnMouseButtonDown(w);
 	}
 	
-	EntityAI GetFocusedItem()
+	override EntityAI GetFocusedItem()
 	{
 		EntityAI item;
 		if( GetFocusedContainer() && ( GetFocusedContainer().IsInherited( ContainerWithCargo ) || GetFocusedContainer().IsInherited( ContainerWithCargoAndAttachments ) ) )
 		{
-			return GetFocusedContainer().GetFocusedEntity();
+			return GetFocusedContainer().GetFocusedItem();
 		}
 		else
 		{
@@ -818,50 +809,57 @@ class ZombieContainer: CollapsibleContainer
 		}
 		else
 		{
-			if( ItemManager.GetInstance().IsItemMoving() )
+			SlotsIcon selected_slot = ItemManager.GetInstance().GetSelectedIcon();
+			EntityAI focused_item = GetFocusedItem();
+			EntityAI selected_item = ItemManager.GetInstance().GetSelectedItem();
+			if( !(selected_slot && selected_slot.IsOutOfReach() ) )
 			{
-				EntityAI selected_item = ItemManager.GetInstance().GetSelectedItem();
-				if( selected_item && selected_item.GetInventory().CanRemoveEntity() )
+				if( selected_item )
 				{
-					GetGame().GetPlayer().PredictiveTakeEntityToTargetInventory( m_ZombieEntity, FindInventoryLocationType.ANY, selected_item );
-					ItemManager.GetInstance().SetSelectedItem( null, null, null );
-					return true;
-				}
-			}
-			else
-			{
-				EntityAI item = GetSlotsIcon( m_FocusedRow, m_FocusedColumn ).GetEntity();
-				if( item && item.GetInventory().CanRemoveEntity() )
-				{
-					EntityAI item_in_hands = GetGame().GetPlayer().GetHumanInventory().GetEntityInHands();
-					if( item_in_hands && item_in_hands.GetInventory().CanRemoveEntity() )
+					if( selected_item != focused_item)
 					{
-						if( GameInventory.CanSwapEntitiesEx( item_in_hands, item ) )
+						if( selected_item.GetInventory().CanRemoveEntity() )
 						{
-							GetGame().GetPlayer().PredictiveSwapEntities( item_in_hands, item );
+							GetGame().GetPlayer().PredictiveTakeEntityToTargetInventory( m_ZombieEntity, FindInventoryLocationType.ANY, selected_item );
+							ItemManager.GetInstance().SetSelectedItem( null, null, null, null );
 							return true;
+						}
+					}
+				}
+				else
+				{
+					if( focused_item && focused_item.GetInventory().CanRemoveEntity() )
+					{
+						EntityAI item_in_hands = GetGame().GetPlayer().GetHumanInventory().GetEntityInHands();
+						if( item_in_hands && item_in_hands.GetInventory().CanRemoveEntity() )
+						{
+							if( GameInventory.CanSwapEntitiesEx( item_in_hands, focused_item ) )
+							{
+								GetGame().GetPlayer().PredictiveSwapEntities( item_in_hands, focused_item );
+								return true;
+							}
+							else
+							{
+								InventoryLocation il_hands_dst = new InventoryLocation;
+								if( GetGame().GetPlayer().GetHumanInventory().FindFreeLocationFor( item_in_hands, FindInventoryLocationType.ANY, il_hands_dst ) )
+								{
+									InventoryMode invMode = InventoryMode.PREDICTIVE;
+						
+									if ( GetGame().GetPlayer().NeedInventoryJunctureFromServer(item_in_hands, item_in_hands.GetHierarchyParent(), il_hands_dst.GetParent()) || GetGame().GetPlayer().NeedInventoryJunctureFromServer(focused_item, focused_item.GetHierarchyParent(), GetGame().GetPlayer()) )
+										invMode = InventoryMode.JUNCTURE;
+									
+									GetGame().GetPlayer().GetHumanInventory().ForceSwapEntities( InventoryMode.JUNCTURE, focused_item, item_in_hands, il_hands_dst );
+									return true;
+								}
+							}
 						}
 						else
 						{
-							InventoryLocation il_hands_dst = new InventoryLocation;
-							if( GetGame().GetPlayer().GetHumanInventory().FindFreeLocationFor( item_in_hands, FindInventoryLocationType.ANY, il_hands_dst ) )
+							if( GetGame().GetPlayer().GetHumanInventory().CanAddEntityInHands( focused_item ) )
 							{
-								InventoryMode invMode = InventoryMode.PREDICTIVE;
-					
-								if ( GetGame().GetPlayer().NeedInventoryJunctureFromServer(item_in_hands, item_in_hands.GetHierarchyParent(), il_hands_dst.GetParent()) || GetGame().GetPlayer().NeedInventoryJunctureFromServer(item, item.GetHierarchyParent(), GetGame().GetPlayer()) )
-									invMode = InventoryMode.JUNCTURE;
-								
-								GetGame().GetPlayer().GetHumanInventory().ForceSwapEntities( InventoryMode.JUNCTURE, item, item_in_hands, il_hands_dst );
+								GetGame().GetPlayer().PredictiveTakeEntityToHands( focused_item );
 								return true;
 							}
-						}
-					}
-					else
-					{
-						if( GetGame().GetPlayer().GetHumanInventory().CanAddEntityInHands( item ) )
-						{
-							GetGame().GetPlayer().PredictiveTakeEntityToHands( item );
-							return true;
 						}
 					}
 				}
@@ -880,7 +878,7 @@ class ZombieContainer: CollapsibleContainer
 		{
 			ItemPreviewWidget item_preview = ItemPreviewWidget.Cast( m_Container.Get( m_FocusedRow ).GetMainWidget().FindAnyWidget( "Render" + m_FocusedColumn ) );
 			ItemBase item = ItemBase.Cast( item_preview.GetItem() );
-			ItemManager.GetInstance().SetSelectedItem( item, null, null );
+			ItemManager.GetInstance().SetSelectedItem( item, null, null, null );
 			return true;
 		}
 		return false;

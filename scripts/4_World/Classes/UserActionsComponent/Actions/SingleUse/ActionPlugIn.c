@@ -21,7 +21,7 @@ class ActionPlugIn: ActionSingleUseBase
 		ItemBase target_IB = ItemBase.Cast( target.GetObject() );
 		
 		//Prevent plugging to items in inventory
-		if ( target_IB && target_IB.GetHierarchyRoot() != player &&  item )
+		if ( target_IB && target_IB.GetHierarchyRoot() == target_IB &&  item )
 		{
 			if ( item.HasEnergyManager()  &&  !item.GetCompEM().IsPlugged()  &&  target_IB.HasEnergyManager()  &&  target_IB.GetCompEM().CanReceivePlugFrom(item) )
 			{

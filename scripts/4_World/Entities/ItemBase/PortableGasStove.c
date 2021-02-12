@@ -11,6 +11,7 @@ class PortableGasStove extends ItemBase
 	protected const float PARAM_COOKING_EQUIP_MAX_TEMP			= 250;		//maximum temperature of attached cooking equipment (degree Celsius)
 	protected const float PARAM_COOKING_TIME_INC_COEF			= 0.5;		//cooking time increase coeficient, can be used when balancing how fast a food can be cooked
 	
+	private 		float m_TimeFactor;
 	//
 	ref Cooking m_CookingProcess;
 	ItemBase m_CookingEquipment;
@@ -48,7 +49,7 @@ class PortableGasStove extends ItemBase
 	}	
 	
 	//--- ATTACHMENTS
-	override void EEItemAttached ( EntityAI item, string slot_name ) 
+	override void EEItemAttached( EntityAI item, string slot_name ) 
 	{
 		super.EEItemAttached( item, slot_name );
 		
@@ -60,7 +61,7 @@ class PortableGasStove extends ItemBase
 		}
 	}
 	
-	override void EEItemDetached ( EntityAI item, string slot_name ) 
+	override void EEItemDetached( EntityAI item, string slot_name ) 
 	{
 		super.EEItemDetached( item, slot_name );
 		
@@ -126,11 +127,12 @@ class PortableGasStove extends ItemBase
 				//start cooking
 				if ( cook_equip_temp >= PARAM_COOKING_TEMP_THRESHOLD )
 				{
+					m_TimeFactor = consumed_energy;
 					CookWithEquipment();
 				}				
 				
 				//set temperature to cooking equipment
-				cook_equip_temp = cook_equip_temp + PARAM_COOKING_EQUIP_TEMP_INCREASE;
+				cook_equip_temp = cook_equip_temp + (PARAM_COOKING_EQUIP_TEMP_INCREASE * consumed_energy);
 				cook_equip_temp = Math.Clamp ( cook_equip_temp, 0, PARAM_COOKING_EQUIP_MAX_TEMP );
 				GetCookingEquipment().SetTemperature( cook_equip_temp );
 			}
@@ -144,7 +146,7 @@ class PortableGasStove extends ItemBase
 			m_CookingProcess = new Cooking();
 		}
 		
-		m_CookingProcess.CookWithEquipment ( GetCookingEquipment(), PARAM_COOKING_TIME_INC_COEF );
+		m_CookingProcess.CookWithEquipment ( GetCookingEquipment(), PARAM_COOKING_TIME_INC_COEF * m_TimeFactor );
 	}
 
 	//================================================================
@@ -198,7 +200,7 @@ class PortableGasStove extends ItemBase
 	//this into/outo parent.Cargo
 	override bool CanPutInCargo( EntityAI parent )
 	{
-		if( !super.CanPutInCargo(parent) ) {return false;}
+		if ( !super.CanPutInCargo(parent) ) {return false;}
 		if ( GetCompEM().IsSwitchedOn() )
 		{
 			return false;
@@ -223,7 +225,7 @@ class PortableGasStove extends ItemBase
 	//hands
 	override bool CanPutIntoHands( EntityAI parent )
 	{
-		if( !super.CanPutIntoHands( parent ) )
+		if ( !super.CanPutIntoHands( parent ) )
 		{
 			return false;
 		}
