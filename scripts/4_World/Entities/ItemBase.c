@@ -1940,12 +1940,12 @@ class ItemBase extends InventoryItem
 	// -------------------------------------------------------------------------	
 	bool OnAction(int action_id, Man player, ParamsReadContext ctx)
 	{
-		if(action_id >= EActions.RECIPES_RANGE_START && action_id < EActions.RECIPES_RANGE_END)
+		if (action_id >= EActions.RECIPES_RANGE_START && action_id < EActions.RECIPES_RANGE_END)
 		{
 			PluginRecipesManager plugin_recipes_manager = PluginRecipesManager.Cast( GetPlugin(PluginRecipesManager) );
 			int idWithoutOffset = action_id - EActions.RECIPES_RANGE_START;
 			PlayerBase p = PlayerBase.Cast( player );
-			if( EActions.RECIPES_RANGE_START  < 1000 )
+			if ( EActions.RECIPES_RANGE_START  < 1000 )
 			{
 				float anim_length = plugin_recipes_manager.GetRecipeLengthInSecs(idWithoutOffset);
 				float specialty_weight = plugin_recipes_manager.GetRecipeSpecialty(idWithoutOffset);
@@ -1957,33 +1957,63 @@ class ItemBase extends InventoryItem
 			}
 		}
 		
-		if( GetGame().IsServer() )
+		if ( GetGame().IsServer() )
 		{
-			if(action_id >= EActions.DEBUG_AGENTS_RANGE_INJECT_START && action_id < EActions.DEBUG_AGENTS_RANGE_INJECT_END)
+			if (action_id >= EActions.DEBUG_AGENTS_RANGE_INJECT_START && action_id < EActions.DEBUG_AGENTS_RANGE_INJECT_END)
 			{
 				int agent_id = action_id - EActions.DEBUG_AGENTS_RANGE_INJECT_START;
 				InsertAgent(agent_id,100);
 			}
 	
-			if(action_id >= EActions.DEBUG_AGENTS_RANGE_REMOVE_START && action_id < EActions.DEBUG_AGENTS_RANGE_REMOVE_END)
+			if (action_id >= EActions.DEBUG_AGENTS_RANGE_REMOVE_START && action_id < EActions.DEBUG_AGENTS_RANGE_REMOVE_END)
 			{
 				int agent_id2 = action_id - EActions.DEBUG_AGENTS_RANGE_REMOVE_START;
 				RemoveAgent(agent_id2);
 			}
 			
-			if( action_id == EActions.SET_MAX_QUANTITY ) //SetMaxQuantity
+			if ( action_id == EActions.ADD_QUANTITY )
 			{
-				SetQuantityMax();
+				AddQuantity(GetQuantityMax() * 0.2);
+				
+				if ( m_EM )
+				{
+					m_EM.AddEnergy(m_EM.GetEnergyMax() * 0.2);
+				}
+				//PrintVariables();
 			}
-			
-			
-			if( action_id == EActions.REMOVE_QUANTITY ) //Quantity -20%
+						
+			if ( action_id == EActions.REMOVE_QUANTITY ) //Quantity -20%
 			{
-				AddQuantity(GetQuantityMax()/-5);
+				AddQuantity(- GetQuantityMax() * 0.2);
+				
+				if ( m_EM )
+				{
+					m_EM.AddEnergy(- m_EM.GetEnergyMax() * 0.2);
+				}
 				//PrintVariables();
 			}
 			
-			if( action_id == EActions.GET_TOTAL_WEIGHT ) //Prints total weight of item + its contents
+			if ( action_id == EActions.SET_QUANTITY_0 ) //SetMaxQuantity
+			{
+				SetQuantity(0);
+				
+				if ( m_EM )
+				{
+					m_EM.SetEnergy(0);
+				}
+			}
+			
+			if ( action_id == EActions.SET_MAX_QUANTITY ) //SetMaxQuantity
+			{
+				SetQuantityMax();
+				
+				if ( m_EM )
+				{
+					m_EM.SetEnergy(m_EM.GetEnergyMax());
+				}
+			}
+			
+			if ( action_id == EActions.GET_TOTAL_WEIGHT ) //Prints total weight of item + its contents
 			{
 				Print(GetWeight());
 			}
@@ -1999,21 +2029,16 @@ class ItemBase extends InventoryItem
 			}
 			*/
 	
-			if( action_id == EActions.ADD_HEALTH ) 
+			if ( action_id == EActions.ADD_HEALTH ) 
 			{
 				this.AddHealth("","",GetMaxHealth("","Health")/5);
 			}
-			if( action_id == EActions.REMOVE_HEALTH ) 
+			if ( action_id == EActions.REMOVE_HEALTH ) 
 			{
 				this.AddHealth("","",-GetMaxHealth("","Health")/5);
-			}	
-			
-			if( action_id == EActions.SET_QUANTITY_0 ) //SetMaxQuantity
-			{
-				SetQuantity(0);
 			}
 			
-			if( action_id == EActions.SPIN ) //SetMaxQuantity
+			if ( action_id == EActions.SPIN ) //SetMaxQuantity
 			{
 				
 				Magnum_Cylinder cylinder = Magnum_Cylinder.Cast(GetAttachmentByType(Magnum_Cylinder));
@@ -2022,10 +2047,10 @@ class ItemBase extends InventoryItem
 		//Magnum_Base magnum = Magnum_Base.Cast(m_weapon);
 		
 		//Magazine mag = m_weapon.GetMagazine(0);
-				if(cylinder)
+				if (cylinder)
 				{
 					float a  = cylinder.GetAnimationPhase("Rotate_Cylinder");
-					if(a + 0.167 > 1.0)
+					if (a + 0.167 > 1.0)
 					{
 						Print("-----RESET-----");
 						a -= 1.0;
@@ -2058,43 +2083,37 @@ class ItemBase extends InventoryItem
 				SetAnimationPhase("cylinder_rotate", a + 0.2);*/
 			}
 			
-			if( action_id == EActions.WATCH_ITEM ) //SetMaxQuantity
+			if ( action_id == EActions.WATCH_ITEM ) //SetMaxQuantity
 			{
 				PluginItemDiagnostic mid = PluginItemDiagnostic.Cast( GetPlugin(PluginItemDiagnostic) );
 				mid.RegisterDebugItem( ItemBase.Cast( this ), PlayerBase.Cast( player ));
 			}
 			
-			if( action_id == EActions.ADD_QUANTITY )
-			{
-				AddQuantity(GetQuantityMax()/5);
-				//PrintVariables();
-			}
-	
-			if( action_id == EActions.ADD_TEMPERATURE )
+			if ( action_id == EActions.ADD_TEMPERATURE )
 			{
 				AddTemperature(1);
 				//PrintVariables();
 			}
 			
-			if( action_id == EActions.REMOVE_TEMPERATURE )
+			if ( action_id == EActions.REMOVE_TEMPERATURE )
 			{
 				AddTemperature(-1);
 				//PrintVariables();
 			}
 			
-			if( action_id == EActions.ADD_WETNESS )
+			if ( action_id == EActions.ADD_WETNESS )
 			{
 				AddWet(GetWetMax()/5);
 				//PrintVariables();
 			}
 			
-			if( action_id == EActions.REMOVE_WETNESS )
+			if ( action_id == EActions.REMOVE_WETNESS )
 			{
 				AddWet(-GetWetMax()/5);
 				//PrintVariables();
 			}
 	
-			if( action_id == EActions.LIQUIDTYPE_UP )
+			if ( action_id == EActions.LIQUIDTYPE_UP )
 			{
 				int curr_type = GetLiquidType();
 				SetLiquidType(curr_type * 2);
@@ -2102,19 +2121,19 @@ class ItemBase extends InventoryItem
 				//PrintVariables();
 			}
 			
-			if( action_id == EActions.LIQUIDTYPE_DOWN )
+			if ( action_id == EActions.LIQUIDTYPE_DOWN )
 			{
 				int curr_type2 = GetLiquidType();
 				SetLiquidType(curr_type2 / 2);
 			}
 
-			if( action_id == EActions.PRINT_BULLETS )
+			if ( action_id == EActions.PRINT_BULLETS )
 			{
-				if( IsMagazine() )
+				if ( IsMagazine() )
 				{
 					Magazine this_mag;
 					Class.CastTo(this_mag, this);
-					for(int i = 0; i < this_mag.GetAmmoCount(); i++)
+					for (int i = 0; i < this_mag.GetAmmoCount(); i++)
 					{
 						float damage;
 						string class_name;
@@ -2864,9 +2883,13 @@ class ItemBase extends InventoryItem
 	bool SetQuantity(float value, bool destroy_config = true, bool destroy_forced = false, bool allow_client = false, bool clamp_to_stack_max = true)
 	{
 		float delta = 0;
-		if( !IsServerCheck(allow_client) ) return false;
-		if( !HasQuantity() ) return false;
-		if( IsLiquidContainer() && GetLiquidType() == 0 )
+		if ( !IsServerCheck(allow_client) )
+			return false;
+		
+		if ( !HasQuantity() ) 
+			return false;
+		
+		if ( IsLiquidContainer() && GetLiquidType() == 0 )
 		{
 			Debug.LogError("No LiquidType specified, try setting 'varLiquidTypeInit' to a particular liquid type");
 			return false;
@@ -2877,19 +2900,19 @@ class ItemBase extends InventoryItem
 		
 		bool on_min_value = value <= (min + 0.001); //workaround, items with "varQuantityDestroyOnMin = true;" get destroyed
 		
-		if( on_min_value )
+		if ( on_min_value )
 		{
-			if( destroy_config )
+			if ( destroy_config )
 			{
 				bool dstr = ConfigGetBool("varQuantityDestroyOnMin");
-				if( dstr )
+				if ( dstr )
 				{
 					m_VarQuantity = Math.Clamp(value, min, max);
 					this.Delete();
 					return true;
 				}
 			}
-			else if( destroy_forced )
+			else if ( destroy_forced )
 			{
 				m_VarQuantity = Math.Clamp(value, min, max);
 				this.Delete();
@@ -3263,7 +3286,7 @@ class ItemBase extends InventoryItem
 	float GetEnergy()
 	{
 		float energy = 0;
-		if( this.HasEnergyManager() )
+		if ( this.HasEnergyManager() )
 		{
 			energy = this.GetCompEM().GetEnergy();
 		}
@@ -3300,7 +3323,8 @@ class ItemBase extends InventoryItem
 
 	void SetTemperature(float value, bool allow_client = false)
 	{
-		if( !IsServerCheck(allow_client) ) return;
+		if ( !IsServerCheck(allow_client) ) 
+			return;
 		float min = GetTemperatureMin();
 		float max = GetTemperatureMax();
 		

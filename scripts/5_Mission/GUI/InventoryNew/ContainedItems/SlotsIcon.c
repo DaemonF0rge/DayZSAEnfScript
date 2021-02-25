@@ -11,7 +11,7 @@ class SlotsIcon: LayoutHolder
 	protected ItemBase				m_Item;
 	protected EntityAI				m_SlotParent;
 	protected int					m_SlotID;
-	protected bool					m_IsDragged;
+	protected bool					m_IsDragged			= false;
 	
 	protected Widget				m_PanelWidget;
 	
@@ -91,6 +91,8 @@ class SlotsIcon: LayoutHolder
 		
 		m_Reserved 				= false;
 		m_SlotID 				= -1;
+		m_Item					= null;
+		m_Obj					= null;
 		
 		m_SlotParent			= slot_parent;
 		

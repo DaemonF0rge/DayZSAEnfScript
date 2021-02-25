@@ -81,8 +81,18 @@ class AttachmentCategoriesContainer: CollapsibleContainer
 		m_OpenedContainers.Insert( m_Body[0] );
 		for ( int i = 0; i < m_Body.Count(); i++ )
 		{
+			
 			ClosableContainer cnt = ClosableContainer.Cast( m_Body.Get( i ) );
-			if( cnt && cnt.IsOpened() )
+			AttachmentCategoriesRow att_cat = AttachmentCategoriesRow.Cast(cnt);
+			
+			if( m_Entity && att_cat )
+			{
+				if( att_cat.IsOpened() && m_Entity.CanDisplayAttachmentCategory(att_cat.GetCategoryIdentifier()) )
+				{
+					m_OpenedContainers.Insert( att_cat );
+				}
+			}
+			else if( cnt && cnt.IsOpened() )
 			{
 				m_OpenedContainers.Insert( cnt );
 			}
@@ -96,7 +106,7 @@ class AttachmentCategoriesContainer: CollapsibleContainer
 	
 	override void MoveGridCursor( int direction )
 	{
-		Container active_container = Container.Cast( m_Body.Get( m_ActiveIndex ) );
+		Container active_container = Container.Cast( m_OpenedContainers.Get( m_ActiveIndex ) );
 		active_container.MoveGridCursor( direction );
 	}
 	
@@ -369,6 +379,8 @@ class AttachmentCategoriesContainer: CollapsibleContainer
 				icon.GetRadialIconClosed().Show( false );
 			}
 		}
+		
+		RecomputeOpenedContainers();
 	}
 
 	override void OnDropReceivedFromHeader( Widget w, int x, int y, Widget receiver )

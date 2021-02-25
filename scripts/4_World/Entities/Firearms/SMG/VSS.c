@@ -50,7 +50,8 @@ class VSS : VSS_Base
 		ItemOptics optic = GetAttachedOptics();
 		if (optic && KobraOptic.Cast(optic))
 			return false;
-		return super.CanEnterIronsights();
+		
+		return true;
 	}
 };
 class ASVAL : VSS_Base
@@ -60,6 +61,6 @@ class ASVAL : VSS_Base
 		ItemOptics optic = GetAttachedOptics();
 		if (optic && M4_T3NRDSOptic.Cast(optic) || M68Optic.Cast(optic) || ReflexOptic.Cast(optic))
 			return false;
-		return super.CanEnterIronsights();
+		return true;
 	}
 };

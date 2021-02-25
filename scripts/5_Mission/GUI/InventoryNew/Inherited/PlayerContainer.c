@@ -12,6 +12,7 @@ class PlayerContainer: CollapsibleContainer
 	
 	protected ref SizeToChild					m_ContentResize;
 	protected bool								m_ShouldChangeSize = true;
+	protected const	int							HEADER_INDEX_OFFSET = 2;
 	
 	void MoveContainerUp( Container cont )
 	{
@@ -170,7 +171,7 @@ class PlayerContainer: CollapsibleContainer
 					WidgetEventHandler.GetInstance().RegisterOnMouseButtonUp( icon.GetPanelWidget(),  this, "ToggleWidget" );
 
 					icon.GetRadialIconPanel().Show( true );
-					if( sort_index <= current_sort )
+					if( sort_index + HEADER_INDEX_OFFSET  <= current_sort )
 						m_ActiveIndex++;
 					m_ShowedItems.Insert( item, iwca );
 					Refresh();
@@ -183,7 +184,7 @@ class PlayerContainer: CollapsibleContainer
 					WidgetEventHandler.GetInstance().RegisterOnMouseButtonUp( icon.GetPanelWidget(),  this, "ToggleWidget" );
 					m_ShowedItems.Insert( item, iwc );
 					icon.GetRadialIconPanel().Show(true);
-					if( sort_index <= current_sort )
+					if( sort_index + HEADER_INDEX_OFFSET  <= current_sort )
 						m_ActiveIndex++;
 					
 					Refresh();
@@ -341,9 +342,14 @@ class PlayerContainer: CollapsibleContainer
 	{
 		ItemManager.GetInstance().HideTooltip( );
 		
+		if( m_ActiveIndex >= m_OpenedContainers.Count() )
+		{
+			m_ActiveIndex = 1;
+		}
 		Container active = Container.Cast( m_OpenedContainers[m_ActiveIndex] );
 		if( !active.IsActive() )
 		{
+			SetFirstActive();
 			return;
 		}
 		
@@ -412,9 +418,14 @@ class PlayerContainer: CollapsibleContainer
 
 	override void SetPreviousActive( bool force = false )
 	{
+		if( m_ActiveIndex >= m_OpenedContainers.Count() )
+		{
+			m_ActiveIndex = 1;
+		}
 		Container active = Container.Cast( m_OpenedContainers[m_ActiveIndex] );
 		if( !active.IsActive() )
 		{
+			SetFirstActive();
 			return;
 		}
 		

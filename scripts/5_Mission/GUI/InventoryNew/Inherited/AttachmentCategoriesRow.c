@@ -77,7 +77,7 @@ class AttachmentCategoriesRow: ClosableContainer
 				int stack_max;
 				if( selected_item.GetInventory().CanRemoveEntity() )
 				{
-					if( m_Entity.GetInventory().CanAddAttachmentEx( selected_item, focused_icon.GetSlotID() ) )
+					if( !focused_item && m_Entity.GetInventory().CanAddAttachmentEx( selected_item, focused_icon.GetSlotID() ) )
 					{
 						stack_max = InventorySlots.GetStackMaxForSlotId( focused_icon.GetSlotID() );
 						float quantity = selected_item.GetQuantity();
@@ -115,30 +115,6 @@ class AttachmentCategoriesRow: ClosableContainer
 								if( focused_item.GetInventory().CanAddEntityInCargo( selected_item, selected_item.GetInventory().GetFlipCargo() ) )
 								{
 									SplitItemUtils.TakeOrSplitToInventory( PlayerBase.Cast( player ), focused_item, selected_item );
-									return true;
-								}
-							}
-						}
-						else
-						{
-							InventoryLocation inv_loc_src = new InventoryLocation;
-							InventoryLocation inv_loc_dst = new InventoryLocation;
-							selected_item.GetInventory().GetCurrentInventoryLocation( inv_loc_src );
-							m_Entity.GetInventory().FindFreeLocationFor( selected_item, FindInventoryLocationType.ATTACHMENT, inv_loc_dst );
-							int dst_slot = inv_loc_dst.GetSlot();
-	
-							if(dst_slot == focused_icon && selected_item.GetInventory().CanRemoveEntity() && inv_loc_dst.IsValid() && inv_loc_dst.GetType() == InventoryLocationType.ATTACHMENT )
-							{
-								stack_max = InventorySlots.GetStackMaxForSlotId( inv_loc_dst.GetSlot() );
-								quantity = selected_item.GetQuantity();
-								if( stack_max == 0 || stack_max >= quantity || !selected_item.CanBeSplit() )
-								{
-									GetGame().GetPlayer().PredictiveTakeEntityToTargetAttachmentEx( m_Entity, selected_item, inv_loc_dst.GetSlot() );
-									return true;
-								}
-								else if( stack_max >= 0 || !selected_item.CanBeSplit() )
-								{
-									selected_item.SplitIntoStackMaxClient( m_Entity, inv_loc_dst.GetSlot() );
 									return true;
 								}
 							}
@@ -213,7 +189,7 @@ class AttachmentCategoriesRow: ClosableContainer
 			int stack_max;
 			if( selected_item && selected_item.GetInventory().CanRemoveEntity() && !GetFocusedIcon().IsOutOfReach() )
 			{
-				if( m_Entity.GetInventory().CanAddAttachmentEx( selected_item, selected_slot ) )
+				if( !prev_item && m_Entity.GetInventory().CanAddAttachmentEx( selected_item, selected_slot ) )
 				{
 					stack_max = InventorySlots.GetStackMaxForSlotId( selected_slot );
 					float quantity = selected_item.GetQuantity();
@@ -251,29 +227,6 @@ class AttachmentCategoriesRow: ClosableContainer
 							if( prev_item.GetInventory().CanAddEntityInCargo( selected_item, selected_item.GetInventory().GetFlipCargo() ) )
 							{
 								SplitItemUtils.TakeOrSplitToInventory( PlayerBase.Cast( player ), prev_item, selected_item );
-								return false;
-							}
-						}
-					}
-					else
-					{
-						InventoryLocation inv_loc_src = new InventoryLocation;
-						InventoryLocation inv_loc_dst = new InventoryLocation;
-						selected_item.GetInventory().GetCurrentInventoryLocation( inv_loc_src );
-						m_Entity.GetInventory().FindFreeLocationFor( selected_item, FindInventoryLocationType.ATTACHMENT, inv_loc_dst );
-						
-						if( inv_loc_dst.IsValid() && inv_loc_dst.GetType() == InventoryLocationType.ATTACHMENT )
-						{
-							stack_max = InventorySlots.GetStackMaxForSlotId( inv_loc_dst.GetSlot() );
-							quantity = selected_item.GetQuantity();
-							if( stack_max == 0 || stack_max >= quantity || !selected_item.CanBeSplit() )
-							{
-								GetGame().GetPlayer().PredictiveTakeEntityToTargetAttachmentEx( m_Entity, selected_item, inv_loc_dst.GetSlot() );
-								return false;
-							}
-							else if( stack_max >= 0 || !selected_item.CanBeSplit() )
-							{
-								selected_item.SplitIntoStackMaxClient( m_Entity, inv_loc_dst.GetSlot() );
 								return false;
 							}
 						}
@@ -332,27 +285,6 @@ class AttachmentCategoriesRow: ClosableContainer
 							return true;
 						}
 					}
-					else
-					{
-						InventoryLocation inv_loc_src = new InventoryLocation;
-						InventoryLocation inv_loc_dst = new InventoryLocation;
-						selected_item.GetInventory().GetCurrentInventoryLocation( inv_loc_src );
-						m_Entity.GetInventory().FindFreeLocationFor( selected_item, FindInventoryLocationType.ATTACHMENT, inv_loc_dst );
-						
-						if( inv_loc_dst.IsValid() && inv_loc_dst.GetType() == InventoryLocationType.ATTACHMENT )
-						{
-							stack_max = InventorySlots.GetStackMaxForSlotId( inv_loc_dst.GetSlot() );
-							quantity = selected_item.GetQuantity();
-							if( stack_max == 0 || stack_max >= quantity || !selected_item.CanBeSplit() )
-							{
-								return true;
-							}
-							else if( stack_max >= 0 || !selected_item.CanBeSplit() )
-							{
-								return true;
-							}
-						}
-					}
 				}
 			}
 		}
@@ -387,12 +319,14 @@ class AttachmentCategoriesRow: ClosableContainer
 		if( m_FocusedRow < m_Ics.Count() )
 		{
 			EntityAI focused_item = GetFocusedItem();
+			SlotsIcon icon = GetFocusedIcon();
 			if( focused_item )
 			{
 				float x, y;
-				m_Ics.Get( m_FocusedRow ).GetMainWidget().FindAnyWidget( "Cursor" + m_FocusedColumn ).GetScreenPos( x, y );
+				icon.GetCursorWidget().GetScreenPos( x, y );
 				ItemManager.GetInstance().PrepareTooltip( focused_item, x, y );
 			}
+			icon.GetCursorWidget().Show(true);
 		}
 	}
 	
@@ -448,7 +382,7 @@ class AttachmentCategoriesRow: ClosableContainer
 			if( m_FocusedRow == m_Ics.Count() + m_AttachmentCargos.Count() )
 			{
 				m_FocusedRow = 0;
-				cnt = Container.Cast( m_Parent.GetParent().GetParent().GetParent() );
+				cnt = Container.Cast( m_Parent.GetParent() );
 				if( cnt )
 				{
 					cnt.SetNextActive();
@@ -520,12 +454,13 @@ class AttachmentCategoriesRow: ClosableContainer
 	
 		if( m_FocusedRow < m_Ics.Count() )
 		{
-			m_Ics.Get( m_FocusedRow ).GetMainWidget().FindAnyWidget( "Cursor" + m_FocusedColumn ).Show( true );
+			SlotsIcon icon = GetFocusedIcon();
+			icon.GetCursorWidget().Show( true );
 			EntityAI focused_item = GetFocusedItem();
 			if( focused_item )
 			{
 				float x, y;
-				m_Ics.Get( m_FocusedRow ).GetMainWidget().FindAnyWidget( "Cursor" + m_FocusedColumn ).GetScreenPos( x, y );
+				icon.GetCursorWidget().GetScreenPos( x, y );
 				ItemManager.GetInstance().PrepareTooltip( focused_item, x, y );
 			}
 		}
