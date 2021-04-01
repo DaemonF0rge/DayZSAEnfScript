@@ -90,7 +90,7 @@ class PluginRecipesManager extends PluginRecipesManagerBase
 			return 0;
 		}
 		
-		if( ( item1.GetInventory().IsAttachment() && !item1.GetHierarchyParent().IsMan() ) || ( item2.GetInventory().IsAttachment() && !item2.GetHierarchyParent().IsMan() ) )
+		if( ( item1.GetInventory().IsAttachment() && item1.GetHierarchyParent().DisassembleOnLastDetach() ) || ( item2.GetInventory().IsAttachment() && item2.GetHierarchyParent().DisassembleOnLastDetach() ) )
 		{
 			if(ids) ids.Clear();
 			return 0;

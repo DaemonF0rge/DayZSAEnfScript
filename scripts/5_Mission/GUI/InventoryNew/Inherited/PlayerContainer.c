@@ -89,7 +89,7 @@ class PlayerContainer: CollapsibleContainer
 
 			if ( GetGame().ConfigIsExisting( path ) )
 			{
-				string icon_name;
+				string icon_name; //icon_name must be in format "set:<setname> image:<imagename>"
 				GetGame().ConfigGetText( path + " ghostIcon", icon_name );
 				int slot_number = i;
 				int column = slot_number % ITEMS_IN_ROW;
@@ -119,12 +119,13 @@ class PlayerContainer: CollapsibleContainer
 				WidgetEventHandler.GetInstance().RegisterOnDraggingOver( icon.GetPanelWidget(),  this, "DraggingOver" );
 				WidgetEventHandler.GetInstance().RegisterOnMouseButtonDown( icon.GetPanelWidget(),  this, "MouseClick" );
 				
-				icon.GetGhostSlot().LoadImageFile( 0, "set:dayz_inventory image:" + icon_name );
+				icon.GetGhostSlot().LoadImageFile( 0, StaticGUIUtils.VerifyIconImageString(StaticGUIUtils.IMAGESETGROUP_INVENTORY,icon_name) );
 				//END - LoadIconIntoWidgetSlot
 
 				GetGame().ConfigGetText( path + " name", slot_name );
 				int slot_id = InventorySlots.GetSlotIdFromString( slot_name );
 				icon.SetSlotID(slot_id);
+				icon.SetSlotDisplayName(InventorySlots.GetSlotDisplayName(slot_id));
 				m_InventorySlots.Set( slot_id, icon );
 			}
 		}
@@ -174,6 +175,7 @@ class PlayerContainer: CollapsibleContainer
 					if( sort_index + HEADER_INDEX_OFFSET  <= current_sort )
 						m_ActiveIndex++;
 					m_ShowedItems.Insert( item, iwca );
+					RecomputeOpenedContainers();
 					Refresh();
 				}
 				else if( item.GetInventory().GetCargo() )
@@ -183,6 +185,7 @@ class PlayerContainer: CollapsibleContainer
 					iwc.UpdateInterval();
 					WidgetEventHandler.GetInstance().RegisterOnMouseButtonUp( icon.GetPanelWidget(),  this, "ToggleWidget" );
 					m_ShowedItems.Insert( item, iwc );
+					RecomputeOpenedContainers();
 					icon.GetRadialIconPanel().Show(true);
 					if( sort_index + HEADER_INDEX_OFFSET  <= current_sort )
 						m_ActiveIndex++;
@@ -321,12 +324,18 @@ class PlayerContainer: CollapsibleContainer
 	{
 		super.SetFirstActive();
 		
-		EntityAI focused_item = GetFocusedItem();
+		SlotsIcon icon = GetSlotsIcon( m_FocusedRow, m_FocusedColumn );
+		EntityAI focused_item = icon.GetItem();
+		float x, y;
+		icon.GetCursorWidget().GetScreenPos( x, y );
+		
 		if( focused_item )
 		{
-			float x, y;
-			GetSlotsIcon( m_FocusedRow, m_FocusedColumn ).GetCursorWidget().GetScreenPos( x, y );
 			ItemManager.GetInstance().PrepareTooltip( focused_item, x, y );
+		}
+		else
+		{
+			ItemManager.GetInstance().PrepareSlotsTooltip( icon.GetSlotDisplayName(), icon.GetSlotDesc(), x, y );
 		}
 		m_ScrollWidget.VScrollToPos01( 0 );
 	}
@@ -472,12 +481,17 @@ class PlayerContainer: CollapsibleContainer
 					m_ScrollWidget.VScrollToPos01( 0 );
 				}
 				
-				EntityAI focused_item = GetFocusedItem();
+				SlotsIcon icon = GetSlotsIcon( m_FocusedRow, m_FocusedColumn );
+				EntityAI focused_item = icon.GetItem();
+				float x, y;
+				icon.GetCursorWidget().GetScreenPos( x, y );
 				if( focused_item )
 				{
-					float x, y;
-					GetSlotsIcon( m_FocusedRow, m_FocusedColumn ).GetCursorWidget().GetScreenPos( x, y );
 					ItemManager.GetInstance().PrepareTooltip( focused_item, x, y );
+				}
+				else
+				{
+					ItemManager.GetInstance().PrepareSlotsTooltip( icon.GetSlotDisplayName(), icon.GetSlotDesc(), x, y );
 				}
 			}
 			else
@@ -1066,13 +1080,20 @@ class PlayerContainer: CollapsibleContainer
 				}
 			}
 			
-			GetSlotsIcon( m_FocusedRow, m_FocusedColumn ).GetCursorWidget().Show( true );
+			SlotsIcon icon = GetSlotsIcon( m_FocusedRow, m_FocusedColumn );
+			
+			icon.GetCursorWidget().Show( true );
+			icon.GetCursorWidget().GetScreenPos( x, y );
+			
 			
 			EntityAI focused_item = GetFocusedItem();
 			if( focused_item )
 			{
-				GetSlotsIcon( m_FocusedRow, m_FocusedColumn ).GetCursorWidget().GetScreenPos( x, y );
 				ItemManager.GetInstance().PrepareTooltip( focused_item, x, y );
+			}
+			else
+			{
+				ItemManager.GetInstance().PrepareSlotsTooltip( icon.GetSlotDisplayName(), icon.GetSlotDesc(), x, y );
 			}
 			
 			ScrollToActiveContainer( Container.Cast( m_PlayerAttachmentsContainer.Get( m_FocusedRow ) ) );
@@ -1135,6 +1156,7 @@ class PlayerContainer: CollapsibleContainer
 	
 			SlotsIcon icon = GetSlotsIcon( row, column );
 			
+			icon.SetSlotParent(m_Player);
 			icon.GetMainWidget().Show( true );
 			icon.Clear();
 			

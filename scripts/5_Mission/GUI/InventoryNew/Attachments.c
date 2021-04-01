@@ -83,12 +83,18 @@ class Attachments
 		if( m_Ics.Count() > 0 )
 			m_Ics.Get( 0 ).SetFocus( 0 );
 		
-		EntityAI focused_item = GetFocusedItem();
+		SlotsIcon icon = GetFocusedIcon();
+		EntityAI focused_item = icon.GetItem();
+		float x, y;
+		icon.GetCursorWidget().GetScreenPos( x, y );
+		
 		if( focused_item )
 		{
-			float x, y;
-			m_Ics.Get( m_FocusedRow ).GetSlotIcon( m_FocusedColumn ).GetCursorWidget().GetScreenPos( x, y );
 			ItemManager.GetInstance().PrepareTooltip( focused_item, x, y );
+		}
+		else
+		{
+			ItemManager.GetInstance().PrepareSlotsTooltip( icon.GetSlotDisplayName(), icon.GetSlotDesc(), x, y );
 		}
 		Inventory.GetInstance().UpdateConsoleToolbar();
 	}
@@ -103,12 +109,18 @@ class Attachments
 			m_Ics.Get( m_FocusedRow ).SetFocus( 0 );
 		}
 		
-		EntityAI focused_item = GetFocusedItem();
+		SlotsIcon icon = GetFocusedIcon();
+		EntityAI focused_item = icon.GetItem();
+		float x, y;
+		icon.GetCursorWidget().GetScreenPos( x, y );
+		
 		if( focused_item )
 		{
-			float x, y;
-			m_Ics.Get( m_FocusedRow ).GetSlotIcon( m_FocusedColumn ).GetCursorWidget().GetScreenPos( x, y );
 			ItemManager.GetInstance().PrepareTooltip( focused_item, x, y );
+		}
+		else
+		{
+			ItemManager.GetInstance().PrepareSlotsTooltip( icon.GetSlotDisplayName(), icon.GetSlotDesc() , x, y );
 		}
 		Inventory.GetInstance().UpdateConsoleToolbar();
 	}
@@ -256,11 +268,21 @@ class Attachments
 		ItemBase ent = ItemBase.Cast( GetFocusedItem() );
 		ItemBase item_in_hands = ItemBase.Cast(	GetGame().GetPlayer().GetHumanInventory().GetEntityInHands() );
 		
-		if( ent && item_in_hands && ( item_in_hands.CanBeCombined( ent ) ) )
+		if( !ent || !item_in_hands )
+		{
+			return false;
+		}
+		if ( item_in_hands.CanBeCombined( ent ) )
 		{
 			item_in_hands.CombineItemsClient( ent );
 			return false;
 		}
+		PlayerBase player = PlayerBase.Cast( GetGame().GetPlayer() );
+		PluginRecipesManager plugin_recipes_manager = PluginRecipesManager.Cast( GetPlugin( PluginRecipesManager ) );
+		ref array<int> recipes = new array<int>;
+		if ( plugin_recipes_manager.GetValidRecipes( ent, item_in_hands, recipes, player ) > 0 )
+			player.GetCraftingManager().SetInventoryCraft( recipes[0], ent, item_in_hands );
+		
 		return true;
 	}
 	
@@ -411,12 +433,17 @@ class Attachments
 
 		m_Ics.Get( m_FocusedRow ).SetFocus( m_FocusedColumn );
 		
-		EntityAI focused_item = GetFocusedItem();
+		SlotsIcon icon = GetFocusedIcon();
+		EntityAI focused_item = icon.GetItem();
+		float x, y;
+		icon.GetCursorWidget().GetScreenPos( x, y );
 		if( focused_item )
 		{
-			float x, y;
-			m_Ics.Get( m_FocusedRow ).GetSlotIcon( m_FocusedColumn ).GetCursorWidget().GetScreenPos( x, y );
 			ItemManager.GetInstance().PrepareTooltip( focused_item, x, y );
+		}
+		else
+		{
+			ItemManager.GetInstance().PrepareSlotsTooltip( icon.GetSlotDisplayName(), icon.GetSlotDesc(), x, y );
 		}
 		Inventory.GetInstance().UpdateConsoleToolbar();
 	}
@@ -507,6 +534,7 @@ class Attachments
 		SlotsIcon icon = m_AttachmentSlots.Get( slot_id );
 		
 		icon.SetSlotID( slot_id );
+		icon.SetSlotDisplayName(InventorySlots.GetSlotDisplayName(slot_id));
 		if( item )
 		{
 			icon.Init( item );
@@ -594,12 +622,14 @@ class Attachments
 					path = "CfgSlots" + " Slot_" + "magazine2";
 			}
 			
-			string icon_name = "";
+			string icon_name = ""; //icon_name must be in format "set:<setname> image:<imagename>"
 			if( GetGame().ConfigGetText( path + " ghostIcon", icon_name ) && icon_name != "" )
-				icon2.GetGhostSlot().LoadImageFile( 0, "set:dayz_inventory image:" + icon_name );
+				icon2.GetGhostSlot().LoadImageFile( 0, StaticGUIUtils.VerifyIconImageString(StaticGUIUtils.IMAGESETGROUP_INVENTORY,icon_name) );
 			int slot_id = InventorySlots.GetSlotIdFromString( m_AttachmentSlotNames[i] );
 			m_AttachmentSlots.Insert( slot_id, icon2 );
+			
 			icon2.SetSlotID(slot_id);
+			icon2.SetSlotDisplayName(InventorySlots.GetSlotDisplayName(slot_id));
 			
 			EntityAI item = m_Entity.GetInventory().FindAttachment( slot_id );
 			if( item )

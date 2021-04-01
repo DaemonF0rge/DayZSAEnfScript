@@ -101,6 +101,7 @@ class ActionAttach: ActionSingleUseBase
 	
 	override void OnExecuteClient( ActionData action_data )
 	{
+		ClearInventoryReservationEx(action_data);
 		AttachActionData action_data_a = AttachActionData.Cast(action_data);
 		
 		EntityAI target_EAI;

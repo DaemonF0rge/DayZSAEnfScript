@@ -133,7 +133,7 @@ class AttachmentCategoriesContainer: CollapsibleContainer
 		SlotsIcon icon				= items_cont.GetSlotIcon( slot_number );
 		ImageWidget image_widget	= icon.GetGhostSlot();
 		image_widget.Show( true );
-		image_widget.LoadImageFile( 0, "set:dayz_inventory image:" + icon_name );
+		image_widget.LoadImageFile( 0, StaticGUIUtils.VerifyIconImageString(StaticGUIUtils.IMAGESETGROUP_INVENTORY,icon_name) ); //icon_name must be in format "set:<setname> image:<imagename>"
 		
 		if( m_Body.Count() > ( slot_number + 2 ) )
 		{
@@ -308,6 +308,12 @@ class AttachmentCategoriesContainer: CollapsibleContainer
 				
 				LoadAttachmentCategoriesIcon( items_cont, icon_name, slot_number );
 				
+				string config = config_path_attachment_categories + " " + attachment_category + " name";
+				string name;
+		
+				GetGame().ConfigGetText(config,name);
+				icon.SetSlotDisplayName(name);
+
 				int num = i + 2 + attachments_categories_count / ITEMS_IN_ROW;
 				if( m_Body.Count() > num )
 				{
@@ -347,7 +353,8 @@ class AttachmentCategoriesContainer: CollapsibleContainer
 				{
 					icon = items_cont.GetSlotIcon( attachments_categories_count );
 					icon.GetGhostSlot().Show( true );
-					icon.GetGhostSlot().LoadImageFile( 0, "set:dayz_inventory image:cat_common_cargo" );
+					icon.GetGhostSlot().LoadImageFile( 0, StaticGUIUtils.VerifyIconImageString(StaticGUIUtils.IMAGESETGROUP_INVENTORY,entity.ConfigGetString("GUIInventoryCargoIcon")) );
+					icon.SetSlotDisplayName(entity.ConfigGetString("GUIInventoryCargoName"));
 					icon.GetGhostSlot().SetFlags( WidgetFlags.IGNOREPOINTER );
 					
 					icon.GetRadialIconPanel().Show( true );

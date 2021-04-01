@@ -61,9 +61,11 @@ class VicinitySlotsContainer: Container
 	
 	override EntityAI GetFocusedItem()
 	{
-		ItemPreviewWidget ipw = GetFocusedIcon().GetRender();
-		if( ipw )
+		SlotsIcon icon = GetFocusedIcon();
+		
+		if( icon )
 		{
+			ItemPreviewWidget ipw = icon.GetRender();
 			return ipw.GetItem();
 		}
 		return null;
@@ -665,8 +667,6 @@ class VicinitySlotsContainer: Container
 			{
 				conta = showed_items.Get( item.GetID() );
 				( VicinityContainer.Cast( m_Parent ) ).ToggleContainer( conta );
-				int showed = showed_items.Count();
-				string config = "CfgVehicles " + item.GetType() + " GUIInventoryAttachmentsProps";
 				
 				if ( button == MouseState.RIGHT )
 				{

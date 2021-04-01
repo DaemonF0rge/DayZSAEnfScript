@@ -571,7 +571,7 @@ class ZombieContainer: CollapsibleContainer
 
 			if ( GetGame().ConfigIsExisting( path ) )
 			{
-				string icon_name;
+				string icon_name; //icon_name must be in format "set:<setname> image:<imagename>"
 				GetGame().ConfigGetText( path + " ghostIcon", icon_name );
 				column = i % ITEMS_IN_ROW;
 
@@ -600,7 +600,7 @@ class ZombieContainer: CollapsibleContainer
 				WidgetEventHandler.GetInstance().RegisterOnDraggingOver( icon.GetPanelWidget(),  this, "DraggingOver" );
 				WidgetEventHandler.GetInstance().RegisterOnMouseButtonDown( icon.GetPanelWidget(),  this, "MouseClick" );
 				
-				icon.GetGhostSlot().LoadImageFile( 0, "set:dayz_inventory image:" + icon_name );
+				icon.GetGhostSlot().LoadImageFile( 0, StaticGUIUtils.VerifyIconImageString(StaticGUIUtils.IMAGESETGROUP_INVENTORY,icon_name) );
 				//END - LoadIconIntoWidgetSlot
 
 				GetGame().ConfigGetText( path + " name", slot_name );
@@ -608,6 +608,7 @@ class ZombieContainer: CollapsibleContainer
 				//icon.GetGhostSlot().SetUserID( slot_id );
 				//icon.GetPanelWidget().SetUserID( slot_id );
 				icon.SetSlotID( slot_id );
+				icon.SetSlotDisplayName(InventorySlots.GetSlotDisplayName(slot_id));
 				m_InventorySlots.Set( slot_id, icon );
 				
 				int slot = InventorySlots.GetSlotIdFromString( slot_name );
@@ -633,7 +634,8 @@ class ZombieContainer: CollapsibleContainer
 			icon = GetSlotsIcon( row, column );
 			icon.GetMainWidget().Show( true );
 			icon.Clear();
-			icon.GetGhostSlot().LoadImageFile( 0, "set:dayz_inventory image:cat_common_cargo" );
+			icon.GetGhostSlot().LoadImageFile( 0, StaticGUIUtils.VerifyIconImageString(StaticGUIUtils.IMAGESETGROUP_INVENTORY,m_ZombieEntity.ConfigGetString("GUIInventoryCargoIcon")) );
+			icon.SetSlotDisplayName( m_ZombieEntity.ConfigGetString("GUIInventoryCargoName") );
 			icon.GetRadialIconPanel().Show( true );
 			icon.GetRadialIcon().Show( true );
 			
@@ -739,7 +741,7 @@ class ZombieContainer: CollapsibleContainer
 		EntityAI item;
 		if( GetFocusedContainer() && ( GetFocusedContainer().IsInherited( ContainerWithCargo ) || GetFocusedContainer().IsInherited( ContainerWithCargoAndAttachments ) ) )
 		{
-			return GetFocusedContainer().GetFocusedItem();
+			item = GetFocusedContainer().GetFocusedItem();
 		}
 		else
 		{

@@ -68,6 +68,31 @@ class MetalWire extends ItemBase
 		}
 	}
 	
+	// Event called on item when it is placed in the player(Man) inventory, passes the owner as a parameter
+	override void OnInventoryEnter( Man player )
+	{
+		super.OnInventoryEnter( player );
+		
+		PlayerBase player_PB;
+		Class.CastTo( player_PB, player );
+		if ( player_PB.GetItemInHands() == this && GetCompEM().IsPlugged() )
+		{
+			return;
+		}
+		
+		//Only unplug if we are "powering" something
+		ItemBase powered_device = ItemBase.Cast( GetCompEM().GetPluggedDevice() );
+		if ( powered_device )
+		{
+			GetCompEM().UnplugAllDevices();		
+		
+			if ( !player_PB.IsPlacingLocal() )
+			{
+				GetCompEM().UnplugThis();
+			}
+		}
+	}
+	
 	// Called when THIS is attached to battery
 	override void OnIsPlugged(EntityAI source_device)
 	{
@@ -100,5 +125,6 @@ class MetalWire extends ItemBase
 		AddAction(ActionRestrainTarget);
 		AddAction(ActionRestrainSelf);
 		AddAction(ActionAttachToConstruction);
+		AddAction(ActionAttach);
 	}
 }

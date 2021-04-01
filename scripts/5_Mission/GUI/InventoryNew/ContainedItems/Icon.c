@@ -76,6 +76,11 @@ class Icon: LayoutHolder
 			m_IsDragged = false;
 		}
 	}
+	
+	Widget GetSelectedWidget()
+	{
+		return m_SelectedPanel;
+	}
 
 	bool IsDragged()
 	{

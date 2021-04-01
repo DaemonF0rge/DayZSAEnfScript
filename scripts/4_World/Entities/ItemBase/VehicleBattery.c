@@ -28,7 +28,7 @@ class VehicleBattery : ItemBase
 		if (GetCompEM().IsPlugged())
 			return false;
 		
-		return super.CanReceiveAttachment(attachment, slotId);;
+		return super.CanReceiveAttachment(attachment, slotId);
 	}
 	
 	override bool CanPutIntoHands( EntityAI player ) 
@@ -55,6 +55,24 @@ class VehicleBattery : ItemBase
 		return true;
 	}
 	
+	override bool CanPutInCargo( EntityAI parent )
+	{
+		super.CanPutInCargo( parent );
+		
+		ItemBase powered_device = ItemBase.Cast( GetCompEM().GetPluggedDevice() ); // Should return metal wire or barbed wire attachment
+			
+		if ( powered_device )
+		{
+			//We block placing in cargo if metal wire is plugged
+			//metal wires plugged to batteries in cargo cause too many issues for little gameplay gain
+			if ( powered_device.IsInherited( MetalWire ) )
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+	
 	override void OnInventoryEnter(Man player)
 	{
 		super.OnInventoryEnter(player);
@@ -69,7 +87,9 @@ class VehicleBattery : ItemBase
 				{
 					if ( powered_device.IsInherited( MetalWire ) )
 					{
-						powered_device.GetCompEM().UnplugAllDevices();
+						//Unplug the device the wire is powering, but keep wire plugged to battery
+						if ( powered_device.GetCompEM().IsPlugged() )
+							powered_device.GetCompEM().UnplugDevice( powered_device.GetCompEM().GetPluggedDevice() );
 					}
 					else
 					{
@@ -90,6 +110,7 @@ class VehicleBattery : ItemBase
 			
 			if ( powered_device )
 			{
+				//Should not be possible, but better safe than sorry
 				if ( powered_device.IsInherited( MetalWire ) )
 				{
 					powered_device.GetCompEM().UnplugAllDevices();
@@ -102,11 +123,18 @@ class VehicleBattery : ItemBase
 		}
 	}
 	
+	override bool CanDisplayAttachmentSlot( string slot_name )
+	{
+		if ( GetCompEM().IsPlugged() )
+			return false;
+		return super.CanDisplayAttachmentSlot( slot_name );
+	}
+	
 	override void SetActions()
 	{
 		super.SetActions();
 		
-		AddAction(ActionAttach);
+		//AddAction(ActionAttach);
 		AddAction(ActionAttachOnSelection);
 		AddAction(ActionDetach);
 		//AddAction(ActionAttachPowerSourceToPanel); SHOULD NOT BE USED ANYMORE

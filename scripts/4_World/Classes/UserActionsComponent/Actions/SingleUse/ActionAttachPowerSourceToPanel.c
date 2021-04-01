@@ -45,6 +45,7 @@ class ActionAttachPowerSourceToPanel: ActionSingleUseBase
 
 	override void OnExecuteClient( ActionData action_data )
 	{
+		ClearInventoryReservationEx(action_data);
 		OnExecuteImpl(action_data);
 	}
 	

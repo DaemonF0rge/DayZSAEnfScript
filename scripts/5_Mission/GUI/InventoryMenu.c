@@ -119,7 +119,9 @@ class InventoryMenu extends UIScriptedMenu
 	
 	override bool OnController( Widget w, int control, int value )
 	{
-		return m_Inventory.Controller( w, control, value );
+		if( m_IsOpened )
+			return m_Inventory.Controller( w, control, value );
+		return false;
 	}
 	
 	bool IsOpened()

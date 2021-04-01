@@ -101,6 +101,12 @@ class ItemBase extends InventoryItem
 	// misc
 	ref Timer 				m_PhysDropTimer;
 	
+	// Attachment Locking variables
+	ref array<int> 				m_CompatibleLocks = new array<int>;
+	protected int				m_LockType;
+	protected ref EffectSound 	m_LockingSound;
+	protected string 			m_LockSoundSet = "";
+	
 	// -------------------------------------------------------------------------
 	void ItemBase()
 	{
@@ -175,6 +181,9 @@ class ItemBase extends InventoryItem
 		m_HeatIsolation = GetHeatIsolationInit();
 		m_ItemModelLength = GetItemModelLength();
 		
+		ConfigGetIntArray("compatibleLocks", m_CompatibleLocks);
+		m_LockType = ConfigGetInt("lockType");
+		
 		//Define if item can be split and set ability to be combined accordingly
 		if (ConfigIsExisting("canBeSplit"))
 		{
@@ -199,6 +208,9 @@ class ItemBase extends InventoryItem
 		RegisterNetSyncVariableBool("m_IsBeingPlaced");
 		RegisterNetSyncVariableBool("m_IsTakeable");
 		RegisterNetSyncVariableBool("m_IsHologram");
+		
+		m_LockingSound = new EffectSound;
+		m_LockSoundSet = ConfigGetString("lockSoundSet");
 	}
 
 	void InitializeActions()
@@ -770,6 +782,11 @@ class ItemBase extends InventoryItem
 	bool IsPlayerInside( PlayerBase player, string selection )
 	{
 		return true;
+	}
+	
+	override bool CanObstruct()
+	{
+		return !IsPlayerInside(PlayerBase.Cast(g_Game.GetPlayer()), "");
 	}
 	
 	override bool IsBeingPlaced()
@@ -1380,24 +1397,24 @@ class ItemBase extends InventoryItem
 		float stack_max = GetTargetQuantityMax(slot_id);
 		InventoryLocation loc = new InventoryLocation;
 		
-		if( destination_entity && slot_id != -1 && InventorySlots.IsSlotIdValid( slot_id ) )
+		if ( destination_entity && slot_id != -1 && InventorySlots.IsSlotIdValid( slot_id ) )
 		{
-			if( stack_max <= GetQuantity() )
+			if ( stack_max <= GetQuantity() )
 				split_quantity_new = stack_max;
 			else
 				split_quantity_new = GetQuantity();
 			
 			new_item = ItemBase.Cast( destination_entity.GetInventory().CreateAttachmentEx( this.GetType(), slot_id ) );
-			if( new_item )
+			if ( new_item )
 			{			
 				MiscGameplayFunctions.TransferItemProperties( this, new_item );
 				AddQuantity( -split_quantity_new );
 				new_item.SetQuantity( split_quantity_new );
 			}
 		}
-		else if( destination_entity && slot_id == -1 )
+		else if ( destination_entity && slot_id == -1 )
 		{
-			if( quantity > stack_max )
+			if ( quantity > stack_max )
 				split_quantity_new = stack_max;
 			else
 				split_quantity_new = quantity;
@@ -1408,7 +1425,7 @@ class ItemBase extends InventoryItem
 				new_item = ItemBase.Cast( o );
 			}
 
-			if( new_item )
+			if ( new_item )
 			{			
 				MiscGameplayFunctions.TransferItemProperties( this, new_item );
 				AddQuantity( -split_quantity_new );
@@ -1417,16 +1434,16 @@ class ItemBase extends InventoryItem
 		}
 		else
 		{
-			if( stack_max != 0 )
+			if ( stack_max != 0 )
 			{
-				if( stack_max < GetQuantity() )
+				if ( stack_max < GetQuantity() )
 				{
 					split_quantity_new = GetQuantity() - stack_max;
 				}
 				
-				if( split_quantity_new == 0 )
+				if ( split_quantity_new == 0 )
 				{
-					if( !GetGame().IsMultiplayer() )
+					if ( !GetGame().IsMultiplayer() )
 						player.PhysicalPredictiveDropItem( this );
 					else
 						player.ServerDropEntity( this );
@@ -1435,7 +1452,7 @@ class ItemBase extends InventoryItem
 				
 					new_item = ItemBase.Cast( GetGame().CreateObjectEx( GetType(), player.GetWorldPosition(), ECE_PLACE_ON_SURFACE ) );
 				
-				if( new_item )
+				if ( new_item )
 				{
 					MiscGameplayFunctions.TransferItemProperties( this, new_item );
 					SetQuantity( split_quantity_new );
@@ -1670,11 +1687,11 @@ class ItemBase extends InventoryItem
 			parent.OnAttachmentQuantityChanged(this);
 		}
 		
-		if (delta > 0 && GetUnitWeight() != -1)
+		if (m_CanThisBeSplit && delta > 0 && GetUnitWeight() != -1)
 		{
 			UpdateWeight(WeightUpdateType.RECURSIVE_ADD,GetUnitWeight() * delta);
 		}
-		else if (delta < 0 && GetUnitWeight() != -1)
+		else if (m_CanThisBeSplit && delta < 0 && GetUnitWeight() != -1)
 		{
 			UpdateWeight(WeightUpdateType.RECURSIVE_REMOVE,-GetUnitWeight() * delta);
 		}
@@ -2333,10 +2350,11 @@ class ItemBase extends InventoryItem
 		return found;
 	}
 
-	override void OnRPC(PlayerIdentity sender, int rpc_type,ParamsReadContext  ctx) 
+	
+	override void OnRPC( PlayerIdentity sender, int rpc_type,ParamsReadContext ctx ) 
 	{
 		//Debug.Log("OnRPC called");
-		super.OnRPC(sender, rpc_type,ctx);
+		super.OnRPC( sender, rpc_type,ctx );
 		//if( rpc_type == ERPCs.RPC_ITEM_SPLIT ) SplitItem();
 		/*
 		if( rpc_type == ERPCs.RPC_ITEM_COMBINE ) 
@@ -2350,18 +2368,60 @@ class ItemBase extends InventoryItem
 			CombineItems( item_other );
 		}
 		*/
-		if( GetGame().IsDebug() )
+		
+		//Play soundset for attachment locking ( ActionLockAttachment.c )
+		switch ( rpc_type )
 		{
-			if( rpc_type == ERPCs.RPC_ITEM_DIAG )
+			case ERPCs.RPC_SOUND_LOCK_ATTACH:
+				ref Param2<bool, string> p = new Param2<bool, string>(false, "");
+					
+				if ( ctx.Read( p ) )
+				{
+					bool play = p.param1;
+					string soundSet = p.param2;
+				}
+				
+				if ( play )
+				{
+					if ( m_LockingSound )
+					{
+						if ( !m_LockingSound.IsSoundPlaying() )
+						{
+							m_LockingSound = SEffectManager.PlaySound( soundSet, GetPosition(), 0, 0, true );
+						}
+					}
+					else
+					{
+						m_LockingSound = new EffectSound;
+						
+						if ( m_LockingSound )
+							m_LockingSound = SEffectManager.PlaySound( soundSet, GetPosition(), 0, 0, true );
+					}
+				}
+				else
+				{
+					if ( m_LockingSound )
+					{
+						SEffectManager.DestroySound( m_LockingSound );
+					}
+				}
+			
+			break;
+		
+		}
+		
+		if ( GetGame().IsDebug() )
+		{
+			if ( rpc_type == ERPCs.RPC_ITEM_DIAG )
 			{	
-				PluginItemDiagnostic mid = PluginItemDiagnostic.Cast( GetPlugin(PluginItemDiagnostic) );
-				mid.OnRPC(this,ctx);
+				PluginItemDiagnostic mid = PluginItemDiagnostic.Cast( GetPlugin( PluginItemDiagnostic ) );
+				mid.OnRPC( this, ctx );
 			}
 		}
 		
-		if(GetWrittenNoteData())
+		if ( GetWrittenNoteData() )
 		{
-			GetWrittenNoteData().OnRPC(sender, rpc_type,ctx);
+			GetWrittenNoteData().OnRPC( sender, rpc_type,ctx );
 		}
 	}
 
@@ -3083,7 +3143,14 @@ class ItemBase extends InventoryItem
 	override void UpdateWeight(WeightUpdateType updateType = WeightUpdateType.FULL, float weightAdjustment = 0)
 	{
 		//float itemWetness = GetWet() + 1;
-		float current_quantity;
+		float current_quantity = GetQuantity();
+		/*DumpStack();
+		Print(this);
+		Print("Initial weight: " + m_Weight);
+		Print("Initial adjustement: " + weightAdjustment);
+		Print("current_quantity: " + current_quantity);
+		Print("updateType: " + updateType);*/	
+
 		switch (updateType)
 		{
 			case WeightUpdateType.FULL:
@@ -3144,17 +3211,26 @@ class ItemBase extends InventoryItem
 					}
 		
 					m_Weight = Math.Round(totalWeight);
+				
+					//Print("FULL");
+					//Print("weightAdjustment: " + weightAdjustment);
+					//Print("m_Weight: " + m_Weight);
 				}
 				break;
 			case WeightUpdateType.ADD:
 				m_Weight += weightAdjustment;
+				//Print("ADD");
+				//Print("weightAdjustment: " + weightAdjustment);
+				//Print("m_Weight: " + m_Weight);
 				break;
 			case WeightUpdateType.REMOVE:
 				m_Weight -= weightAdjustment;
+				//Print("REMOVE");
+				//Print("weightAdjustment: " + weightAdjustment);
+				//Print("m_Weight: " + m_Weight);
 				break;
 			case WeightUpdateType.RECURSIVE_ADD:
 				{
-					//Print("RECURSIVE_ADD WA: " + weightAdjustment);
 					if (weightAdjustment == 0) //First one in hierarchy
 					{
 						current_quantity = GetQuantity();
@@ -3175,6 +3251,10 @@ class ItemBase extends InventoryItem
 						weightAdjustment = Math.Round(weightAdjustment);
 					}
 					m_Weight += weightAdjustment;
+				
+					//Print("RECURSIVE_ADD");
+					//Print("weightAdjustment: " + weightAdjustment);
+					//Print("m_Weight: " + m_Weight);
 								
 					EntityAI hierarchyParent = GetHierarchyParent();
 					if (hierarchyParent && !hierarchyParent.IsInherited(PlayerBase))
@@ -3205,6 +3285,10 @@ class ItemBase extends InventoryItem
 					
 					m_Weight -= weightAdjustment;
 				
+					//Print("RECURSIVE_REMOVE");
+					//Print("weightAdjustment: " + weightAdjustment);
+					//Print("m_Weight: " + m_Weight);
+				
 					EntityAI hp = GetHierarchyParent();
 					if (hp && !hp.IsInherited(PlayerBase))
 						hp.UpdateWeight(WeightUpdateType.RECURSIVE_REMOVE, weightAdjustment);
@@ -3213,12 +3297,6 @@ class ItemBase extends InventoryItem
 			default:
 				break;
 		}
-		/*Print(this);
-		Print("current_quantity: " + current_quantity);
-		Print("updateType: " + updateType);
-		Print("weightAdjustment: " + weightAdjustment);
-		Print("m_Weight: " + m_Weight);
-		DumpStack();*/
 	}
 
 	//! Returns the number of items in cargo, otherwise returns 0(non-cargo objects). Recursive.
@@ -3447,6 +3525,19 @@ class ItemBase extends InventoryItem
 			return ConfigGetFloat("itemModelLength");
 		}
 		return 0;
+	}
+	
+	//----------------------------------------------------------------
+	// ATTACHMENT LOCKING
+	// Getters relevant to generic ActionLockAttachment
+	int GetLockType()
+	{
+		return m_LockType;
+	}
+	
+	string GetLockSoundSet()
+	{
+		return m_LockSoundSet;
 	}
 
 	//----------------------------------------------------------------
@@ -3761,6 +3852,11 @@ class ItemBase extends InventoryItem
 		return super.CanLoadAttachment( attachment );
 	}
 
+	bool CanBeDisinfected()
+	{
+		return true;
+	}
+	
 	// Plays muzzle flash particle effects
 	static void PlayFireParticles(ItemBase weapon, int muzzle_index, string ammoType, ItemBase muzzle_owner, ItemBase suppressor, string config_to_search)
 	{
@@ -4242,7 +4338,7 @@ class ItemBase extends InventoryItem
 	
 	bool IsCargoException4x3( EntityAI item )
 	{
-		return ( item.IsKindOf( "Pot" ) || item.IsKindOf( "FryingPan" ) || item.IsKindOf( "SmallProtectorCase" ) || ( item.IsKindOf( "PortableGasStove" ) && item.FindAttachmentBySlotName("CookingEquipment") ) );
+		return ( item.IsKindOf( "Cauldron" ) || item.IsKindOf( "Pot" ) || item.IsKindOf( "FryingPan" ) || item.IsKindOf( "SmallProtectorCase" ) || ( item.IsKindOf( "PortableGasStove" ) && item.FindAttachmentBySlotName("CookingEquipment") ) );
 	}
 	
 		

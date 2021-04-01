@@ -3,15 +3,20 @@ class ItemManager
 	private ref static ItemManager		m_Instance;
 	protected bool						m_IsDragging;
 	protected EntityAI					m_HoveredItem;
+	protected bool						m_SlotInfoShown;
 	protected EntityAI					m_DraggedItem;
 	protected Icon						m_DraggedIcon;
 	protected ref Widget				m_TooltipWidget;
+	protected ref Widget				m_TooltipSlotWidget;
+	protected ref Widget				m_TooltipCategoryWidget;
 	protected ItemPreviewWidget			m_ItemPreviewWidget;
 	protected Widget					m_RootWidget;
 	protected ref map<string, bool>		m_DefautOpenStates;
 	protected ref map<string, bool>		m_DefautHeaderOpenStates;
  	protected int						m_HandsDefaultOpenState;
 	protected ref Timer					m_ToolTipTimer;
+	protected ref Timer					m_TooltipSlotTimer;
+	protected ref Timer					m_TooltipcategoryTimer;
 
 	protected EntityAI					m_SelectedItem;
 	protected Container					m_SelectedContainer;
@@ -38,13 +43,17 @@ class ItemManager
 		m_RootWidget				= root;
 		m_DefautOpenStates			= new map<string, bool>;
 		m_DefautHeaderOpenStates	= new map<string, bool>;
+		m_SlotInfoShown				= false;
 		
 		#ifdef PLATFORM_CONSOLE
 			m_TooltipWidget			= GetGame().GetWorkspace().CreateWidgets("gui/layouts/inventory_new/day_z_inventory_new_tooltip_xbox.layout", root );
+			m_TooltipSlotWidget		= GetGame().GetWorkspace().CreateWidgets("gui/layouts/inventory_new/day_z_inventory_new_tooltip_slot_xbox.layout", root );
 		#else
 			m_TooltipWidget			= GetGame().GetWorkspace().CreateWidgets("gui/layouts/inventory_new/day_z_inventory_new_tooltip.layout", root );
+			m_TooltipSlotWidget		= GetGame().GetWorkspace().CreateWidgets("gui/layouts/inventory_new/day_z_inventory_new_tooltip_slot.layout", root );
 		#endif
 		m_TooltipWidget.Show( false );
+		m_TooltipSlotWidget.Show( false );
 	}
 	
 	void SetItemMicromanagmentMode( bool item_micromanagment_mode )
@@ -328,6 +337,29 @@ class ItemManager
 		m_TooltipWidget.Show( false );
 		m_HoveredItem = null;
 		delete m_ToolTipTimer;
+		
+		HideTooltipSlot();
+	}
+	
+	void HideTooltipSlot()
+	{
+		if ( m_SlotInfoShown )
+		{
+			m_TooltipSlotWidget.Show( false );
+			m_SlotInfoShown = false;
+			delete m_TooltipSlotTimer;
+		}
+		
+	}
+	
+	void HideTooltipCategory()
+	{
+		if ( m_SlotInfoShown )
+		{
+			m_TooltipSlotWidget.Show( false );
+			m_SlotInfoShown = false;
+			delete m_TooltipSlotTimer;
+		}
 	}
 	
 	static int GetItemHealthColor( EntityAI item, string zone = "" )
@@ -481,6 +513,46 @@ class ItemManager
 		}
 	}
 	
+	void PrepareSlotsTooltip( string name, string desc, int x = 0, int y = 0 )
+	{
+		m_SlotInfoShown = true;
+		InspectMenuNew.UpdateSlotInfo( m_TooltipSlotWidget, name, desc );
+			
+		#ifndef PLATFORM_CONSOLE
+		int screen_w, screen_h;
+		float w, h;
+			
+		GetMousePos(x,y);
+			
+		GetScreenSize(screen_w, screen_h);
+		m_TooltipSlotWidget.GetScreenSize(w,h);
+
+		int m_normal_item_size = 20;
+		screen_w -= 10;
+		screen_h -= 10;
+		x += m_normal_item_size;
+		y += m_normal_item_size;
+
+		int right_edge = x + w;
+		if (right_edge > screen_w)
+		{
+			x = screen_w - w;
+		}
+
+		int bottom_edge = y + h;
+		if (bottom_edge > screen_h)
+		{
+			y = y - h - (2*m_normal_item_size);
+		}
+		m_TooltipSlotWidget.SetPos(x, y);
+
+		#endif
+		
+		m_TooltipSlotTimer = new Timer();
+		
+		m_TooltipSlotTimer.Run( TOOLTIP_DELAY, this, "ShowTooltipSlot" );
+	}
+	
 	void SetWidgetDraggable( Widget w, bool draggable )
 	{
 		if (w)
@@ -498,6 +570,11 @@ class ItemManager
 		{
 			m_TooltipWidget.Show( true );
 		}
+	}
+	
+	void ShowTooltipSlot()
+	{	
+		m_TooltipSlotWidget.Show( true );
 	}
 	
 	static int GetCombinationFlags( EntityAI entity1, EntityAI entity2 )

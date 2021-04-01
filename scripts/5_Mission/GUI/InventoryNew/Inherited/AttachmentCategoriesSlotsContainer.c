@@ -19,6 +19,9 @@ class AttachmentCategoriesSlotsContainer: Container
 			WidgetEventHandler.GetInstance().RegisterOnMouseButtonDown( m_ItemsCont.GetSlotIcon( k ).GetMainWidget(),  m_Parent, "MouseClick" );
 			WidgetEventHandler.GetInstance().RegisterOnMouseButtonDown( m_ItemsCont.GetSlotIcon( k ).GetPanelWidget(),  m_Parent, "MouseClick" );
 			
+			WidgetEventHandler.GetInstance().RegisterOnMouseEnter( m_ItemsCont.GetSlotIcon( k ).GetMainWidget(), m_ItemsCont.GetSlotIcon( k ), "MouseEnterGhostSlot" );
+			WidgetEventHandler.GetInstance().RegisterOnMouseLeave( m_ItemsCont.GetSlotIcon( k ).GetMainWidget(), m_ItemsCont.GetSlotIcon( k ), "MouseLeaveGhostSlot" );
+			
 			m_ItemsCont.GetSlotIcon( k ).GetMainWidget().SetUserID( k );
 			m_ItemsCont.GetSlotIcon( k ).GetPanelWidget().SetUserID( k );
 		}

@@ -26,6 +26,11 @@ class ActionTogglePlaceObject: ActionSingleUseBase
 		return true;
 	}
 	
+	override bool IsDeploymentAction()
+	{
+		return true;
+	}
+	
 	override bool RemoveForceTargetAfterUse()
 	{
 		return false;

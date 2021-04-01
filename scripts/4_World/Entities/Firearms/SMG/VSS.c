@@ -48,19 +48,9 @@ class VSS : VSS_Base
 	override bool CanEnterIronsights()
 	{
 		ItemOptics optic = GetAttachedOptics();
-		if (optic && KobraOptic.Cast(optic))
-			return false;
-		
-		return true;
+		if ( optic && PSO1Optic.Cast(optic) || PSO11Optic.Cast(optic) || KashtanOptic.Cast(optic) || KazuarOptic.Cast(optic) )
+			return true;
+		return super.CanEnterIronsights();
 	}
 };
-class ASVAL : VSS_Base
-{
-	override bool CanEnterIronsights()
-	{
-		ItemOptics optic = GetAttachedOptics();
-		if (optic && M4_T3NRDSOptic.Cast(optic) || M68Optic.Cast(optic) || ReflexOptic.Cast(optic))
-			return false;
-		return true;
-	}
-};
+class ASVAL : VSS_Base {};

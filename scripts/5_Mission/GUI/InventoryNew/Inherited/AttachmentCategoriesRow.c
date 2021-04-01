@@ -320,11 +320,15 @@ class AttachmentCategoriesRow: ClosableContainer
 		{
 			EntityAI focused_item = GetFocusedItem();
 			SlotsIcon icon = GetFocusedIcon();
+			float x, y;
+			icon.GetCursorWidget().GetScreenPos( x, y );
 			if( focused_item )
 			{
-				float x, y;
-				icon.GetCursorWidget().GetScreenPos( x, y );
 				ItemManager.GetInstance().PrepareTooltip( focused_item, x, y );
+			}
+			else
+			{
+				ItemManager.GetInstance().PrepareSlotsTooltip( icon.GetSlotDisplayName(), icon.GetSlotDesc(), x, y );
 			}
 			icon.GetCursorWidget().Show(true);
 		}
@@ -889,6 +893,7 @@ class AttachmentCategoriesRow: ClosableContainer
 		SlotsIcon icon					= row.GetSlotIcon( id );
 		
 		icon.SetSlotID(slot_id);
+		icon.SetSlotDisplayName(InventorySlots.GetSlotDisplayName(slot_id));
 		ref CargoContainer cont;
 		
 		if( !m_Entity.CanDisplayAttachmentSlot( slot_name ) )
@@ -1036,7 +1041,7 @@ class AttachmentCategoriesRow: ClosableContainer
 		for ( j = 0; j < count; j++ )
 		{
 			string slot_name = player_ghosts_slots2.Get ( j );
-			string icon_name2;
+			string icon_name2; //must be in format "set:<setname> image:<imagename>"
 			string path = "CfgSlots" + " Slot_" + slot_name;
 			GetGame().ConfigGetText( path + " ghostIcon", icon_name2 );
 			GetGame().ConfigGetText( path + " name", slot_name );
@@ -1052,7 +1057,7 @@ class AttachmentCategoriesRow: ClosableContainer
 			//icon2.Clear();
 			RefreshSlot( j, id, slot_id, slot_name );
 			
-			icon2.GetGhostSlot().LoadImageFile( 0,"set:dayz_inventory image:" + icon_name2 );
+			icon2.GetGhostSlot().LoadImageFile( 0,StaticGUIUtils.VerifyIconImageString(StaticGUIUtils.IMAGESETGROUP_INVENTORY,icon_name2) );
 		}
 		/*
 		array<EntityAI> cargo_attachments = entity.GetAttachmentsWithCargo();
