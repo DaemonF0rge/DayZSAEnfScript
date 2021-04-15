@@ -1,6 +1,6 @@
 //<'system.pbo' properties via Mikero's dos tools, dll version 7.97>
 product=dayz;
 prefix=system;
-version=88831;
+version=88947;
 //PboType=Arma Unknown pbo type (no config or mission).;
 //</properties>
