@@ -1,0 +1,12 @@
+////////////////////////////////////////////////////////////////////
+//DeRap: dz\data\penetration\plexiplate.rvmat
+//Produced from mikero's Dos Tools Dll version 8.10
+//https://mikero.bytex.digital/Downloads
+//'now' is Sat Jun 19 21:02:10 2021 : 'file' last modified on Fri Jun 04 05:25:12 2021
+////////////////////////////////////////////////////////////////////
+
+#define _ARMA_
+
+surfaceInfo = "dz\data\data\Penetration\plexiPlate.bisurf";
+diffuse[] = {0.5,0.5,1.0,1.0};
+ambient[] = {0.5,0.5,1.0,1.0};

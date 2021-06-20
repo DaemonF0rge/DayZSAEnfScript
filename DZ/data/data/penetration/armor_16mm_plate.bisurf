@@ -1,0 +1,24 @@
+////////////////////////////////////////////////////////////////////
+//DeRap: dz\data\penetration\armor_16mm_plate.bisurf
+//Produced from mikero's Dos Tools Dll version 8.10
+//https://mikero.bytex.digital/Downloads
+//'now' is Sat Jun 19 21:02:10 2021 : 'file' last modified on Fri Jun 04 05:25:11 2021
+////////////////////////////////////////////////////////////////////
+
+#define _ARMA_
+
+Density = 7800;
+Thickness = 16;
+bulletPenetrability = 200;
+bulletPenetrabilityWithThickness = 13;
+deflection = 1.25;
+transparency = 0;
+rough = 0.1;
+dust = 0;
+audibility = 1.0;
+soundEnviron = "Empty";
+isLiquid = "false";
+friction = 0.7;
+restitution = 0.3;
+impact = "Hit_Metal";
+soundHit = "metal";

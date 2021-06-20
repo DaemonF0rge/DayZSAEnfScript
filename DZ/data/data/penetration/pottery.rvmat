@@ -1,0 +1,10 @@
+////////////////////////////////////////////////////////////////////
+//DeRap: dz\data\penetration\pottery.rvmat
+//Produced from mikero's Dos Tools Dll version 8.10
+//https://mikero.bytex.digital/Downloads
+//'now' is Sat Jun 19 21:02:10 2021 : 'file' last modified on Fri Jun 04 05:25:14 2021
+////////////////////////////////////////////////////////////////////
+
+#define _ARMA_
+
+surfaceInfo = "dz\data\data\penetration\pottery.bisurf";

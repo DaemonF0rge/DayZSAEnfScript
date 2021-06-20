@@ -1,0 +1,17 @@
+////////////////////////////////////////////////////////////////////
+//DeRap: dz\data\default_2pass.rvmat
+//Produced from mikero's Dos Tools Dll version 8.10
+//https://mikero.bytex.digital/Downloads
+//'now' is Sat Jun 19 21:02:08 2021 : 'file' last modified on Fri Jun 04 05:25:15 2021
+////////////////////////////////////////////////////////////////////
+
+#define _ARMA_
+
+ambient[] = {1,1,1,1};
+diffuse[] = {1,1,1,1};
+forcedDiffuse[] = {0,0,0,0};
+emmisive[] = {0,0,0,1};
+specular[] = {0,0,0,0};
+specularPower = 0;
+PixelShaderID = "Normal";
+VertexShaderID = "Basic";

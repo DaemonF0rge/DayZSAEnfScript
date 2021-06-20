@@ -1,8 +1,8 @@
 ////////////////////////////////////////////////////////////////////
 //DeRap: bin\config.bin
-//Produced from mikero's Dos Tools Dll version 8.06
+//Produced from mikero's Dos Tools Dll version 8.10
 //https://mikero.bytex.digital/Downloads
-//'now' is Tue May 04 12:49:39 2021 : 'file' last modified on Tue May 04 04:36:36 2021
+//'now' is Sat Jun 19 20:53:28 2021 : 'file' last modified on Mon Jun 14 10:35:58 2021
 ////////////////////////////////////////////////////////////////////
 
 #define _ARMA_
@@ -267,6 +267,15 @@ class WeaponMode_Base
 };
 class Mode_SemiAuto: WeaponMode_Base
 {
+	displayName = "#STR_SemiAuto";
+	dispersion = 0.0002;
+	reloadTime = 0.1;
+	sound[] = {"",10.0,1};
+	soundBegin[] = {"sound",1};
+};
+class Mode_Single: Mode_SemiAuto
+{
+	displayName = "#STR_Single";
 	dispersion = 0.0002;
 	reloadTime = 0.1;
 	sound[] = {"",10.0,1};
@@ -274,14 +283,25 @@ class Mode_SemiAuto: WeaponMode_Base
 };
 class Mode_Burst: Mode_SemiAuto
 {
+	displayName = "#STR_Burst";
 	burst = 3;
 	dispersion = 0.0005;
 	sound[] = {"",10.0,1};
 	soundLoop[] = {"sound",1};
 	soundEnd[] = {"sound",1};
 };
+class Mode_Double: Mode_SemiAuto
+{
+	displayName = "#STR_Double";
+	burst = 3;
+	dispersion = 0.0005;
+	sound[] = {"",1.0,1};
+	soundLoop[] = {"sound",1};
+	soundEnd[] = {"sound",1};
+};
 class Mode_FullAuto: Mode_SemiAuto
 {
+	displayName = "#STR_FullAuto";
 	autoFire = 1;
 	soundContinuous = 1;
 	dispersion = 0.0005;

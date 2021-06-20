@@ -1,0 +1,18 @@
+////////////////////////////////////////////////////////////////////
+//DeRap: dz\data\penetration\armor_3mm_plate.rvmat
+//Produced from mikero's Dos Tools Dll version 8.10
+//https://mikero.bytex.digital/Downloads
+//'now' is Sat Jun 19 21:02:10 2021 : 'file' last modified on Fri Jun 04 05:25:14 2021
+////////////////////////////////////////////////////////////////////
+
+#define _ARMA_
+
+surfaceInfo = "dz\data\data\penetration\armor_3mm_plate.bisurf";
+ambient[] = {0.490196,0.592157,0.556863,1.0};
+diffuse[] = {0.490196,0.592157,0.556863,1.0};
+forcedDiffuse[] = {0.0,0.0,0.0,0.0};
+emmisive[] = {0.0,0.0,0.0,1.0};
+specular[] = {0.0,0.0,0.0,1.0};
+specularPower = 1.0;
+PixelShaderID = "Normal";
+VertexShaderID = "Basic";

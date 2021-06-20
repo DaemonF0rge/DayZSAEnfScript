@@ -1,4 +1,4 @@
-//<'core.pbo' properties via Mikero's dos tools, dll version 8.06>
+//<'core.pbo' properties via Mikero's dos tools, dll version 8.10>
 product=undefined;
 prefix=Core;
 version=83544P;

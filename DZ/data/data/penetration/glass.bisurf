@@ -1,0 +1,24 @@
+////////////////////////////////////////////////////////////////////
+//DeRap: dz\data\penetration\glass.bisurf
+//Produced from mikero's Dos Tools Dll version 8.10
+//https://mikero.bytex.digital/Downloads
+//'now' is Sat Jun 19 21:02:10 2021 : 'file' last modified on Fri Jun 04 05:25:12 2021
+////////////////////////////////////////////////////////////////////
+
+#define _ARMA_
+
+Density = 2400;
+deflection = 0.1;
+bulletPenetrability = 250;
+transparency = 1;
+thickness = 5;
+bulletPenetrabilityWithThickness = 120;
+rough = 0;
+dust = 0;
+audibility = 1.3;
+soundEnviron = "Empty";
+isLiquid = "false";
+friction = 0.1;
+restitution = 0.1;
+impact = "Hit_Glass";
+soundHit = "glass";

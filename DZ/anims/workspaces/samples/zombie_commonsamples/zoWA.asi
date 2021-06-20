@@ -1,8 +1,0 @@
-$animsetinstance {
- #template "dz/anims/workspaces/samples/zombie_commonsamples/zow.ast"
- #nparents 1
- #parent "dz/anims/workspaces/samples/zombie_commonsamples/zow.asi"
- #nsources 73
- $animations {
-  
- }

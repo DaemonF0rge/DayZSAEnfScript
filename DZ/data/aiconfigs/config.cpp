@@ -1,3 +1,10 @@
+////////////////////////////////////////////////////////////////////
+//DeRap: dz\aiconfigs\config.bin
+//Produced from mikero's Dos Tools Dll version 8.10
+//https://mikero.bytex.digital/Downloads
+//'now' is Sat Jun 19 21:02:08 2021 : 'file' last modified on Fri Jun 04 05:25:29 2021
+////////////////////////////////////////////////////////////////////
+
 #define _ARMA_
 
 class CfgPatches
@@ -11,11 +18,12 @@ class AIParamsDebug
 };
 class AIParams
 {
-	maxNoiseRange = 400.0;
+	maxNoiseRange = 300.0;
 	rainToNoiseMultiplier = 10.0;
 	seaToNoiseMultiplier = 15.0;
 	noiseDampeningMultiplier = 0.7;
-	noiseCollisionDampeningMultiplier = 0.4;
+	noiseCollisionDampeningMultiplier = 0.2;
+	noiseShotCollisionDampeningMultiplier = 1;
 	groupLODDistance = 1000.0;
 	class AgentTeams
 	{
@@ -268,6 +276,36 @@ class GroupBehaviourTemplates
 				zoneType = "Graze";
 			};
 		};
+	};
+	class DZInfectedPackBeh
+	{
+		type = "InfectedPack";
+		alertDistributionSpeed = 20.0;
+		catchUpTestDelay = 4.0;
+		catchUpStartRadius = 10.0;
+		catchUpTargetRadius = 7.0;
+		groupRadius = 10.0;
+		spawnMinDistanceBetweenAgents = 1.0;
+		agentPathLength = 100.0;
+		maxEnragedTime = 20.0;
+		lifeCycleGroupSpeed = 3;
+		enragedRingDistanceMax = 35;
+		enragedRingDistanceMin = 10;
+		enragedReachDistanceMax = 15;
+		enragedReachDistanceMin = 5;
+		enragedOnReachCount = 25;
+		predictFollowingMaxDistance = 3;
+		predictFollowingTime = 60;
+		predictReachFollowingMaxDistance = 30;
+		predictReachFollowingTime = 50;
+		singleAgentSafeKeeperDelayMin = 10;
+		singleAgentSafeKeeperDelayMax = 30;
+		safeKeeperIntervalMin = 10;
+		safeKeeperIntervalMax = 20;
+		changeTargetCooldown = 60;
+		changeTargetAlertRatio = 10;
+		changeTargetEffectRadius = 5;
+		subgroupSpacingMax = 5;
 	};
 };
 class PathGraphFilters
