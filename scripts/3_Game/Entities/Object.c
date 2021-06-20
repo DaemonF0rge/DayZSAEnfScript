@@ -588,6 +588,11 @@ class Object extends IEntity
 		return IsPlainObject() && !IsScenery();
 	}
 	
+	bool CanProxyObstruct()
+	{
+		return HasProxyParts() || CanUseConstruction();
+	}
+	
 	bool CanBeIgnoredByDroppedItem()
 	{
 		return IsBush() || IsTree();
@@ -754,7 +759,12 @@ class Object extends IEntity
 	
 	// Damage system
 	/**
-  \brief Checks if object is destroyed.
+  	\brief Checks if object has DamageSystem.
+	*/
+	proto native bool   HasDamageSystem();
+	
+	/**
+  	\brief Checks if object is destroyed.
 	*/
 	proto native bool   IsDamageDestroyed();
 	
