@@ -4,11 +4,7 @@ class ActionRemoveSeed: ActionInteractBase
 	
 	void ActionRemoveSeed()
 	{
-	}
-
-	override string GetText()
-	{
-		return "#take";
+		m_Text = "#take";
 	}
 	
 	override typename GetInputType()

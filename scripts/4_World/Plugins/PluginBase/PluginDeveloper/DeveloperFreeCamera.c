@@ -37,8 +37,10 @@ class DeveloperFreeCamera
 		{
 			FreeDebugCamera.GetInstance().SetActive(true);
 
+			#ifdef DEVELOPER
 			GetGame().GetMission().RefreshCrosshairVisibility();
 			//GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).Call(GetGame().GetMission(), "RefreshCrosshairVisibility", NULL);
+			#endif
 		}
 		else
 		{
@@ -56,33 +58,21 @@ class DeveloperFreeCamera
 		{
 			if ( FreeDebugCamera.GetInstance().IsActive() )
 			{
-				if ( teleport_player )
-				{
-					vector from = FreeDebugCamera.GetInstance().GetPosition(); 
-					vector to = from + ( Vector(0,-1,0) * 10000 );   
-					vector contact_pos;   
-					vector contact_dir;   
-					int contact_component; 
-					
-					if ( DayZPhysics.RaycastRV(from, to, contact_pos, contact_dir, contact_component) )   
-					{
-						DeveloperTeleport.SetPlayerPosition( player, contact_pos );
-						DeveloperTeleport.SetPlayerDirection( player, FreeDebugCamera.GetInstance().GetDirection() );
-					}
-				}
-				
+				if (teleport_player)
+					DeveloperTeleport.TeleportAtCursorEx();
 				FreeDebugCamera.GetInstance().SetActive(false);
 
+				#ifdef DEVELOPER
 				if ( GetGame().GetMission() )
 				{
 					GetGame().GetMission().RefreshCrosshairVisibility();
 				}
+				#endif
 				//GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).Call(GetGame().GetMission(), "RefreshCrosshairVisibility", NULL);
 			}
 		}
 		else
 		{
-			Print("DisableFreeCamera( PlayerBase player, bool teleport_player ) -> player is NULL");
 			Debug.LogError("DisableFreeCamera( PlayerBase player, bool teleport_player ) -> player is NULL", "DeveloperFreeCamera");
 		}
 	}
@@ -94,6 +84,7 @@ class DeveloperFreeCamera
 	{
 		if ( player )
 		{
+			#ifdef DEVELOPER
 			if ( !GetGame().IsMultiplayer() )
 			{
 				PluginSceneManager plugin_scene_manager = PluginSceneManager.Cast( GetPlugin(PluginSceneManager) );
@@ -104,8 +95,10 @@ class DeveloperFreeCamera
 				}
 			}
 			
+			
 			GetGame().GetMission().RefreshCrosshairVisibility();
 			//GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).Call(GetGame().GetMission(), "RefreshCrosshairVisibility", NULL);
+			#endif
 		}
 	}
 }

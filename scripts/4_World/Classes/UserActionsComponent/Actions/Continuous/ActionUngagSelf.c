@@ -6,6 +6,7 @@ class ActionUngagSelf: ActionContinuousBase
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONMOD_COVERHEAD_SELF;
 		//m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT | DayZPlayerConstants.STANCEMASK_CROUCH;
+		m_Text = "#ungag";
 	}
 
 	override void CreateConditionComponents()  
@@ -17,11 +18,6 @@ class ActionUngagSelf: ActionContinuousBase
 	override bool HasTarget()
 	{
 		return false;
-	}
-
-	override string GetText()
-	{
-		return "#ungag";
 	}
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

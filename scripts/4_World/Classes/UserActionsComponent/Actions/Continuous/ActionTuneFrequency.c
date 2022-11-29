@@ -16,6 +16,8 @@ class ActionTuneFrequency: ActionContinuousBase
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONMOD_ITEM_TUNE;
 		m_CommandUIDProne = DayZPlayerConstants.CMD_ACTIONFB_ITEM_TUNE;		
 		m_SpecialtyWeight = UASoftSkillsWeight.ROUGH_LOW;
+		
+		m_Text = "#tune_frequency";
 	}
 	
 	override void CreateConditionComponents()  
@@ -32,11 +34,6 @@ class ActionTuneFrequency: ActionContinuousBase
 	override bool HasTarget()
 	{
 		return false;
-	}
-
-	override string GetText()
-	{
-		return "#tune_frequency";
 	}
 
 	override bool ActionCondition ( PlayerBase player, ActionTarget target, ItemBase item )

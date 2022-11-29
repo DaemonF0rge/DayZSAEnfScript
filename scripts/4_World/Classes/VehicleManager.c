@@ -19,7 +19,7 @@
 	
 	protected void PerformAction( int actionID )
 	{
-		if ( !GetGame().IsMultiplayer() || GetGame().IsClient() )
+		if ( !GetGame().IsDedicatedServer() )
 		{
 			if ( !m_Player.GetCommandModifier_Action() && !m_Player.GetCommand_Action() )
 			{

@@ -1,9 +1,33 @@
+//this is instantiated on the client for both the controlled character, as well as the remote characters
 class BleedingSourcesManagerRemote extends BleedingSourcesManagerBase
 {
 	int m_BleedingBits;
 	bool m_ShowDiag;
 	bool m_ShowingDiag;
 	Shape m_Point;
+	bool m_EnableHitIndication = false;
+	
+	override protected void Init()
+	{
+		super.Init();
+		
+		if (GetGame().GetMission().GetEffectWidgets()/* && m_Player.IsControlledPlayer()*/)
+		{
+			Param3<bool,int,float> par = new Param3<bool,int,float>(true,0,0);
+			GetGame().GetMission().GetEffectWidgets().RegisterGameplayEffectData(EffectWidgetsTypes.BLEEDING_LAYER,par);
+		}
+	}
+	
+	override protected void RegisterBleedingZoneEx(string name, int max_time, string bone = "", vector orientation = "0 0 0", vector offset = "0 0 0", float flow_modifier = 1, string particle_name = "BleedingSourceEffect", int inv_location = 0)
+	{
+		super.RegisterBleedingZoneEx(name,max_time,bone,orientation,offset,flow_modifier,particle_name,inv_location);
+		
+		if (GetGame().GetMission().GetEffectWidgets()/* && m_Player.IsControlledPlayer()*/)
+		{
+			Param3<bool,int,float> par = new Param3<bool,int,float>(false,m_Bit,flow_modifier);
+			GetGame().GetMission().GetEffectWidgets().RegisterGameplayEffectData(EffectWidgetsTypes.BLEEDING_LAYER,par);
+		}
+	}
 	
 	void OnVariablesSynchronized(int current_bits)
 	{
@@ -91,7 +115,7 @@ class BleedingSourcesManagerRemote extends BleedingSourcesManagerBase
 		return;
 		int boneIdx = m_Player.GetBoneIndexByName("RightArmExtra");
 
-		if( boneIdx != -1 )
+		if ( boneIdx != -1 )
 		{
 		  Object linkedObject = GetGame().CreateObject("Ammo_ArrowBolt", "0 0 0");
 		
@@ -104,12 +128,13 @@ class BleedingSourcesManagerRemote extends BleedingSourcesManagerBase
 		  */
 			
 			BleedingSourceEffect eff = new BleedingSourceEffect();
+			eff.SetAutodestroy(true);
 			SEffectManager.PlayInWorld( eff, "0 0 0" );
 			Particle p = eff.GetParticle();
 			//p.SetOrientation("0 90 0");
 			m_Player.AddChild(p, boneIdx);
 		
-		  m_Player.AddChild(linkedObject, boneIdx);
+		 	 m_Player.AddChild(linkedObject, boneIdx);
 		}
 	
 	}
@@ -145,8 +170,11 @@ class BleedingSourcesManagerRemote extends BleedingSourcesManagerBase
 			pow++;
 			if( (m_BleedingBits & bit) != 0)
 			{
+				BleedingSourceZone bsz = GetBleedingSourceMeta(bit);
+				
 				string name = GetSelectionNameFromBit(bit);
-				DbgUI.Text(name);
+				string slot_name =  InventorySlots.GetSlotName(bsz.GetInvLocation());
+				DbgUI.Text(name + "| slot name: "+ slot_name);
 			}
 		}
 		
@@ -174,11 +202,6 @@ class BleedingSourcesManagerRemote extends BleedingSourcesManagerBase
 		vector pos = m_Player.ModelToWorld(posMS);
 		m_Point = Debug.DrawSphere(pos, 0.1, COLOR_RED);
 		*/
-		
-		
-		
-		
-		
 		
 		for(int i = 0; i < m_BleedingSources.Count(); i++)
 		{

@@ -14,6 +14,7 @@ class ActionMeasureTemperatureSelf: ActionContinuousBase
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONMOD_TAKETEMPSELF;
 		m_CommandUIDProne = DayZPlayerConstants.CMD_ACTIONFB_TAKETEMPSELF;
 		m_SpecialtyWeight = UASoftSkillsWeight.PRECISE_LOW;
+		m_Text = "#measure_temperature";
 	}
 	
 	override void CreateConditionComponents()  
@@ -30,11 +31,6 @@ class ActionMeasureTemperatureSelf: ActionContinuousBase
 	override bool HasTarget()
 	{
 		return false;
-	}
-		
-	override string GetText()
-	{
-		return "#measure_temperature";
 	}
 
 	override void OnFinishProgressServer( ActionData action_data )

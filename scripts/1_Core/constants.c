@@ -47,7 +47,7 @@ const int INPUT_DEVICE_GAMEPAD_AXIS		= (INPUT_DEVICE_GAMEPAD | INPUT_AXIS);
 /** @}*/
 
 /**
- * \defgroup String constants
+ * \defgroup StringConstants String constants
  * \desc String constants
  * @{
  */

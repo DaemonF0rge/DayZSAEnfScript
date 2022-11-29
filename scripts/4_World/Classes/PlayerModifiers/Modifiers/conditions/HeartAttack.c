@@ -11,6 +11,8 @@ class HeartAttackMdfr: ModifierBase
 		m_TickIntervalInactive 	= DEFAULT_TICK_TIME_INACTIVE;
 		m_TickIntervalActive 	= DEFAULT_TICK_TIME_ACTIVE;
 		m_IsPersistent = true;
+		DisableDeactivateCheck();
+		DisableActivateCheck();
 	}
 	override bool ActivateCondition(PlayerBase player)
 	{

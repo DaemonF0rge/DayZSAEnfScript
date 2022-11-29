@@ -9,6 +9,7 @@ class PainKillersMdfr: ModifierBase
 		m_ID 					= eModifiers.MDF_PAINKILLERS;
 		m_TickIntervalInactive 	= DEFAULT_TICK_TIME_INACTIVE;
 		m_TickIntervalActive 	= 1;
+		DisableActivateCheck();
 	}
 
 	override bool ActivateCondition(PlayerBase player)
@@ -29,7 +30,7 @@ class PainKillersMdfr: ModifierBase
 	
 	override void OnActivate(PlayerBase player)
 	{
-		if (player.m_BrokenLegState != eBrokenLegs.NO_BROKEN_LEGS)
+		if (player.GetBrokenLegs() != eBrokenLegs.NO_BROKEN_LEGS)
 			player.m_ShockHandler.SetMultiplier(0.5);//was 0.75 //Switch the shock multiplier NEED A CONST
 		player.IncreaseHealingsCount();
 		/*
@@ -41,7 +42,7 @@ class PainKillersMdfr: ModifierBase
 	
 	override void OnDeactivate(PlayerBase player)
 	{
-		if (player.m_BrokenLegState != eBrokenLegs.NO_BROKEN_LEGS)
+		if (player.GetBrokenLegs() != eBrokenLegs.NO_BROKEN_LEGS)
 			player.m_ShockHandler.SetMultiplier(1); //Reset the shock multiplier when modifier stops
 		player.DecreaseHealingsCount();
 		/*

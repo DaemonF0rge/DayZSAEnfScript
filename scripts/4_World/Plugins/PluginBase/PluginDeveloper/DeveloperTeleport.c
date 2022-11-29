@@ -1,6 +1,6 @@
 class DeveloperTeleport
 {
-	protected static const int TELEPORT_DISTANCE_MAX = 1000;
+	protected static const float TELEPORT_DISTANCE_MAX = 1000;
 	
 	static void TeleportAtCursor()
 	{
@@ -29,6 +29,28 @@ class DeveloperTeleport
 		}
 	}
 	
+	protected static const float TELEPORT_DISTANCE_MAX_EX = 500;
+	static void TeleportAtCursorEx()
+	{
+		PlayerBase player = PlayerBase.Cast( GetGame().GetPlayer() );
+		vector rayStart = GetGame().GetCurrentCameraPosition();
+		vector rayEnd = rayStart + GetGame().GetCurrentCameraDirection() * TELEPORT_DISTANCE_MAX_EX;		
+		vector hitPos;
+		vector hitNormal;
+		float hitFraction;
+		Object hitObj;
+
+		if (DayZPhysics.SphereCastBullet(rayStart, rayEnd, 0.01, PhxInteractionLayers.TERRAIN | PhxInteractionLayers.ROADWAY | PhxInteractionLayers.ITEM_LARGE|PhxInteractionLayers.BUILDING|PhxInteractionLayers.VEHICLE, player, hitObj, hitPos, hitNormal, hitFraction))
+		{
+			DeveloperTeleport.SetPlayerPosition( player, hitPos );
+			
+			if (DeveloperFreeCamera.IsFreeCameraEnabled())
+			{
+				DeveloperTeleport.SetPlayerDirection( player, FreeDebugCamera.GetInstance().GetDirection() );
+			}
+		}
+	}
+	
 	// Set Player Position (MP support)
 	static void SetPlayerPosition(PlayerBase player, vector position)
 	{
@@ -51,7 +73,7 @@ class DeveloperTeleport
 		}
 		else
 		{
-			ref Param3<float, float, float> params = new Param3<float, float, float>(position[0], position[1], position[2]);
+			Param3<float, float, float> params = new Param3<float, float, float>(position[0], position[1], position[2]);
 			player.RPCSingleParam(ERPCs.DEV_RPC_TELEPORT, params, true);
 		}
 	}
@@ -78,18 +100,14 @@ class DeveloperTeleport
 		}
 		else
 		{
-			ref Param3<float, float, float> params = new Param3<float, float, float>(direction[0], direction[1], direction[2]);
+			Param3<float, float, float> params = new Param3<float, float, float>(direction[0], direction[1], direction[2]);
 			player.RPCSingleParam(ERPCs.DEV_RPC_SET_PLAYER_DIRECTION, params, true);
 		}
 	}
 	
 	static void OnRPC(PlayerBase player, int rpc_type, ParamsReadContext ctx)
 	{
-		if ( !GetGame().IsDebug() )
-		{
-			return;
-		}
-	
+		#ifdef DIAG_DEVELOPER
 		if ( rpc_type == ERPCs.DEV_RPC_TELEPORT )
 		{
 			OnRPCSetPlayerPosition(player, ctx);
@@ -98,11 +116,12 @@ class DeveloperTeleport
 		{
 			OnRPCSetPlayerDirection(player, ctx);
 		}
+		#endif
 	}
 	
 	static protected void OnRPCSetPlayerPosition(PlayerBase player, ParamsReadContext ctx)
 	{
-		ref Param3<float, float, float> p = new Param3<float, float, float>(0, 0, 0);
+		Param3<float, float, float> p = new Param3<float, float, float>(0, 0, 0);
 		if (ctx.Read(p))
 		{
 			vector v = "0 0 0";
@@ -115,7 +134,7 @@ class DeveloperTeleport
 	
 	static protected void OnRPCSetPlayerDirection(PlayerBase player, ParamsReadContext ctx)
 	{
-		ref Param3<float, float, float> p = new Param3<float, float, float>(0, 0, 0);
+		Param3<float, float, float> p = new Param3<float, float, float>(0, 0, 0);
 		if (ctx.Read(p))
 		{
 			vector v = "0 0 0";

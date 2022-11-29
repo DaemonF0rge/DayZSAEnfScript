@@ -26,33 +26,86 @@ enum ECurveType
 
 class Math3D
 {
+	private void Math3D() {}
+	private void ~Math3D() {}
+	
 	//-----------------------------------------------------------------
 	proto static vector ClipLine(vector start, vector end, vector norm, float d);
 
+	/**
+	\brief Tests whether ray is intersecting sphere.
+		\param raybase \p vector Start of ray
+		\param raycos \p vector End of ray
+		\param center \p vector Center of sphere
+		\param radius \p float Radius of sphere
+		\return \p float -1 when not intersecting, else the fraction of ray
+	*/
 	proto static float IntersectRaySphere(vector raybase, vector raycos, vector center, float radius);
+	
+	/**
+	\brief Tests whether ray is intersecting axis aligned box.
+		\param start \p vector Start of ray
+		\param end \p vector End of ray
+		\param mins \p vector Minimums of bound box
+		\param maxs \p vector Maximums of bound box
+		\return \p float -1 when not intersecting, else the fraction of ray
+	*/
 	proto static float IntersectRayBox(vector start, vector end, vector mins, vector maxs);
 	
 	/**
-	\brief Tests whether sphere is intersecting cone
+	\brief Tests whether sphere is intersecting axis aligned box.
+		\param origin \p vector Origin of sphere
+		\param radius \p float Radius of sphere
+		\param mins \p vector Minimums of bound box
+		\param maxs \p vector Maximums of bound box
+		\return \p bool True when intersects
+	*/
+	proto static bool IntersectSphereBox(vector origin, float radius, vector mins, vector maxs);
+	
+	/**
+	\brief Tests whether sphere is intersecting cone.
 		\param origin \p vector Origin of sphere
 		\param radius \p float Radius of sphere
 		\param conepos \p vector Position of top of cone
 		\param axis \p vector Orientation of cone in direction from top to bottom
 		\param angle \p float Angle of cone in radians
-		\return \p bool - Whether sphere is intersecting cone
+		\return \p bool True when sphere is intersecting cone
 	*/
 	proto static bool IntersectSphereCone(vector origin, float radius, vector conepos, vector axis, float angle);
 	
 	/**
-	\brief Tests whether sphere is fully inside cone
+	\brief Tests whether sphere is fully inside cone.
 		\param origin \p vector Origin of sphere
 		\param radius \p float Radius of sphere
 		\param conepos \p vector Position of top of cone
 		\param axis \p vector Orientation of cone in direction from top to bottom
 		\param angle \p float Angle of cone in radians
-		\return \p bool - Whether sphere is fully inside cone
+		\return \p bool True when sphere is fully inside cone
 	*/
 	proto static bool IntersectWholeSphereCone(vector origin, float radius, vector conepos, vector axis, float angle);
+	
+	/**
+	\brief Tests whether cylinder is intersecting oriented box.
+		\param mins \p vector Minimums of bound box
+		\param maxs \p vector Maximums of bound box
+		\param obbMat \p vector Transform of box
+		\param cylMat \p vector Transform of cylinder
+		\param cylinderRadius \p float Radius of cylinder
+		\param cylinderHeight \p float Height of cylinder
+		\return \p bool True when cylinder is intersecting oriented box
+	*/
+	proto static bool IntersectCylinderOBB(vector mins, vector maxs, vector obbMat[4], vector cylMat[4], float cylinderRadius, float cylinderHeight);
+	
+	/**
+	\brief Tests whether ray is intersecting cylinder.
+		\param rayStart \p vector Start of ray
+		\param rayEnd \p vector End of ray
+		\param center \p vector Center of cylinder
+		\param radius \p float Radius of cylinder
+		\param height \p float Height of cylinder
+		\return \p bool True when ray is intersecting cylinder
+	*/
+	proto static bool IntersectRayCylinder(vector rayStart, vector rayEnd, vector center, float radius, float height);
 	
 	/**
 	\brief Creates rotation matrix from angles

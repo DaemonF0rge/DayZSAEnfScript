@@ -15,7 +15,7 @@ class ActionForceFeed: ActionForceConsume
 		m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT | DayZPlayerConstants.STANCEMASK_CROUCH;
 		
-		
+		m_Text = "#feed";
 		//m_Animation = "feed";
 	}
 	
@@ -24,11 +24,39 @@ class ActionForceFeed: ActionForceConsume
 		m_ConditionTarget = new CCTMan(UAMaxDistances.DEFAULT);
 		m_ConditionItem = new CCINonRuined;
 	}
-		
-	override string GetText()
+	
+
+	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
 	{
-		return "#feed";
+		if (!super.ActionCondition( player, target, item))
+			return false;
+		
+		PlayerBase target_player = PlayerBase.Cast(target.GetObject());
+		
+		if (target_player)
+			return target_player.CanEatAndDrink();
+		else
+			return false;
 	}
+	
+	
+	override void OnEndServer( ActionData action_data )
+	{	
+		super.OnEndServer(action_data);
+		if ( action_data.m_Player.HasBloodyHands() && !action_data.m_Player.GetInventory().FindAttachment( InventorySlots.GLOVES ) )
+		{
+			Object targetPlayer = action_data.m_Target.GetObject();
+			PlayerBase target = PlayerBase.Cast( targetPlayer );
+			if ( target )
+			{
+				target.SetBloodyHandsPenalty();
+			}
+		}
+	}
+	
+		
+		
+	
 };
 
 
@@ -60,6 +88,20 @@ class ActionForceFeedSmall: ActionForceConsume
 		m_ConditionTarget = new CCTMan(UAMaxDistances.DEFAULT);
 		m_ConditionItem = new CCINonRuined;
 	}
+	
+	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
+	{
+		if (!super.ActionCondition( player, target, item))
+			return false;
+		
+		PlayerBase target_player = PlayerBase.Cast(target.GetObject());
+		
+		if (target_player)
+			return target_player.CanEatAndDrink();
+		else
+			return false;
+	}
+	
 		
 	override string GetText()
 	{

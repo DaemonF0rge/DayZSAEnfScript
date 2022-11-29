@@ -126,7 +126,7 @@ class PluginDayZCreatureAIDebug extends PluginBase
 	
 	override void OnUpdate(float delta_time)
 	{
-		if (!GetGame().IsMultiplayer() || GetGame().IsClient())
+		if (!GetGame().IsDedicatedServer())
 		{
 			CheckShowMode();
 		}

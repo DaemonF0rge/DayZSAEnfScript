@@ -82,10 +82,9 @@ class ComponentEnergyManager : Component
 	void ComponentEnergyManager()
 	{
 		// Disable debug arrows on public release, so that they don't use their timers.
-		if ( !GetGame().IsDebug() )
-		{
-			m_DebugPlugs = false;
-		}
+		#ifndef DEVELOPER
+		m_DebugPlugs = false;
+		#endif
 	}
 	
 	void ~ComponentEnergyManager()
@@ -375,7 +374,7 @@ class ComponentEnergyManager : Component
 	{
 		m_IsSwichedOnPreviousState = m_IsSwichedOn;
 		
-		if ( GetGame().IsServer() )
+		if (GetGame().IsServer() || !GetGame().IsMultiplayer())
 		{
 			if ( CanSwitchOn() )
 			{
@@ -406,7 +405,7 @@ class ComponentEnergyManager : Component
 	{
 		m_IsSwichedOnPreviousState = m_IsSwichedOn;
 		
-		if ( GetGame().IsServer() )
+		if (GetGame().IsServer() || !GetGame().IsMultiplayer())
 		{
 			if ( CanSwitchOff() )
 			{
@@ -523,15 +522,24 @@ class ComponentEnergyManager : Component
 	//! Energy manager: Sets stored energy for this device. It ignores the min/max limit!
 	void SetEnergy(float new_energy)
 	{
-		if (GetGame().IsServer()) // Client can't change energy value.
+		if (GetGame().IsServer() || !GetGame().IsMultiplayer()) // Client can't change energy value.
 		{
 			float old_energy = m_Energy;
 			m_Energy = new_energy;
 			
-			if (old_energy - GetEnergyUsage() <= 0)
+			if ( old_energy - GetEnergyUsage() <= 0 || (old_energy != new_energy && Math.Min(old_energy,new_energy) <= 0) )
 			{
 				UpdateCanWork();
 			}
+		}
+	}
+	
+	//! Energy manager: Sets stored energy for this device between 0 and MAX based on relative input value between 0 and 1
+	void SetEnergy0To1(float energy01)
+	{
+		if (GetGame().IsServer() || !GetGame().IsMultiplayer()) // Client can't change energy value.
+		{
+			SetEnergy( Math.Lerp(0, GetEnergyMax(),energy01));
 		}
 	}
 
@@ -689,7 +697,7 @@ class ComponentEnergyManager : Component
 	// Checks whenever this device can work or not and updates this information on all clients. Can be called many times per frame because synchronization happens only once if a change has occured.
 	void UpdateCanWork()
 	{
-		if ( GetGame().IsServer() )
+		if (GetGame().IsServer() || !GetGame().IsMultiplayer())
 		{
 			bool current_state = CanWork();
 			
@@ -697,6 +705,11 @@ class ComponentEnergyManager : Component
 			{
 				m_CanWork = current_state;
 				Synch();
+				
+				if ( m_ThisEntityAI && m_ThisEntityAI.GetHierarchyParent() && m_ThisEntityAI.GetHierarchyParent().GetCompEM() )
+				{
+					m_ThisEntityAI.GetHierarchyParent().GetCompEM().UpdateCanWork();
+				}
 			}
 		}
 	}
@@ -754,9 +767,10 @@ class ComponentEnergyManager : Component
 			return m_CanWork;
 		}
 		
-		
-		if (m_ThisEntityAI.IsRuined())
+		if (m_ThisEntityAI && m_ThisEntityAI.IsRuined())
+		{
 			return false;
+		}
 		
 		// Check if the power source(s) (which can be serially connected) can provide needed energy.
 		float 		energy_usage 	= test_energy;
@@ -773,6 +787,11 @@ class ComponentEnergyManager : Component
 			return false;
 		}
 		
+		if (gathered_energy <= 0 && energy_usage <= 0) //empty power source
+		{
+			return false;
+		}
+		
 		int cycle_limit = 500; // Sanity check to definitely avoid infinite cycles
 		
 		while ( gathered_energy < energy_usage ) // Look for energy source if we don't have enough stored energy
@@ -785,26 +804,26 @@ class ComponentEnergyManager : Component
 			else
 			{
 				DPrint("Energy Manager ERROR: The 'cycle_limit' safety break had to be activated to prevent possible game freeze. Dumping debug information...");
-				Print(m_ThisEntityAI);
-				Print(this);
-				Print(energy_source);
+				//Print(m_ThisEntityAI);
+				//Print(this);
+				//Print(energy_source);
 				
 				if (energy_source.GetCompEM())
 				{
-					Print(energy_source.GetCompEM());
+					//Print(energy_source.GetCompEM());
 				}
 				
-				Print(gathered_energy);
-				Print(energy_usage);
+				//Print(gathered_energy);
+				//Print(energy_usage);
 				
-				Print(m_ThisEntityAI.GetPosition());
+				//Print(m_ThisEntityAI.GetPosition());
 				
 				if (energy_source)
 				{
-					Print(energy_source.GetPosition());
+					//Print(energy_source.GetPosition());
 				}
 				
-				Print("End of the 'cycle_limit' safety break ^ ");
+				//Print("End of the 'cycle_limit' safety break ^ ");
 				
 				return false;
 			}
@@ -1176,6 +1195,12 @@ class ComponentEnergyManager : Component
 	//! Energy manager: Returns the update interval of this device.
 	float GetUpdateInterval()
 	{
+		#ifdef DIAG_DEVELOPER
+		if (FeatureTimeAccel.GetFeatureTimeAccelEnabled(ETimeAccelCategories.ENERGY_CONSUMPTION) || (FeatureTimeAccel.GetFeatureTimeAccelEnabled(ETimeAccelCategories.ENERGY_RECHARGE)))
+		{
+			return 1;//when modifying time accel, we might want to see things happen when they should, instead of waiting for the next tick
+		}
+		#endif
 		return m_UpdateInterval;
 	}
 	
@@ -1188,6 +1213,13 @@ class ComponentEnergyManager : Component
 	//! Energy manager: Returns the number of energy this device needs to run itself (See its config >> energyUsagePerSecond)
 	float GetEnergyUsage()
 	{
+		#ifdef DIAG_DEVELOPER
+		if (FeatureTimeAccel.GetFeatureTimeAccelEnabled(ETimeAccelCategories.ENERGY_CONSUMPTION))
+		{
+			float timeAccel = FeatureTimeAccel.GetFeatureTimeAccelValue();
+			return m_EnergyUsage * timeAccel;
+		}
+		#endif
 		return m_EnergyUsage;
 	}
 
@@ -1202,6 +1234,14 @@ class ComponentEnergyManager : Component
 	{
 		if (added_energy != 0)
 		{
+			#ifdef DIAG_DEVELOPER
+			if (FeatureTimeAccel.GetFeatureTimeAccelEnabled(ETimeAccelCategories.ENERGY_RECHARGE))
+			{
+				float timeAccel = FeatureTimeAccel.GetFeatureTimeAccelValue();
+				added_energy *= timeAccel;
+			}
+			#endif
+
 			bool energy_was_added = (added_energy > 0);
 			
 			float energy_to_clamp = GetEnergy() + added_energy;
@@ -1235,7 +1275,7 @@ class ComponentEnergyManager : Component
 		
 		float health = 100;
 		
-		if (GetGame().IsServer()) // TO DO: Remove this IF when method GetHealth can be called on client!
+		if (GetGame().IsServer() || !GetGame().IsMultiplayer()) // TO DO: Remove this IF when method GetHealth can be called on client!
 			health = m_ThisEntityAI.GetHealth("","");
 		
 		float damage_coef = 1 - (health / max_health);
@@ -1358,7 +1398,7 @@ class ComponentEnergyManager : Component
 	void OnOwnSocketTaken( EntityAI device ) 
 	{
 		//play sound
-		if ( device.GetCompEM().GetPlugType() == PLUG_COMMON_APPLIANCE )
+		if ( device.GetCompEM().GetPlugType() == PLUG_COMMON_APPLIANCE && m_ThisEntityAI.IsInitialized() )
 		{
 			EffectSound sound_plug;
 			m_ThisEntityAI.PlaySoundSet( sound_plug, "cablereel_plugin_SoundSet", 0, 0 );
@@ -1371,7 +1411,7 @@ class ComponentEnergyManager : Component
 	void OnOwnSocketReleased( EntityAI device ) 
 	{
 		//play sound
-		if ( device.GetCompEM().GetPlugType() == PLUG_COMMON_APPLIANCE )
+		if ( device.GetCompEM().GetPlugType() == PLUG_COMMON_APPLIANCE && m_ThisEntityAI.IsInitialized() )
 		{
 			EffectSound sound_unplug;
 			m_ThisEntityAI.PlaySoundSet( sound_unplug, "cablereel_unplug_SoundSet", 0, 0 );
@@ -1580,7 +1620,7 @@ class ComponentEnergyManager : Component
 			device_to_plug.GetCompEM().OnIsPlugged(m_ThisEntityAI);
 			WakeUpWholeBranch( m_ThisEntityAI );
 			
-			if (GetGame().IsServer())
+			if (GetGame().IsServer() || !GetGame().IsMultiplayer())
 			{
 				device_to_plug.HideSelection( SEL_CORD_FOLDED );
 				device_to_plug.ShowSelection( SEL_CORD_PLUGGED );
@@ -1723,7 +1763,7 @@ class ComponentEnergyManager : Component
 					float consume_energy = GetEnergyUsage() * consumed_energy_coef;
 					bool has_consumed_enough = true;
 					
-					if (GetGame().IsServer()) // single player or server side multiplayer
+					if (GetGame().IsServer() || !GetGame().IsMultiplayer()) // single player or server side multiplayer
 						has_consumed_enough = ConsumeEnergy( consume_energy );
 					
 					SetPowered( has_consumed_enough );

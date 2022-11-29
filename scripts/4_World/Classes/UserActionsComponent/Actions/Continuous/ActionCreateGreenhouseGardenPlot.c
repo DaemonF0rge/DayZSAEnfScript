@@ -18,11 +18,7 @@ class ActionCreateGreenhouseGardenPlot: ActionContinuousBase
 		m_CommandUID        = DayZPlayerConstants.CMD_ACTIONFB_DIGMANIPULATE;
 		m_StanceMask        = DayZPlayerConstants.STANCEMASK_ERECT;
 		m_SpecialtyWeight 	= UASoftSkillsWeight.ROUGH_LOW;
-	}
-
-	override string GetText()
-	{
-		return "#make_garden_plot";
+		m_Text = "#make_garden_plot";
 	}
 	
 	override void CreateConditionComponents()  

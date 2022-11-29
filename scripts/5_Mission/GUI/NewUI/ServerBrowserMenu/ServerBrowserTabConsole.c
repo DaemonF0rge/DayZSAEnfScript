@@ -46,11 +46,11 @@ class ServerBrowserTabConsole extends ServerBrowserTab
 	}
 	
 	void ShowHideConsoleWidgets()
-	{
-		bool is_xbox = true;
-		
+	{		
 #ifdef PLATFORM_PS4
-		is_xbox = false;
+		bool is_xbox = false;
+#else
+		bool is_xbox = true;
 #endif
 		
 		m_Root.FindAnyWidget( "filters_root_nav_img_lb_xbox" ).Show( is_xbox );
@@ -72,44 +72,31 @@ class ServerBrowserTabConsole extends ServerBrowserTab
 		
 		if ( error != EBiosError.OK || !result_list )
 		{
-			m_LoadingText.SetText( "Error code: " + error );
+			m_LoadingText.SetText( string.Format("Error: %1", ErrorModuleHandler.GetClientMessage(ErrorCategory.BIOSError, error)) );
 			return;
 		}
 		
-		if( result_list.m_Page == 1 )
+		if ( result_list.m_Page == 1 )
 		{
 			m_TotalPages = result_list.m_Pages;
 			m_TotalServers = result_list.m_NumServers;
-			//m_LoadingText.SetText( "#server_browser_tab_loaded" + " " + m_EntryWidgets.Count() + "/" + m_TotalServers + " " +  "#server_browser_servers_desc" );
-			
-			
-			if( m_Menu.GetServersLoadingTab() != m_TabType || !result_list || ( !result_list.m_Results || result_list.m_Results.Count() == 0 ) )
+					
+			if ( m_Menu.GetServersLoadingTab() != m_TabType || !result_list || ( !result_list.m_Results || result_list.m_Results.Count() == 0 ) )
 			{
-				m_Menu.SetServersLoadingTab( TabType.NONE );
-				string text = "#server_browser_tab_unable_to_get_server";
-				if( !result_list )
-				{
-					text += ( "Error code: " + error );
-				}
-				else
-				{
-					text += "#server_browser_tab_no_servers_with_filter";
-				}
-				
-				m_LoadingText.SetText( text );
-	
+				m_Menu.SetServersLoadingTab( TabType.NONE );				
+				m_LoadingText.SetText("#server_browser_tab_unable_to_get_server #server_browser_tab_no_servers_with_filter");
 				return;
 			}
 		}
 		
 		m_LastLoadedPage = result_list.m_Page;
 		
-		if( m_TotalPages > 0 )
+		if ( m_TotalPages > 0 )
 		{
 			LoadEntries( result_list.m_Page, result_list.m_Results );
 		}
 		
-		if( m_TotalPages > m_LastLoadedPage )
+		if ( m_TotalPages > m_LastLoadedPage )
 		{
 			GetNextPage();
 			return;
@@ -150,11 +137,12 @@ class ServerBrowserTabConsole extends ServerBrowserTab
 				if( PassFilter( result ) )
 				{
 					ref ServerBrowserEntry entry = new ServerBrowserEntry( m_ServerList, index, this );
-					string server_id = result.m_HostIp + ":" + result.m_HostPort;
+					string ipPort = result.GetIpPort();
 					entry.FillInfo( result );
-					entry.SetFavorite( m_Menu.IsFavorited( server_id ) );
+					entry.SetFavorite( m_Menu.IsFavorited(ipPort));
+					entry.UpdateEntry();
 					
-					m_EntryWidgets.Insert( server_id, entry );
+					m_EntryWidgets.Insert(ipPort, entry);
 					index++;					
 					m_EntriesSorted[m_SortType].Insert( result );
 					
@@ -350,8 +338,7 @@ class ServerBrowserTabConsole extends ServerBrowserTab
 		array<ref GetServersResultRow> entries = m_EntriesSorted[m_SortType];
 		if( entries.Count() > 0 )
 		{
-			string server_id = entries.Get( 0 ).m_HostIp + ":" + entries.Get( 0 ).m_HostPort;
-			m_EntryWidgets.Get( server_id ).Focus();
+			m_EntryWidgets.Get(entries.Get(0).GetIpPort()).Focus();
 			m_IsFilterFocused = false;
 		}
 		else

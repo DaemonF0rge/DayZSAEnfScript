@@ -2,44 +2,39 @@ class ActionClapBearTrapWithThisItem: ActionSingleUseBase
 {
 	void ActionClapBearTrapWithThisItem()
 	{
-		m_CommandUID = DayZPlayerConstants.CMD_ACTIONFB_POKE;
-		m_StanceMask = DayZPlayerConstants.STANCEMASK_CROUCH;
-		m_FullBody = true;
+		m_CommandUID	= DayZPlayerConstants.CMD_ACTIONFB_POKE;
+		m_StanceMask	= DayZPlayerConstants.STANCEMASK_CROUCH;
+		m_FullBody		= true;
+		m_Text			= "#trigger_bear_trap";
 	}
 	
 	override void CreateConditionComponents()
 	{
-		m_ConditionItem = new CCINonRuined;
-		m_ConditionTarget = new CCTCursor;
+		m_ConditionItem		= new CCINonRuined;
+		m_ConditionTarget	= new CCTCursor;
 	}
 
-	override string GetText()
+	override bool ActionCondition(PlayerBase player, ActionTarget target, ItemBase item)
 	{
-		return "#trigger_bear_trap";
-	}
-
-	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
-	{
-		if ( !target )
+		if (!target)
+		{
 			return false;
-
-		TrapBase target_TB;
-
-		if ( Class.CastTo(target_TB,  target.GetObject() ) &&  item )
-		{		
-			if (target_TB.IsActive() && target_TB.CanBeClapped() && IsInReach(player, target, UAMaxDistances.DEFAULT))
-			{
-				return true;
-			}
 		}
+
+		BearTrap trap;
+		if (Class.CastTo(trap, target.GetObject()))
+		{		
+			return trap.IsActive() && trap.CanBeDisarmed() && IsInReach(player, target, UAMaxDistances.DEFAULT);
+		}
+
 		return false;
 	}
 
 	override void OnExecuteServer( ActionData action_data )
 	{
-		TrapBase target_TB;
-		Class.CastTo(target_TB,  action_data.m_Target.GetObject() );
+		BearTrap trap;
+		Class.CastTo(trap, action_data.m_Target.GetObject());
 		
-		target_TB.SnapOnObject(action_data.m_MainItem);
+		trap.Disarm();
 	}
-};
+}

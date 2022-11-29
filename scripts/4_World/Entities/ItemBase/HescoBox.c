@@ -13,8 +13,7 @@ class HescoBox extends Inventory_Base
 	void HescoBox()
 	{
 		m_State = FOLDED;
-		m_DeployLoopSound = new EffectSound;
-		
+
 		//synchronized variables
 		RegisterNetSyncVariableInt( "m_State", FOLDED, FILLED );
 		RegisterNetSyncVariableBool("m_IsSoundSynchRemote");
@@ -23,10 +22,7 @@ class HescoBox extends Inventory_Base
 	
 	void ~HescoBox()
 	{
-		if ( m_DeployLoopSound )
-		{
-			SEffectManager.DestroySound( m_DeployLoopSound );
-		}
+		SEffectManager.DestroyEffect( m_DeployLoopSound );
 	}
 
 	override bool HasProxyParts()
@@ -268,9 +264,9 @@ class HescoBox extends Inventory_Base
 	
 	void PlayDeployLoopSound()
 	{		
-		if ( GetGame().IsMultiplayer() && GetGame().IsClient() || !GetGame().IsMultiplayer() )
+		if ( !GetGame().IsDedicatedServer() )
 		{		
-			if ( !m_DeployLoopSound.IsSoundPlaying() )
+			if ( !m_DeployLoopSound || !m_DeployLoopSound.IsSoundPlaying() )
 			{
 				m_DeployLoopSound = SEffectManager.PlaySound( GetLoopDeploySoundset(), GetPosition() );
 			}
@@ -279,7 +275,7 @@ class HescoBox extends Inventory_Base
 	
 	void StopDeployLoopSound()
 	{
-		if ( GetGame().IsMultiplayer() && GetGame().IsClient() || !GetGame().IsMultiplayer() )
+		if ( !GetGame().IsDedicatedServer() )
 		{	
 			m_DeployLoopSound.SetSoundFadeOut(0.5);
 			m_DeployLoopSound.SoundStop();

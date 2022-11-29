@@ -18,17 +18,13 @@ class ActionFertilizeSlot: ActionContinuousBase
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONFB_INTERACT;
 		m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_CROUCH;
+		m_Text = "#fertilize_slot";
 	}
 	
 	override void CreateConditionComponents()  
 	{
 		m_ConditionTarget = new CCTDummy;
 		m_ConditionItem = new CCINonRuined;
-	}
-		
-	override string GetText()
-	{
-		return "#fertilize_slot";
 	}
 
 

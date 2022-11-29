@@ -161,8 +161,60 @@ class Animal_GallusGallusDomesticus extends AnimalBase
 	{
 		return "HenCluck_X_SoundSet";
 	}
+	
+	override bool ReplaceOnDeath()
+	{
+		return true;
+	}
+	
+	override bool CanBeSkinned()
+	{
+		return false;
+	}
+	
+	override string GetDeadItemName()
+	{
+		return "DeadRooster";
+	}
+	
+	override bool KeepHealthOnReplace()
+	{
+		return false;
+	}
 }
-class Animal_GallusGallusDomesticusF extends Animal_GallusGallusDomesticus {}
+
+class Animal_GallusGallusDomesticusF extends Animal_GallusGallusDomesticus 
+{
+	override string GetDeadItemName()
+	{
+		return "DeadChicken_Brown";
+	}
+}
+
+class Animal_GallusGallusDomesticusF_Brown extends Animal_GallusGallusDomesticusF
+{
+	override string GetDeadItemName()
+	{
+		return "DeadChicken_Brown";
+	}
+}
+
+class Animal_GallusGallusDomesticusF_Spotted extends Animal_GallusGallusDomesticusF
+{
+	override string GetDeadItemName()
+	{
+		return "DeadChicken_Spotted";
+	}
+}
+
+class Animal_GallusGallusDomesticusF_White extends Animal_GallusGallusDomesticusF
+{
+	override string GetDeadItemName()
+	{
+		return "DeadChicken_White";
+	}
+}
+
 
 class Animal_OvisAries extends AnimalBase
 {

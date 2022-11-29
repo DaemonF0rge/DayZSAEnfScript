@@ -77,6 +77,11 @@ class GardenBase extends ItemBase //BuildingSuper
 		return true;
 	}
 	
+	override int GetHideIconMask()
+	{
+		return EInventoryIconVisibility.HIDE_VICINITY;
+	}
+	
 	void SetBaseFertility(float value)
 	{
 		m_DefaultFertility = value;

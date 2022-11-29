@@ -9,6 +9,7 @@ class MorphineMdfr: ModifierBase
 		m_ID 					= eModifiers.MDF_MORPHINE;
 		m_TickIntervalInactive 	= DEFAULT_TICK_TIME_INACTIVE;
 		m_TickIntervalActive 	= 1;
+		DisableActivateCheck();
 	}
 
 	override bool ActivateCondition(PlayerBase player)
@@ -28,7 +29,7 @@ class MorphineMdfr: ModifierBase
 
 	override void OnActivate(PlayerBase player)
 	{
-		if (player.m_BrokenLegState != eBrokenLegs.NO_BROKEN_LEGS)
+		if (player.GetBrokenLegs() != eBrokenLegs.NO_BROKEN_LEGS)
 		{
 			player.m_ShockHandler.SetMultiplier(0.1); //was 0.5 //Switch the shock multiplier NEED A CONST
 		}
@@ -40,7 +41,7 @@ class MorphineMdfr: ModifierBase
 	override void OnDeactivate(PlayerBase player)
 	{
 		
-		if (player.m_BrokenLegState != eBrokenLegs.NO_BROKEN_LEGS)
+		if (player.GetBrokenLegs() != eBrokenLegs.NO_BROKEN_LEGS)
 			player.m_ShockHandler.SetMultiplier(1); //Reset the shock multiplier when modifier stops
 		//if( player.GetNotifiersManager() ) player.GetNotifiersManager().DeactivateByType(eNotifiers.NTF_PILLS);
 		player.DecreaseHealingsCount();

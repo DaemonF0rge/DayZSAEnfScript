@@ -22,17 +22,14 @@ class ActionDismantleGardenPlot: ActionContinuousBase
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT;
 		m_SpecialtyWeight = UASoftSkillsWeight.ROUGH_LOW;
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONFB_DIGMANIPULATE;
-	}
 		
-	override string GetText()
-	{
-		return "#remove_garden_plot";
+		m_Text = "#remove_garden_plot";
 	}
 	
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
 	{
 		//Action not allowed if player has broken legs
-		if ( player.m_BrokenLegState == eBrokenLegs.BROKEN_LEGS )
+		if ( player.GetBrokenLegs() == eBrokenLegs.BROKEN_LEGS )
 			return false;
 		
 		GardenPlot targetPlot = GardenPlot.Cast( target.GetObject() );

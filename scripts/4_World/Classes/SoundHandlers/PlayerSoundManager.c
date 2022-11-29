@@ -99,7 +99,7 @@ class PlayerSoundManagerClient extends PlayerSoundManagerBase
 	void PlayerSoundManagerClient(PlayerBase player)
 	{
 		
-		if( GetGame().IsClient() || !GetGame().IsMultiplayer() ) 
+		if( !GetGame().IsDedicatedServer() ) 
 		{
 			m_ClientCharacterDistanceCheck.Run(2, this, "CheckAllowUpdate", null, true);
 		}
@@ -126,11 +126,13 @@ class PlayerSoundManagerClient extends PlayerSoundManagerBase
 			SetAllowUpdate(false);
 			return;
 		}
-		
+
+#ifndef NO_GUI
 		for(int i = 0; i < MAX_HANDLERS_COUNT; i++)
 		{
 			m_Handlers[i].Update();
 		}
+#endif
 	}
 	
 	void CheckAllowUpdate()

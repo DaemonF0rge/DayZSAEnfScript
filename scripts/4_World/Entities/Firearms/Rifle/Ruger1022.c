@@ -5,7 +5,7 @@ class Ruger1022_Base : RifleBoltFree_Base
 		return new Ruger1022Recoil(this); //TODO
 	}
 	
-	override int GetWeaponSpecificCommand(int weaponAction ,int subCommand)
+	/*override int GetWeaponSpecificCommand(int weaponAction ,int subCommand)
 	{
 		if ( weaponAction == WeaponActions.RELOAD)
 		{
@@ -29,17 +29,15 @@ class Ruger1022_Base : RifleBoltFree_Base
 		
 		}
 		return subCommand;
-	}
+	}*/
 	
 	//Debug menu Spawn Ground Special
 	override void OnDebugSpawn()
-	{
-		EntityAI entity;
-		if ( Class.CastTo(entity, this) )
-		{
-			entity.GetInventory().CreateInInventory( "HuntingOptic" );
-			entity.SpawnEntityOnGroundPos("Mag_Ruger1022_30Rnd", entity.GetPosition());
-		}
-	}
-	
+	{		
+		GameInventory inventory = GetInventory();
+
+		inventory.CreateInInventory( "HuntingOptic" );
+		
+		SpawnAttachedMagazine("Mag_Ruger1022_30Rnd");
+	}	
 };

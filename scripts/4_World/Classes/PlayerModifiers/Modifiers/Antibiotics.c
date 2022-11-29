@@ -12,6 +12,8 @@ class AntibioticsMdfr: ModifierBase
 		m_TickIntervalInactive 	= DEFAULT_TICK_TIME_INACTIVE;
 		m_TickIntervalActive 	= 3;
 		m_RegenTime = ANTIBIOTICS_LIFETIME;
+		
+		DisableActivateCheck();
 	}
 
 	override bool ActivateCondition(PlayerBase player)

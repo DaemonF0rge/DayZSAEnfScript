@@ -9,6 +9,11 @@ class Sword extends ToolBase
 		return true;
 	}
 	
+	override array<int> GetValidFinishers()
+	{
+		return {EMeleeHitType.FINISHER_LIVERSTAB,EMeleeHitType.FINISHER_NECKSTAB};
+	}
+	
 	override void SetActions()
 	{
 		super.SetActions();

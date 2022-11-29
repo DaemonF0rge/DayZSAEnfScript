@@ -1,5 +1,10 @@
 class Land_Radio_PanelBig extends StaticTransmitter
 {
+	override bool DisableVicinityIcon()
+	{
+		return true;
+	}
+	
 	// --- SYSTEM EVENTS
 	override void OnStoreSave( ParamsWriteContext ctx )
 	{   

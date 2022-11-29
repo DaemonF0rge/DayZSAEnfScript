@@ -23,17 +23,13 @@ class ActionActivateTrap: ActionContinuousBase
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_CROUCH;
 		m_Sound = "craft_universal_0";
 		m_SpecialtyWeight = UASoftSkillsWeight.PRECISE_LOW;
+		m_Text = "#activate";
 	}
 	
 	override void CreateConditionComponents()  
 	{	
 		m_ConditionTarget = new CCTNonRuined( UAMaxDistances.DEFAULT );
 		m_ConditionItem = new CCINotPresent;
-	}
-
-	override string GetText()
-	{
-		return "#activate";
 	}
 	
 	override typename GetInputType()
@@ -49,18 +45,29 @@ class ActionActivateTrap: ActionContinuousBase
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
 	{
 		ItemBase tgt_item = ItemBase.Cast( target.GetObject() );
-		if ( tgt_item && tgt_item.IsBeingPlaced() ) return false;
+		if ( tgt_item && tgt_item.IsBeingPlaced() ) 
+			return false;
 		
 		Object targetObject = target.GetObject();
-		if ( targetObject != NULL && targetObject.IsInherited(TrapBase) ) 
+		if ( targetObject != NULL ) 
 		{
-			TrapBase trap = TrapBase.Cast( targetObject );
-			
-			if ( trap.IsActivable() )
+			if ( targetObject.IsInherited( TrapBase ) )
 			{
-				return true;
+				TrapBase trap = TrapBase.Cast( targetObject );
+			
+				if ( trap.IsActivable() )
+				{
+					return true;
+				}
 			}
-		}
+			else if ( targetObject.IsInherited( TrapSpawnBase ) )
+			{
+				TrapSpawnBase spawnTrap = TrapSpawnBase.Cast( targetObject );
+			
+				if ( spawnTrap && !spawnTrap.IsActive() )
+					return spawnTrap.IsPlaceableAtPosition( spawnTrap.GetPosition() );
+			}
+		} 
 		
 		return false;
 	}
@@ -72,8 +79,11 @@ class ActionActivateTrap: ActionContinuousBase
 		if ( !GetGame().IsMultiplayer() || GetGame().IsServer() )
 		{
 			TrapBase trap = TrapBase.Cast( action_data.m_Target.GetObject() );
-			Param1<bool> play = new Param1<bool>( true );
-			GetGame().RPCSingleParam( trap, SoundTypeTrap.ACTIVATING, play, true );
+			if ( trap )
+			{
+				Param1<bool> play = new Param1<bool>( true );
+				GetGame().RPCSingleParam( trap, SoundTypeTrap.ACTIVATING, play, true );
+			}
 		}
 	}
 	
@@ -82,8 +92,11 @@ class ActionActivateTrap: ActionContinuousBase
 		if ( !GetGame().IsMultiplayer() || GetGame().IsServer() )
 		{
 			TrapBase trap = TrapBase.Cast( action_data.m_Target.GetObject());
-			Param1<bool> play = new Param1<bool>( false );
-			GetGame().RPCSingleParam( trap, SoundTypeTrap.ACTIVATING, play, true );
+			if ( trap )
+			{
+				Param1<bool> play = new Param1<bool>( false );
+				GetGame().RPCSingleParam( trap, SoundTypeTrap.ACTIVATING, play, true );
+			}
 		}
 	}
 	
@@ -102,10 +115,55 @@ class ActionActivateTrap: ActionContinuousBase
 	override void OnFinishProgressServer( ActionData action_data )
 	{
 		Object targetObject = action_data.m_Target.GetObject();
-		if ( targetObject != NULL && targetObject.IsInherited(TrapBase) ) 
+		if ( targetObject != NULL )
 		{
-			TrapBase trap = TrapBase.Cast( targetObject );
-			trap.StartActivate( action_data.m_Player );
+			if ( targetObject.IsInherited( TrapBase ) ) 
+			{
+				TrapBase trap = TrapBase.Cast( targetObject );
+				
+				trap.StartActivate( action_data.m_Player );
+				
+				return;
+			}
+			else if ( targetObject.IsInherited( TrapSpawnBase ) ) 
+			{
+				TrapSpawnBase spawnTrap = TrapSpawnBase.Cast( targetObject );
+				Trap_RabbitSnare snareTrap;
+				vector orientation = action_data.m_Player.GetOrientation();
+				vector position = action_data.m_Player.GetPosition();
+				position = position + ( action_data.m_Player.GetDirection() * 0.5 );
+				
+				// We want to make sure the snare trap is standing upwards
+				if ( CastTo( snareTrap, spawnTrap ) )
+				{
+					orientation = action_data.m_Player.GetLocalProjectionOrientation();
+					
+					vector rotation_matrix[3];
+					float direction[4];
+					InventoryLocation source = new InventoryLocation;
+					InventoryLocation destination = new InventoryLocation;
+					
+					Math3D.YawPitchRollMatrix( orientation, rotation_matrix );
+					Math3D.MatrixToQuat( rotation_matrix, direction );
+					
+					if ( spawnTrap.GetInventory().GetCurrentInventoryLocation( source ) )
+					{
+						destination.SetGroundEx( spawnTrap, position, direction );
+						
+						if ( GetGame().IsMultiplayer() )
+						{
+							action_data.m_Player.ServerTakeToDst(source, destination);
+						}		
+					}
+				}
+				
+				//Debug.Log("Trap pos : " + spawnTrap.GetPosition() );
+				//Debug.Log("Player pos : " + action_data.m_Player.GetPosition() );
+				
+				spawnTrap.OnPlacementComplete( action_data.m_Player, position, orientation );
+				
+				return;
+			}
 		}
 	}
 };

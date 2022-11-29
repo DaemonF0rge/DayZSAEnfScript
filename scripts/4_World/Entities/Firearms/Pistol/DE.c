@@ -8,13 +8,11 @@ class Deagle_Base : Pistol_Base
 	//Debug menu Spawn Ground Special
 	override void OnDebugSpawn()
 	{
-		EntityAI entity;
-		if ( Class.CastTo(entity, this) )
-		{
-			entity.GetInventory().CreateInInventory( "PistolSuppressor" );
-			entity.GetInventory().CreateInInventory( "PistolOptic" );
-			entity.SpawnEntityOnGroundPos("Mag_Deagle_9rnd", entity.GetPosition());
-		}
+		GameInventory inventory = GetInventory();
+		inventory.CreateInInventory( "PistolSuppressor" );
+		inventory.CreateInInventory( "PistolOptic" );
+		
+		SpawnAttachedMagazine("Mag_Deagle_9rnd");
 	}
 	
 };

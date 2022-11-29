@@ -5,4 +5,9 @@ class PeachesCan : Edible_Base
 		//super.Open();
 		ReplaceEdibleWithNew("PeachesCan_Opened");
 	}
+	
+	override bool IsOpen()
+	{
+		return false;
+	}
 }

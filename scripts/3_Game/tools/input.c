@@ -52,6 +52,7 @@ class Input
 		
 	/**  
 	\brief Returns true just in frame, when action was invoked (button was pressed)
+	\note if the input is limited (click, hold, doubleclick), 'Press' event is limited as well, and reacts to the limiter only! Otherwise it registeres the first event, usually 'press' (change of value from 0)
 	@param action id of action, defined in \ref 4_World/Classes/UserActionsComponent/_constants.c
 	@param check_focus if true and game is unfocused, returns 0; otherwise returns actual value
 	@return true if action was invoked in that frame, false otherwise
@@ -121,7 +122,7 @@ class Input
 	proto native int	SetProfile(int index);
 
 
-	// devices
+	// devices - joystick only!
 	proto native int		GetDevicesCount();
 	proto int				GetDeviceName(int device_index, out string name);
 	proto native int		IsDeviceXInput(int device_index);
@@ -163,7 +164,7 @@ class Input
 		#ifdef PLATFORM_PS4
 		BiosUser user;
 		GetGamepadUser( gamepad, user );
-		if( user && user == GetGame().GetUserManager().GetSelectedUser() )
+		if (user && user == GetGame().GetUserManager().GetSelectedUser())
 		{
 			SelectActiveGamepad(gamepad);
 			g_Game.DeleteGamepadDisconnectMenu();
@@ -171,7 +172,7 @@ class Input
 		#endif
 		
 		#ifdef PLATFORM_XBOX
-		if( IsEnabledMouseAndKeyboardEvenOnServer() && gamepad == g_Game.GetPreviousGamepad() )
+		if (gamepad == g_Game.GetPreviousGamepad())
 		{
 			SelectActiveGamepad(g_Game.GetPreviousGamepad());
 		}
@@ -181,31 +182,19 @@ class Input
 	//! callback that is fired when gamepad is disconnected
 	void OnGamepadDisconnected(int gamepad)
 	{
-		if( IsInactiveGamepadOrUserSelected(gamepad) )
+		if (IsInactiveGamepadOrUserSelected(gamepad))
 		{
 			#ifdef PLATFORM_PS4
 			ResetActiveGamepad();
 			#endif
 			
-			if( !g_Game.IsLoading() )
+			if (!g_Game.IsLoading())
 			{
 				DayZLoadState state = g_Game.GetLoadState();
-				if( state != DayZLoadState.MAIN_MENU_START && state != DayZLoadState.MAIN_MENU_USER_SELECT )
+				if (state != DayZLoadState.MAIN_MENU_START && state != DayZLoadState.MAIN_MENU_USER_SELECT)
 				{
-					//#ifdef PLATFORM_XBOX
-					//if ( !IsEnabledMouseAndKeyboard() || GetCurrentInputDevice() != EInputDeviceType.MOUSE_AND_KEYBOARD )
-					//{
-					//	g_Game.CreateGamepadDisconnectMenu();	
-					//}
-					//#else
 					g_Game.CreateGamepadDisconnectMenu();
-					//#endif
 				}
-				
-				#ifdef PLATFORM_XBOX
-				if( !IsEnabledMouseAndKeyboardEvenOnServer() )
-					IdentifyGamepad( GetEnterButton() );
-				#endif
 			}
 		}
 	}
@@ -258,12 +247,10 @@ class Input
 	
 	void OnLastInputDeviceChanged(EInputDeviceType inputDevice)
 	{
-		//#ifdef PLATFORM_XBOX
-		//if ( !IsActiveGamepadSelected() && inputDevice == EInputDeviceType.CONTROLLER )
-		//{
-		//	g_Game.CreateGamepadDisconnectMenu();
-		//}
-		//#endif
+		if (GetGame().GetMission())
+		{
+			GetGame().GetMission().GetOnInputDeviceChanged().Invoke(inputDevice);
+		}
 	}
 };
 

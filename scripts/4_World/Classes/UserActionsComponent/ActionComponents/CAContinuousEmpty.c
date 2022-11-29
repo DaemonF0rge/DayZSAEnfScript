@@ -51,7 +51,7 @@ class CAContinuousEmpty : CAContinuousBase
 			return UA_ERROR;
 		}
 		
-		if ( action_data.m_MainItem.GetWet() >= action_data.m_MainItem.GetWetMax() )
+		if ( m_WringingClothes && action_data.m_MainItem.GetWet() >= action_data.m_MainItem.GetWetMax() )
 		{
 			//Print("SetEND_2");
 			return UA_FINISHED;

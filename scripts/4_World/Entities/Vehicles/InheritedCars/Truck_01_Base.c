@@ -1,18 +1,79 @@
 class Truck_01_Base extends CarScript
 {
+	protected ref UniversalTemperatureSource m_UTSource;
+	protected ref UniversalTemperatureSourceSettings m_UTSSettings;
+	protected ref UniversalTemperatureSourceLambdaEngine m_UTSLEngine;
+
 	void Truck_01_Base()
 	{
-		m_dmgContactCoef = 0.018;
-		m_enginePtcPos = "0 1.346 2.205";
+		m_dmgContactCoef 		= 0.018;
+		m_enginePtcPos 			= "0 1.346 2.205";
 		
-		m_EngineStartOK = "Truck_01_engine_start_SoundSet";
-		m_EngineStartBattery = "Truck_01_engine_failed_start_battery_SoundSet";
-		m_EngineStartPlug = "Truck_01_engine_failed_start_sparkplugs_SoundSet";
-		m_EngineStartFuel = "Truck_01_engine_failed_start_fuel_SoundSet";
-		m_EngineStopFuel = "Truck_01_engine_stop_fuel_SoundSet";
+		m_EngineStartOK 		= "Truck_01_engine_start_SoundSet";
+		m_EngineStartBattery	= "Truck_01_engine_failed_start_battery_SoundSet";
+		m_EngineStartPlug 		= "Truck_01_engine_failed_start_sparkplugs_SoundSet";
+		m_EngineStartFuel 		= "Truck_01_engine_failed_start_fuel_SoundSet";
+		m_EngineStopFuel 		= "Truck_01_engine_stop_fuel_SoundSet";
 
-		m_CarDoorOpenSound = "Truck_01_door_open_SoundSet";
-		m_CarDoorCloseSound = "Truck_01_door_close_SoundSet";
+		m_CarDoorOpenSound 		= "Truck_01_door_open_SoundSet";
+		m_CarDoorCloseSound 	= "Truck_01_door_close_SoundSet";
+		
+		m_CarHornShortSoundName = "Truck_01_Horn_Short_SoundSet";
+		m_CarHornLongSoundName	= "Truck_01_Horn_SoundSet";
+		
+		SetEnginePos("0 1.4 2.25");
+	}
+
+	override void EEInit()
+	{		
+		super.EEInit();
+		
+		if (GetGame().IsServer() || !GetGame().IsMultiplayer())
+		{
+ 			m_UTSSettings 					= new UniversalTemperatureSourceSettings();
+			m_UTSSettings.m_ManualUpdate 	= true;
+			m_UTSSettings.m_TemperatureMin	= 0;
+			m_UTSSettings.m_TemperatureMax	= 30;
+			m_UTSSettings.m_RangeFull		= 0.5;
+			m_UTSSettings.m_RangeMax		= 2;
+			m_UTSSettings.m_TemperatureCap	= 25;
+			
+			m_UTSLEngine					= new UniversalTemperatureSourceLambdaEngine();
+			m_UTSource						= new UniversalTemperatureSource(this, m_UTSSettings, m_UTSLEngine);
+		}		
+	}
+	
+	override void OnEngineStart()
+	{
+		super.OnEngineStart();
+
+		if (GetGame().IsServer() || !GetGame().IsMultiplayer())
+		{
+			m_UTSource.SetDefferedActive(true, 20.0);
+		}
+	}
+	
+	override void OnEngineStop()
+	{
+		super.OnEngineStop();
+
+		if (GetGame().IsServer() || !GetGame().IsMultiplayer())
+		{
+			m_UTSource.SetDefferedActive(false, 10.0);
+		}
+	}
+	
+	override void EOnPostSimulate(IEntity other, float timeSlice)
+	{
+		super.EOnPostSimulate(other, timeSlice);
+		
+		if (GetGame().IsServer() || !GetGame().IsMultiplayer())
+		{
+			if (m_UTSource.IsActive())
+			{
+				m_UTSource.Update(m_UTSSettings, m_UTSLEngine);
+			}
+		}
 	}
 
 	override float GetTransportCameraDistance()
@@ -30,9 +91,9 @@ class Truck_01_Base extends CarScript
 		return VehicleAnimInstances.V3S;
 	}
 
-	override int GetSeatAnimationType( int posIdx )
+	override int GetSeatAnimationType(int posIdx)
 	{
-		switch( posIdx )
+		switch (posIdx)
 		{
 		case 0:
 			return DayZPlayerConstants.VEHICLESEAT_DRIVER;
@@ -46,30 +107,43 @@ class Truck_01_Base extends CarScript
 	// Override for car-specific light type
 	override CarLightBase CreateFrontLight()
 	{
-		return CarLightBase.Cast( ScriptedLightBase.CreateLight(Truck_01FrontLight) );
+		return CarLightBase.Cast(ScriptedLightBase.CreateLight(Truck_01FrontLight));
 	}
 	
 	// Override for car-specific light type
 	override CarRearLightBase CreateRearLight()
 	{
-		return CarRearLightBase.Cast( ScriptedLightBase.CreateLight(Truck_01RearLight) );
+		return CarRearLightBase.Cast(ScriptedLightBase.CreateLight(Truck_01RearLight));
 	}
 	
-	override bool CanReleaseAttachment( EntityAI attachment )
+	override bool CanReleaseAttachment(EntityAI attachment)
 	{
-		if ( !super.CanReleaseAttachment( attachment ) )
+		if (!super.CanReleaseAttachment(attachment))
+		{
 			return false;
+		}
 		
-		if ( EngineIsOn() && attachment.GetType() == "TruckBattery" )
+		if (EngineIsOn() && attachment.GetType() == "TruckBattery")
+		{
 			return false;
+		}
 
 		return true;
 	}
 	
-	override void EEHealthLevelChanged(int oldLevel, int newLevel, string zone)
+	override protected bool CanManipulateSpareWheel(string slotSelectionName)
 	{
-		super.EEHealthLevelChanged(oldLevel,newLevel,zone);
-		//Print( zone );
+		if (slotSelectionName == "wheel_spare_1")
+		{
+			return GetAnimationPhase("wheelSidePlate1") == 1.0);
+		}
+		
+		if (slotSelectionName == "wheel_spare_2")
+		{
+			return GetAnimationPhase("wheelSidePlate2") == 1.0);
+		}
+		
+		return super.CanManipulateSpareWheel(slotSelectionName);
 	}
 
 	override bool CrewCanGetThrough( int posIdx )
@@ -123,63 +197,76 @@ class Truck_01_Base extends CarScript
 		return super.GetDoorInvSlotNameFromSeatPos(posIdx);
 	}
 
-	override float OnSound( CarSoundCtrl ctrl, float oldValue )
+	override float OnSound(CarSoundCtrl ctrl, float oldValue)
 	{
-		switch ( ctrl )
+		switch (ctrl)
 		{
-			case CarSoundCtrl.DOORS:
-				float newValue = 0;
+		case CarSoundCtrl.DOORS:
+			float newValue = 0;
 
-				//-----
-				if ( GetCarDoorsState( "Truck_01_Door_1_1" ) == CarDoorState.DOORS_CLOSED )
-				{
-					newValue += 0.4;
-				}
+			//-----
+			if (GetCarDoorsState("Truck_01_Door_1_1") == CarDoorState.DOORS_CLOSED)
+			{
+				newValue += 0.4;
+			}
 
-				if ( GetCarDoorsState( "Truck_01_Door_2_1" ) == CarDoorState.DOORS_CLOSED )
-				{
-					newValue += 0.4;
-				}
+			if (GetCarDoorsState( "Truck_01_Door_2_1" ) == CarDoorState.DOORS_CLOSED)
+			{
+				newValue += 0.4;
+			}
 
-				if ( newValue > 1 )
-					newValue = 1;
-
-			return newValue;
-			break;
+			return Math.Clamp(newValue, 0, 1);
+		break;
 		}
 
-		return oldValue;
+		return super.OnSound(ctrl, oldValue);
+	}
+	
+	override void OnAnimationPhaseStarted(string animSource, float phase)
+	{
+		super.OnAnimationPhaseStarted(animSource, phase);
+
+		#ifndef SERVER
+		switch (animSource)
+		{
+		case "wheelsideplate1":
+		case "wheelsideplate2":
+			EffectSound sound;
+			if (phase == 0)
+			{
+				sound = SEffectManager.PlaySound("Truck_01_Gear_Open_Side_Plate_SoundSet", GetPosition(), 0.1, 0.1);
+			}
+			else
+			{
+				sound = SEffectManager.PlaySound("Truck_01_Gear_Close_Side_Plate_SoundSet", GetPosition(), 0.1, 0.1);
+			}
+			
+			if (sound)
+			{
+				sound.SetAutodestroy(true);
+			}
+		break;
+		}
+		#endif
 	}
 	
 	override int GetCarDoorsState( string slotType )
 	{
 		CarDoor carDoor;
-		Class.CastTo( carDoor, FindAttachmentBySlotName( slotType ) );
-		if ( !carDoor )
-			return CarDoorState.DOORS_MISSING;
-		
-		switch( slotType )
+		Class.CastTo(carDoor, FindAttachmentBySlotName(slotType));
+		if (!carDoor)
 		{
-			case "Truck_01_Door_1_1":
-				if ( GetAnimationPhase("DoorsDriver") > 0.5 )
-					return CarDoorState.DOORS_OPEN;
-				else
-					return CarDoorState.DOORS_CLOSED;
-			break;
-
-			case "Truck_01_Door_2_1":
-				if ( GetAnimationPhase("DoorsCoDriver") > 0.5 )
-					return CarDoorState.DOORS_OPEN;
-				else
-					return CarDoorState.DOORS_CLOSED;
-
-			break;
-
-			case "Truck_01_Hood":
-				if ( GetAnimationPhase("DoorsHood") > 0.5 )
-					return CarDoorState.DOORS_OPEN;
-				else
-					return CarDoorState.DOORS_CLOSED;
+			return CarDoorState.DOORS_MISSING;
+		}
+		
+		switch (slotType)
+		{
+		case "Truck_01_Door_1_1":
+			return TranslateAnimationPhaseToCarDoorState("DoorsDriver");
+		case "Truck_01_Door_2_1":
+			return TranslateAnimationPhaseToCarDoorState("DoorsCoDriver");
+		case "Truck_01_Hood":
+			return TranslateAnimationPhaseToCarDoorState("DoorsHood");
 		}
 		
 		return CarDoorState.DOORS_MISSING;
@@ -300,11 +387,11 @@ class Truck_01_Base extends CarScript
 	override void OnDebugSpawn()
 	{
 		EntityAI entity;
+		EntityAI ent;
+		ItemBase container;
 		
 		if ( Class.CastTo(entity, this) )
 		{
-			entity.GetInventory().CreateInInventory( "Truck_01_Wheel" );
-			entity.GetInventory().CreateInInventory( "Truck_01_Wheel" );
 			entity.GetInventory().CreateInInventory( "Truck_01_Wheel" );
 			entity.GetInventory().CreateInInventory( "Truck_01_Wheel" );
 			
@@ -321,7 +408,28 @@ class Truck_01_Base extends CarScript
 
 			entity.GetInventory().CreateInInventory( "HeadlightH7" );
 			entity.GetInventory().CreateInInventory( "HeadlightH7" );
-		};
+			
+			//-----IN CAR CARGO
+			entity.GetInventory().CreateInInventory( "Truck_01_Wheel" );
+			entity.GetInventory().CreateInInventory( "Truck_01_Wheel" );
+			entity.GetInventory().CreateInInventory( "TruckBattery" );
+			entity.GetInventory().CreateInInventory( "HeadlightH7" );
+			//--
+			ent = entity.GetInventory().CreateInInventory( "Blowtorch" );
+			entity = ent.GetInventory().CreateInInventory( "LargeGasCanister" );
+			//--
+			entity.GetInventory().CreateInInventory( "CanisterGasoline" );
+			ent = entity.GetInventory().CreateInInventory( "CanisterGasoline" );
+			if ( Class.CastTo(container, ent) )
+			{
+				container.SetLiquidType(LIQUID_WATER, true);
+			}
+			ent = entity.GetInventory().CreateInInventory( "Blowtorch" );
+			if ( ent )
+			{
+				entity = ent.GetInventory().CreateInInventory( "LargeGasCanister" );
+			}
+		}
 
 		Fill( CarFluid.FUEL, 120 );
 		Fill( CarFluid.OIL, 4.0 );

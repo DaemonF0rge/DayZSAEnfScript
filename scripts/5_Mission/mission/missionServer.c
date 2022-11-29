@@ -25,7 +25,7 @@ class MissionServer extends MissionBase
 	protected ref array<vector> m_FiringPos; 					// Where we should fire from. On Init set the relevant data
 	
 	//All Chernarus firing coordinates 
-	protected ref const array<vector> CHERNARUS_STRIKE_POS = 
+	protected const ref array<vector> CHERNARUS_STRIKE_POS = 
 	{
 		"-500.00 165.00 5231.69",
 		"-500.00 300.00 9934.41",
@@ -35,7 +35,7 @@ class MissionServer extends MissionBase
 	};
 	
 	//All livonia firing coordinates
-	protected ref const array<vector> LIVONIA_STRIKE_POS = 
+	protected const ref  array<vector> LIVONIA_STRIKE_POS = 
 	{ 
 		"7440.00 417.00 -500.00",
 		"-500.00 276.00 5473.00",
@@ -57,11 +57,7 @@ class MissionServer extends MissionBase
 	void MissionServer()
 	{
 		GetGame().GetCallQueue(CALL_CATEGORY_GAMEPLAY).CallLater(this.UpdatePlayersStats, 30000, true);
-	
-		int debugMonitorEnable = GetGame().ServerConfigGetInt("enableDebugMonitor");
-		m_RespawnMode = GetGame().ServerConfigGetInt("disableRespawnDialog");
-		GetGame().SetDebugMonitorEnabled(debugMonitorEnable);
-		
+
 		m_DeadPlayersArray = new array<ref CorpseData>;
 		UpdatePlayersStats();
 		m_Players = new array<Man>;
@@ -77,10 +73,20 @@ class MissionServer extends MissionBase
 	
 	override void OnInit()
 	{
+		//Print("OnInit()");
 		super.OnInit();
-		
+		CfgGameplayHandler.LoadData();
+		UndergroundAreaLoader.SpawnAllTriggerCarriers();
 		//Either pass consts in Init.c or insert all desired coords ( or do both ;) )
 		m_FiringPos = new array<vector>;
+	}
+	
+	override void OnMissionStart()
+	{
+		super.OnMissionStart();
+		
+		// We will load the Effect areas on Default mission start
+		EffectAreaLoader.CreateZones();
 	}
 	
 	override void OnUpdate(float timeslice)
@@ -91,7 +97,19 @@ class MissionServer extends MissionBase
 		m_WorldData.UpdateBaseEnvTemperature( timeslice );	// re-calculate base enviro temperature
 		
 		RandomArtillery( timeslice );
+		
+		super.OnUpdate( timeslice );
 	}
+	
+	override void OnGameplayDataHandlerLoad()
+	{
+		//Print("MissionServer - OnGameplayDataHandlerLoad()");
+		m_RespawnMode = CfgGameplayHandler.GetDisableRespawnDialog();
+		GetGame().SetDebugMonitorEnabled(GetGame().ServerConfigGetInt("enableDebugMonitor"));
+		
+		InitialiseWorldData();
+	}
+		
 	
 	void RandomArtillery( float deltaTime )
 	{
@@ -107,7 +125,7 @@ class MissionServer extends MissionBase
 				
 				// Variables to be used in this scope
 				int randPos; // Select random position
-				ref Param1<vector> pos; // The value to be sent through RPC
+				Param1<vector> pos; // The value to be sent through RPC
 				array<ref Param> params; // The RPC params
 				
 				if ( m_MaxSimultaneousStrikes == 1 )
@@ -172,7 +190,7 @@ class MissionServer extends MissionBase
 	{
 		PluginLifespan module_lifespan;
 		Class.CastTo(module_lifespan, GetPlugin( PluginLifespan ));
-		ref array<Man> players = new array<Man>;
+		array<Man> players = new array<Man>;
 		GetGame().GetPlayers( players );
 			
 		for ( int i = 0; i < players.Count(); i++ )
@@ -212,14 +230,17 @@ class MissionServer extends MissionBase
 				if (player)
 				{
 					identity = player.GetIdentity();
+					m_LogoutPlayers.Remove(player);
+				}
+				else
+				{
+					m_LogoutPlayers.RemoveElement(i);
 				}
 				
 				// disable reconnecting to old char
 				// GetGame().RemoveFromReconnectCache(info.param2);
 	
-				PlayerDisconnected(player, identity, info.param2);
-				
-				m_LogoutPlayers.Remove(player);
+				PlayerDisconnected(player, identity, info.param2);						
 			}
 			else
 			{
@@ -239,7 +260,8 @@ class MissionServer extends MissionBase
 		case ClientPrepareEventTypeID:
 			ClientPrepareEventParams clientPrepareParams;
 			Class.CastTo(clientPrepareParams, params);
-			
+			CfgGameplayHandler.SyncDataSendEx(clientPrepareParams.param1);
+			UndergroundAreaLoader.SyncDataSend(clientPrepareParams.param1);
 			OnClientPrepareEvent(clientPrepareParams.param1, clientPrepareParams.param2, clientPrepareParams.param3, clientPrepareParams.param4, clientPrepareParams.param5);
 			break;
 
@@ -255,8 +277,10 @@ class MissionServer extends MissionBase
 			identity = newParams.param1;
 			InvokeOnConnect(player,identity );
 			SyncEvents.SendPlayerList();
+			
 			ControlPersonalLight(player);
 			SyncGlobalLighting(player);
+			
 			break;
 			
 		case ClientReadyEventTypeID:
@@ -463,7 +487,7 @@ class MissionServer extends MissionBase
 	{
 		string characterType;
 		//m_RespawnMode = GetGame().ServerConfigGetInt("setRespawnMode"); //todo - init somewhere safe
-		SyncRespawnModeInfo(identity);
+		//SyncRespawnModeInfo(identity);
 		// get login data for new character
 		if ( ProcessLoginData(ctx) && (m_RespawnMode == GameConstants.RESPAWN_MODE_CUSTOM) && !GetGame().GetMenuDefaultCharacterData(false).IsRandomCharacterForced() )
 		{
@@ -524,6 +548,9 @@ class MissionServer extends MissionBase
 				if (!m_LogoutPlayers.Contains(player) && !m_NewLogoutPlayers.Contains(player))
 				{
 					Print("[Logout]: New player " + identity.GetId() + " with logout time " + logoutTime.ToString());
+					
+					// send statistics to client
+					player.StatSyncToClient();
 					
 					// inform client about logout time
 					GetGame().SendLogoutTime(player, logoutTime);
@@ -610,17 +637,20 @@ class MissionServer extends MissionBase
 	void TickScheduler(float timeslice)
 	{
 		GetGame().GetWorld().GetPlayerList(m_Players);
-		if( m_Players.Count() == 0 ) return;
-		for(int i = 0; i < SCHEDULER_PLAYERS_PER_TICK; i++)
+		int players_count = m_Players.Count();
+		int tick_count_max = Math.Min(players_count, SCHEDULER_PLAYERS_PER_TICK);
+		
+		for(int i = 0; i < tick_count_max; i++)
 		{
-			if(m_currentPlayer >= m_Players.Count() )
+			if(m_currentPlayer >= players_count )
 			{
 				m_currentPlayer = 0;
 			}
-			//PrintString(m_currentPlayer.ToString());
+			
 			PlayerBase currentPlayer = PlayerBase.Cast(m_Players.Get(m_currentPlayer));
 			
-			currentPlayer.OnTick();
+			if(currentPlayer)
+				currentPlayer.OnTick();
 			m_currentPlayer++;
 		}
 	}
@@ -628,12 +658,14 @@ class MissionServer extends MissionBase
 	//--------------------------------------------------
 	override bool InsertCorpse(Man player)
 	{
-		ref CorpseData corpse_data = new CorpseData(PlayerBase.Cast(player),GetGame().GetTime());
+		CorpseData corpse_data = new CorpseData(PlayerBase.Cast(player),GetGame().GetTime());
 		return m_DeadPlayersArray.Insert(corpse_data) >= 0;
 	}
 	
 	void UpdateCorpseStatesServer()
 	{
+		if (m_DeadPlayersArray.Count() == 0)//nothing to process, abort
+			return;
 		int current_time = GetGame().GetTime();
 		array<int> invalid_corpses = new array<int>;
 		CorpseData corpse_data;

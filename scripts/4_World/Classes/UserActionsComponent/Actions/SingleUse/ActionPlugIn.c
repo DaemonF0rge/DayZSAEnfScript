@@ -3,17 +3,13 @@ class ActionPlugIn: ActionSingleUseBase
 	void ActionPlugIn()
 	{
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONMOD_INTERACTONCE;
+		m_Text = "#plug_in";
 	}
 	
 	override void CreateConditionComponents()  
 	{	
 		m_ConditionItem = new CCINonRuined;
 		m_ConditionTarget = new CCTNonRuined(UAMaxDistances.DEFAULT);
-	}
-		
-	override string GetText()
-	{
-		return "#plug_in";
 	}
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

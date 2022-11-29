@@ -14,17 +14,13 @@ class ActionUncoverHeadTarget: ActionUncoverHeadBase
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONFB_INTERACT;
 		m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT | DayZPlayerConstants.STANCEMASK_CROUCH;
+		m_Text = "#uncover_players_head";
 	}
 	
 	override void CreateConditionComponents()  
 	{
 		m_ConditionItem = new CCINone;
 		m_ConditionTarget = new CCTMan(UAMaxDistances.DEFAULT,false);
-	}
-	
-	override string GetText()
-	{
-		return "#uncover_players_head";
 	}
 	
 	override typename GetInputType()

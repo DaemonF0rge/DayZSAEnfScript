@@ -379,7 +379,7 @@ class SoftSkillsManager
 // ----------------------------------------------------------------------------------------
 	void CreateDebugWindow( bool create )
 	{
-		if( create )
+		if ( create )
 		{
 			m_DebugWindow = new SoftSkillManagerDebug( this );
 			SetIsDebug( create );
@@ -395,9 +395,9 @@ class SoftSkillsManager
 	// ----------------------------------------------------------------------------------------
 	void SynchDebugStats()
 	{	
-		if( GetGame().IsServer() && GetGame().IsMultiplayer() )
+		if ( GetGame().IsServer() && GetGame().IsMultiplayer() )
 		{
-			ref Param5<float, float, float, float, bool> debug_stats;
+			Param5<float, float, float, float, bool> debug_stats;
 			
 			debug_stats = new Param5<float, float, float, float, bool>( m_GeneralBonusBefore, m_GeneralBonusAfter, m_LastUAValue, m_CoolDownValue, m_IsCoolDown );
 			GetGame().RPCSingleParam( m_Player, ERPCs.RPC_SOFT_SKILLS_STATS_SYNC, debug_stats, true, m_Player.GetIdentity() );

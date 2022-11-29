@@ -1,16 +1,14 @@
 class ActionZoomOut: ActionSingleUseBase
 {
-	void ActionZoomOut() {}
+	void ActionZoomOut()
+	{
+		m_Text = "#zoom_out";
+	}
 	
 	override void CreateConditionComponents()
 	{
 		m_ConditionItem = new CCINonRuined;
 		m_ConditionTarget = new CCTNone;
-	}
-
-	override string GetText()
-	{
-		return "#zoom_out";
 	}
 
 	override bool HasTarget()

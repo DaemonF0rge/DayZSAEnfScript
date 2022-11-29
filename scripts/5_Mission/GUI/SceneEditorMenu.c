@@ -799,12 +799,12 @@ class SceneEditorMenu extends UIScriptedMenu
 	
 	override void OnShow()
 	{
-		MissionGameplay.Cast( GetGame().GetMission() ).PlayerControlDisable(INPUT_EXCLUDE_ALL);
+		GetGame().GetMission().AddActiveInputExcludes({"menu"});
 	}
 	
 	override void OnHide()
 	{
-		MissionGameplay.Cast( GetGame().GetMission() ).PlayerControlEnable(true);
+		GetGame().GetMission().RemoveActiveInputExcludes({"menu"},true);
 	}
 
 	//============================================

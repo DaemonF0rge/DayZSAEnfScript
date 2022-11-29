@@ -2,17 +2,13 @@ class ActionNextCombinationLockDialOnTarget: ActionInteractBase
 {
 	void ActionNextCombinationLockDialOnTarget()
 	{
+		m_Text = "#next_combination_lock_dial";
 	}
 
 	override void CreateConditionComponents()  
 	{
 		m_ConditionItem = new CCINone;
 		m_ConditionTarget = new CCTNonRuined( UAMaxDistances.DEFAULT );
-	}
-
-	override string GetText()
-	{
-		return "#next_combination_lock_dial";
 	}
 
 	override bool IsInstant()

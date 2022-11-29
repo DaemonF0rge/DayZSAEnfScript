@@ -109,6 +109,9 @@ class RaycastRVResult
 
 class DayZPhysics
 {
+	private void DayZPhysics() {}
+	private void ~DayZPhysics() {}
+	
 	/**
 	\brief Raycasts world by given parameters
 	\param begPos \p vector 	Begin position of raycast (e.g. player position)

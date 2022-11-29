@@ -46,7 +46,7 @@ class DeCraftTruck01DoubleWheel extends RecipeBase
 		
 		//result1
 		AddResult("Truck_01_Wheel");//add results here
-
+		//m_ResultSpawnDistance[0] = 1.5;
 		m_ResultSetFullQuantity[0] = false;//true = set full quantity, false = do nothing
 		m_ResultSetQuantity[0] = -1;//-1 = do nothing
 		m_ResultSetHealth[0] = -1;//-1 = do nothing
@@ -58,7 +58,7 @@ class DeCraftTruck01DoubleWheel extends RecipeBase
 
 		//result2
 		AddResult("Truck_01_Wheel");//add results here
-
+		//m_ResultSpawnDistance[1] = 2.5;
 		m_ResultSetFullQuantity[1] = false;//true = set full quantity, false = do nothing
 		m_ResultSetQuantity[1] = -1;//-1 = do nothing
 		m_ResultSetHealth[1] = -1;//-1 = do nothing
@@ -83,6 +83,14 @@ class DeCraftTruck01DoubleWheel extends RecipeBase
 
 	override void Do(ItemBase ingredients[], PlayerBase player,array<ItemBase> results, float specialty_weight)//gets called upon recipe's completion
 	{
-		Debug.Log("Recipe Do method called","recipes");
+		ItemBase ingredient1 = ingredients[0];
+		
+		ItemBase result1 = results.Get(0);
+		
+		result1.SetPosition(ingredient1.GetPosition()- "0 0.16 0");
+		
+		ItemBase result2 = results.Get(1);
+		result2.SetPosition(ingredient1.GetPosition() + "0 0.12 0.1");
+		
 	}
 };

@@ -26,6 +26,8 @@ class GreenBellPepper : Edible_Base
 		
 		AddAction(ActionForceFeed);
 		AddAction(ActionEat);
+		AddAction(ActionCreateIndoorFireplace);
+		AddAction(ActionCreateIndoorOven);
 	}
 	
 	override void EEOnCECreate()

@@ -4,6 +4,8 @@ class ClosableHeader: Header
 	protected int			m_DefaultSort;
 	
 	protected Widget		m_MovePanel;
+	protected Widget		m_PanelWidget;
+	protected Widget		m_DragRender;
 	protected ButtonWidget	m_MoveUp;
 	protected ButtonWidget	m_MoveDown;
 	
@@ -12,11 +14,13 @@ class ClosableHeader: Header
 	void ClosableHeader( LayoutHolder parent, string function_name )
 	{
 		m_MovePanel	= GetMainWidget().FindAnyWidget( "MovePanel" );
+		m_PanelWidget	= GetMainWidget().FindAnyWidget( "PanelWidget" );
+		m_DragRender	= GetMainWidget().FindAnyWidget( "Drag_Render" );
 		m_MoveUp	= ButtonWidget.Cast( GetMainWidget().FindAnyWidget( "MoveUp" ) );
 		m_MoveDown	= ButtonWidget.Cast( GetMainWidget().FindAnyWidget( "MoveDown" ) );
 		
-		WidgetEventHandler.GetInstance().RegisterOnClick( m_MoveUp,  m_Parent, "EquipmentMoveUp" );
-		WidgetEventHandler.GetInstance().RegisterOnClick( m_MoveDown,  m_Parent, "EquipmentMoveDown" );
+		WidgetEventHandler.GetInstance().RegisterOnClick( m_MoveUp,  m_Parent, "MoveContainerUp" );
+		WidgetEventHandler.GetInstance().RegisterOnClick( m_MoveDown,  m_Parent, "MoveContainerDown" );
 		WidgetEventHandler.GetInstance().RegisterOnMouseLeave( m_MoveUp,  this, "MouseLeave" );
 		WidgetEventHandler.GetInstance().RegisterOnMouseLeave( m_MoveDown,  this, "MouseLeave" );
 		
@@ -29,7 +33,7 @@ class ClosableHeader: Header
 		float temp;
 		GetMainWidget().GetScreenSize( temp, m_SquareSize );
 		
-		m_DefaultColor			= GetMainWidget().FindAnyWidget( "PanelWidget" ).GetColor();
+		m_DefaultColor			= m_PanelWidget.GetColor();
 		m_DefaultFontSize		= 20;
 		
 		if( GetParent() && GetParent().GetParent() && GetParent().GetParent().GetParent() )
@@ -56,7 +60,7 @@ class ClosableHeader: Header
 		
 		float x, y;
 		m_HeaderText.GetScreenSize( x, y );
-		GetMainWidget().FindAnyWidget( "PanelWidget" ).SetSize( 1, y + InventoryMenu.GetHeightMultiplied( 10 ) );
+		m_PanelWidget.SetSize( 1, y + InventoryMenu.GetHeightMultiplied( 10 ) );
 	}
 	
 	void OnDragHeader( Widget w, int x, int y )
@@ -64,7 +68,7 @@ class ClosableHeader: Header
 		ClosableContainer parent = ClosableContainer.Cast( m_Parent );
 		if( parent && GetMainWidget() && m_Entity )
 		{
-			ItemPreviewWidget item_preview_drag = ItemPreviewWidget.Cast( GetMainWidget().FindAnyWidget( "Drag_Render" ) );
+			ItemPreviewWidget item_preview_drag = ItemPreviewWidget.Cast( m_DragRender );
 			item_preview_drag.SetFlags(WidgetFlags.EXACTPOS );
 			m_DefaultSort = GetRootWidget().GetSort();
 			item_preview_drag.GetParent().GetParent().GetParent().GetParent().GetParent().GetParent().GetParent().GetParent().AddChild( GetRootWidget() );
@@ -78,7 +82,7 @@ class ClosableHeader: Header
 			
 			parent.HideContent( true );
 			
-			GetMainWidget().FindAnyWidget( "PanelWidget" ).Show( false );
+			m_PanelWidget.Show( false );
 			if( item_preview_drag )
 				item_preview_drag.Show( true );
 			
@@ -101,7 +105,7 @@ class ClosableHeader: Header
 	
 	void UpdateFlip( bool flipped )
 	{
-		ItemPreviewWidget item_preview_drag = ItemPreviewWidget.Cast( GetMainWidget().FindAnyWidget( "Drag_Render" ) );
+		ItemPreviewWidget item_preview_drag = ItemPreviewWidget.Cast( m_DragRender );
 		if( InventoryItem.Cast( m_Entity ) && item_preview_drag )
 		{
 			int ww, hh;
@@ -124,8 +128,16 @@ class ClosableHeader: Header
 		GetRootWidget().SetSort( 0 );
 		if( parent )
 		{
-			GetMainWidget().FindAnyWidget( "PanelWidget" ).Show( true );
-			GetMainWidget().FindAnyWidget( "Drag_Render" ).Show( false );
+			//
+			ItemPreviewWidget item_preview_drag = ItemPreviewWidget.Cast( m_DragRender );
+			if( item_preview_drag )
+			{
+				item_preview_drag.SetItem( null );//TODO: is this safe?
+			}
+			//
+			
+			m_PanelWidget.Show( true );
+			m_DragRender.Show( false );
 			
 			parent.ShowContent( true );
 			
@@ -146,7 +158,7 @@ class ClosableHeader: Header
 			m_MovePanel.Show( true );
 			#endif
 		}
-		ItemManager.GetInstance().PrepareTooltip( m_Entity, x, y );
+		PrepareOwnedTooltip( m_Entity, x, y );
 		return true;
 	}
 
@@ -159,19 +171,20 @@ class ClosableHeader: Header
 				m_MovePanel.Show( false );
 			}
 		}
-		ItemManager.GetInstance().HideTooltip();
+		HideOwnedTooltip();
 		return true;
 	}
 	
 	override void SetActive( bool active )
 	{
+		super.SetActive( active );
 		if( active )
 		{
-			GetMainWidget().FindAnyWidget( "PanelWidget" ).SetColor( ARGBF( 1, 1, 0, 0 ) );
+			m_PanelWidget.SetColor( ARGBF( 1, 1, 0, 0 ) );
 		}
 		else
 		{
-			GetMainWidget().FindAnyWidget( "PanelWidget" ).SetColor( m_DefaultColor );
+			m_PanelWidget.SetColor( m_DefaultColor );
 		}
 	}
 }

@@ -1,6 +1,7 @@
 class VomitSymptom extends SymptomBase
 {
 	//just for the Symptom parameters set-up and gets called even if the Symptom doesn't execute, don't put any gameplay code in here
+	const int BLOOD_LOSS = 250;
 	override void OnInit()
 	{
 		m_SymptomType = SymptomTypes.PRIMARY;
@@ -23,11 +24,25 @@ class VomitSymptom extends SymptomBase
 
 	}
 	
+	bool IsContaminationActive()
+	{
+		return m_Player.GetModifiersManager().IsModifierActive(eModifiers.MDF_CONTAMINATION2) || m_Player.GetModifiersManager().IsModifierActive(eModifiers.MDF_CONTAMINATION3);
+	}
+	
 	override void OnAnimationStart()
 	{
-		m_Player.GetStatToxicity().Set(0);
-		if(m_Player.m_PlayerStomach)
-			m_Player.m_PlayerStomach.ClearContents();
+		if(m_Player)
+		{
+			m_Player.GetStatToxicity().Set(0);
+			if(m_Player.m_PlayerStomach)
+				m_Player.m_PlayerStomach.ClearContents();
+			
+			if (IsContaminationActive())
+			{
+				m_Player.AddHealth("","Blood", -BLOOD_LOSS);
+			}
+			
+		}
 		//Print("------------ vomit start -------------");
 	}
 	
@@ -35,6 +50,12 @@ class VomitSymptom extends SymptomBase
 	{
 		//! deplete stamina
 		m_Player.GetStaminaHandler().DepleteStamina(EStaminaModifiers.OVERALL_DRAIN);
+		
+		if (IsContaminationActive())
+		{
+			PluginLifespan module_lifespan = PluginLifespan.Cast( GetPlugin( PluginLifespan ) );
+			module_lifespan.UpdateBloodyHandsVisibilityEx( m_Player, eBloodyHandsTypes.JUST_BLOOD );
+		}
 	}
 	
 	override bool CanActivate()
@@ -47,18 +68,18 @@ class VomitSymptom extends SymptomBase
 	{
 		PlayAnimationFB(DayZPlayerConstants.CMD_ACTIONFB_VOMIT,DayZPlayerConstants.STANCEMASK_CROUCH, GetDuration() );
 		//timer.Run(10, this, "Destroy");
-		if (LogManager.IsSymptomLogEnable()) Debug.SymptomLog("n/a", this.ToString(), "n/a", "OnGetActivated", m_Player.ToString());
+		//if (LogManager.IsSymptomLogEnable()) Debug.SymptomLog("n/a", this.ToString(), "n/a", "OnGetActivated", m_Player.ToString());
 	}
 
 	//!only gets called once on an active Symptom that is being deactivated
 	override void OnGetDeactivatedServer(PlayerBase player)
 	{
-		if (LogManager.IsSymptomLogEnable()) Debug.SymptomLog("n/a", this.ToString(), "n/a", "OnGetDeactivated", m_Player.ToString());
+		//if (LogManager.IsSymptomLogEnable()) Debug.SymptomLog("n/a", this.ToString(), "n/a", "OnGetDeactivated", m_Player.ToString());
 	}
 
 	override void OnGetDeactivatedClient(PlayerBase player)
 	{
-		if (LogManager.IsSymptomLogEnable()) Debug.SymptomLog("n/a", this.ToString(), "n/a", "OnGetDeactivated", m_Player.ToString());	
+		//if (LogManager.IsSymptomLogEnable()) Debug.SymptomLog("n/a", this.ToString(), "n/a", "OnGetDeactivated", m_Player.ToString());	
 	}
 	
 	override SmptAnimMetaBase SpawnAnimMetaObject()

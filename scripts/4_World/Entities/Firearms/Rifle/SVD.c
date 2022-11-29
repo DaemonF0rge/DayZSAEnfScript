@@ -16,13 +16,12 @@ class SVD_Base : RifleBoltLock_Base
 	//Debug menu Spawn Ground Special
 	override void OnDebugSpawn()
 	{
-		EntityAI entity;
-		if ( Class.CastTo(entity, this) )
-		{
-			entity.GetInventory().CreateInInventory( "PSO1Optic" );	
-			entity.GetInventory().CreateInInventory( "AK_Suppressor" );	
-			entity.GetInventory().CreateInInventory( "Battery9V" );	
-			entity.SpawnEntityOnGroundPos("Mag_SVD_10Rnd", entity.GetPosition());
-		}
+		GameInventory inventory = GetInventory();
+
+		inventory.CreateInInventory( "PSO1Optic" );
+		inventory.CreateInInventory( "AK_Suppressor" );
+		inventory.CreateInInventory( "Battery9V" );
+		
+		SpawnAttachedMagazine("Mag_SVD_10Rnd");
 	}
 };

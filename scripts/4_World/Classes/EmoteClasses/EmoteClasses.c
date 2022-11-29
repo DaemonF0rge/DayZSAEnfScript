@@ -4,6 +4,7 @@ class EmoteGreeting extends EmoteBase
 	void EmoteGreeting()
 	{
 		m_ID = EmoteConstants.ID_EMOTE_GREETING;
+		m_InputActionName = "EmoteGreeting";
 		m_StanceMaskAdditive = DayZPlayerConstants.STANCEMASK_CROUCH | DayZPlayerConstants.STANCEMASK_ERECT;
 		m_StanceMaskFullbody = DayZPlayerConstants.STANCEMASK_PRONE;
 		m_AdditiveCallbackUID = DayZPlayerConstants.CMD_GESTUREMOD_GREETING;
@@ -17,6 +18,7 @@ class EmoteSOS extends EmoteBase
 	void EmoteSOS()
 	{
 		m_ID = EmoteConstants.ID_EMOTE_SOS;
+		m_InputActionName = "EmoteSOS";
 		m_StanceMaskAdditive = 0;
 		m_StanceMaskFullbody = DayZPlayerConstants.STANCEMASK_ERECT;
 		m_AdditiveCallbackUID = 0;
@@ -30,6 +32,7 @@ class EmoteHeart extends EmoteBase
 	void EmoteHeart()
 	{
 		m_ID = EmoteConstants.ID_EMOTE_HEART;
+		m_InputActionName = "EmoteHeart";
 		m_StanceMaskAdditive = DayZPlayerConstants.STANCEMASK_CROUCH | DayZPlayerConstants.STANCEMASK_ERECT;
 		m_StanceMaskFullbody = DayZPlayerConstants.STANCEMASK_PRONE;
 		m_AdditiveCallbackUID = DayZPlayerConstants.CMD_GESTUREMOD_HEART;
@@ -43,6 +46,7 @@ class EmoteTaunt extends EmoteBase
 	void EmoteTaunt()
 	{
 		m_ID = EmoteConstants.ID_EMOTE_TAUNT;
+		m_InputActionName = "EmoteTaunt";
 		m_StanceMaskAdditive = DayZPlayerConstants.STANCEMASK_CROUCH | DayZPlayerConstants.STANCEMASK_ERECT;
 		m_StanceMaskFullbody = DayZPlayerConstants.STANCEMASK_PRONE;
 		m_AdditiveCallbackUID = DayZPlayerConstants.CMD_GESTUREMOD_TAUNT;
@@ -57,6 +61,7 @@ class EmoteLyingDown extends EmoteBase
 	void EmoteLyingDown()
 	{
 		m_ID = EmoteConstants.ID_EMOTE_LYINGDOWN;
+		m_InputActionName = "EmoteLyingDown";
 		m_StanceMaskAdditive = 0;
 		m_StanceMaskFullbody = DayZPlayerConstants.STANCEMASK_CROUCH;
 		m_AdditiveCallbackUID = 0;
@@ -78,6 +83,7 @@ class EmoteTauntKiss extends EmoteBase
 	void EmoteTauntKiss()
 	{
 		m_ID = EmoteConstants.ID_EMOTE_TAUNTKISS;
+		m_InputActionName = "EmoteTauntKiss";
 		m_StanceMaskAdditive = DayZPlayerConstants.STANCEMASK_CROUCH | DayZPlayerConstants.STANCEMASK_ERECT;
 		m_StanceMaskFullbody = DayZPlayerConstants.STANCEMASK_PRONE;
 		m_AdditiveCallbackUID = DayZPlayerConstants.CMD_GESTUREMOD_TAUNTKISS;
@@ -91,6 +97,7 @@ class EmotePoint extends EmoteBase
 	void EmotePoint()
 	{
 		m_ID = EmoteConstants.ID_EMOTE_POINT;
+		m_InputActionName = "EmotePoint";
 		m_StanceMaskAdditive = DayZPlayerConstants.STANCEMASK_CROUCH | DayZPlayerConstants.STANCEMASK_ERECT;
 		m_StanceMaskFullbody = DayZPlayerConstants.STANCEMASK_PRONE;
 		m_AdditiveCallbackUID = DayZPlayerConstants.CMD_GESTUREMOD_POINT;
@@ -104,6 +111,7 @@ class EmoteTauntElbow extends EmoteBase
 	void EmoteTauntElbow()
 	{
 		m_ID = EmoteConstants.ID_EMOTE_TAUNTELBOW;
+		m_InputActionName = "EmoteTauntElbow";
 		m_StanceMaskAdditive = DayZPlayerConstants.STANCEMASK_CROUCH | DayZPlayerConstants.STANCEMASK_ERECT;
 		m_StanceMaskFullbody = 0;
 		m_AdditiveCallbackUID = DayZPlayerConstants.CMD_GESTUREMOD_TAUNTELBOW;
@@ -117,6 +125,7 @@ class EmoteThumb extends EmoteBase
 	void EmoteThumb()
 	{
 		m_ID = EmoteConstants.ID_EMOTE_THUMB;
+		m_InputActionName = "EmoteThumb";
 		m_StanceMaskAdditive = DayZPlayerConstants.STANCEMASK_CROUCH | DayZPlayerConstants.STANCEMASK_ERECT;
 		m_StanceMaskFullbody = DayZPlayerConstants.STANCEMASK_PRONE;
 		m_AdditiveCallbackUID = DayZPlayerConstants.CMD_GESTUREMOD_THUMB;
@@ -130,6 +139,7 @@ class EmoteThumbDown extends EmoteBase
 	void EmoteThumbDown()
 	{
 		m_ID = EmoteConstants.ID_EMOTE_THUMBDOWN;
+		m_InputActionName = "EmoteThumbDown";
 		m_StanceMaskAdditive = DayZPlayerConstants.STANCEMASK_CROUCH | DayZPlayerConstants.STANCEMASK_ERECT;
 		m_StanceMaskFullbody = DayZPlayerConstants.STANCEMASK_PRONE;
 		m_AdditiveCallbackUID = DayZPlayerConstants.CMD_GESTUREMOD_THUMBDOWN;
@@ -143,6 +153,7 @@ class EmoteThroat extends EmoteBase
 	void EmoteThroat()
 	{
 		m_ID = EmoteConstants.ID_EMOTE_THROAT;
+		m_InputActionName = "EmoteThroat";
 		m_StanceMaskAdditive = DayZPlayerConstants.STANCEMASK_CROUCH | DayZPlayerConstants.STANCEMASK_ERECT;
 		m_StanceMaskFullbody = DayZPlayerConstants.STANCEMASK_PRONE;
 		m_AdditiveCallbackUID = DayZPlayerConstants.CMD_GESTUREMOD_THROAT;
@@ -156,6 +167,7 @@ class EmoteDance extends EmoteBase
 	void EmoteDance()
 	{
 		m_ID = EmoteConstants.ID_EMOTE_DANCE;
+		m_InputActionName = "EmoteDance";
 		m_StanceMaskAdditive = 0;
 		m_StanceMaskFullbody = DayZPlayerConstants.STANCEMASK_ERECT;
 		m_AdditiveCallbackUID = 0;
@@ -165,7 +177,7 @@ class EmoteDance extends EmoteBase
 	
 	override bool EmoteCondition(int stancemask)
 	{
-		if (m_Player.m_BrokenLegState == eBrokenLegs.BROKEN_LEGS)
+		if (m_Player.GetBrokenLegs() == eBrokenLegs.BROKEN_LEGS)
 			return false;
 		
 		return true;
@@ -177,6 +189,7 @@ class EmoteSalute extends EmoteBase
 	void EmoteSalute()
 	{
 		m_ID = EmoteConstants.ID_EMOTE_SALUTE;
+		m_InputActionName = "EmoteSalute";
 		m_StanceMaskAdditive = 0;
 		m_StanceMaskFullbody = DayZPlayerConstants.STANCEMASK_ERECT;
 		m_AdditiveCallbackUID = 0;
@@ -190,6 +203,7 @@ class EmoteTimeout extends EmoteBase
 	void EmoteTimeout()
 	{
 		m_ID = EmoteConstants.ID_EMOTE_TIMEOUT;
+		m_InputActionName = "EmoteTimeout";
 		m_StanceMaskAdditive = DayZPlayerConstants.STANCEMASK_CROUCH | DayZPlayerConstants.STANCEMASK_ERECT;
 		m_StanceMaskFullbody = DayZPlayerConstants.STANCEMASK_PRONE;
 		m_AdditiveCallbackUID = DayZPlayerConstants.CMD_GESTUREMOD_TIMEOUT;
@@ -203,6 +217,7 @@ class EmoteDabbing extends EmoteBase
 	void EmoteDabbing()
 	{
 		m_ID = EmoteConstants.ID_EMOTE_DABBING;
+		//m_InputActionName = "EmoteDabbing";
 		m_StanceMaskAdditive = DayZPlayerConstants.STANCEMASK_CROUCH | DayZPlayerConstants.STANCEMASK_ERECT;
 		m_StanceMaskFullbody = 0;
 		m_AdditiveCallbackUID = DayZPlayerConstants.CMD_GESTUREMOD_DABBING;
@@ -216,6 +231,7 @@ class EmoteFacepalm extends EmoteBase
 	void EmoteFacepalm()
 	{
 		m_ID = EmoteConstants.ID_EMOTE_FACEPALM;
+		m_InputActionName = "EmoteFacepalm";
 		m_StanceMaskAdditive = DayZPlayerConstants.STANCEMASK_CROUCH | DayZPlayerConstants.STANCEMASK_ERECT;
 		m_StanceMaskFullbody = 0;
 		m_AdditiveCallbackUID = DayZPlayerConstants.CMD_GESTUREMOD_FACEPALM;
@@ -229,6 +245,7 @@ class EmoteClap extends EmoteBase
 	void EmoteClap()
 	{
 		m_ID = EmoteConstants.ID_EMOTE_CLAP;
+		m_InputActionName = "EmoteClap";
 		m_StanceMaskAdditive = DayZPlayerConstants.STANCEMASK_CROUCH | DayZPlayerConstants.STANCEMASK_ERECT;
 		m_StanceMaskFullbody = 0;
 		m_AdditiveCallbackUID = DayZPlayerConstants.CMD_GESTUREMOD_CLAP;
@@ -242,6 +259,7 @@ class EmoteSilent extends EmoteBase
 	void EmoteSilent()
 	{
 		m_ID = EmoteConstants.ID_EMOTE_SILENT;
+		m_InputActionName = "EmoteSilent";
 		m_StanceMaskAdditive = DayZPlayerConstants.STANCEMASK_CROUCH | DayZPlayerConstants.STANCEMASK_ERECT;
 		m_StanceMaskFullbody = DayZPlayerConstants.STANCEMASK_PRONE;
 		m_AdditiveCallbackUID = DayZPlayerConstants.CMD_GESTUREMOD_SILENCE;
@@ -255,6 +273,7 @@ class EmoteWatching extends EmoteBase
 	void EmoteWatching()
 	{
 		m_ID = EmoteConstants.ID_EMOTE_WATCHING;
+		m_InputActionName = "EmoteWatching";
 		m_StanceMaskAdditive = DayZPlayerConstants.STANCEMASK_CROUCH | DayZPlayerConstants.STANCEMASK_ERECT;
 		m_StanceMaskFullbody = DayZPlayerConstants.STANCEMASK_PRONE;
 		m_AdditiveCallbackUID = DayZPlayerConstants.CMD_GESTUREMOD_WATCHING;
@@ -268,6 +287,7 @@ class EmoteHold extends EmoteBase
 	void EmoteHold()
 	{
 		m_ID = EmoteConstants.ID_EMOTE_HOLD;
+		m_InputActionName = "EmoteHold";
 		m_StanceMaskAdditive = DayZPlayerConstants.STANCEMASK_CROUCH | DayZPlayerConstants.STANCEMASK_ERECT;
 		m_StanceMaskFullbody = DayZPlayerConstants.STANCEMASK_PRONE;
 		m_AdditiveCallbackUID = DayZPlayerConstants.CMD_GESTUREMOD_HOLD;
@@ -281,6 +301,7 @@ class EmoteListening extends EmoteBase
 	void EmoteListening()
 	{
 		m_ID = EmoteConstants.ID_EMOTE_LISTENING;
+		m_InputActionName = "EmoteListening";
 		m_StanceMaskAdditive = DayZPlayerConstants.STANCEMASK_CROUCH | DayZPlayerConstants.STANCEMASK_ERECT;
 		m_StanceMaskFullbody = DayZPlayerConstants.STANCEMASK_PRONE;
 		m_AdditiveCallbackUID = DayZPlayerConstants.CMD_GESTUREMOD_LISTENING;
@@ -294,6 +315,7 @@ class EmotePointSelf extends EmoteBase
 	void EmotePointSelf()
 	{
 		m_ID = EmoteConstants.ID_EMOTE_POINTSELF;
+		m_InputActionName = "EmotePointSelf";
 		m_StanceMaskAdditive = DayZPlayerConstants.STANCEMASK_CROUCH | DayZPlayerConstants.STANCEMASK_ERECT;
 		m_StanceMaskFullbody = DayZPlayerConstants.STANCEMASK_PRONE;
 		m_AdditiveCallbackUID = DayZPlayerConstants.CMD_GESTUREMOD_POINTSELF;
@@ -307,6 +329,7 @@ class EmoteLookAtMe extends EmoteBase
 	void EmoteLookAtMe()
 	{
 		m_ID = EmoteConstants.ID_EMOTE_LOOKATME;
+		m_InputActionName = "EmoteLookAtMe";
 		m_StanceMaskAdditive = DayZPlayerConstants.STANCEMASK_CROUCH | DayZPlayerConstants.STANCEMASK_ERECT;
 		m_StanceMaskFullbody = DayZPlayerConstants.STANCEMASK_PRONE;
 		m_AdditiveCallbackUID = DayZPlayerConstants.CMD_GESTUREMOD_LOOKATME;
@@ -320,6 +343,7 @@ class EmoteTauntThink extends EmoteBase
 	void EmoteTauntThink()
 	{
 		m_ID = EmoteConstants.ID_EMOTE_TAUNTTHINK;
+		m_InputActionName = "EmoteTauntThink";
 		m_StanceMaskAdditive = DayZPlayerConstants.STANCEMASK_CROUCH | DayZPlayerConstants.STANCEMASK_ERECT;
 		m_StanceMaskFullbody = DayZPlayerConstants.STANCEMASK_PRONE;
 		m_AdditiveCallbackUID = DayZPlayerConstants.CMD_GESTUREMOD_TAUNTTHINK;
@@ -333,6 +357,7 @@ class EmoteMove extends EmoteBase
 	void EmoteMove()
 	{
 		m_ID = EmoteConstants.ID_EMOTE_MOVE;
+		m_InputActionName = "EmoteMove";
 		m_StanceMaskAdditive = DayZPlayerConstants.STANCEMASK_CROUCH | DayZPlayerConstants.STANCEMASK_ERECT;
 		m_StanceMaskFullbody = DayZPlayerConstants.STANCEMASK_PRONE;
 		m_AdditiveCallbackUID = DayZPlayerConstants.CMD_GESTUREMOD_MOVE;
@@ -346,6 +371,7 @@ class EmoteGetDown extends EmoteBase
 	void EmoteGetDown()
 	{
 		m_ID = EmoteConstants.ID_EMOTE_DOWN;
+		m_InputActionName = "EmoteGetDown";
 		m_StanceMaskAdditive = DayZPlayerConstants.STANCEMASK_CROUCH | DayZPlayerConstants.STANCEMASK_ERECT;
 		m_StanceMaskFullbody = DayZPlayerConstants.STANCEMASK_PRONE;
 		m_AdditiveCallbackUID = DayZPlayerConstants.CMD_GESTUREMOD_DOWN;
@@ -359,6 +385,7 @@ class EmoteCome extends EmoteBase
 	void EmoteCome()
 	{
 		m_ID = EmoteConstants.ID_EMOTE_COME;
+		m_InputActionName = "EmoteCome";
 		m_StanceMaskAdditive = DayZPlayerConstants.STANCEMASK_CROUCH | DayZPlayerConstants.STANCEMASK_ERECT;
 		m_StanceMaskFullbody = DayZPlayerConstants.STANCEMASK_PRONE;
 		m_AdditiveCallbackUID = DayZPlayerConstants.CMD_GESTUREMOD_COME;
@@ -368,30 +395,44 @@ class EmoteCome extends EmoteBase
 }
 
 //Handled directly via EmoteManager!
-/*class EmoteSurrender extends EmoteBase
+class EmoteSurrender extends EmoteBase
 {
 	void EmoteSurrender()
 	{
+		m_ID = EmoteConstants.ID_EMOTE_SURRENDER;
+		m_InputActionName = "EmoteSurrender";
+		m_HideItemInHands = false;
 	}
 	
-	case EmoteConstants.ID_EMOTE_SURRENDER :
-		if ( !m_IsSurrendered )
+	override bool DetermineOverride(out int callback_ID, out int stancemask, out bool is_fullbody)
+	{
+		stancemask = DayZPlayerConstants.STANCEMASK_ALL;
+		return true;
+	}
+	
+	override bool EmoteStartOverride(typename callbacktype, int id, int mask, bool fullbody)
+	{
+		bool surrendered = m_Player.GetEmoteManager().m_IsSurrendered;
+		if (!surrendered)
 		{
-			PlaySurrenderInOut(true);
+			m_Player.GetEmoteManager().PlaySurrenderInOut(true);
 		}
-		else if ( m_IsSurrendered )
+		else
 		{
-			if ( m_Player.GetItemInHands() )
+			if (m_Player.GetItemInHands())
 				m_Player.GetItemInHands().Delete();
 		}
-	break;
-}*/
+		
+		return true;
+	}
+}
 
 class EmoteCampfireSit extends EmoteBase
 {
 	void EmoteCampfireSit()
 	{
 		m_ID = EmoteConstants.ID_EMOTE_CAMPFIRE;
+		m_InputActionName = "EmoteCampfireSit";
 		m_StanceMaskAdditive = 0;
 		m_StanceMaskFullbody = DayZPlayerConstants.STANCEMASK_CROUCH;
 		m_AdditiveCallbackUID = 0;
@@ -405,6 +446,7 @@ class EmoteSitA extends EmoteBase
 	void EmoteSitA()
 	{
 		m_ID = EmoteConstants.ID_EMOTE_SITA;
+		m_InputActionName = "EmoteSitA";
 		m_StanceMaskAdditive = 0;
 		m_StanceMaskFullbody = DayZPlayerConstants.STANCEMASK_CROUCH;
 		m_AdditiveCallbackUID = 0;
@@ -418,6 +460,7 @@ class EmoteSitB extends EmoteBase
 	void EmoteSitB()
 	{
 		m_ID = EmoteConstants.ID_EMOTE_SITB;
+		m_InputActionName = "EmoteSitB";
 		m_StanceMaskAdditive = 0;
 		m_StanceMaskFullbody = DayZPlayerConstants.STANCEMASK_CROUCH;
 		m_AdditiveCallbackUID = 0;
@@ -431,6 +474,7 @@ class EmoteRPSRandom extends EmoteBase
 	void EmoteRPSRandom()
 	{
 		m_ID = EmoteConstants.ID_EMOTE_RPS;
+		m_InputActionName = "EmoteRPSRandom";
 		m_StanceMaskAdditive = DayZPlayerConstants.STANCEMASK_ERECT;
 		m_StanceMaskFullbody = 0;
 		m_AdditiveCallbackUID = DayZPlayerConstants.CMD_GESTUREMOD_RPS;
@@ -444,6 +488,7 @@ class EmoteRPSRock extends EmoteBase
 	void EmoteRPSRock()
 	{
 		m_ID = EmoteConstants.ID_EMOTE_RPS_R;
+		m_InputActionName = "EmoteRPSRock";
 		m_StanceMaskAdditive = DayZPlayerConstants.STANCEMASK_ERECT;
 		m_StanceMaskFullbody = 0;
 		m_AdditiveCallbackUID = DayZPlayerConstants.CMD_GESTUREMOD_RPS;
@@ -457,6 +502,7 @@ class EmoteRPSPaper extends EmoteBase
 	void EmoteRPSPaper()
 	{
 		m_ID = EmoteConstants.ID_EMOTE_RPS_P;
+		m_InputActionName = "EmoteRPSPaper";
 		m_StanceMaskAdditive = DayZPlayerConstants.STANCEMASK_ERECT;
 		m_StanceMaskFullbody = 0;
 		m_AdditiveCallbackUID = DayZPlayerConstants.CMD_GESTUREMOD_RPS;
@@ -470,6 +516,7 @@ class EmoteRPSScisors extends EmoteBase
 	void EmoteRPSScisors()
 	{
 		m_ID = EmoteConstants.ID_EMOTE_RPS_S;
+		m_InputActionName = "EmoteRPSScisors";
 		m_StanceMaskAdditive = DayZPlayerConstants.STANCEMASK_ERECT;
 		m_StanceMaskFullbody = 0;
 		m_AdditiveCallbackUID = DayZPlayerConstants.CMD_GESTUREMOD_RPS;
@@ -483,6 +530,7 @@ class EmoteNod extends EmoteBase
 	void EmoteNod()
 	{
 		m_ID = EmoteConstants.ID_EMOTE_NOD;
+		m_InputActionName = "EmoteNod";
 		m_StanceMaskAdditive = DayZPlayerConstants.STANCEMASK_CROUCH | DayZPlayerConstants.STANCEMASK_ERECT;
 		m_StanceMaskFullbody = DayZPlayerConstants.STANCEMASK_PRONE;
 		m_AdditiveCallbackUID = DayZPlayerConstants.CMD_GESTUREMOD_NODHEAD;
@@ -496,6 +544,7 @@ class EmoteShake extends EmoteBase
 	void EmoteShake()
 	{
 		m_ID = EmoteConstants.ID_EMOTE_SHAKE;
+		m_InputActionName = "EmoteShake";
 		m_StanceMaskAdditive = DayZPlayerConstants.STANCEMASK_CROUCH | DayZPlayerConstants.STANCEMASK_ERECT;
 		m_StanceMaskFullbody = DayZPlayerConstants.STANCEMASK_PRONE;
 		m_AdditiveCallbackUID = DayZPlayerConstants.CMD_GESTUREMOD_SHAKEHEAD;
@@ -509,6 +558,7 @@ class EmoteShrug extends EmoteBase
 	void EmoteShrug()
 	{
 		m_ID = EmoteConstants.ID_EMOTE_SHRUG;
+		m_InputActionName = "EmoteShrug";
 		m_StanceMaskAdditive = DayZPlayerConstants.STANCEMASK_CROUCH | DayZPlayerConstants.STANCEMASK_ERECT;
 		m_StanceMaskFullbody = DayZPlayerConstants.STANCEMASK_PRONE;
 		m_AdditiveCallbackUID = DayZPlayerConstants.CMD_GESTUREMOD_SHRUG;
@@ -522,6 +572,7 @@ class EmoteSuicide extends EmoteBase
 	void EmoteSuicide()
 	{
 		m_ID = EmoteConstants.ID_EMOTE_SUICIDE;
+		m_InputActionName = "EmoteSuicide";
 		m_StanceMaskAdditive = 0;
 		m_StanceMaskFullbody = 0;
 		m_AdditiveCallbackUID = 0;
@@ -601,9 +652,6 @@ class EmoteSuicide extends EmoteBase
 					break;
 				}
 			}
-			
-			
-			
 		}
 		if (callback_ID > -1)
 		{
@@ -637,27 +685,38 @@ class EmoteSuicide extends EmoteBase
 	}
 }
 
-//Handled directly via EmoteManager!
-/*class EmoteVomit extends EmoteBase
+class EmoteVomit extends EmoteBase
 {
 	void EmoteVomit()
 	{
 		m_ID = EmoteConstants.ID_EMOTE_VOMIT;
+		m_InputActionName = "EmoteVomit";
 		m_StanceMaskAdditive = DayZPlayerConstants.STANCEMASK_CROUCH | DayZPlayerConstants.STANCEMASK_ERECT;
 		m_StanceMaskFullbody = DayZPlayerConstants.STANCEMASK_PRONE;
 		m_AdditiveCallbackUID = DayZPlayerConstants.CMD_GESTUREMOD_NODHEAD;
 		m_FullbodyCallbackUID = DayZPlayerConstants.CMD_GESTUREFB_NODHEAD;
 		m_HideItemInHands = false;
 	}
-	case EmoteConstants.ID_EMOTE_VOMIT :
+	
+	override bool EmoteCondition(int stancemask)
+	{
+		return DayZPlayerUtils.PlayerCanChangeStance(m_Player,DayZPlayerConstants.STANCEIDX_CROUCH);
+	}
+	
+	override bool EmoteStartOverride(typename callbacktype, int id, int mask, bool fullbody)
+	{
 		if ( m_Player.GetInstanceType() == DayZPlayerInstanceType.INSTANCETYPE_SERVER || !GetGame().IsMultiplayer() )
 		{
-			ref SymptomBase symptom = m_Player.GetSymptomManager().QueueUpPrimarySymptom(SymptomIDs.SYMPTOM_VOMIT);
-	     			
-	           if ( symptom )
-	           { 
-	               symptom.SetDuration(Math.RandomIntInclusive(4,8));
-	           }
+			SymptomBase symptom = m_Player.GetSymptomManager().QueueUpPrimarySymptom(SymptomIDs.SYMPTOM_VOMIT);
+			
+			if ( symptom )
+			{
+			    symptom.SetDuration(Math.RandomIntInclusive(4,8));
+			}
 		}
-	break;
-}*/
+		
+		m_Player.GetEmoteManager().SetEmoteLockState(false);
+		
+		return true;
+	}
+}

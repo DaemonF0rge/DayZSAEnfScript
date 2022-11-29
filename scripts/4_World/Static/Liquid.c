@@ -26,8 +26,8 @@ class Liquid
 		{
 			string liquid_class_name;
 			GetGame().ConfigGetChildName(cfg_classname, i, liquid_class_name);
-			string liquid_full_path = cfg_classname + " " + liquid_class_name;
-			int config_liquid_type = GetGame().ConfigGetInt(liquid_full_path + " " + "type");
+			string liquid_full_path = string.Format("%1 %2",cfg_classname, liquid_class_name);
+			int config_liquid_type = GetGame().ConfigGetInt( string.Format("%1 type", liquid_full_path) );
 			m_AllLiquidsByType.Insert(config_liquid_type, SetUpNutritionalProfile(config_liquid_type, liquid_class_name));
 			m_AllLiquidsByName.Insert(liquid_class_name, SetUpNutritionalProfile(config_liquid_type, liquid_class_name));
 			
@@ -38,12 +38,12 @@ class Liquid
 	//---------------------------------------------------------------------------------------------------------
 	static void Transfer(ItemBase source_ent, ItemBase target_ent, float quantity = -1)
 	{
-		if( !Liquid.CanTransfer(source_ent, target_ent) ) return;
+		if ( !Liquid.CanTransfer(source_ent, target_ent) ) return;
 		
 		ItemBase source = source_ent;
 		ItemBase target = target_ent;
 		
-		Debug.Log("Transfer, source:"+source.ToString()+" target: "+target.ToString(), "LiquidTransfer");
+//		Debug.Log("Transfer, source:"+source.ToString()+" target: "+target.ToString(), "LiquidTransfer");
 		
 		float source_quantity 	= source.GetQuantity();
 		float target_quantity 	= target.GetQuantity();
@@ -54,10 +54,10 @@ class Liquid
 		
 		float available_capacity = target.GetQuantityMax() - target_quantity;
 		
-		Debug.Log("target_mask ="+target_mask.ToString(), "LiquidTransfer");
-		Debug.Log("source_mask ="+source_mask.ToString(), "LiquidTransfer");
-		Debug.Log("source_liquid_type ="+source_liquid_type.ToString(), "LiquidTransfer");
-		Debug.Log("target_liquid_type ="+target_liquid_type.ToString(), "LiquidTransfer");
+//		Debug.Log("target_mask ="+target_mask.ToString(), "LiquidTransfer");
+//		Debug.Log("source_mask ="+source_mask.ToString(), "LiquidTransfer");
+//		Debug.Log("source_liquid_type ="+source_liquid_type.ToString(), "LiquidTransfer");
+//		Debug.Log("target_liquid_type ="+target_liquid_type.ToString(), "LiquidTransfer");
 		
 		//target.GetBloodType(source_liquid_type);//override target liquidType
 		float quantity_to_transfer;
@@ -83,9 +83,10 @@ class Liquid
 	
 	static bool CanTransfer(ItemBase source_ent, ItemBase target_ent)
 	{
-		if(!source_ent || !target_ent)
+		if (!source_ent || !target_ent)
 			return false;
-		if( !source_ent.IsItemBase() || !target_ent.IsItemBase() )
+		
+		if ( !source_ent.IsItemBase() || !target_ent.IsItemBase() )
 		{
 			//Debug.Log("One of the Items is not of ItemBase type", "LiquidTransfer");
 			return false;
@@ -101,20 +102,20 @@ class Liquid
 		
 		
 		float source_quantity = source_ent.GetQuantity();
-		if( source_quantity <= 0 )
+		if ( source_quantity <= 0 )
 		{
 			//Debug.Log("source has no quantity", "LiquidTransfer");
 			return false;//if there is nothing to transfer
 		}
 		
 		int source_liquid_type 	= source_ent.GetLiquidType();	
-		if( source_liquid_type < 1 ) 
+		if ( source_liquid_type < 1 ) 
 		{
 			//Debug.Log("source has some quantity, but does not have a valid liquidType set, liquidType = "+ToString(source_liquid_type), "LiquidTransfer");
 			return false;//if source is not a container
 		}
 		
-		if(!CanFillContainer(target_ent,source_liquid_type) )
+		if ( !CanFillContainer(target_ent,source_liquid_type) )
 		{
 			return false;
 		}
@@ -124,7 +125,7 @@ class Liquid
 	}
 	static void FillContainer(ItemBase container, int liquid_type, float amount)
 	{
-		if(!CanFillContainer(container,liquid_type) )
+		if ( !CanFillContainer(container,liquid_type) )
 		{
 			return;
 		}
@@ -137,7 +138,7 @@ class Liquid
 	static void FillContainerEnviro(ItemBase container, int liquid_type, float amount, bool inject_agents = false)
 	{
 		FillContainer(container,liquid_type,amount);
-		if(inject_agents)
+		if (inject_agents)
 		{
 			PluginTransmissionAgents plugin = PluginTransmissionAgents.Cast(GetPlugin(PluginTransmissionAgents));
 			plugin.TransmitAgents(NULL, container, AGT_WATER_POND, amount);
@@ -146,24 +147,26 @@ class Liquid
 	
 	static bool CanFillContainer(ItemBase container, int liquid_type, bool ignore_fullness_check = false)
 	{
-		if(!container) return false;
+		if (!container) 
+			return false;
+		
 		bool is_container_full = container.IsFullQuantity();
 		
-		if( is_container_full && !ignore_fullness_check)
+		if ( is_container_full && !ignore_fullness_check)
 		{
 			//Debug.Log("container is full", "LiquidTransfer");
 			return false;
 			
 		}
-		int container_mask 	= container.ConfigGetFloat("liquidContainerType");
+		int container_mask = container.ConfigGetFloat("liquidContainerType");
 		
-		if( container_mask == 0 )
+		if ( container_mask == 0 )
 		{
 			//Debug.Log("target is not a container", "LiquidTransfer");
 			return false;//if the target liquidContainerType is set to 0
 		}
 		
-		if( (liquid_type & container_mask) == 0 )
+		if ( (liquid_type & container_mask) == 0 )
 		{
 			//Debug.Log("target liquidContainerType does not support this liquid type", "LiquidTransfer");
 			return false;
@@ -173,7 +176,7 @@ class Liquid
 		
 		int container_liquid_type 	= container.GetLiquidType();
 		
-		if( container_quantity > 0 && container_liquid_type != liquid_type) 
+		if ( container_quantity > 0 && container_liquid_type != liquid_type) 
 		{
 			//Debug.Log("target is not empty AND is of different liquid type than liquid_type added in", "LiquidTransfer");
 			return false;
@@ -191,19 +194,19 @@ class Liquid
 		{
 			string liquid_class_name;
 			GetGame().ConfigGetChildName(cfg_classname, i, liquid_class_name);
-			string liquid_full_path = cfg_classname + " " + liquid_class_name;
-			int config_liquid_type = GetGame().ConfigGetInt(liquid_full_path + " " + "type");
+			string liquid_full_path = string.Format("%1 %2", cfg_classname, liquid_class_name);
+			int config_liquid_type = GetGame().ConfigGetInt(string.Format("%1 type", liquid_full_path) );
 			
-			if( config_liquid_type == liquid_type )// found the specific class, now lets extract the values
+			if ( config_liquid_type == liquid_type )// found the specific class, now lets extract the values
 			{
-				if(!is_nutrition_property) 
+				if (!is_nutrition_property) 
 				{
-					GetGame().ConfigGetText(liquid_full_path + " " + property_name,property_value);
+					GetGame().ConfigGetText(string.Format("%1 %2", liquid_full_path, property_name), property_value);
 					return property_value;
 				}
 				else
 				{
-					GetGame().ConfigGetText(liquid_full_path + " Nutrition " + property_name,property_value);
+					GetGame().ConfigGetText(string.Format("%1 Nutrition %2", liquid_full_path, property_name), property_value);
 					return property_value;
 				}
 			}

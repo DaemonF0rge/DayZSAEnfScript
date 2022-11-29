@@ -25,6 +25,7 @@ class ExtinguishTorch extends RecipeBase
 		//INGREDIENTS
 		//ingredient 1
 		InsertIngredient(0,"Torch");//you can insert multiple ingredients this way
+		InsertIngredient(0,"Broom");//you can insert multiple ingredients this way
 
 		m_IngredientAddHealth[0] = 0;// 0 = do nothing
 		m_IngredientSetHealth[0] = -1; // -1 = do nothing
@@ -64,12 +65,13 @@ class ExtinguishTorch extends RecipeBase
 
 	override bool CanDo(ItemBase ingredients[], PlayerBase player)//final check for recipe's validity
 	{
+		FlammableBase target = FlammableBase.Cast(ingredients[0]);
 		ItemBase container;
 		Class.CastTo(container, ingredients[1]);
 		
 		if ( container.GetLiquidType() & (GROUP_LIQUID_BLOOD | LIQUID_WATER | LIQUID_RIVERWATER | LIQUID_BEER) )
 		{
-			return true;
+			return target.IsIgnited();
 		}
 		return false;
 	}
@@ -81,6 +83,7 @@ class ExtinguishTorch extends RecipeBase
 		if (ingredient1.HasEnergyManager())
 		{
 			ingredient1.GetCompEM().SwitchOff();
+			ingredient1.SetWetMax();
 		}
 	}
 };

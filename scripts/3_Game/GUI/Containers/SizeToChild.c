@@ -16,7 +16,7 @@ class SizeToChild extends ScriptedWidgetEventHandler
 		m_Root	= w;
 		
 		m_Child	= m_Root.FindAnyWidget( m_ChildName );
-		if( m_Child )
+		if ( m_Child )
 		{
 			ResizeParentToChild();
 		}
@@ -24,13 +24,13 @@ class SizeToChild extends ScriptedWidgetEventHandler
 	
 	bool ResizeParentToChild()
 	{
-		return ResizeParentToChild( m_IgnoredBool );
+		return ResizeParentToChild( m_IgnoredBool, -1, false );
 	}
 	
-	bool ResizeParentToChild( out bool changed_size, int limit = -1 )
+	bool ResizeParentToChild( out bool changed_size, int limit = -1, bool immedUpdate = true )
 	{
 		float x, y, o_x, o_y, new_x, new_y;
-		if( m_Child )
+		if ( m_Child )
 		{
 			m_Child.Update();
 			m_Child.GetScreenSize( x, y );
@@ -40,7 +40,7 @@ class SizeToChild extends ScriptedWidgetEventHandler
 			bool changed	= false;
 			bool hit_limit	= false;
 			
-			if( m_ResizeHorizontal && x != new_x )
+			if ( m_ResizeHorizontal && x != new_x )
 			{
 				new_x = x + m_HorizontalOffset;
 				changed = true;
@@ -48,7 +48,7 @@ class SizeToChild extends ScriptedWidgetEventHandler
 			else
 				new_x = o_x;
 			
-			if( m_ResizeVertical && y != new_y )
+			if ( m_ResizeVertical && y != new_y )
 			{
 				new_y = y + m_VerticalOffset;
 				changed = true;
@@ -56,15 +56,15 @@ class SizeToChild extends ScriptedWidgetEventHandler
 			else
 				new_y = o_y;
 			
-			if( limit > 0 && new_y > limit )
+			if ( limit > 0 && new_y > limit )
 			{
 				new_y = limit;
 				hit_limit = true;
 			}
 			
-			if( changed )
+			if ( changed )
 			{
-				m_Root.SetSize( new_x, new_y );
+				m_Root.SetSize( new_x, new_y, immedUpdate );
 			}
 			
 			changed_size = changed;
@@ -73,7 +73,7 @@ class SizeToChild extends ScriptedWidgetEventHandler
 		else
 		{
 			m_Child	= m_Root.FindAnyWidget( m_ChildName );
-			if( !m_Child )
+			if ( !m_Child )
 			{
 				Print( "Error in size to child, " + m_Root.GetName() + " has no child named " + m_ChildName );
 			}
@@ -95,9 +95,9 @@ class SizeToParent extends ScriptedWidgetEventHandler
 	{
 		m_Root	= w;
 		
-		if( m_ResizeHorizontal )
+		if ( m_ResizeHorizontal )
 			m_Root.ClearFlags( WidgetFlags.HEXACTSIZE );
-		if( m_ResizeVertical )
+		if ( m_ResizeVertical )
 			m_Root.ClearFlags( WidgetFlags.VEXACTSIZE );
 		
 		m_Parent	= m_Root.GetParent();
@@ -115,7 +115,7 @@ class SizeToParent extends ScriptedWidgetEventHandler
 		
 		bool changed = false;
 		
-		if( m_ResizeHorizontal && x != new_x )
+		if ( m_ResizeHorizontal && x != new_x )
 		{
 			new_x = x;
 			changed = true;
@@ -123,7 +123,7 @@ class SizeToParent extends ScriptedWidgetEventHandler
 		else
 			new_x = o_x;
 		
-		if( m_ResizeVertical && y != new_y )
+		if ( m_ResizeVertical && y != new_y )
 		{
 			new_y = y;
 			changed = true;
@@ -131,7 +131,7 @@ class SizeToParent extends ScriptedWidgetEventHandler
 		else
 			new_y = o_y;
 		
-		if( changed )
+		if ( changed )
 			m_Root.SetSize( new_x, new_y );
 	}
 }

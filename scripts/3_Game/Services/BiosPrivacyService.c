@@ -64,7 +64,7 @@ class BiosPrivacyService
 		@return EBiosError indicating if the async operation is pending.
 		
 	*/
-	proto native EBiosError GetPermissionsAsync(ref array<string> uid_list, ref array<EBiosPrivacyPermission> permission_list);
+	proto native EBiosError GetPermissionsAsync(array<string> uid_list, array<EBiosPrivacyPermission> permission_list);
 
 	//! Query for privileges
 	/*!
@@ -88,7 +88,7 @@ class BiosPrivacyService
 		@param error error indicating success or fail of the async operation.
 	
 	*/
-	void OnPermissions(ref BiosPrivacyUidResultArray result_list, EBiosError error)
+	void OnPermissions(BiosPrivacyUidResultArray result_list, EBiosError error)
 	{
 		if (result_list == null)
 		{

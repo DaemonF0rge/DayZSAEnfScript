@@ -6,7 +6,9 @@ class HealthRegenMdfr: ModifierBase
 		m_ID 					= eModifiers.MDF_HEALTH_REGEN;
 		m_TickIntervalInactive 	= DEFAULT_TICK_TIME_INACTIVE;
 		m_TickIntervalActive 	= DEFAULT_TICK_TIME_ACTIVE;
+		DisableDeactivateCheck();
 	}
+	
 	override bool ActivateCondition(PlayerBase player)
 	{
 		return true;
@@ -40,7 +42,7 @@ class HealthRegenMdfr: ModifierBase
 			player.AddHealth("LeftHand","Health",regen_speed * PlayerConstants.DAMAGE_ZONE_BLOOD_REGEN_MODIFIER);
 			
 			//Leg regen when legs are NOT BROKEN
-			if ( player.m_BrokenLegState == eBrokenLegs.NO_BROKEN_LEGS )
+			if ( player.GetBrokenLegs() == eBrokenLegs.NO_BROKEN_LEGS )
 			{
 				player.AddHealth("RightLeg","Health", PlayerConstants.LEG_HEALTH_REGEN);
 				player.AddHealth("RightFoot","Health", PlayerConstants.LEG_HEALTH_REGEN);

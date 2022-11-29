@@ -103,10 +103,13 @@ class StomachItem
 
 class PlayerStomach
 {
+	const int DIGESTING_WATER = 1;
+	const int DIGESTING_ENERGY = 2;
+	
 	const int quantity_bit_offset = 16;
 	const int id_bit_offset = 4;//based on food stage count(+1 for safe measure)
 	static int CHECKSUM;
-	const float DIGESTION_POINTS = 3;
+	const float DIGESTION_POINTS = PlayerConstants.DIGESTION_SPEED;
 	const int ACCEPTABLE_QUANTITY_MAX = 32768;
 	const int ACCEPTABLE_FOODSTAGE_MAX = FoodStageType.COUNT - 1;
 	static ref map<string, int> m_NamesToIDs = new map<string, int>;
@@ -114,8 +117,8 @@ class PlayerStomach
 	static const bool m_InitData = PlayerStomach.InitData();
 	ref array<ref StomachItem> m_StomachContents = new array<ref StomachItem>;
 	int m_AgentTransferFilter;//bit mask that prevents agents set in the mask from passing to the player
-	bool m_Digesting;
-	
+	bool 	m_Digesting;
+	int 	m_DigestingType;
 	PlayerBase m_Player;
 	float m_StomachVolume;
 	const int STORAGE_VERSION = 106;
@@ -124,10 +127,6 @@ class PlayerStomach
 	void PlayerStomach(PlayerBase player)
 	{
 		m_Player = player;
-		/*
-		if(!m_InitData)
-			 m_InitData = PlayerStomach.InitData();
-		*/
 	}
 
 	void ~PlayerStomach()
@@ -143,10 +142,7 @@ class PlayerStomach
 	
 	void ClearContents()
 	{
-		while(m_StomachContents.Count() > 0 )
-		{
-			m_StomachContents.Remove(m_StomachContents.Count() - 1);
-		}
+		m_StomachContents.Clear();
 		m_StomachVolume = 0.0;
 	}
 	
@@ -163,7 +159,7 @@ class PlayerStomach
 	static void RegisterItem(string classname, int id)
 	{
 		int hash = classname.Hash();
-		CHECKSUM = (CHECKSUM & ~hash) | (~CHECKSUM & hash); //xor hash vs current checksum
+		CHECKSUM = CHECKSUM^hash; //xor hash vs current checksum
 //		Print(classname);
 //		Print(CHECKSUM);
 		m_NamesToIDs.Insert(classname, id);
@@ -177,6 +173,8 @@ class PlayerStomach
 	
 	static int GetIDFromClassname(string name)
 	{
+		if(!m_NamesToIDs.Contains(name))
+			return -1;
 		return m_NamesToIDs.Get(name);
 	}
 	
@@ -192,7 +190,6 @@ class PlayerStomach
 		int scope;
 		string path;
 		int consumable_count;
-		
 		for(int i = 0; i < all_paths.Count(); i++)
 		{
 			config_path = all_paths.Get(i);
@@ -234,25 +231,28 @@ class PlayerStomach
 	
 	bool IsDigesting()
 	{
-		return m_Digesting;
+		return (m_DigestingType != 0);
+	}
+	
+	int GetDigestingType()
+	{
+		return m_DigestingType;
 	}
 	
 	
 	void Update(float delta_time)
 	{
 		ProcessNutrients(delta_time);
-		//PrintUpdate();
 	}
 	
 	void ProcessNutrients(float delta_time)
 	{
 		StomachItem item;
 		int stomach_items_count = m_StomachContents.Count();
-		m_Digesting = false;
+		m_DigestingType = 0;
 		if(stomach_items_count == 0) 
 			return;
 		
-		m_Digesting = true;
 		float digestion_points_per_item = (DIGESTION_POINTS / stomach_items_count) * delta_time;
 		m_StomachVolume = 0;//reset, it's accumulated with each pass
 		for(int i = 0; i < m_StomachContents.Count(); i ++)
@@ -268,6 +268,17 @@ class PlayerStomach
 			m_StomachVolume += volume;
 			m_Player.GetStatEnergy().Add(energy);
 			m_Player.GetStatWater().Add(water);
+			
+			if(energy > 0)
+			{
+				m_DigestingType = m_DigestingType | DIGESTING_ENERGY;
+			}
+			
+			if(water > 0)
+			{
+				m_DigestingType = m_DigestingType | DIGESTING_WATER;
+			}
+			
 			DigestAgents(agents, consumed_amount);
 		}
 	}
@@ -311,6 +322,8 @@ class PlayerStomach
 	
 	void AddToStomach(string class_name, float amount, int food_stage = 0, int agents = 0)
 	{
+		if (GetIDFromClassname(class_name) == -1)
+			return;
 		bool is_liquid;
 		
 		NutritionalProfile profile = Liquid.GetNutritionalProfileByName(class_name);
@@ -323,19 +336,19 @@ class PlayerStomach
 			profile = Edible_Base.GetNutritionalProfile(null,class_name, food_stage);
 		}
 		
-		// sanity checks start
-		if(amount > ACCEPTABLE_QUANTITY_MAX || amount < 0)
-		{
-			amount = 0;
-		}
-		if (food_stage < 0 || food_stage > ACCEPTABLE_FOODSTAGE_MAX)
-		{
-			food_stage = FoodStageType.RAW;
-		}
-		// stanity checks end
-		
 		if(profile)
 		{
+			// sanity checks start
+			if(amount > ACCEPTABLE_QUANTITY_MAX || amount < 0)
+			{
+				amount = 0;
+			}
+			if (food_stage < 0 || food_stage > ACCEPTABLE_FOODSTAGE_MAX)
+			{
+				food_stage = FoodStageType.RAW;
+			}
+			// sanity checks end
+			
 			agents = agents | profile.GetAgents();
 			bool found = false;
 			for(int i = 0; i < m_StomachContents.Count(); i++)
@@ -368,16 +381,16 @@ class PlayerStomach
 		{
 			stomach_item = m_StomachContents.Get(i);
 			int id = PlayerStomach.GetIDFromClassname(stomach_item.m_ClassName);
-			Print("SAVE id:" + id);
-			Print("SAVE id_bit_offset:" + id_bit_offset);
+			//Print("SAVE id:" + id);
+			//Print("SAVE id_bit_offset:" + id_bit_offset);
 			
 			int write_result = stomach_item.m_FoodStage | ( id << id_bit_offset );
 			write_result = write_result | ((int)stomach_item.m_Amount << quantity_bit_offset);
 			ctx.Write( write_result );
 			ctx.Write( stomach_item.m_Agents );
-			Print("SAVE write_result:" + write_result);
+			//Print("SAVE write_result:" + write_result);
 		}
-		Print("SAVE CHECKSUM:" + PlayerStomach.CHECKSUM);
+		//Print("SAVE CHECKSUM:" + PlayerStomach.CHECKSUM);
 	}
 	
 	bool OnStoreLoad(ParamsReadContext ctx, int version)
@@ -403,22 +416,22 @@ class PlayerStomach
 			{
 				return false;
 			}
-			if(checksum == CHECKSUM)//if checksum matches, add to stomach, otherwise throw the data away but go through the serialization to keep the stream intact
+			if(checksum == CHECKSUM)//if checksum matches, add to stomach, otherwise throw the data away but go through the de-serialization to keep the stream intact
 			{
 				int amount = value >> quantity_bit_offset;//isolate amount bits
 				int id_mask = Math.Pow(2, quantity_bit_offset) - 1;
 				int id = (id_mask & value) >> id_bit_offset;//isolate id bits
 				int food_mask = Math.Pow(2, id_bit_offset) - 1;
 				int food_stage = value & food_mask;
-				Print("LOAD value:" + value);
-				Print("LOAD id:" + id);
-				Print("LOAD id_bit_offset:" + id_bit_offset);
-				Print("LOAD food_stage:" + food_stage);
+				//Print("LOAD value:" + value);
+				//Print("LOAD id:" + id);
+				//Print("LOAD id_bit_offset:" + id_bit_offset);
+				//Print("LOAD food_stage:" + food_stage);
 				string classname = GetClassnameFromID(id);
 				AddToStomach(classname, amount, food_stage, agents);
 			}
 		}
-		Print("LOAD checksum:" + checksum);
+		//Print("LOAD checksum:" + checksum);
 		if(checksum != CHECKSUM)
 		{
 			Print("Stomach checksum fail");

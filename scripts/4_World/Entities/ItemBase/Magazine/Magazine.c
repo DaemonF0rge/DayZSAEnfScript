@@ -48,7 +48,7 @@ class Magazine : InventoryItemSuper
 		m_ManipulationDamage = ConfigGetFloat("manipulationDamage");
 		m_CompatiableAmmo = new array<string>;
 		ConfigGetTextArray("ammoItems", m_CompatiableAmmo);
-		if ( GetGame().IsClient() || !GetGame().IsMultiplayer() )
+		if ( !GetGame().IsDedicatedServer() )
 		{
 			if ( !m_AmmoData )
 				m_AmmoData = new map<string, ref AmmoData>;
@@ -418,6 +418,8 @@ class Magazine : InventoryItemSuper
 	
 	override void OnWasAttached( EntityAI parent, int slot_id )
 	{
+		super.OnWasAttached(parent, slot_id);
+		
 		PlayerBase player = PlayerBase.Cast(GetHierarchyRootPlayer());
 		Weapon_Base wpn = Weapon_Base.Cast(parent);
 		if (wpn && player)
@@ -435,6 +437,8 @@ class Magazine : InventoryItemSuper
 	
 	override void OnWasDetached( EntityAI parent, int slot_id )
 	{
+		super.OnWasDetached(parent, slot_id);
+		
 		PlayerBase player = PlayerBase.Cast(GetHierarchyRootPlayer());
 		Weapon_Base wpn = Weapon_Base.Cast(parent);
 		
@@ -446,6 +450,7 @@ class Magazine : InventoryItemSuper
 	
 	override void EEHealthLevelChanged( int oldLevel, int newLevel, string zone )
 	{
+		super.EEHealthLevelChanged(oldLevel, newLevel, zone);
 		float damage = 1 - GetHealthLevelValue(newLevel) + 0.001;
 			
 		int cartridgeCount = GetAmmoCount();		

@@ -14,6 +14,7 @@ class PlayerBaseClient extends PlayerBase
 		}
 	}
 	
+	/*
 	override void OnRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
 	{
 		super.OnRPC(sender, rpc_type, ctx);
@@ -33,7 +34,16 @@ class PlayerBaseClient extends PlayerBase
 				break;
 			}
 		}
+	}*/
+	
+	override void OnGameplayDataHandlerSync()
+	{
+		super.OnGameplayDataHandlerSync();
+		m_PersonalLightEnabledOnCurrentServer = !CfgGameplayHandler.GetDisablePersonalLight();
+		UpdatePersonalLight();
+		UpdateHitDirectionValues();
 	}
+	
 	
 	//! Controls the ON/OFF switch of the Personal Light. PL will still shine only if the server allows it.
 	static void SwitchPersonalLight(bool state)
@@ -62,10 +72,8 @@ class PlayerBaseClient extends PlayerBase
 		}
 	}
 	
-	/*override void SetNVGWorking(bool state)
+	static void UpdateHitDirectionValues()
 	{
-		super.SetNVGWorking(state);
-		
-		SwitchPersonalLight(!state);
-	}*/
+		HitDirectionEffectBase.CheckValues();
+	}
 }

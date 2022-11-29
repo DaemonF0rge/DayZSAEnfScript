@@ -80,7 +80,9 @@ class ConnectErrorServerModule : ErrorHandlerModuleScript
 		switch (eventTypeId)
 		{
 			case MPSessionPlayerReadyEventTypeID:
+#ifndef NO_GUI
 				g_Game.GetUIManager().CloseSpecificDialog(m_LastErrorThrown);
+#endif
 				break;
 			
 			default:

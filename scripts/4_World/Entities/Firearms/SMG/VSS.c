@@ -5,7 +5,7 @@ class VSS_Base : RifleBoltFree_Base
 		return new VSSRecoil(this);
 	}
 	
-	override int GetWeaponSpecificCommand(int weaponAction ,int subCommand)
+	/*override int GetWeaponSpecificCommand(int weaponAction ,int subCommand)
 	{
 		if ( weaponAction == WeaponActions.RELOAD)
 		{
@@ -29,7 +29,7 @@ class VSS_Base : RifleBoltFree_Base
 		
 		}
 		return subCommand;
-	}
+	}*/
 	
 	//Debug menu Spawn Ground Special
 	override void OnDebugSpawn()

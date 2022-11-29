@@ -16,6 +16,7 @@ class MainMenuConsole extends UIScriptedMenu
 	protected Widget				m_Options;
 	protected Widget				m_Controls;
 	protected Widget				m_Play;
+	protected Widget				m_MessageButton;
 	
 	protected ref Widget			m_LastFocusedButton;
 	
@@ -35,6 +36,7 @@ class MainMenuConsole extends UIScriptedMenu
 		m_Options					= layoutRoot.FindAnyWidget( "options" );
 		m_Controls					= layoutRoot.FindAnyWidget( "controls" );
 		m_Play						= layoutRoot.FindAnyWidget( "play" );
+		m_MessageButton				= layoutRoot.FindAnyWidget( "message_button" );
 		
 		m_Version					= TextWidget.Cast( layoutRoot.FindAnyWidget( "version" ) );
 		m_Mission					= MissionMainMenu.Cast( GetGame().GetMission() );
@@ -43,41 +45,28 @@ class MainMenuConsole extends UIScriptedMenu
 		GetGame().GetUIManager().ScreenFadeOut(1);
 
 		string launch_done;
-		if( !GetGame().GetProfileString( "FirstLaunchDone", launch_done ) || launch_done != "true" )
+		if ( !GetGame().GetProfileString( "FirstLaunchDone", launch_done ) || launch_done != "true" )
 		{
 			GetGame().SetProfileString( "FirstLaunchDone", "true" );
 			GetGame().GetUIManager().ShowDialog( "#main_menu_tutorial", "#main_menu_tutorial_desc", 555, DBT_YESNO, DBB_YES, DMT_QUESTION, this );
 			GetGame().SaveProfile();
 		}
 		
-		#ifdef PLATFORM_PS4
-			string confirm = "cross";
-			if( GetGame().GetInput().GetEnterButton() == GamepadButton.A )
-			{
-				confirm = "cross";
-			}
-			else
-			{
-				confirm = "circle";
-			}
-			ImageWidget toolbar_a = layoutRoot.FindAnyWidget( "SelectIcon" );
-			ImageWidget toolbar_y = layoutRoot.FindAnyWidget( "ChooseAccount" );
-			ImageWidget toolbar_x = layoutRoot.FindAnyWidget( "OpenStoreIcon" );
-			
-			toolbar_a.LoadImageFile( 0, "set:playstation_buttons image:" + confirm );
-			toolbar_x.LoadImageFile( 0, "set:playstation_buttons image:square" );
-			toolbar_y.Show( false );
-		#endif
-		
-		LoadMods();
-		
+		UpdateControlsElements();	
+		LoadMods();		
 		Refresh();
+		
+		GetGame().GetMission().GetOnInputPresetChanged().Insert(OnInputPresetChanged);
+		GetGame().GetMission().GetOnInputDeviceChanged().Insert(OnInputDeviceChanged);
+		
+		OnInputDeviceChanged(GetGame().GetInput().GetCurrentInputDevice());
+
 		return layoutRoot;
 	}
 	
 	void LoadMods()
 	{
-		ref array<ref ModInfo> modArray = new array<ref ModInfo>;
+		array<ref ModInfo> modArray = new array<ref ModInfo>;
 		
 		GetGame().GetModInfos( modArray );
 		if ( modArray.Count() > 0 )
@@ -86,22 +75,49 @@ class MainMenuConsole extends UIScriptedMenu
 			modArray.Invert();
 		}
 		
-		if( m_ModsDetailed )
+		if ( m_ModsDetailed )
 			delete m_ModsDetailed;
 		
-		if( modArray.Count() > 0 )
+		if ( modArray.Count() > 0 )
 		{
 			ImageWidget dlc_icon = ImageWidget.Cast( layoutRoot.FindAnyWidget("show_dlc_icon") );
-			dlc_icon.LoadImageFile( 0, modArray.Get( 0 ).GetLogoSmall() );
-			dlc_icon.FindAnyWidget("Owned").Show( modArray.Get( 0 ).GetIsOwned() );
-			dlc_icon.FindAnyWidget("Unowned").Show( modArray.Get( 0 ).GetIsOwned() );
-			m_ModsDetailed = new ModsMenuDetailed(modArray, layoutRoot.FindAnyWidget("ModsDetailed"), null, null);
+			ModInfo info = modArray[0];
+			bool isOwned = info.GetIsOwned();
+			dlc_icon.LoadImageFile( 0, info.GetLogoSmall() );
+			dlc_icon.FindAnyWidget("Owned").Show( isOwned );
+			dlc_icon.FindAnyWidget("Unowned").Show( !isOwned );
+			m_ModsDetailed = new ModsMenuDetailed(modArray, layoutRoot.FindAnyWidget("ModsDetailed"), null, this);
+		}
+	}
+
+	protected void OnInputPresetChanged()
+	{
+		#ifdef PLATFORM_CONSOLE
+		UpdateControlsElements();
+		#endif
+	}
+
+	protected void OnInputDeviceChanged(EInputDeviceType pInputDeviceType)
+	{
+		switch (pInputDeviceType)
+		{
+		case EInputDeviceType.CONTROLLER:
+			UpdateControlsElements();
+			layoutRoot.FindAnyWidget("toolbar_bg").Show(true);
+		break;
+
+		default:
+			if (GetGame().GetInput().IsEnabledMouseAndKeyboardEvenOnServer())
+			{
+				layoutRoot.FindAnyWidget("toolbar_bg").Show(false);
+			}
+		break;
 		}
 	}
 	
 	override bool OnClick( Widget w, int x, int y, int button )
 	{
-		if( w == m_Play )
+		if ( w == m_Play )
 		{
 			m_LastFocusedButton = m_Play;
 			OpenMenuServerBrowser();
@@ -150,14 +166,20 @@ class MainMenuConsole extends UIScriptedMenu
 			if (m_ModsDetailed.IsOpen() )
 			{
 				m_ModsDetailed.Close();
-				layoutRoot.FindAnyWidget( "OpenStore" ).Show( false );
 			}
 			else
 			{
 				m_ModsDetailed.Open();
 				m_ModsDetailed.HighlightFirst();
-				layoutRoot.FindAnyWidget( "OpenStore" ).Show( true );
 			}
+			#ifdef PLATFORM_CONSOLE
+			UpdateControlsElements();
+			#endif
+			return true;
+		}
+		else if ( w == m_MessageButton )
+		{
+			OpenCredits();
 			return true;
 		}
 		return false;
@@ -179,10 +201,10 @@ class MainMenuConsole extends UIScriptedMenu
 	{
 		string name;
 		
-		if( GetGame().GetUserManager() && GetGame().GetUserManager().GetSelectedUser() )
+		if ( GetGame().GetUserManager() && GetGame().GetUserManager().GetSelectedUser() )
 		{
 			name = GetGame().GetUserManager().GetSelectedUser().GetName();
-			if( name.LengthUtf8() > 18 )
+			if ( name.LengthUtf8() > 18 )
 			{
 				name = name.SubstringUtf8(0, 18);
 				name += "...";
@@ -212,7 +234,7 @@ class MainMenuConsole extends UIScriptedMenu
 		LoadMods();
 		Refresh();
 		
-		if( m_ScenePC && m_ScenePC.GetIntroCamera() )
+		if ( m_ScenePC && m_ScenePC.GetIntroCamera() )
 		{
 			m_ScenePC.GetIntroCamera().LookAt( m_ScenePC.GetIntroCharacter().GetPosition() + Vector( 0, 1, 0 ) );
 		}
@@ -222,7 +244,8 @@ class MainMenuConsole extends UIScriptedMenu
 			#ifndef PLATFORM_PS4
 			layoutRoot.FindAnyWidget( "choose_account" ).Show( GetGame().GetInput().IsEnabledMouseAndKeyboard() );
 			#endif
-			layoutRoot.FindAnyWidget( "toolbar_bg" ).Show( !GetGame().GetInput().IsEnabledMouseAndKeyboard() );
+		layoutRoot.FindAnyWidget( "ButtonHolderCredits" ).Show( GetGame().GetInput().IsEnabledMouseAndKeyboard() );
+		UpdateControlsElements();
 		#endif
 	}
 	
@@ -234,12 +257,22 @@ class MainMenuConsole extends UIScriptedMenu
 	override void Update(float timeslice)
 	{
 		super.Update( timeslice );
-		#ifndef PLATFORM_CONSOLE
-		if ( GetGame().GetInput().LocalPress("UAUIBack", false) && g_Game.GetLoadState() != DayZGameState.CONNECTING && !GetGame().GetUIManager().IsDialogVisible() )
+		
+		if ( g_Game.GetLoadState() != DayZGameState.CONNECTING && !GetGame().GetUIManager().IsDialogVisible() )
 		{
-			Exit();
-		}
+		#ifndef PLATFORM_CONSOLE
+			if (GetGame().GetInput().LocalPress("UAUIBack", false))
+			{
+				Exit();
+			}
+		#else
+			if (GetGame().GetInput().LocalPress("UAUICredits", false))
+			{
+				OpenCredits();
+			}
 		#endif
+		}
+		
 		#ifdef PLATFORM_XBOX
 		if ( GetGame().GetInput().LocalPress("UAUICtrlY",false) )
 		{
@@ -248,11 +281,16 @@ class MainMenuConsole extends UIScriptedMenu
 		#endif
 		if ( GetGame().GetInput().LocalPress("UAUICtrlX",false) )
 		{
-			if( m_ModsDetailed.IsOpen() && m_ModsDetailed.GetHighlighted() )
+			if ( CanStoreBeOpened() )
 			{
 				m_ModsDetailed.GetHighlighted().GoToStore();
 			}
 		}
+	}
+	
+	bool CanStoreBeOpened()
+	{
+		return ( m_ModsDetailed && m_ModsDetailed.IsOpen() && m_ModsDetailed.GetHighlighted() && !GetGame().GetContentDLCService().OwnsAllDLC() );
 	}
 	
 	void OpenMenuServerBrowser()
@@ -285,10 +323,16 @@ class MainMenuConsole extends UIScriptedMenu
 		EnterScriptedMenu(MENU_CHARACTER);
 	}
 	
+	void OpenCredits()
+	{
+		EnterScriptedMenu(MENU_CREDITS);
+		m_Mission.OnMenuEnter(MENU_CREDITS);
+	}
+	
 	void ChangeAccount()
 	{
 		BiosUserManager user_manager = GetGame().GetUserManager();
-		if( user_manager )
+		if ( user_manager )
 		{
 			g_Game.SetLoadState( DayZLoadState.MAIN_MENU_START );
 			#ifndef PLATFORM_WINDOWS
@@ -306,7 +350,7 @@ class MainMenuConsole extends UIScriptedMenu
 	//Coloring functions (Until WidgetStyles are useful)
 	void ColorHighlight( Widget w )
 	{
-		if( !w )
+		if ( !w )
 			return;
 		
 		int color_pnl = ARGB(255, 200, 0, 0);
@@ -319,7 +363,7 @@ class MainMenuConsole extends UIScriptedMenu
 	
 	void ColorNormal( Widget w )
 	{
-		if( !w )
+		if ( !w )
 			return;
 		
 		int color_pnl = ARGB(0, 0, 0, 0);
@@ -332,18 +376,18 @@ class MainMenuConsole extends UIScriptedMenu
 	
 	override bool OnModalResult( Widget w, int x, int y, int code, int result )
 	{
-		if( code == IDC_MAIN_QUIT )
+		if ( code == IDC_MAIN_QUIT )
 		{
-			if( result == 2 )
+			if ( result == 2 )
 			{
 				GetGame().GetCallQueue(CALL_CATEGORY_GUI).Call(g_Game.RequestExit, IDC_MAIN_QUIT);
 			}
 			
 			return true;
 		}
-		else if( code == 555 )
+		else if ( code == 555 )
 		{
-			if( result == 2 )
+			if ( result == 2 )
 			{
 				OpenMenuTutorials();
 			}
@@ -353,12 +397,12 @@ class MainMenuConsole extends UIScriptedMenu
 	
 	void ButtonSetText( Widget w, string text )
 	{
-		if( !w )
+		if ( !w )
 			return;
 				
 		TextWidget label = TextWidget.Cast(w.FindWidget( w.GetName() + "_label" ) );
 		
-		if( label )
+		if ( label )
 		{
 			label.SetText( text );
 		}
@@ -367,12 +411,12 @@ class MainMenuConsole extends UIScriptedMenu
 	
 	void ButtonSetColor( Widget w, int color )
 	{
-		if( !w )
+		if ( !w )
 			return;
 		
 		Widget panel = w.FindWidget( w.GetName() + "_panel" );
 		
-		if( panel )
+		if ( panel )
 		{
 			panel.SetColor( color );
 		}
@@ -380,12 +424,12 @@ class MainMenuConsole extends UIScriptedMenu
 	
 	void ButtonSetAlphaAnim( Widget w )
 	{
-		if( !w )
+		if ( !w )
 			return;
 		
 		Widget panel = w.FindWidget( w.GetName() + "_panel" );
 		
-		if( panel )
+		if ( panel )
 		{
 			SetWidgetAnimAlpha( panel );
 		}
@@ -393,26 +437,42 @@ class MainMenuConsole extends UIScriptedMenu
 	
 	void ButtonSetTextColor( Widget w, int color )
 	{
-		if( !w )
+		if ( !w )
 			return;
 
 		TextWidget label	= TextWidget.Cast(w.FindAnyWidget( w.GetName() + "_label" ) );
 		TextWidget text		= TextWidget.Cast(w.FindAnyWidget( w.GetName() + "_text" ) );
 		TextWidget text2	= TextWidget.Cast(w.FindAnyWidget( w.GetName() + "_text_1" ) );
 				
-		if( label )
+		if ( label )
 		{
 			label.SetColor( color );
 		}
 		
-		if( text )
+		if ( text )
 		{
 			text.SetColor( color );
 		}
 		
-		if( text2 )
+		if ( text2 )
 		{
 			text2.SetColor( color );
 		}
+	}
+	
+	protected void UpdateControlsElements()
+	{
+		RichTextWidget toolbar_text = RichTextWidget.Cast(layoutRoot.FindAnyWidget("ContextToolbarText"));
+		string context = InputUtils.GetRichtextButtonIconFromInputAction("UAUICredits", "#menu_credits", EUAINPUT_DEVICE_CONTROLLER, InputUtils.ICON_SCALE_TOOLBAR);
+		
+		if ( CanStoreBeOpened() )
+			context += string.Format(" %1",InputUtils.GetRichtextButtonIconFromInputAction("UAUICtrlX", "#mod_detail_info_store", EUAINPUT_DEVICE_CONTROLLER, InputUtils.ICON_SCALE_TOOLBAR));
+
+#ifndef PLATFORM_PS4
+		context += string.Format(" %1",InputUtils.GetRichtextButtonIconFromInputAction("UAUICtrlY", "#layout_xbox_main_menu_toolbar_account", EUAINPUT_DEVICE_CONTROLLER, InputUtils.ICON_SCALE_TOOLBAR));
+#endif
+		context += string.Format(" %1",InputUtils.GetRichtextButtonIconFromInputAction("UAUISelect", "#layout_xbox_main_menu_toolbar_select", EUAINPUT_DEVICE_CONTROLLER, InputUtils.ICON_SCALE_TOOLBAR));
+		
+		toolbar_text.SetText(context);
 	}
 }

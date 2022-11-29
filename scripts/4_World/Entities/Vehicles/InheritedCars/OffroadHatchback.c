@@ -1,18 +1,78 @@
 class OffroadHatchback extends CarScript
 {
-	
+	protected ref UniversalTemperatureSource m_UTSource;
+	protected ref UniversalTemperatureSourceSettings m_UTSSettings;
+	protected ref UniversalTemperatureSourceLambdaEngine m_UTSLEngine;
+
 	void OffroadHatchback()
 	{
-		m_dmgContactCoef = 0.075;
+		m_dmgContactCoef 		= 0.075;
 	
-		m_EngineStartOK = "offroad_engine_start_SoundSet";
-		m_EngineStartBattery = "offroad_engine_failed_start_battery_SoundSet";
-		m_EngineStartPlug = "offroad_engine_failed_start_sparkplugs_SoundSet";
-		m_EngineStartFuel = "offroad_engine_failed_start_fuel_SoundSet";
-		m_EngineStopFuel = "offroad_engine_stop_fuel_SoundSet";
+		m_EngineStartOK 		= "offroad_engine_start_SoundSet";
+		m_EngineStartBattery 	= "offroad_engine_failed_start_battery_SoundSet";
+		m_EngineStartPlug 		= "offroad_engine_failed_start_sparkplugs_SoundSet";
+		m_EngineStartFuel 		= "offroad_engine_failed_start_fuel_SoundSet";
+		m_EngineStopFuel 		= "offroad_engine_stop_fuel_SoundSet";
 		
-		m_CarDoorOpenSound = "offroad_door_open_SoundSet";
-		m_CarDoorCloseSound = "offroad_door_close_SoundSet";
+		m_CarDoorOpenSound 		= "offroad_door_open_SoundSet";
+		m_CarDoorCloseSound 	= "offroad_door_close_SoundSet";
+		
+		m_CarHornShortSoundName = "Offroad_Horn_Short_SoundSet";
+		m_CarHornLongSoundName	= "Offroad_Horn_SoundSet";
+		
+		SetEnginePos("0 0.7 1.2");
+	}
+	
+	override void EEInit()
+	{		
+		super.EEInit();
+		
+		if (GetGame().IsServer() || !GetGame().IsMultiplayer())
+		{
+ 			m_UTSSettings 					= new UniversalTemperatureSourceSettings();
+			m_UTSSettings.m_ManualUpdate 	= true;
+			m_UTSSettings.m_TemperatureMin	= 0;
+			m_UTSSettings.m_TemperatureMax	= 30;
+			m_UTSSettings.m_RangeFull		= 0.5;
+			m_UTSSettings.m_RangeMax		= 2;
+			m_UTSSettings.m_TemperatureCap	= 25;
+			
+			m_UTSLEngine					= new UniversalTemperatureSourceLambdaEngine();
+			m_UTSource						= new UniversalTemperatureSource(this, m_UTSSettings, m_UTSLEngine);
+		}		
+	}
+	
+	override void OnEngineStart()
+	{
+		super.OnEngineStart();
+
+		if (GetGame().IsServer() || !GetGame().IsMultiplayer())
+		{
+			m_UTSource.SetDefferedActive(true, 20.0);
+		}
+	}
+	
+	override void OnEngineStop()
+	{
+		super.OnEngineStop();
+
+		if (GetGame().IsServer() || !GetGame().IsMultiplayer())
+		{
+			m_UTSource.SetDefferedActive(false, 10.0);
+		}
+	}
+	
+	override void EOnPostSimulate(IEntity other, float timeSlice)
+	{
+		super.EOnPostSimulate(other, timeSlice);
+		
+		if (GetGame().IsServer() || !GetGame().IsMultiplayer())
+		{
+			if (m_UTSource.IsActive())
+			{
+				m_UTSource.Update(m_UTSSettings, m_UTSLEngine);
+			}
+		}
 	}
 	
 	override int GetAnimInstance()
@@ -54,71 +114,44 @@ class OffroadHatchback extends CarScript
 		return CarLightBase.Cast( ScriptedLightBase.CreateLight(OffroadHatchbackFrontLight) );
 	}
 
-/*
-	override void EEItemAttached ( EntityAI item, string slot_name ) 
+	override bool CanReleaseAttachment(EntityAI attachment)
 	{
-		//not working properly 
-		if ( item.GetType() == "HatchbackWheel_Ruined" )
+		if (!super.CanReleaseAttachment(attachment))
 		{
-			dBodyActive( this, ActiveState.ACTIVE);
-			dBodyApplyImpulseAt( this, vector.Up * 2, item.GetPosition() );
-		}
-
-		if ( GetGame().IsServer() )
-		{
-			if ( slot_name == "CarRadiator" )
-			{
-				m_RadiatorHealth = 1;
-				//Leak( CarFluid.COOLANT, GetFluidFraction(CarFluid.COOLANT)*GetFluidCapacity(CarFluid.COOLANT) );
-			}
-		}
-	}
-
-		override void EEItemDetached(EntityAI item, string slot_name)
-	{
-		if ( GetGame().IsServer() )
-		{
-			//int slot_id = InventorySlots.GetSlotIdFromString(slot_name);
-			
-			if ( slot_name == "CarBattery")
-			{
-				if ( IsScriptedLightsOn() )
-					SwitchLights();
-			}
-		}
-	}
-*/
-
-	override bool CanReleaseAttachment( EntityAI attachment )
-	{
-		if( !super.CanReleaseAttachment( attachment ) )
 			return false;
+		}
 		
-		string attType = attachment.GetType();
-		
-		if ( EngineIsOn() || GetCarDoorsState("NivaHood") == CarDoorState.DOORS_CLOSED )
+		if (EngineIsOn() || GetCarDoorsState("NivaHood") == CarDoorState.DOORS_CLOSED)
 		{
-			if ( attType == "CarRadiator" || attType == "CarBattery" || attType == "SparkPlug" )
+			string attType = attachment.GetType();
+			if (attType == "CarRadiator" || attType == "CarBattery" || attType == "SparkPlug")
+			{
 				return false;
+			}
 		}
 
 		return true;
 	}
+	
+	override protected bool CanManipulateSpareWheel(string slotSelectionName)
+	{
+		return GetCarDoorsState("NivaHood") != CarDoorState.DOORS_CLOSED;
+	}
 
 	override bool CanDisplayAttachmentCategory( string category_name )
 	{
-		//super
-		if ( !super.CanDisplayAttachmentCategory( category_name ) )
-		return false;
-		//
-	
-		category_name.ToLower();
-		PlayerBase player = PlayerBase.Cast( GetGame().GetPlayer() );
-		
-		if ( category_name.Contains( "engine" ) )
+		if (!super.CanDisplayAttachmentCategory(category_name))
 		{
-			if ( GetCarDoorsState("NivaHood") == CarDoorState.DOORS_CLOSED )
+			return false;
+		}
+	
+		category_name.ToLower();		
+		if (category_name.Contains("engine"))
+		{
+			if (GetCarDoorsState("NivaHood") == CarDoorState.DOORS_CLOSED)
+			{
 				return false;
+			}
 		}
 				
 		return true;
@@ -126,75 +159,45 @@ class OffroadHatchback extends CarScript
 	
 	override bool CanDisplayCargo()
 	{
-		if ( !super.CanDisplayCargo() )
-			return false;
-		
-		if ( GetCarDoorsState("NivaTrunk") == CarDoorState.DOORS_CLOSED )
-			return false;
-		
-		return false;
-	}
-/*
-	int GetAnimationPhaseBySlot( string slotType )
-	{
-		CarDoor carDoor;
-		
-		if ( Class.CastTo( carDoor, FindAttachmentBySlotName( slotType ) ) )
+		if (!super.CanDisplayCargo())
 		{
-			if ( GetAnimationPhase("DoorsDriver") > 0.5 )
-			{
-				return CarDoorState.DOORS_OPEN;
-			}
-			else
-			{
-				return CarDoorState.DOORS_CLOSED;
-			}
+			return false;
 		}
 		
-		return CarDoorState.DOORS_MISSING;
+		if (GetCarDoorsState("NivaTrunk") == CarDoorState.DOORS_CLOSED)
+		{
+			return false;
+		}
+		
+		return true;
 	}
-*/
 
-	override int GetCarDoorsState( string slotType )
+	override int GetCarDoorsState(string slotType)
 	{
 		CarDoor carDoor;
-
-		Class.CastTo( carDoor, FindAttachmentBySlotName( slotType ) );
-		if ( !carDoor )
-			return CarDoorState.DOORS_MISSING;
-
-		switch( slotType )
+		
+		Class.CastTo(carDoor, FindAttachmentBySlotName(slotType));
+		if (!carDoor)
 		{
-			case "NivaDriverDoors":
-				if ( GetAnimationPhase("DoorsDriver") > 0.5 )
-					return CarDoorState.DOORS_OPEN;
-				else
-					return CarDoorState.DOORS_CLOSED;
+			return CarDoorState.DOORS_MISSING;
+		}
 
+		switch (slotType)
+		{
+		case "NivaDriverDoors":
+			return TranslateAnimationPhaseToCarDoorState("DoorsDriver");
 			break;
 			
-			case "NivaCoDriverDoors":
-				if ( GetAnimationPhase("DoorsCoDriver") > 0.5 )
-					return CarDoorState.DOORS_OPEN;
-				else
-					return CarDoorState.DOORS_CLOSED;
-
+		case "NivaCoDriverDoors":
+			return TranslateAnimationPhaseToCarDoorState("DoorsCoDriver");
 			break;
 			
-			case "NivaHood":
-				if ( GetAnimationPhase("DoorsHood") > 0.5 )
-					return CarDoorState.DOORS_OPEN;
-				else
-					return CarDoorState.DOORS_CLOSED;
-
+		case "NivaHood":
+			return TranslateAnimationPhaseToCarDoorState("DoorsHood");
 			break;
 			
-			case "NivaTrunk":
-				if ( GetAnimationPhase("DoorsTrunk") > 0.5 )
-					return CarDoorState.DOORS_OPEN;
-				else
-					return CarDoorState.DOORS_CLOSED;
-
+		case "NivaTrunk":
+			return TranslateAnimationPhaseToCarDoorState("DoorsTrunk");
 			break;
 		}
 
@@ -204,43 +207,43 @@ class OffroadHatchback extends CarScript
 	override bool CrewCanGetThrough( int posIdx )
 	{
 		CarDoor carDoor;
-		switch( posIdx )
+		switch (posIdx)
 		{
-			case 0:
-				if ( GetCarDoorsState( "NivaDriverDoors" ) == CarDoorState.DOORS_CLOSED )
-					return false;
-				else if ( GetAnimationPhase("SeatDriver") > 0.5 )
-					return false;
+		case 0:
+			if (GetCarDoorsState("NivaDriverDoors") == CarDoorState.DOORS_CLOSED)
+				return false;
+			else if (GetAnimationPhase("SeatDriver") > 0.5)
+				return false;
 
-				return true;
-			break;
+			return true;
+		break;
 
-			case 1:
-				if ( GetCarDoorsState( "NivaCoDriverDoors" ) == CarDoorState.DOORS_CLOSED )
-					return false;
-				else if ( GetAnimationPhase("SeatCoDriver") > 0.5 )
-					return false;
+		case 1:
+			if (GetCarDoorsState("NivaCoDriverDoors") == CarDoorState.DOORS_CLOSED)
+				return false;
+			else if (GetAnimationPhase("SeatCoDriver") > 0.5)
+				return false;
 
-				return true;
-			break;
+			return true;
+		break;
 
-			case 2:
-				if ( GetCarDoorsState( "NivaDriverDoors" ) == CarDoorState.DOORS_CLOSED )
-					return false;
-				else if ( GetAnimationPhase("SeatDriver") <= 0.5 )
-					return false;
+		case 2:
+			if (GetCarDoorsState("NivaDriverDoors") == CarDoorState.DOORS_CLOSED)
+				return false;
+			else if (GetAnimationPhase("SeatDriver") <= 0.5)
+				return false;
 
-				return true;
-			break;
+			return true;
+		break;
 
-			case 3:
-				if ( GetCarDoorsState( "NivaCoDriverDoors" ) == CarDoorState.DOORS_CLOSED )
-					return false;
-				else if ( GetAnimationPhase("SeatCoDriver") <= 0.5 )
-					return false;
+		case 3:
+			if (GetCarDoorsState("NivaCoDriverDoors") == CarDoorState.DOORS_CLOSED)
+				return false;
+			else if (GetAnimationPhase("SeatCoDriver") <= 0.5)
+				return false;
 
-				return true;
-			break;
+			return true;
+		break;
 		}
 
 		return false;
@@ -248,7 +251,7 @@ class OffroadHatchback extends CarScript
 
 	override string GetDoorSelectionNameFromSeatPos(int posIdx)
 	{
-		switch( posIdx )
+		switch (posIdx)
 		{
 		case 0:
 		case 2:
@@ -265,7 +268,7 @@ class OffroadHatchback extends CarScript
 
 	override string GetDoorInvSlotNameFromSeatPos(int posIdx)
 	{
-		switch( posIdx )
+		switch (posIdx)
 		{
 		case 0:
 		case 2:
@@ -282,48 +285,54 @@ class OffroadHatchback extends CarScript
 	
 	// 0 full ambient and engine sound
 	// 1 zero ambient and engine sound
-	override float OnSound( CarSoundCtrl ctrl, float oldValue )
+	override float OnSound(CarSoundCtrl ctrl, float oldValue)
 	{
-		switch ( ctrl )
+		float tempCap = 0.0;
+
+		switch (ctrl)
 		{
-			case CarSoundCtrl.DOORS:
-				float newValue = 0;
+		case CarSoundCtrl.DOORS:
+			float newValue = 0;
+			if (GetCarDoorsState("NivaDriverDoors") == CarDoorState.DOORS_CLOSED)
+			{
+				newValue += 0.5;
+			}
 
-				//-----
-				if ( GetCarDoorsState( "NivaDriverDoors" ) == CarDoorState.DOORS_CLOSED )
-					newValue += 0.5;
+			if (GetCarDoorsState("NivaCoDriverDoors") == CarDoorState.DOORS_CLOSED)
+			{
+				newValue += 0.5;
+			}
 
-				if ( GetCarDoorsState( "NivaCoDriverDoors" ) == CarDoorState.DOORS_CLOSED )
-					newValue += 0.5;
+			if (GetCarDoorsState("NivaTrunk") == CarDoorState.DOORS_CLOSED)
+			{
+				newValue += 0.3;
+			}
+		
+			if (GetHealthLevel("WindowFront") == GameConstants.STATE_RUINED)
+			{
+				newValue -= 0.6;
+			}
 
-				if ( GetCarDoorsState( "NivaTrunk" ) == CarDoorState.DOORS_CLOSED )
-					newValue += 0.3;
-			
-				if ( GetHealthLevel( "WindowFront") == GameConstants.STATE_RUINED )
-					newValue -= 0.6;
+			if (GetHealthLevel("WindowLR") == GameConstants.STATE_RUINED)
+			{
+				newValue -= 0.2;
+			}
+		
+			if (GetHealthLevel("WindowRR") == GameConstants.STATE_RUINED)
+			{
+				newValue -= 0.2;
+			}
 
-				if ( GetHealthLevel( "WindowLR") == GameConstants.STATE_RUINED )
-					newValue -= 0.2;
-			
-				if ( GetHealthLevel( "WindowRR") == GameConstants.STATE_RUINED )
-					newValue -= 0.2;
-
-				if ( newValue > 1 )
-					newValue = 1;
-			
-				if ( newValue < 0 )
-					newValue = 0;
-			
-				return newValue;
-			break;
+			return Math.Clamp(newValue, 0, 1);
+		break;
 		}
 
-		return oldValue;
+		return super.OnSound(ctrl, oldValue);
 	}
 
 	override string GetAnimSourceFromSelection( string selection )
 	{
-		switch( selection )
+		switch (selection)
 		{
 		case "doors_driver":
 			return "DoorsDriver";
@@ -473,7 +482,9 @@ class OffroadHatchback extends CarScript
 	override void OnDebugSpawn()
 	{
 		EntityAI entity;
-		
+		EntityAI ent;
+		ItemBase container;
+
 		if ( Class.CastTo(entity, this) )
 		{
 			entity.GetInventory().CreateInInventory( "HatchbackWheel" );
@@ -485,14 +496,36 @@ class OffroadHatchback extends CarScript
 			entity.GetInventory().CreateInInventory( "SparkPlug" );
 			entity.GetInventory().CreateInInventory( "CarRadiator" );
 
-			entity.GetInventory().CreateInInventory( "HatchbackDoors_Driver" );
+			//entity.GetInventory().CreateInInventory( "HatchbackDoors_Driver" );
 			entity.GetInventory().CreateInInventory( "HatchbackDoors_CoDriver" );
 			entity.GetInventory().CreateInInventory( "HatchbackHood" );
 			entity.GetInventory().CreateInInventory( "HatchbackTrunk" );
 
 			entity.GetInventory().CreateInInventory( "HeadlightH7" );
 			entity.GetInventory().CreateInInventory( "HeadlightH7" );
-		};
+
+			//-----IN CAR CARGO
+			entity.GetInventory().CreateInInventory( "HatchbackWheel" );
+			entity.GetInventory().CreateInInventory( "CarBattery" );
+			entity.GetInventory().CreateInInventory( "SparkPlug" );
+			entity.GetInventory().CreateInInventory( "HeadlightH7" );
+			entity.GetInventory().CreateInInventory( "CarRadiator" );
+			//--
+			ent = entity.GetInventory().CreateInInventory( "Blowtorch" );
+			entity = ent.GetInventory().CreateInInventory( "LargeGasCanister" );
+			//--
+			entity.GetInventory().CreateInInventory( "CanisterGasoline" );
+			ent = entity.GetInventory().CreateInInventory( "CanisterGasoline" );
+			if ( Class.CastTo(container, ent) )
+			{
+				container.SetLiquidType(LIQUID_WATER, true);
+			}
+			ent = entity.GetInventory().CreateInInventory( "Blowtorch" );
+			if ( ent )
+			{
+				entity = ent.GetInventory().CreateInInventory( "LargeGasCanister" );
+			}
+		}
 
 		Fill( CarFluid.FUEL, 50 );
 		Fill( CarFluid.COOLANT, 6.0 );
@@ -513,7 +546,9 @@ class OffroadHatchback_White extends OffroadHatchback
 	override void OnDebugSpawn()
 	{
 		EntityAI entity;
-		
+		EntityAI ent;
+		ItemBase container;
+
 		if ( Class.CastTo(entity, this) )
 		{
 			entity.GetInventory().CreateInInventory( "HatchbackWheel" );
@@ -525,14 +560,36 @@ class OffroadHatchback_White extends OffroadHatchback
 			entity.GetInventory().CreateInInventory( "SparkPlug" );
 			entity.GetInventory().CreateInInventory( "CarRadiator" );
 
-			entity.GetInventory().CreateInInventory( "HatchbackDoors_Driver_White" );
+			//entity.GetInventory().CreateInInventory( "HatchbackDoors_Driver_White" );
 			entity.GetInventory().CreateInInventory( "HatchbackDoors_CoDriver_White" );
 			entity.GetInventory().CreateInInventory( "HatchbackHood_White" );
 			entity.GetInventory().CreateInInventory( "HatchbackTrunk_White" );
 
 			entity.GetInventory().CreateInInventory( "HeadlightH7" );
 			entity.GetInventory().CreateInInventory( "HeadlightH7" );
-		};
+
+			//-----IN CAR CARGO
+			entity.GetInventory().CreateInInventory( "HatchbackWheel" );
+			entity.GetInventory().CreateInInventory( "CarBattery" );
+			entity.GetInventory().CreateInInventory( "SparkPlug" );
+			entity.GetInventory().CreateInInventory( "HeadlightH7" );
+			entity.GetInventory().CreateInInventory( "CarRadiator" );
+			//--
+			ent = entity.GetInventory().CreateInInventory( "Blowtorch" );
+			entity = ent.GetInventory().CreateInInventory( "LargeGasCanister" );
+			//--
+			entity.GetInventory().CreateInInventory( "CanisterGasoline" );
+			ent = entity.GetInventory().CreateInInventory( "CanisterGasoline" );
+			if ( Class.CastTo(container, ent) )
+			{
+				container.SetLiquidType(LIQUID_WATER, true);
+			}
+			ent = entity.GetInventory().CreateInInventory( "Blowtorch" );
+			if ( ent )
+			{
+				entity = ent.GetInventory().CreateInInventory( "LargeGasCanister" );
+			}
+		}
 
 		Fill( CarFluid.FUEL, 50 );
 		Fill( CarFluid.COOLANT, 6.0 );
@@ -545,7 +602,9 @@ class OffroadHatchback_Blue extends OffroadHatchback
 	override void OnDebugSpawn()
 	{
 		EntityAI entity;
-		
+		EntityAI ent;
+		ItemBase container;
+
 		if ( Class.CastTo(entity, this) )
 		{
 			entity.GetInventory().CreateInInventory( "HatchbackWheel" );
@@ -557,14 +616,36 @@ class OffroadHatchback_Blue extends OffroadHatchback
 			entity.GetInventory().CreateInInventory( "SparkPlug" );
 			entity.GetInventory().CreateInInventory( "CarRadiator" );
 
-			entity.GetInventory().CreateInInventory( "HatchbackDoors_Driver_Blue" );
+			//entity.GetInventory().CreateInInventory( "HatchbackDoors_Driver_Blue" );
 			entity.GetInventory().CreateInInventory( "HatchbackDoors_CoDriver_Blue" );
 			entity.GetInventory().CreateInInventory( "HatchbackHood_Blue" );
 			entity.GetInventory().CreateInInventory( "HatchbackTrunk_Blue" );
 
 			entity.GetInventory().CreateInInventory( "HeadlightH7" );
 			entity.GetInventory().CreateInInventory( "HeadlightH7" );
-		};
+
+			//-----IN CAR CARGO
+			entity.GetInventory().CreateInInventory( "HatchbackWheel" );
+			entity.GetInventory().CreateInInventory( "CarBattery" );
+			entity.GetInventory().CreateInInventory( "SparkPlug" );
+			entity.GetInventory().CreateInInventory( "HeadlightH7" );
+			entity.GetInventory().CreateInInventory( "CarRadiator" );
+			//--
+			ent = entity.GetInventory().CreateInInventory( "Blowtorch" );
+			entity = ent.GetInventory().CreateInInventory( "LargeGasCanister" );
+			//--
+			entity.GetInventory().CreateInInventory( "CanisterGasoline" );
+			ent = entity.GetInventory().CreateInInventory( "CanisterGasoline" );
+			if ( Class.CastTo(container, ent) )
+			{
+				container.SetLiquidType(LIQUID_WATER, true);
+			}
+			ent = entity.GetInventory().CreateInInventory( "Blowtorch" );
+			if ( ent )
+			{
+				entity = ent.GetInventory().CreateInInventory( "LargeGasCanister" );
+			}
+		}
 
 		Fill( CarFluid.FUEL, 50 );
 		Fill( CarFluid.COOLANT, 6.0 );

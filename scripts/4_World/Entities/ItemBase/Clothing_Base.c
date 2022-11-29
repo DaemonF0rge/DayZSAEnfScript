@@ -12,14 +12,27 @@ class Clothing extends Clothing_Base
 	{
 		return true;
 	}
-
+	
+	//! Used for 'glasses' (and other colored layers triggered by attach/detach in the InventorySlots.EYEWEAR)
+	int GetGlassesEffectID()
+	{
+		return -1;
+	}
+	
+	//----------------------------------------------------------------
+	// GameplayWidgetEffects
+	array<int> GetEffectWidgetTypes()
+	{
+		return null;
+	}
+	
 	// Conditions	
 	override bool CanPutInCargo( EntityAI parent )
 	{
 		if ( !super.CanPutInCargo( parent ) )
 			return false;
 		
-		return CanPutInCargoClothingConditions( parent );
+		return !parent || CanPutInCargoClothingConditions( parent );
 	}
 	
 	bool CanPutInCargoClothingConditions( EntityAI parent )
@@ -88,22 +101,61 @@ class Clothing extends Clothing_Base
 	}
 	
 	//Method used to specify if a piece of eyeware can be worn under a gas mask
+	//! deprecated
 	bool CanWearUnderMask(EntityAI parent)
 	{
-		bool is_mask_only = false;
-		
-		if ( parent.FindAttachmentBySlotName( "Mask" ) )
-		{
-			is_mask_only = parent.FindAttachmentBySlotName( "Mask" ).ConfigGetBool( "noEyewear" );
-		}
-		
-		if ( ( GetNumberOfItems() == 0 || !parent || parent.IsMan() ) && !is_mask_only )
-		{
-			return true;
-		}
-		return false;	
+		return true;
 	}
 	
+	// -------------------------------------------------------------------------
+	override void EEHealthLevelChanged(int oldLevel, int newLevel, string zone)
+	{
+		super.EEHealthLevelChanged(oldLevel, newLevel, zone);
+		if ( !GetGame().IsDedicatedServer() )
+		{
+			PlayerBase player_owner = PlayerBase.Cast(GetHierarchyParent());
+			
+			if( player_owner )
+			{
+				if( player_owner.m_CorpseState != 0 )
+				{
+					GetGame().GetCallQueue( CALL_CATEGORY_GUI ).CallLater( player_owner.UpdateCorpseState, 0, false);
+				}
+			}
+		}
+	}
+	
+	override void SwitchItemSelectionTextureEx(EItemManipulationContext context, Param par = null)
+	{
+		super.SwitchItemSelectionTextureEx(context, par);
+		
+		Param1<PlayerBase> data = Param1<PlayerBase>.Cast(par);
+		if (!data)
+		{
+			return;
+		}
+		
+		PlayerBase player = data.param1;
+		
+		int personality = GetHiddenSelectionIndex("personality");
+		if (personality >= 0)
+		{
+			string tone_mat = player.m_EmptyGloves.GetHiddenSelectionsMaterials().Get(0);
+			string tone_texture;
+			
+			if (player.m_CorpseState > PlayerConstants.CORPSE_STATE_FRESH)
+			{
+				tone_texture = player.m_DecayedTexture;
+			}
+			else
+			{
+				tone_texture = player.m_EmptyGloves.GetHiddenSelectionsTextures().Get(0);
+			}
+			
+			SetObjectMaterial( personality, tone_mat );
+			SetObjectTexture( personality, tone_texture );
+		}
+	}
 };
 
 typedef Clothing ClothingBase;

@@ -29,6 +29,7 @@ class ServerBrowserEntry extends ScriptedWidgetEventHandler
 	
 	protected bool						m_IsExpanded;
 	protected bool						m_IsFavorited;
+	protected bool						m_IsOnline;
 	
 	protected ref GetServersResultRow	m_ServerData;
 	protected int						m_Index;
@@ -37,15 +38,13 @@ class ServerBrowserEntry extends ScriptedWidgetEventHandler
 	protected bool						m_FirstExpand = true;
 	
 	void ServerBrowserEntry( Widget parent, int index, ServerBrowserTab tab )
-	{
-		m_Index++;
-		
+	{		
 		#ifdef PLATFORM_CONSOLE
 			m_Root				= GetGame().GetWorkspace().CreateWidgets( "gui/layouts/new_ui/server_browser/xbox/server_browser_list_entry.layout", parent );
 		#else
 			m_Root				= GetGame().GetWorkspace().CreateWidgets( "gui/layouts/new_ui/server_browser/pc/server_browser_list_entry_pages.layout", parent );
 		#endif
-		//m_Root.SetSort( index );
+		
 		m_Root.Enable( true );
 		m_Favorite				= m_Root.FindAnyWidget( "favorite_button" );
 		m_Expand				= m_Root.FindAnyWidget( "expand_button" );
@@ -70,19 +69,18 @@ class ServerBrowserEntry extends ScriptedWidgetEventHandler
 		m_ServerModsExpand		= ButtonWidget.Cast( m_Root.FindAnyWidget( "mods_expand" ) );
 		
 		m_Root.FindAnyWidget( "basic_info" ).Show( true );
-		
 		m_Root.FindAnyWidget( "favorite_image" ).Update();
 		m_Root.FindAnyWidget( "unfavorite_image" ).Update();
 		
 		m_Index					= index;
 		m_Tab					= tab;
+		m_IsOnline              = true;
 		
 		m_ServerTime.LoadImageFile( 0, "set:dayz_gui image:icon_sun" );
 		m_ServerTime.LoadImageFile( 1, "set:dayz_gui image:icon_sun_accel" );
 		m_ServerTime.LoadImageFile( 2, "set:dayz_gui image:icon_moon" );
 		m_ServerTime.LoadImageFile( 3, "set:dayz_gui image:icon_moon_accel" );
 		
-		UpdateColors();
 		m_Root.SetHandler( this );
 	}
 	
@@ -103,6 +101,11 @@ class ServerBrowserEntry extends ScriptedWidgetEventHandler
 	
 	override bool OnClick( Widget w, int x, int y, int button )
 	{
+		if (!IsOnline())
+		{
+			return false;
+		}
+		
 		#ifdef PLATFORM_CONSOLE
 		if ( w == m_Root	)
 		{
@@ -131,6 +134,11 @@ class ServerBrowserEntry extends ScriptedWidgetEventHandler
 	
 	override bool OnDoubleClick( Widget w, int x, int y, int button )
 	{
+		if (!IsOnline())
+		{
+			return false;
+		}
+		
 		if ( button == MouseState.LEFT )
 		{
 			if ( w == m_Root )
@@ -240,6 +248,11 @@ class ServerBrowserEntry extends ScriptedWidgetEventHandler
 		return false;
 	}
 	
+	bool IsOnline()
+	{
+		return m_IsOnline;
+	}
+	
 	bool IsFocusable( Widget w )
 	{
 		if ( w )
@@ -249,7 +262,7 @@ class ServerBrowserEntry extends ScriptedWidgetEventHandler
 	}
 	
 	void FillInfo( GetServersResultRow server_info )
-	{
+	{	
 		m_ServerData = server_info;
 		m_FirstExpand = true;
 		
@@ -288,8 +301,23 @@ class ServerBrowserEntry extends ScriptedWidgetEventHandler
 		SetBattleye( server_info.m_AntiCheat );
 		SetIP( server_info.m_Id );
 		SetAcceleration( server_info.m_EnvironmentTimeMul );
+		SetServerMapName();
 #endif
 #endif
+	}
+	
+	void UpdateEntry()
+	{
+		if (m_ServerData.m_IsSelected)
+		{
+			Darken(m_Root, 0, 0);
+			Select();
+			SetFocus( m_Root );
+		}
+		else
+		{
+			Lighten(m_Root, null, 0, 0);
+		}
 	}
 	
 	void SetName( string name )
@@ -470,7 +498,7 @@ class ServerBrowserEntry extends ScriptedWidgetEventHandler
 	
 	string GetIP()
 	{
-		return m_ServerData.m_HostIp;
+		return m_ServerData.GetIP();
 	}
 	
 	int GetPort()
@@ -555,20 +583,27 @@ class ServerBrowserEntry extends ScriptedWidgetEventHandler
 		m_ServerMaKIcon.Show( is_mkenabled );
 	}
 	
+	void SetIsOnline(bool isOnline)
+	{
+		m_IsOnline = isOnline;
+	}
+	
 	bool ToggleFavorite()
 	{
 		m_IsFavorited = !m_IsFavorited;
-		
-#ifdef PLATFORM_CONSOLE
-		//Save Data Console
-		GetServersResultRow data = m_ServerData;
-		m_Tab.GetRootMenu().SetFavoriteConsoles(data.m_HostIp, data.m_HostPort, m_IsFavorited);
-#else
+		string ip = m_ServerData.GetIP();
+#ifdef PLATFORM_WINDOWS	
 		//Save Data PC
-		GetServersResultRow data = m_ServerData;
-		TStringArray server_id = new TStringArray;
-		data.m_Id.Split(":", server_id);
-		OnlineServices.SetServerFavorited(server_id[0], data.m_HostPort, data.m_SteamQueryPort, m_IsFavorited);
+		m_Tab.GetRootMenu().AddFavorite(ip, m_ServerData.m_SteamQueryPort, m_IsFavorited);
+	
+	#ifdef PLATFORM_CONSOLE
+		OnlineServices.SetServerFavorited(ip, 0, m_ServerData.m_SteamQueryPort, m_IsFavorited);
+	#else
+		OnlineServices.SetServerFavorited(ip, m_ServerData.m_HostPort, m_ServerData.m_SteamQueryPort, m_IsFavorited);
+	#endif
+#else
+		//Save Data Console		
+		m_IsFavorited = m_Tab.GetRootMenu().SetFavoriteConsoles(ip, m_ServerData.m_HostPort, m_IsFavorited);
 #endif
 		
 		m_Root.FindAnyWidget( "unfavorite_image" ).Show( !m_IsFavorited );
@@ -631,15 +666,8 @@ class ServerBrowserEntry extends ScriptedWidgetEventHandler
 	{
 		if ( m_Selected )
 		{
-			m_ServerData.m_IsSelected = false;
-			
+			m_ServerData.m_IsSelected = false;		
 			m_Selected = false;
-			float alpha = 0.1;
-			if ( m_Index % 2 )
-			{
-				alpha = 0.3;
-			}
-			m_Root.SetColor( ARGB( alpha, 50, 50, 50 ) );
 			
 			Lighten( m_Root, null, 0, 0 );
 		}
@@ -647,27 +675,37 @@ class ServerBrowserEntry extends ScriptedWidgetEventHandler
 	
 	void UpdateColors()
 	{
-		float alpha = 0.3;
-		if ( m_Index % 2 )
+		float alpha = 1;
+		if (!IsOnline())
 		{
-			alpha = 0;
+			alpha = 0.5;
+			m_ServerPopulation.SetText("-");
+			m_ServerSlots.SetText("-");			
+			m_ServerPing.SetText("-");
+			m_ServerPing.SetColor( ARGB( 255, 255, 255, 255) );
 		}
 		
-		m_Root.SetAlpha( alpha );
-	}
-	
-	//Coloring functions (Until WidgetStyles are useful)
-	void Darken( Widget w, int x, int y )
-	{
-		if ( m_Selected )
-			return;
-		
-		if ( w == m_Root || w == m_Favorite || w == m_Expand )
+#ifndef PLATFORM_CONSOLE
+		if (!IsOnline())
 		{
-			m_Root.SetColor( ARGB( 255, 200, 0, 0) );
-			m_Root.SetAlpha( 1 );
-			m_ServerName.SetColor( ARGB( 255, 255, 255, 255 ) );
+			m_ServerTime.Show(false);
+			m_Expand.Show(false);
 		}
+		
+		else
+		{
+			m_ServerTime.Show(true);
+			m_Expand.Show(true);
+		}
+#endif
+		
+		m_Root.SetAlpha(alpha);
+		m_ServerPopulation.SetAlpha(alpha);
+		m_ServerSlots.SetAlpha(alpha);
+		m_ServerPing.SetAlpha(alpha);
+		
+		m_ServerName.SetColor( ARGB( 255, 255, 255, 255) );
+		m_ServerName.SetAlpha(alpha);
 	}
 	
 	//Coloring functions (Until WidgetStyles are useful)
@@ -680,7 +718,26 @@ class ServerBrowserEntry extends ScriptedWidgetEventHandler
 		{
 			m_Root.SetColor( ARGB( 255, 0, 0, 0) );
 			m_Root.SetAlpha( 1 );
+			UpdateColors();
+			
 			m_ServerName.SetColor( ARGB( 255, 255, 0, 0 ) );
+			if (!IsOnline())
+			{
+				m_ServerName.SetAlpha(0.5);
+			}
+		}
+	}
+	
+	//Coloring functions (Until WidgetStyles are useful)
+	void Darken( Widget w, int x, int y )
+	{
+		if ( m_Selected )
+			return;
+		
+		if ( w == m_Root || w == m_Favorite || w == m_Expand )
+		{
+			m_Root.SetColor( ARGB( 255, 200, 0, 0) );
+			UpdateColors();
 		}
 	}
 	
@@ -695,9 +752,16 @@ class ServerBrowserEntry extends ScriptedWidgetEventHandler
 		{
 			return;
 		}
+
+		m_Root.SetColor( ARGB( 255, 0, 0, 0) );			
+		UpdateColors();		
 		
-		m_Root.SetColor( ARGB( 255, 0, 0, 0) );
-		m_ServerName.SetColor( ARGB( 255, 255, 255, 255 ) );
-		UpdateColors();
+		float alpha = 0.3;
+		if ( m_Index % 2 )
+		{
+			alpha = 0;
+		}
+		
+		m_Root.SetAlpha( alpha );
 	}
 }

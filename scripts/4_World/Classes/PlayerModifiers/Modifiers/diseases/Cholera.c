@@ -61,7 +61,7 @@ class CholeraMdfr: ModifierBase
 	override protected void OnTick(PlayerBase player, float deltaT)
 	{
 		float water_loss = ( deltaT * ( WATER_LOSS_CHOLERA * Math.Max( WATER_LOSS_CHOLERA_MIN, player.GetSingleAgentCountNormalized( eAgents.CHOLERA ) ) ) );
-		Print( ( WATER_LOSS_CHOLERA * Math.Max( WATER_LOSS_CHOLERA_MIN, player.GetSingleAgentCountNormalized( eAgents.CHOLERA ) ) ) );
+		//Print( ( WATER_LOSS_CHOLERA * Math.Max( WATER_LOSS_CHOLERA_MIN, player.GetSingleAgentCountNormalized( eAgents.CHOLERA ) ) ) );
 		player.GetStatWater().Add( -water_loss );
 
 		float stomach_volume = player.m_PlayerStomach.GetStomachVolume();

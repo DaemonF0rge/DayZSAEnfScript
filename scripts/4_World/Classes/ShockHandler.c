@@ -1,6 +1,8 @@
 class ShockHandler
 {	
 	protected float 						m_Shock;
+	protected float 						m_ShockValueMax;
+	protected float 						m_ShockValueThreshold;
 	protected PlayerBase					m_Player;
 	
 	protected const float 					UPDATE_THRESHOLD = 3; //NOTE : The lower, the more precise but the more synchronization
@@ -21,11 +23,16 @@ class ShockHandler
 	private const float 					PULSE_AMPLITUDE = 0.05; //This is a multiplier, keep below 1 or expect the unexpected
 	private 	  float 					m_PulseTimer;
 	
+	protected ref Param1<float> 			m_Param;
+	
 	void ShockHandler(PlayerBase player)
 	{
 		m_Player = player;
 		m_Player.m_CurrentShock = m_Player.GetMaxHealth("", "Shock");
 		m_PrevVignette = m_Player.m_CurrentShock * 0.01; //Equivalent to divided by 100
+		m_ShockValueMax = m_Player.GetMaxHealth("", "Shock");
+		m_ShockValueThreshold = m_ShockValueMax * 0.95;
+		m_Param = new Param1<float>(0);
 	}
 
 	void Update(float deltaT)
@@ -39,23 +46,37 @@ class ShockHandler
 			//Deactivate tunnel vignette when player falls unconscious
 			if ( m_Player.IsUnconscious() )
 			{
-				PPEffects.SetTunnelVignette(0);
+				PPERequesterBank.GetRequester(PPERequester_TunnelVisionEffects).Stop();
+				return;
+			}
+			
+			//Deactivate if above visible threshold (also stops "zero bobbing" being sent all the time
+			if ( m_Player.m_CurrentShock >= m_ShockValueThreshold)
+			{
+				PPERequesterBank.GetRequester(PPERequester_TunnelVisionEffects).Stop();
 				return;
 			}
 			
 			//Add bobbing to create pulsing effect
-			float val = MiscGameplayFunctions.Bobbing( PULSE_PERIOD, PULSE_AMPLITUDE, m_PulseTimer );
+			float val = 0.0;
+			if ( m_Player.m_CurrentShock > m_ShockValueMax * 0.8)
+				val = MiscGameplayFunctions.Bobbing( PULSE_PERIOD, PULSE_AMPLITUDE, m_PulseTimer );
+			float val_adjusted;
 			
 			if ( m_Player.m_CurrentShock != (m_PrevVignette * 100) )
 			{
 				//Interpolate between previous level and currently synchronized shock level
 				m_LerpRes = LerpVignette( m_PrevVignette, NormalizeShockVal(m_Player.m_CurrentShock), m_TimeSinceLastTick );
-				PPEffects.SetTunnelVignette( 1 - Easing.EaseInQuart(m_LerpRes) + val );
+				
+				val_adjusted = 1 - Easing.EaseInQuart(m_LerpRes) + val;
 			}
 			else
 			{
-				PPEffects.SetTunnelVignette( 1 - Easing.EaseInQuart( NormalizeShockVal(m_Player.m_CurrentShock)) + val );
+				val_adjusted = 1 - Easing.EaseInQuart( NormalizeShockVal(m_Player.m_CurrentShock)) + val;
 			}
+			
+			m_Param.param1 = val_adjusted;
+			PPERequesterBank.GetRequester(PPERequester_TunnelVisionEffects).Start(m_Param);
 		}
 		
 		if ( m_TimeSinceLastTick > VALUE_CHECK_INTERVAL )
@@ -70,7 +91,7 @@ class ShockHandler
 			CheckValue( false );
 			m_TimeSinceLastTick = 0;
 		}
-	}		
+	}
 	
 	float GetCurrentShock()
 	{
@@ -106,6 +127,11 @@ class ShockHandler
 		if ( GetGame().IsServer() )
 		{	
 			m_Player.m_CurrentShock = m_Player.GetHealth("", "Shock");
+			
+			/*
+			if (m_Player.m_CurrentShock <= 0)
+				m_Player.SetHealthMax("", "Shock");
+			*/
 			if ( m_CumulatedShock >= UPDATE_THRESHOLD || forceUpdate )
 			{
 				m_CumulatedShock *= m_ShockMultiplier;
@@ -147,7 +173,7 @@ class ShockHandler
 	private void ShockHitEffect( float compareBase )
 	{
 		float shockDifference = compareBase - m_Player.m_CurrentShock;
-		
+		//Print(shockDifference);
 		if ( shockDifference >= UPDATE_THRESHOLD )
 		{
 			if ( m_CumulatedShock < 25 )

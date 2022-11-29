@@ -10,6 +10,7 @@ class HungerMdfr: ModifierBase
 		m_ID 					= eModifiers.MDF_HUNGER;
 		m_TickIntervalInactive 	= DEFAULT_TICK_TIME_INACTIVE;
 		m_TickIntervalActive 	= 1;
+		DisableDeactivateCheck();
 	}
 	
 	override bool ActivateCondition(PlayerBase player)
@@ -32,17 +33,15 @@ class HungerMdfr: ModifierBase
 		player.GetMovementState(m_MovementState);
 		float energy = player.GetStatEnergy().Get();
 		float metabolic_speed = MiscGameplayFunctions.GetEnergyMetabolicSpeed(m_MovementState.m_iMovement);
-		//PrintString(metabolic_speed.ToString());
 		
-		float energy_delta  = Math.AbsInt(player.GetStatEnergy().Get() - m_LastEnergyLevel);
-		if (energy <  m_LastEnergyLevel) energy_delta = -energy_delta;
-		m_LastEnergyLevel = player.GetStatEnergy().Get();
+		float modifier = energy/PlayerConstants.SL_ENERGY_MAX + PlayerConstants.CONSUMPTION_MULTIPLIER_BASE; 
+		metabolic_speed *= modifier; //non linear shaping for consumption curve (comment out to have it linear)
 		
 		player.GetStatEnergy().Add( -metabolic_speed * deltaT );
 		if ( energy <= PlayerConstants.LOW_ENERGY_THRESHOLD )
 		{
 			player.SetMixedSoundState( eMixedSoundStates.HUNGRY );
-			if( !player.GetStomach().IsDigesting() )
+			if( (player.GetStomach().GetDigestingType() & PlayerStomach.DIGESTING_ENERGY) == 0)
 				player.AddHealth("GlobalHealth", "Health", -PlayerConstants.LOW_ENERGY_DAMAGE_PER_SEC * deltaT );
 		}
 		else

@@ -46,7 +46,7 @@ class BlindnessSymptom extends SymptomBase
 	override void OnGetDeactivatedClient(PlayerBase player)
 	{
 		if (LogManager.IsSymptomLogEnable()) Debug.SymptomLog("n/a", this.ToString(), "n/a", "OnGetDeactivated", m_Player.ToString());
-		PPEffects.DisableBurlapSackBlindness();
+		PPERequesterBank.GetRequester(PPERequester_BurlapSackEffects).Stop(); //TODO - use different PPERequester when connected, otherwise it would interfere with burlapsack blindness
 	}
 	
 }

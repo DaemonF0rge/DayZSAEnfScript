@@ -1,3 +1,6 @@
+// ip, name, connection port, queryPort
+typedef Param4<string, string, int, int> CachedServerInfo;
+
 // Script File
 
 enum ESortType
@@ -75,6 +78,27 @@ class GetServersResultRow
 	
 	bool m_Favorite;
 
+	string GetIpPort()
+	{
+#ifdef PLATFORM_WINDOWS
+		return m_Id;
+#else
+		return GetIP() + ":" + m_HostPort;
+#endif
+	}
+	
+	string GetIP()
+	{
+#ifdef PLATFORM_WINDOWS
+		// Hack - In new Serverborwser on PC has bad m_HostIp but ID contains correct IP
+		array<string> parts = new array<string>;
+		m_Id.Split(":", parts);
+		return parts[0];
+#else
+		return m_HostIp;
+#endif
+	}
+	
 	bool IsSelected()
 	{
 		return m_IsSelected;
@@ -475,7 +499,14 @@ class BiosLobbyService
 	
 	proto native void AddServerFavorite(string ipAddress, int port, int steamQueryPort);
 	proto native void RemoveServerFavorite(string ipAddress, int port, int steamQueryPort);
-
+	proto native void GetFavoriteServers(TStringArray favServers);
+	
+	//! Get cached info about favorited servers (ONLY ON WINDOWS)
+	/*!
+		@param favServersInfoCache gets populated with data with format: key = Query End Point, value.param1 = Server Name, value.param2 = Connection Port
+	*/
+	proto native void GetCachedFavoriteServerInfo(array<ref CachedServerInfo> favServersInfoCache);
+	
 	//! Async function to retrieve info about mods for specific server (only for PC)
 	//! @param serverId have to be an id returned by callbacks issued by last call to GetServers
 	//! if GetServers is used another time the id's must be upated
@@ -488,7 +519,7 @@ class BiosLobbyService
 		@param response for debugging - this is the data returned by the server; or an empty string ;)
 	*/
 	
-	void OnDoneAsync(ref GetServersResult result_list, EBiosError error, string response)
+	void OnDoneAsync(GetServersResult result_list, EBiosError error, string response)
 	{
 		/*
 		if (result_list.m_Results != null && result_list.m_Results.Count() > 0)
@@ -497,13 +528,13 @@ class BiosLobbyService
 		OnlineServices.OnLoadServersAsync( result_list, error, response );
 	}
 	
-	void OnGetFirstServerWithEmptySlot(ref GetFirstServerWithEmptySlotResult result_list, EBiosError error)
+	void OnGetFirstServerWithEmptySlot(GetFirstServerWithEmptySlotResult result_list, EBiosError error)
 	{
 		OnlineServices.OnAutoConnectToEmptyServer( result_list, error );
 	}
 	
 	//! Async callback for GetServerModList
-	void OnServerModList(ref GetServerModListResult result_list, EBiosError error)
+	void OnServerModList(GetServerModListResult result_list, EBiosError error)
 	{
 		OnlineServices.OnGetServerModList( result_list, error );
 	}

@@ -24,18 +24,26 @@ enum eNotifiers
 
 class NotifiersManager
 {
-
+	static const int 				MAX_COUNT = 64;
 	ref array<ref NotifierBase> 	m_Notifiers;
+	ref NotifierBase 				m_NotifiersStatic[MAX_COUNT];//introduced as a seperate array to allow for fast lookup, keeping the old one for quick looping through but also to keep modding compatibility
 	PlayerBase						m_Player;
 	ref VirtualHud					m_VirtualHud;
 	int								m_MinTickTime;
 	string 							m_System = "Notifiers";
+	
 	void NotifiersManager(PlayerBase player)
 	{
 		m_Player = player;
 
 		m_Notifiers = new array<ref NotifierBase>;
-		
+
+		m_MinTickTime = MIN_TICK_NOTIFIERS;
+		Init();
+	}
+
+	void Init()
+	{
 		m_Notifiers.Insert(new HungerNotfr(this));
 		m_Notifiers.Insert(new ThirstNotfr(this));
 		m_Notifiers.Insert(new WarmthNotfr(this));
@@ -43,17 +51,22 @@ class NotifiersManager
 		m_Notifiers.Insert(new HealthNotfr(this));
 		m_Notifiers.Insert(new FeverNotfr(this));
 		m_Notifiers.Insert(new SickNotfr(this));
-		//m_Notifiers.Insert(new BleedingNotfr(this));
 		m_Notifiers.Insert(new StuffedNotfr(this));
 		m_Notifiers.Insert(new BloodNotfr(this));
-		//m_Notifiers.Insert(new AgentsNotfr(this));
 		m_Notifiers.Insert(new PillsNotfr(this));
 		m_Notifiers.Insert(new HeartbeatNotfr(this));
 		m_Notifiers.Insert(new FracturedLegNotfr(this)); //New addition
 		
-		m_MinTickTime = MIN_TICK_NOTIFIERS;
 	}
-
+	
+	void RegisterItself(int notifier_id, NotifierBase modifier)
+	{
+		if(notifier_id >= MAX_COUNT)
+			Error("out of bounds for notifier id: " + notifier_id);
+		else
+			m_NotifiersStatic[notifier_id] = modifier;
+	}
+	
 	PlayerBase GetPlayer()
 	{
 		return m_Player;
@@ -63,18 +76,10 @@ class NotifiersManager
 	{
 		return m_VirtualHud;
 	}
-
-
+	
 	NotifierBase FindNotifier( int type )
 	{
-		for(int i = 0;i < m_Notifiers.Count(); i++)
-		{
-			if ( m_Notifiers.Get(i).GetNotifierType() == type )
-			{
-				return m_Notifiers.Get(i);
-			}
-		}
-		return null;
+		return m_NotifiersStatic[type];
 	}
 
 	void ActivateByType(int notifier, bool triggerEvent = true)
@@ -98,13 +103,14 @@ class NotifiersManager
 	{
 		int current_time = GetGame().GetTime();
 
-		for(int i = 0;i < m_Notifiers.Count(); i++)
+		foreach(NotifierBase notifier: m_Notifiers)
 		{
-			if ( m_Notifiers.Get(i).IsActive() && m_Notifiers.Get(i).IsTimeToTick(current_time) )
+			if ( notifier.IsActive() && notifier.IsTimeToTick(current_time) )
 			{
-				m_Notifiers.Get(i).OnTick(current_time);
+				notifier.OnTick(current_time);
 			}
-		}
+		}		
+
 	}
 
 }

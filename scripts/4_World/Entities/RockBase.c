@@ -7,50 +7,68 @@ class RockBase: Object
 
 	int GetAmountOfDrops(ItemBase item)
 	{
-		if ( item && item.IsKindOf("Pickaxe") )
+		if (item)
 		{
-			return 4;
+			switch (item.GetType())
+			{
+			case "Pickaxe":
+				return 4;
+	 		case "SledgeHammer":
+				return 8;
+			}
 		}
-		else if ( item && item.IsKindOf("SledgeHammer") )
-		{
-			return 8;
-		}
-		else
-		{
-			return 1;
-		}
+
+		return 1;
 	}	
 	
+	/* Defines the yield of the action*/
 	void GetMaterialAndQuantityMap(ItemBase item, out map<string,int> output_map)
 	{
-		if ( item && item.KindOf("Pickaxe") )
+		if (item == null)
 		{
-			output_map.Insert("Stone",2);
+			return;
 		}
-		else if ( item && item.KindOf("SledgeHammer") )
+		
+		switch (item.GetType())
 		{
+		case "Pickaxe":
+		case "SledgeHammer":
+		case "Hammer":
 			output_map.Insert("Stone",1);
-		}
-		else if ( item )
-		{
-			output_map.Insert("Stone",1);
+			break;
+ 		case "PipeWrench":
+		case "Wrench":
+		case "Screwdriver":
+		case "Crowbar":
+		case "MeatTenderizer":
+			output_map.Insert("SmallStone",1);
+			break;
 		}
 	}
 
+	/*Return value defines how much damage the item will take*/
 	float GetDamageToMiningItemEachDrop(ItemBase item)
 	{
-		if ( item && item.IsKindOf("Pickaxe") )
+		if (item)
 		{
-			return 20;
+			switch (item.GetType())
+			{
+			case "SledgeHammer":
+			case "Pickaxe":
+				return 20;
+			case "Wrench":
+			case "Screwdriver":
+			case "MeatTenderizer":
+				return 25;
+			case "PipeWrench":
+			case "Crowbar":
+				return 50;
+			case "Hammer":
+				return 40;
+			}
 		}
-		else if ( item && item.IsKindOf("SledgeHammer") )
-		{
-			return 20;
-		}
-		else
-		{
-			return 40;
-		}
+
+		return 25;
 	}
 };
 
@@ -59,9 +77,6 @@ class RockBase: Object
 	class Static_stone3: RockBase {};
 	class Static_stone4: RockBase {};
 	class Static_stone5: RockBase {};
-
-// 	currently unused rocks
-/*
 	class Static_rock_apart1: RockBase {};
 	class Static_rock_apart2: RockBase {};
 	class Static_rock_bright_apart1: RockBase {};
@@ -88,6 +103,19 @@ class RockBase: Object
 	class Static_rock_wallh2: RockBase {};
 	class Static_rock_wallh3: RockBase {};
 	class Static_rock_wallv: RockBase {};
+	class Static_rock_stone6: RockBase{};
+	class Static_rock_stone6_moss: RockBase{};
+	class Static_rock_stone7: RockBase{};
+	class Static_rock_stone7_moss: RockBase{};
+	class Static_rock_stone8: RockBase{};
+	class Static_rock_stone8_moss: RockBase{};
+	class Static_rock_stone9: RockBase{};
+	class Static_rock_stone9_moss: RockBase{};
+	class Static_rock_stone10: RockBase{};
+	class Static_rock_stone10_moss: RockBase{};
+// 	currently unused rocks
+/*
+	
 	class Static_stone5_Trail_B: RockBase {};
 	class Static_stone5_Trail_G: RockBase {};
 	class Static_stone5_Trail_R: RockBase {};

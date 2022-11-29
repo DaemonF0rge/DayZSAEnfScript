@@ -22,6 +22,8 @@ class CreditsMenu extends UIScriptedMenu
 	protected ImageWidget						m_Logo;
 	protected ScrollWidget						m_Scroller;
 	protected WrapSpacerWidget					m_Content;
+	protected RichTextWidget 					m_InfoPanelText;
+	protected Widget 							m_InfoPanel;
 	
 	override Widget Init()
 	{
@@ -32,6 +34,8 @@ class CreditsMenu extends UIScriptedMenu
 		m_Logo		= ImageWidget.Cast( layoutRoot.FindAnyWidget( "Logo" ) );
 		m_Scroller	= ScrollWidget.Cast( layoutRoot.FindAnyWidget( "CreditsPanel" ) );
 		m_Content	= WrapSpacerWidget.Cast( layoutRoot.FindAnyWidget( "CreditsContent" ) );
+		m_InfoPanelText = RichTextWidget.Cast( layoutRoot.FindAnyWidget( "InfoPanelText" ) );
+		m_InfoPanel = layoutRoot.FindAnyWidget( "InfoPanel" );
 		
 		GetScreenSize( x, y );
 		
@@ -43,6 +47,9 @@ class CreditsMenu extends UIScriptedMenu
 		m_Scroller.GetScreenSize( x_f, m_ScrollSize );
 		
 		GetGame().GameScript.Call( this, "LoadDataAsync", null );
+		
+		UpdateInfoPanelText(GetGame().GetInput().GetCurrentInputDevice());
+		
 		return layoutRoot;
 	}
 	
@@ -79,6 +86,7 @@ class CreditsMenu extends UIScriptedMenu
 			
 			layoutRoot.SetAlpha( m_MenuFadeInLevel );
 			m_Logo.SetAlpha( m_LogoFadeInLevel );
+			m_InfoPanelText.SetAlpha( m_MenuFadeInLevel );
 		}
 		else if( m_ScrollLevel + m_ScrollSize <= m_Scroller.GetContentHeight() )
 		{
@@ -95,6 +103,7 @@ class CreditsMenu extends UIScriptedMenu
 				Close();
 			
 			layoutRoot.SetAlpha( m_MenuFadeInLevel2 );
+			m_InfoPanelText.SetAlpha( m_MenuFadeInLevel2 );
 		}
 		
 		m_CurrentTime += timeslice;
@@ -102,6 +111,18 @@ class CreditsMenu extends UIScriptedMenu
 		if( GetGame().GetInput().LocalRelease("UAUIBack") )
 		{
 			Close();
+		}
+	}
+	
+	void UpdateInfoPanelText(int input_device_type)
+	{
+		if (GetGame().GetInput().IsEnabledMouseAndKeyboard() && input_device_type == EInputDeviceType.MOUSE_AND_KEYBOARD)
+		{
+			m_InfoPanelText.SetText("ESC " + "#menu_back");
+		}
+		else
+		{
+			m_InfoPanelText.SetText(InputUtils.GetRichtextButtonIconFromInputAction("UAUIBack", "#menu_back", EUAINPUT_DEVICE_CONTROLLER, InputUtils.ICON_SCALE_TOOLBAR));
 		}
 	}
 }

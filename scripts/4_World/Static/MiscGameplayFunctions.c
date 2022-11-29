@@ -139,9 +139,14 @@ class DropEquipAndDestroyRootLambda : ReplaceItemWithNewLambdaBase
 				child.GetInventory().GetCurrentInventoryLocation(child_src);
 				
 				InventoryLocation child_dst = new InventoryLocation;
-				child_dst.Copy(child_src);
-				child_dst.CopyLocationFrom(understash_src, true);
 				//@TODO: modify _dst with place on gnd?
+				
+				vector m4[4];
+				Math3D.MatrixIdentity4(m4);
+				
+				GameInventory.PrepareDropEntityPos(old_item, child, m4, false);
+				
+				child_dst.SetGround(child,m4);
 				
 				m_Player.LocalTakeToDst(child_src, child_dst);
 												
@@ -205,7 +210,33 @@ enum ThrowEntityFlags
 }
 
 class MiscGameplayFunctions
-{	
+{
+	//! truncate float to specified precision
+	static float Truncate(float value, int decimals = 2)
+	{
+		int multiplier = Math.Pow(10,decimals);
+		return Math.Clamp(Math.Floor(value * multiplier),float.LOWEST, float.MAX) / multiplier;
+	}
+	//! truncate float to specified precision, output as string
+	static string TruncateToS(float value, int decimals = 2)
+	{
+		return Truncate(value, decimals).ToString();
+	}
+	//! truncate float to specified precision
+	static vector TruncateVec(vector value, int decimals = 2)
+	{
+		int multiplier = Math.Pow(10,decimals);
+		float v1 = Math.Clamp(Math.Floor(value[0] * multiplier),float.LOWEST, float.MAX) / multiplier;
+		float v2 = Math.Clamp(Math.Floor(value[1] * multiplier),float.LOWEST, float.MAX) / multiplier;
+		float v3 = Math.Clamp(Math.Floor(value[2] * multiplier),float.LOWEST, float.MAX) / multiplier;
+		return Vector(v1,v2,v3);
+	}
+	
+	static string TruncateVecToS(vector value,int decimals = 2, string delimiter = " ")
+	{
+		return MiscGameplayFunctions.TruncateToS(value[0],decimals) + delimiter + MiscGameplayFunctions.TruncateToS(value[1],decimals) +delimiter + MiscGameplayFunctions.TruncateToS(value[2],decimals));
+	}
+	
 	static string GetColorString(float r, float g, float b, float a)
 	{
 		return string.Format("#(argb,8,8,3)color(%1,CO)", string.Format("%1,%2,%3,%4", r, g, b, a));
@@ -346,7 +377,7 @@ class MiscGameplayFunctions
 			{
 				magazine = weapon.GetMagazine(weapon.GetCurrentMuzzle());
 			
-				if(magazine)
+				if (magazine)
 				{
 					if (magazine.GetAmmoCount() <= 5)
 					{
@@ -358,7 +389,7 @@ class MiscGameplayFunctions
 			{
 				magazine = weapon.GetMagazine(weapon.GetCurrentMuzzle());
 			
-				if(magazine)
+				if (magazine)
 				{
 					if (magazine.GetAmmoCount() <= 5)
 					{
@@ -395,7 +426,7 @@ class MiscGameplayFunctions
 	//!Spawns multiple piles of stackable ItemBase objects on ground (intended for generic use)
 	static array<ItemBase> CreateItemBasePiles(string item_name, vector ground_position, float quantity, float health, bool floaty_spawn = false)
 	{
-		ref array<ItemBase>	item_piles;
+		array<ItemBase>	item_piles;
 		float max_stack_size;
 		ItemBase pile;
 		
@@ -434,7 +465,7 @@ class MiscGameplayFunctions
 	
 	static array<Magazine> CreateMagazinePiles(string item_name, vector ground_position, float quantity,  float health )
 	{
-		ref array<Magazine>	items;
+		array<Magazine>	items;
 		float stack_size;
 		Magazine pile;
 		
@@ -461,7 +492,7 @@ class MiscGameplayFunctions
 	
 	static array<Magazine> CreateMagazinePilesFromBullet(string bullet_type, vector ground_position, float quantity,  float health )
 	{
-		ref array<Magazine>	items;
+		array<Magazine>	items;
 		items = new array<Magazine>;
 		float stack_size;
 		Magazine pile;
@@ -580,30 +611,22 @@ class MiscGameplayFunctions
 	static float GetEnergyMetabolicSpeed(int movement_speed)
 	{
 		float speed;
-		//PrintString(movement_speed.ToString());
 		switch (movement_speed)
 		{
-			case 1:
-			{
-				speed = PlayerConstants.METABOLIC_SPEED_ENERGY_WALK;
-				break;
-			}
-			case 2:
-			{
-				speed = PlayerConstants.METABOLIC_SPEED_ENERGY_JOG;
-				break;
-			}
-			case 3:
-			{
-				speed = PlayerConstants.METABOLIC_SPEED_ENERGY_SPRINT;
-				break;
-			}
-			default:
-			{
-				speed = 0;
-				break;
-			}
+		case DayZPlayerConstants.MOVEMENTIDX_WALK:
+			speed = PlayerConstants.METABOLIC_SPEED_ENERGY_WALK;
+		break;
+		case DayZPlayerConstants.MOVEMENTIDX_RUN:
+			speed = PlayerConstants.METABOLIC_SPEED_ENERGY_JOG;
+		break;
+		case DayZPlayerConstants.MOVEMENTIDX_SPRINT:
+			speed = PlayerConstants.METABOLIC_SPEED_ENERGY_SPRINT;
+		break;
+		default:
+			speed = 0;
+		break;
 		}
+
 		speed += PlayerConstants.METABOLIC_SPEED_ENERGY_BASAL;
 		return speed;
 	}
@@ -613,27 +636,20 @@ class MiscGameplayFunctions
 		float speed;
 		switch (movement_speed)
 		{
-			case 1:
-			{
-				speed = PlayerConstants.METABOLIC_SPEED_WATER_WALK;
-				break;
-			}
-			case 2:
-			{
-				speed = PlayerConstants.METABOLIC_SPEED_WATER_JOG;
-				break;
-			}
-			case 3:
-			{
-				speed = PlayerConstants.METABOLIC_SPEED_WATER_SPRINT;
-				break;
-			}
-			default:
-			{
-				speed = 0;
-				break;
-			}
+		case DayZPlayerConstants.MOVEMENTIDX_WALK:
+			speed = PlayerConstants.METABOLIC_SPEED_WATER_WALK;
+		break;
+		case DayZPlayerConstants.MOVEMENTIDX_RUN:
+			speed = PlayerConstants.METABOLIC_SPEED_WATER_JOG;
+		break;
+		case DayZPlayerConstants.MOVEMENTIDX_SPRINT:
+			speed = PlayerConstants.METABOLIC_SPEED_WATER_SPRINT;
+		break;
+		default:
+			speed = 0;
+		break;
 		}
+
 		speed += PlayerConstants.METABOLIC_SPEED_WATER_BASAL;
 		return speed;
 	}
@@ -647,25 +663,25 @@ class MiscGameplayFunctions
 	{
 		bool type;
 		
-		if( tool )
+		if ( tool )
 		{
 			//is unrestrain and not struggle
 			type = tool.ConfigGetBool("RestrainUnlockType");
 		}
 		string new_item_name = current_item.ConfigGetString( "OnRestrainChange");
 		
-		if( new_item_name != "" )
+		if ( new_item_name != "" )
 		{
-			if( player_target )
+			if ( player_target )
 			{
 				if (player_target.IsAlive())
-					MiscGameplayFunctions.TurnItemIntoItemEx(player_target, new ReplaceAndDestroyLambda(current_item, new_item_name, player_target, type));
+					MiscGameplayFunctions.TurnItemIntoItemEx(player_target, new ReplaceAndDestroyLambdaEx(current_item, new_item_name, player_target, type));
 				else
 					MiscGameplayFunctions.TurnItemIntoItemEx(player_source, new DestroyItemInCorpsesHandsAndCreateNewOnGndLambda(current_item, new_item_name, player_target, type));
 			}
 			else
 			{
-				MiscGameplayFunctions.TurnItemIntoItemEx(player_target, new ReplaceAndDestroyLambda(current_item, new_item_name, player_target, type));
+				MiscGameplayFunctions.TurnItemIntoItemEx(player_target, new ReplaceAndDestroyLambdaEx(current_item, new_item_name, player_target, type));
 			}
 		}
 		else
@@ -682,7 +698,7 @@ class MiscGameplayFunctions
 	//! Check if player direction(based on cone of defined angle) is oriented to target position
 	static bool IsPlayerOrientedTowardPos(notnull DayZPlayerImplement player, vector target_pos, float cone_angle)
 	{
-		if(player)
+		if (player)
 		{
 			vector player_dir = player.GetDirection();
 			vector to_target_dir = target_pos - player.GetPosition();
@@ -721,79 +737,98 @@ class MiscGameplayFunctions
 		return output;
 	}
 	
+	// deprecated - dont use
 	static bool ComplexBuildCollideCheckClient( PlayerBase player, ActionTarget target, ItemBase item, string partName = "" )
+	{
+		return true;
+	}
+	
+	static bool ComplexBuildCollideCheckClient( PlayerBase player, ActionTarget target, ItemBase item, int constraction_index )
 	{
 		BaseBuildingBase base_building = BaseBuildingBase.Cast( target.GetObject() );
 		if (base_building)
 		{
 			Construction construction = base_building.GetConstruction();
-			if (construction && BuildCondition( player, target, item, false ))
+			if (construction && BuildCondition( player, target, item, false, constraction_index ))
 			{
 				ConstructionActionData construction_action_data = player.GetConstructionActionData();
-				if (partName == "")
-					partName = construction_action_data.GetCurrentBuildPart().GetPartName();
+				string partName;
+				if ( item )
+				{
+					partName = construction_action_data.GetBuildPartAtIndex(constraction_index).GetPartName();
+				}
+				else
+				{
+					partName = construction_action_data.GetBuildPartNoToolAtIndex(constraction_index).GetPartName();
+				}
 				bool boo;
 				if (base_building.PerformRoofCheckForBase(partName,player,boo) && boo)
 					return false;
 				if ( player.IsPlacingLocal() || player.IsPlacingServer() )
 					return false;
 				
-				float distance_root = vector.DistanceSq(target.GetCursorHitPos(), player.GetPosition());
-				
-				if (distance_root < UAMaxDistances.BASEBUILDING_SHORT)
-					return false; 
-				
+				/*float distance_root = vector.DistanceSq(target.GetCursorHitPos(), player.GetPosition());
+
+				if (!CfgGameplayHandler.GetDisableDistanceCheck() && distance_root < UAMaxDistances.BASEBUILDING_SHORT)
+				{
+					return false;
+				} */
 				return !construction.IsColliding( partName );
 			}
 		}
 		return false;
 	}
 	
+	// deprecated - dont use
 	static bool BuildCondition( PlayerBase player, ActionTarget target, ItemBase item, bool camera_check )
-	{	
-		if ( player && !player.IsLeaning() )
-		{
-			Object targetObject = target.GetObject();
-			if ( targetObject && targetObject.CanUseConstruction() )
-			{
-				BaseBuildingBase base_building = BaseBuildingBase.Cast( targetObject );
-				ConstructionActionData construction_action_data = player.GetConstructionActionData();
-				construction_action_data.SetTarget( targetObject );
-				
-				string main_part_name = targetObject.GetActionComponentName( target.GetComponentIndex() );
-				
-				if ( GetGame().IsMultiplayer() || GetGame().IsServer() )
-				{
-					construction_action_data.RefreshPartsToBuild( main_part_name, item, !targetObject.CanUseHandConstruction() );
-				}
-				ConstructionPart constrution_part = construction_action_data.GetCurrentBuildPart();
+	{
+		return true;
+	}
 	
-				//Debug
-				/*
-				if ( constrution_part )
-				{
-					Construction construction = base_building.GetConstruction();	
-					construction.IsColliding( constrution_part.GetPartName() );
-				}
-				*/
+	static bool BuildCondition( PlayerBase player, ActionTarget target, ItemBase item, bool camera_check, int constraction_index )
+	{	
+		Object targetObject = target.GetObject();
+		if ( targetObject && targetObject.CanUseConstruction() )
+		{
+			BaseBuildingBase base_building = BaseBuildingBase.Cast( targetObject );
+			ConstructionActionData construction_action_data = player.GetConstructionActionData();
+			construction_action_data.SetTarget( targetObject );
+			
+			ConstructionPart constrution_part;
+			if ( item )
+			{
+				constrution_part = construction_action_data.GetBuildPartAtIndex(constraction_index);
+			}
+			else
+			{
+				constrution_part = construction_action_data.GetBuildPartNoToolAtIndex(constraction_index);
+			}
 
-				if ( constrution_part )
+			//Debug
+			/*
+			if ( constrution_part )
+			{
+				Construction construction = base_building.GetConstruction();	
+				construction.IsColliding( constrution_part.GetPartName() );
+			}
+			*/
+			
+			if ( constrution_part )
+			{
+				//camera and position checks
+				bool position_check = ( base_building.MustBeBuiltFromOutside() && !base_building.IsPlayerInside(player, constrution_part.GetMainPartName()) ) || ( !base_building.MustBeBuiltFromOutside() && base_building.IsPlayerInside(player, constrution_part.GetMainPartName()) );
+				if ( position_check && !player.GetInputController().CameraIsFreeLook() )
 				{
-					//camera and position checks
-					bool position_check = ( base_building.MustBeBuiltFromOutside() && !base_building.IsPlayerInside(player, constrution_part.GetMainPartName()) ) || ( !base_building.MustBeBuiltFromOutside() && base_building.IsPlayerInside(player, constrution_part.GetMainPartName()) );
-					if ( position_check && !player.GetInputController().CameraIsFreeLook() )
+					//Camera check (client-only)
+					if ( camera_check )
 					{
-						//Camera check (client-only)
-						if ( camera_check )
+						if ( GetGame() && ( !GetGame().IsDedicatedServer() ) )
 						{
-							if ( GetGame() && ( !GetGame().IsMultiplayer() || GetGame().IsClient() ) )
-							{
-								return !base_building.IsFacingCamera( constrution_part.GetMainPartName() );
-							}
+							return !base_building.IsFacingCamera( constrution_part.GetMainPartName() );
 						}
-						
-						return true;
 					}
+					
+					return true;
 				}
 			}
 		}
@@ -1076,7 +1111,7 @@ class MiscGameplayFunctions
 			break;
 		}
 		
-		//! apply fatctors
+		//! apply factors
 		heatIsolation *= healthFactor;
 		heatIsolation *= wetFactor;
 
@@ -1146,7 +1181,7 @@ class MiscGameplayFunctions
 
 		array<ref array<Object>> tempGroups = new array<ref array<Object>>;
 		array<ref array<Object>> objectGroups = new array<ref array<Object>>;
-		ref array<Object> group;
+		array<Object> group;
 		
 		float cos = Math.Cos(90);
 		float sin = Math.Sin(90);
@@ -1217,7 +1252,7 @@ class MiscGameplayFunctions
 
 	static void SplitArrayIntoGroupsByDistance(array<Object> objects, array<ref array<Object>> objectGroups, float squaredDistanceDelta)
 	{
-		ref array<Object> group;
+		array<Object> group;
 		for ( int i = 0; i < objects.Count(); )
 		{
 			Object obj1 = objects[i];
@@ -1377,16 +1412,19 @@ class MiscGameplayFunctions
 		return cycle;
 	}
 	
+	// DEPRECATED, use Math.ModFloat directly instead
 	static float FModulus(float x, float y)
 	{
-		float res;
+		// Keeping this for reference in case someone wants it later
+		/*float res;
 		//Prevent division by 0
 		if (y == 0)
 			y = 1;
 		
 		int n = Math.Floor(x/y);
 		res = x - n * y;
-		return res;
+		return res;*/
+		return Math.ModFloat( x, y );
 	}
 	
 	static void RemoveSplint( PlayerBase player )
@@ -1441,12 +1479,141 @@ class MiscGameplayFunctions
 			attachment.Delete();
 		}
 	}
+	
+	//! checks if we should teleport the player to a safe location and if so, performs the teleportation
+	static void TeleportCheck(notnull PlayerBase player, notnull array<ref array<float>> safe_positions)
+	{
+		if( player.GetSimulationTimeStamp() < 20 && !player.IsPersistentFlag(PersistentFlag.AREA_PRESENCE) )
+		{
+			//simulation time is bellow a threshold, which means the player has recently connected,
+			//the player does not have the AREA_PRESENCE flag set, which means they were not inside the area when they disconnected,
+			//that means they just spawned into a contaminated area, lets move them somewhere safe
+			vector player_pos = player.GetPosition();
+			vector closest_safe_pos = MiscGameplayFunctions.GetClosestSafePos(player_pos, safe_positions);
+			
+			if (player_pos!=closest_safe_pos)
+			{
+				closest_safe_pos[1] = GetGame().SurfaceY(closest_safe_pos[0], closest_safe_pos[2]);
+				
+				player.SetPosition( closest_safe_pos );//...so lets teleport them somewhere safe
+				//DeveloperTeleport.SetPlayerPosition(player, closest_safe_pos);
+				GetGame().RPCSingleParam(player, ERPCs.RPC_WARNING_TELEPORT, null, true, player.GetIdentity());
+			}
+			
+			player.SetPersistentFlag(PersistentFlag.AREA_PRESENCE, false);
+		}
+	}
+	
+	
+	static vector GetClosestSafePos(vector to_pos, notnull array<ref array<float>> positions)
+	{
+		vector closest_pos = to_pos;
+		float smallest_dist = float.MAX;
+		foreach( array<float> pos:positions)
+		{
+			vector vpos = "0 0 0";
+			vpos[0] = pos[0];
+			vpos[2] = pos[1];
+
+			to_pos[1] = 0;
+			float dist = vector.DistanceSq(to_pos, vpos);//2d dist sq
+			if ( dist < smallest_dist)
+			{
+				smallest_dist = dist;
+				closest_pos = vpos;
+			}
+		}
+		return closest_pos;
+	}
+	
+	static void GenerateAINoiseAtPosition(vector position, float lifeTime, NoiseParams noiseParams)
+	{
+		if (GetGame().IsServer())
+		{
+			NoiseSystem noise = GetGame().GetNoiseSystem();
+			if (noise)
+			{
+				noise.AddNoiseTarget(position, lifeTime, noiseParams);
+			}
+		}
+	}
+
+	static float GetMinValue(array<float> pArray)
+	{
+		float minValue = 0.0;
+		for (int i = 0; i < pArray.Count(); i++)
+		{
+			if (minValue == 0 || pArray.Get(i) < minValue)
+			{
+				minValue = pArray.Get(i);
+			}
+		}
+		
+		return minValue;
+	}
+	
+	static float GetMaxValue(array<float> pArray)
+	{
+		float maxValue = 0.0;
+		for (int i = 0; i < pArray.Count(); i++)
+		{
+			if (maxValue == 0 || pArray.Get(i) > maxValue)
+			{
+				maxValue = pArray.Get(i);
+			}
+		}
+		
+		return maxValue;
+	}
+		
+	static string GetItemDisplayName(string type)
+	{
+		return GetGame().ConfigGetTextOut("CfgVehicles " + type + " displayName");
+	}
+
+	static bool IsComponentInSelection(array<Selection> pSelection, string pCompName)
+	{
+		if (pSelection.Count() == 0 || pCompName.Length() == 0)
+		{
+			return false;
+		}
+
+		for (int i = 0; i < pSelection.Count(); ++i)
+		{
+			pCompName.ToLower();
+			if (pSelection[i] && pSelection[i].GetName() == pCompName)
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+	
+	static int GetComponentIndex(array<Selection> pSelection, string pCompName)
+	{
+		if (!MiscGameplayFunctions.IsComponentInSelection(pSelection, pCompName))
+		{
+			return INDEX_NOT_FOUND;
+		}
+
+		for (int i = 0; i < pSelection.Count(); ++i)
+		{
+			pCompName.ToLower();
+			if (pSelection[i] && pSelection[i].GetName() == pCompName)
+			{
+				return i;
+			}
+		}
+
+		return INDEX_NOT_FOUND;
+	}
 };
 
 class DestroyItemInCorpsesHandsAndCreateNewOnGndLambda : ReplaceAndDestroyLambda
 {
 	// @NOTE m_Player == target player - i.e. restrained one
-	void DestroyItemInCorpsesHandsAndCreateNewOnGndLambda (EntityAI old_item, string new_item_type, PlayerBase player, bool destroy = false)
+	void DestroyItemInCorpsesHandsAndCreateNewOnGndLambda(EntityAI old_item, string new_item_type, PlayerBase player, bool destroy = false)
 	{
 		InventoryLocation gnd = new InventoryLocation;
 		vector mtx[4];
@@ -1458,7 +1625,7 @@ class DestroyItemInCorpsesHandsAndCreateNewOnGndLambda : ReplaceAndDestroyLambda
 		OverrideNewLocation(gnd);
 	}
 	
-	protected override void RemoveOldItemFromLocation ()
+	protected override void RemoveOldItemFromLocation()
 	{
 		super.RemoveOldItemFromLocation();
 		m_Player.GetHumanInventory().OnEntityInHandsDestroyed(m_OldLocation);

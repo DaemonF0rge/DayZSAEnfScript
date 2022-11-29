@@ -7,14 +7,18 @@ class ItemActionsWidget extends ScriptedWidgetEventHandler
 	protected ActionBase				m_Single;
 	protected ActionBase				m_Continuous;
 	protected ActionManagerClient	 	m_AM;
+	protected IngameHud					m_Hud;
 
 	protected int						m_InteractActionsNum;
 	protected int						m_ContinuousInteractActionsNum;
+	protected int						m_ItemActionsNum;
+	protected int						m_ContinuousItemActionsNum;
 	protected bool 						m_HealthEnabled;
 	protected bool						m_QuantityEnabled;
 	
 	protected ref WidgetFadeTimer		m_FadeTimer;
 	protected bool						m_Faded;
+	protected bool 						m_Hidden;
 
 	protected Widget					m_Root;
 	protected Widget 					m_ItemLeft;
@@ -38,68 +42,97 @@ class ItemActionsWidget extends ScriptedWidgetEventHandler
 		m_HealthEnabled 		= true;
 		m_QuantityEnabled 		= true;
 		
-		//KeysToUIElements.Init(); // Initialiaze of KeysToUIElements
-
+		m_Hud					= GetHud();
+		m_Hidden 				= true;
+		
 		GetGame().GetUpdateQueue(CALL_CATEGORY_GUI).Insert(Update);
+		GetGame().GetMission().GetOnInputPresetChanged().Insert(OnInputPresetChanged);
+		GetGame().GetMission().GetOnInputDeviceChanged().Insert(OnInputDeviceChanged);
 	}
 	
 	void ~ItemActionsWidget()
 	{
 		GetGame().GetUpdateQueue(CALL_CATEGORY_GUI).Remove(Update);
 	}
-
-	void SetInteractXboxIcon( string imageset_name, string image_name )
-	{
-		SetXboxIcon( "ia_interact", imageset_name, image_name );
-	}
-
-	void SetContinuousInteractXboxIcon( string imageset_name, string image_name )
-	{
-		SetXboxIcon( "ia_continuous_interact", imageset_name, image_name );
-	}
-
-	void SetSingleXboxIcon( string imageset_name, string image_name )
-	{
-		SetXboxIcon( "ia_single", imageset_name, image_name );
-	}
 	
-	void SetContinuousXboxIcon( string imageset_name, string image_name )
-	{
-		SetXboxIcon( "ia_continuous", imageset_name, image_name );
-	}
+	//! DEPRECATED
+	void SetInteractXboxIcon(string imageset_name, string image_name) {};
+	void SetContinuousInteractXboxIcon(string imageset_name, string image_name) {};
+	void SetSingleXboxIcon(string imageset_name, string image_name) {};
+	void SetContinuousXboxIcon(string imageset_name, string image_name) {};
+	protected void SetXboxIcon(string name, string imageset_name, string image_name) {};
+	//! ----------
 	
-	protected void SetXboxIcon( string name, string imageset_name, string image_name )
+	protected void SetControllerIcon(string pWidgetName, string pInputName)
 	{
-		ImageWidget w = ImageWidget.Cast( m_Root.FindAnyWidget( name + "_btn_icon_xbox" ) );
-		w.LoadImageFile( 0, "set:"+ imageset_name + " image:" + image_name );
+		RichTextWidget w = RichTextWidget.Cast(m_Root.FindAnyWidget(pWidgetName + "_btn_icon_xbox"));
+		w.SetText(InputUtils.GetRichtextButtonIconFromInputAction(pInputName, "", EUAINPUT_DEVICE_CONTROLLER));
 	}
 
-	protected void ShowXboxHidePCIcons( string widget, bool show_xbox_icon )
+	protected void ShowXboxHidePCIcons(string widget, bool show_xbox_icon)
 	{
-		m_Root.FindAnyWidget( widget + "_btn_icon_xbox" ).Show( show_xbox_icon );
-		m_Root.FindAnyWidget( widget + "_btn_icon" ).Show( !show_xbox_icon );
+		m_Root.FindAnyWidget(widget + "_btn_icon_xbox" ).Show(show_xbox_icon);
+		m_Root.FindAnyWidget(widget + "_btn_icon" ).Show(!show_xbox_icon);
 	}
 
 	protected void OnWidgetScriptInit(Widget w)
 	{
 		m_Root = w;
 		m_Root.SetHandler(this);
-		m_Root.Show(false);
+		m_Root.Show(false);		
 
 		m_ItemLeft = w.FindAnyWidget("ia_item_left");
+
+		bool isMouseEnabled = true;
+		#ifdef PLATFORM_CONSOLE
+		isMouseEnabled = GetGame().GetInput().IsEnabledMouseAndKeyboardEvenOnServer();
+		#endif
 		
-#ifdef PLATFORM_XBOX
-		SetSingleXboxIcon("xbox_buttons", "RT");
-		SetContinuousXboxIcon("xbox_buttons", "RT");
-		SetInteractXboxIcon("xbox_buttons", "X");
-		SetContinuousInteractXboxIcon("xbox_buttons", "X");
-#endif
-#ifdef PLATFORM_PS4
-		SetSingleXboxIcon("playstation_buttons", "R2");
-		SetContinuousXboxIcon("playstation_buttons", "R2");
-		SetInteractXboxIcon("playstation_buttons", "square");
-		SetContinuousInteractXboxIcon("playstation_buttons", "square");
-#endif
+		//! UA -> widget icon
+		SetControllerIcon("ia_interact", "UAAction");
+		SetControllerIcon("ia_continuous_interact", "UAAction");
+		SetControllerIcon("ia_single", "UADefaultAction");
+		SetControllerIcon("ia_continuous", "UADefaultAction");
+
+		ShowXboxHidePCIcons("ia_interact", !isMouseEnabled);
+		ShowXboxHidePCIcons("ia_continuous_interact", !isMouseEnabled);
+		ShowXboxHidePCIcons("ia_single", !isMouseEnabled);
+		ShowXboxHidePCIcons("ia_continuous", !isMouseEnabled);
+	}
+	
+	protected void OnInputPresetChanged()
+	{
+		#ifdef PLATFORM_CONSOLE
+		SetControllerIcon("ia_interact", "UAAction");
+		SetControllerIcon("ia_continuous_interact", "UAAction");
+		SetControllerIcon("ia_single", "UADefaultAction");
+		SetControllerIcon("ia_continuous", "UADefaultAction");
+		#endif
+	}
+
+	protected void OnInputDeviceChanged(EInputDeviceType pInputDeviceType)
+	{
+		switch (pInputDeviceType)
+		{
+		case EInputDeviceType.CONTROLLER:
+			ShowXboxHidePCIcons("ia_interact", true);
+			ShowXboxHidePCIcons("ia_continuous_interact", true);
+			ShowXboxHidePCIcons("ia_continuous", true);
+			ShowXboxHidePCIcons("ia_single", true);
+		break;
+
+		default:
+			bool isMouseEnabled = true;
+			#ifdef PLATFORM_CONSOLE
+			isMouseEnabled = GetGame().GetInput().IsEnabledMouseAndKeyboardEvenOnServer();
+			#endif
+
+			ShowXboxHidePCIcons("ia_interact", !isMouseEnabled);
+			ShowXboxHidePCIcons("ia_continuous_interact", !isMouseEnabled);
+			ShowXboxHidePCIcons("ia_continuous", !isMouseEnabled);
+			ShowXboxHidePCIcons("ia_single", !isMouseEnabled);
+		break;
+		}
 	}
 
 	protected void BuildCursor()
@@ -116,14 +149,13 @@ class ItemActionsWidget extends ScriptedWidgetEventHandler
 		
 		// quantity
 		//! weapon specific
-		if( m_EntityInHands && m_EntityInHands.IsWeapon() )
+		if (m_EntityInHands && m_EntityInHands.IsWeapon())
 		{
-			//GetWeaponQuantity(q_chamber, q_mag);
 			SetWeaponQuantity(q_chamber, q_mag, "ia_item", "ia_item_quantity_pb", "ia_item_quantity_text", m_QuantityEnabled);
 			SetWeaponModeAndZeroing("ia_item_subdesc", "ia_item_subdesc_up", "ia_item_subdesc_down", true);
 		}
 		//! transmitter/PAS specific
-		else if( m_EntityInHands && m_EntityInHands.IsTransmitter() )
+		else if (m_EntityInHands && m_EntityInHands.IsTransmitter())
 		{
 			SetRadioFrequency(GetRadioFrequency(), "ia_item_subdesc", "ia_item_subdesc_up", "ia_item_subdesc_down", m_QuantityEnabled);
 			GetItemQuantity(q_type, q_cur, q_min, q_max);
@@ -146,42 +178,40 @@ class ItemActionsWidget extends ScriptedWidgetEventHandler
 		SetActionWidget(m_Single, GetActionDesc(m_Single), "ia_single", "ia_single_action_name");
 		SetActionWidget(m_Continuous, GetActionDesc(m_Continuous), "ia_continuous", "ia_continuous_action_name");
 		SetMultipleInteractAction("ia_interact_mlt_wrapper");
-		SetMultipleContinuousInteractAction("continuous_interact_mlt_wrapper");
+		SetMultipleContinuousInteractAction("ia_continuous_interact_mlt_wrapper");
+		SetMultipleItemAction("ia_single_mlt_wrapper");
+		SetMultipleContinuousItemAction("ia_continuous_mlt_wrapper");
 	}
-		
+	
 	protected void Update()
 	{
-		//! don't show crosshair if it's disabled in profile
-		if(!g_Game.GetProfileOption(EDayZProfilesOptions.HUD))
+		//! don't show when disabled in profile
+		if (!g_Game.GetProfileOption(EDayZProfilesOptions.HUD) || !m_Hud.IsHudVisible())
 		{
 			m_Root.Show(false);
 			return;
 		};
 
-		if(m_Player && !m_Player.IsAlive()) // handle respawn
+		if (m_Player && !m_Player.IsAlive()) // handle respawn
 		{
 			m_Player = null;
 			m_AM = null;
 		}
-		if(!m_Player) GetPlayer();
-		if(!m_AM) GetActionManager();
+		if (!m_Player) GetPlayer();
+		if (!m_AM) GetActionManager();
 
-		GetEntityInHands();
 		GetActions();
+		GetEntityInHands();
 
-		if((m_EntityInHands || m_Interact || m_ContinuousInteract || m_Single || m_Continuous) && GetGame().GetUIManager().GetMenu() == null)
+		if ((m_EntityInHands || !m_Hidden) && GetGame().GetUIManager().GetMenu() == null)
 		{
+			CheckForActionWidgetOverrides();
 			BuildCursor();
 			CheckRefresherFlagVisibility();
 			m_Root.Show(true);
 		}
 		else
-		{
-			if (m_Root.IsVisible())
-			{
-				m_Root.Show(false);
-			}
-		}
+			m_Root.Show(false);
 
 		m_MaxWidthChild = 200;
 	}
@@ -194,8 +224,8 @@ class ItemActionsWidget extends ScriptedWidgetEventHandler
 
 	protected void GetActionManager()
 	{
-		if( m_Player && m_Player.IsPlayerSelected() )
-			ActionManagerClient.CastTo( m_AM, m_Player.GetActionManager() );
+		if (m_Player && m_Player.IsPlayerSelected())
+			ActionManagerClient.CastTo(m_AM, m_Player.GetActionManager());
 		else
 			m_AM = null;
 	}
@@ -207,35 +237,29 @@ class ItemActionsWidget extends ScriptedWidgetEventHandler
 		m_Single = null;
 		m_Continuous = null;
 
-		if(!m_AM) return;
-		//if(!m_EntityInHands) return false;
-		if(m_Player.IsSprinting()) return;
+		if (!m_AM)
+			return;
+
+		if (m_Player.IsSprinting())
+			return;
 		
-		array<ActionBase> possible_interact_actions = m_AM.GetPossibleActions(InteractActionInput);
-		int possible_interact_actions_index = m_AM.GetPossibleActionIndex(InteractActionInput);
-		array<ActionBase> possible_continuous_interact_actions = m_AM.GetPossibleActions(ContinuousInteractActionInput);
-		int possible_continuous_interact_actions_index = m_AM.GetPossibleActionIndex(ContinuousInteractActionInput);
-		
-		m_InteractActionsNum = possible_interact_actions.Count();
-		if ( m_InteractActionsNum > 0 )
-		{
-			m_Interact = possible_interact_actions[possible_interact_actions_index];
-		}
-		
-		m_ContinuousInteractActionsNum = possible_continuous_interact_actions.Count();
-		if ( m_ContinuousInteractActionsNum > 0 )
-		{
-			m_ContinuousInteract = possible_continuous_interact_actions[possible_continuous_interact_actions_index];
-		}
-		
-		
+		m_Interact = m_AM.GetPossibleAction(InteractActionInput);
+		m_ContinuousInteract = m_AM.GetPossibleAction(ContinuousInteractActionInput);
 		m_Single = m_AM.GetPossibleAction(DefaultActionInput);
 		m_Continuous = m_AM.GetPossibleAction(ContinuousDefaultActionInput);
+		
+		if (!m_Interact && !m_ContinuousInteract && !m_Continuous && !m_Single)
+			m_Hidden = false;
+		
+		m_InteractActionsNum = m_AM.GetPossibleActionCount(InteractActionInput);
+		m_ContinuousInteractActionsNum = m_AM.GetPossibleActionCount(ContinuousInteractActionInput);
+		m_ItemActionsNum = m_AM.GetPossibleActionCount(DefaultActionInput);
+		m_ContinuousItemActionsNum = m_AM.GetPossibleActionCount(ContinuousDefaultActionInput);
 	}
 
 	protected void GetEntityInHands()
 	{
-		if(!m_Player) return;
+		if (!m_Player) return;
 		
 		EntityAI eai = m_Player.GetHumanInventory().GetEntityInHands();
 		
@@ -251,51 +275,37 @@ class ItemActionsWidget extends ScriptedWidgetEventHandler
 	
 	protected string GetActionDesc(ActionBase action)
 	{
-		string desc = "";
 		if (action && action.GetText())
-		{
-			desc = action.GetText();
-			return desc;
-		}
-		return desc;
+			return action.GetText();
+
+		return string.Empty;
 	}
 	
 	protected string GetItemDesc(EntityAI entity)
 	{
-		string desc = "";
+		if (m_EntityInHands)
+			return m_EntityInHands.GetDisplayName();
 
-		if(m_EntityInHands)
-		{
-			desc = m_EntityInHands.GetDisplayName();
-			return desc;
-		}
-		return desc;
+		return string.Empty;
 	}
 	
 	protected int GetItemHealth()
 	{
-		int health = -1;
-
-		if(m_EntityInHands)
-		{
-			health = m_EntityInHands.GetHealthLevel();
-			return health;
-		}
+		if (m_EntityInHands)
+			return m_EntityInHands.GetHealthLevel();
 		
-		return health;
+		return -1;
 	}
 
 	protected void GetItemQuantity(out int q_type, out float q_cur, out int q_min, out int q_max)
 	{
-		InventoryItem item = null;
-
-		if( m_EntityInHands )
+		if ( m_EntityInHands )
 		{
-			Class.CastTo(item, m_EntityInHands);
+			InventoryItem item = InventoryItem.Cast(m_EntityInHands);
 			q_type = QuantityConversions.HasItemQuantity(m_EntityInHands);
-			if(q_type > 0)
+			if (q_type > 0)
 			{
-				if(q_type == QUANTITY_PROGRESS)
+				if (q_type == QUANTITY_PROGRESS)
 				{
 					QuantityConversions.GetItemQuantity(item, q_cur, q_min, q_max);
 
@@ -313,43 +323,10 @@ class ItemActionsWidget extends ScriptedWidgetEventHandler
 		}
 	}
 	
-/*	protected void GetWeaponQuantity(out int q_chamber, out int q_mag)
-	{
-		q_chamber = 0;
-		q_mag = 0;
-
-		Weapon_Base wpn;
-		Magazine mag
-
-		if ( Class.CastTo(wpn, m_EntityInHands ) )
-		{
-			int mi = wpn.GetCurrentMuzzle();
-			mag = wpn.GetMagazine(mi);
-			if (!wpn.IsChamberFiredOut(mi) && !wpn.IsChamberEmpty(mi))
-			{
-				q_chamber = 1;
-			}
-			if (wpn.IsJammed())
-			{
-				q_chamber = -1;
-			}
-			
-			if (mag)
-			{
-				q_mag = mag.GetAmmoCount();
-			}
-			else if (wpn.GetInternalMagazineCartridgeCount(mi) > 0)
-			{
-				q_mag = wpn.GetInternalMagazineCartridgeCount(mi);
-			}
-		}
-	}*/
-	
 	protected string GetRadioFrequency()
 	{
 		TransmitterBase trans;
-
-		if ( Class.CastTo(trans, m_EntityInHands ) )
+		if (Class.CastTo(trans, m_EntityInHands))
 		{
 			return trans.GetTunedFrequency().ToString();
 		}
@@ -364,21 +341,13 @@ class ItemActionsWidget extends ScriptedWidgetEventHandler
 		
 		widget = m_Root.FindAnyWidget(itemWidget);
 		
-		if(entity)
+		if (entity && !m_Player.GetItemAccessor().IsItemInHandsHidden())
 		{
 			descText.ToUpper();
 			TextWidget itemName;
 			Class.CastTo(itemName, widget.FindAnyWidget(descWidget));
 			itemName.SetText(descText);
 			widget.Show(true);
-
-			/*
-			int x, y;
-			itemName.GetTextSize(x, y);
-			if (descText.Length() > 0 && x > m_MaxWidthChild);
-				m_MaxWidthChild = x;
-			*/
-
 		}
 		else
 			widget.Show(false);
@@ -390,7 +359,7 @@ class ItemActionsWidget extends ScriptedWidgetEventHandler
 		
 		widget = m_Root.FindAnyWidget(itemWidget);
 		
-		if(enabled)
+		if (enabled)
 		{
 			ImageWidget healthMark;
 			Class.CastTo(healthMark, widget.FindAnyWidget(healthWidget));
@@ -444,7 +413,7 @@ class ItemActionsWidget extends ScriptedWidgetEventHandler
 		
 		widget = m_Root.FindAnyWidget(itemWidget);
 		
-		if(enabled)
+		if (enabled)
 		{
 			ProgressBarWidget progressBar;
 			TextWidget textWidget;
@@ -460,7 +429,7 @@ class ItemActionsWidget extends ScriptedWidgetEventHandler
 					textWidget.GetParent().Show(false);
 					break;
 				case QUANTITY_COUNT :
-					if(max > 1 || current > 1)
+					if (max > 1 || current > 1)
 					{
 						string qty_text = string.Format("%1/%2", Math.Round(current).ToString(), max.ToString());
 						progressBar.Show(false);
@@ -510,7 +479,7 @@ class ItemActionsWidget extends ScriptedWidgetEventHandler
 
 			if ( Class.CastTo(wpn, m_EntityInHands ) )
 			{
-				if(Magnum.Cast(wpn))
+				if (Magnum_Base.Cast(wpn))
 				{
 					mag_quantity = 0;
 					for (int j = 0; j < wpn.GetMuzzleCount(); j++)
@@ -585,7 +554,7 @@ class ItemActionsWidget extends ScriptedWidgetEventHandler
 		
 		widget = m_Root.FindAnyWidget(itemWidget);
 
-		if(enabled)
+		if (enabled)
 		{
 			TextWidget txtModeWidget;
 			TextWidget txtZeroingWidget;
@@ -618,7 +587,7 @@ class ItemActionsWidget extends ScriptedWidgetEventHandler
 		
 		widget = m_Root.FindAnyWidget(itemWidget);
 		
-		if(enabled)
+		if (enabled)
 		{
 			TextWidget txtUpWidget;
 			TextWidget txtDownWidget;
@@ -635,27 +604,15 @@ class ItemActionsWidget extends ScriptedWidgetEventHandler
 	
 	protected void SetActionWidget(ActionBase action, string descText, string actionWidget, string descWidget)
 	{
-		Widget widget;
-		
-		widget = m_Root.FindAnyWidget(actionWidget);
-		
-#ifdef PLATFORM_XBOX
-		ShowXboxHidePCIcons( actionWidget, !GetGame().GetInput().IsEnabledMouseAndKeyboardEvenOnServer() );
-#else
-#ifdef PLATFORM_PS4
-		ShowXboxHidePCIcons( actionWidget, !GetGame().GetInput().IsEnabledMouseAndKeyboardEvenOnServer() );
-#else
-		ShowXboxHidePCIcons( actionWidget, false );
-#endif
-#endif
-		// TODO: TMP: Car AM rework needed (checking of player's command)
-		if(action && (!action.HasTarget() || m_Player.GetCommand_Vehicle()))
+		Widget widget = m_Root.FindAnyWidget(actionWidget);
+
+		if (action && (!action.HasTarget() || m_Player.GetCommand_Vehicle()))
 		{
 			TextWidget actionName;
 			Class.CastTo(actionName, widget.FindAnyWidget(descWidget));
 			
 
-			if(action.GetInput().GetInputType() == ActionInputType.AIT_CONTINUOUS)
+			if (action.GetInput().GetInputType() == ActionInputType.AIT_CONTINUOUS)
 			{
 				descText = descText + " " + "#action_target_cursor_hold";
 				actionName.SetText(descText);
@@ -679,24 +636,33 @@ class ItemActionsWidget extends ScriptedWidgetEventHandler
 		Widget widget;
 
 		widget = m_Root.FindAnyWidget(multiActionsWidget);
-
-		if(m_InteractActionsNum > 1)
-			widget.Show(true);
-		else
-			widget.Show(false);
+		widget.Show(m_InteractActionsNum > 1);
 	}
 	
 	//! shows arrows near the interact action if there are more than one available
 	protected void SetMultipleContinuousInteractAction(string multiActionsWidget)
 	{
-		/*Widget widget;
+		Widget widget;
 
 		widget = m_Root.FindAnyWidget(multiActionsWidget);
+		widget.Show(m_ContinuousInteractActionsNum > 1);
+	}
+	
+	protected void SetMultipleItemAction(string multiActionsWidget)
+	{
+		Widget widget;
 
-		if(m_ContinuousInteractActionsNum > 1)
-			widget.Show(true);
-		else
-			widget.Show(false);*/
+		widget = m_Root.FindAnyWidget(multiActionsWidget);
+		widget.Show(m_ItemActionsNum > 1);
+	}
+	
+	//! shows arrows near the interact action if there are more than one available
+	protected void SetMultipleContinuousItemAction(string multiActionsWidget)
+	{
+		Widget widget;
+
+		widget = m_Root.FindAnyWidget(multiActionsWidget);
+		widget.Show(m_ContinuousItemActionsNum > 1);
 	}
 	
 	protected void SetInteractActionIcon(string actionWidget, string actionIconFrameWidget, string actionIconWidget, string actionIconTextWidget)
@@ -715,7 +681,7 @@ class ItemActionsWidget extends ScriptedWidgetEventHandler
 		UAInput i1 = GetUApi().GetInputByName("UAAction"); 
 		
 		i1.SelectAlternative(0); //! select first alternative (which is the primary bind)
-		for( int c = 0; c < i1.BindKeyCount(); c++ )
+		for (int c = 0; c < i1.BindKeyCount(); c++)
 		{
 		  	int _hc = i1.GetBindKey(0);
 		  	keyName = GetUApi().GetButtonName(_hc);
@@ -724,21 +690,46 @@ class ItemActionsWidget extends ScriptedWidgetEventHandler
 		// uses text in floating widget
 		iconWidget.Show(false);
 		textWidget.SetText(keyName);
-		//frameWidget.Show(true);
 		textWidget.Show(true);	
 	}
 	
 	protected void CheckRefresherFlagVisibility()
 	{
 		Widget w = m_Root.FindAnyWidget("ia_item_flag_icon");
-		if ( m_Player.GetHologramLocal() )
+		if (m_Player.GetHologramLocal())
 		{
 			EntityAI entity = m_Player.GetHologramLocal().GetProjectionEntity();
 			w.Show(entity.IsRefresherSignalingViable() && m_Player.IsTargetInActiveRefresherRange(entity));
 		}
-		else if ( w.IsVisible() )
+		else if (w.IsVisible())
 		{
 			w.Show(false);
 		}
+	}
+	
+	protected void CheckForActionWidgetOverrides()
+	{
+		ItemBase item;
+		typename actionName;
+		if (Class.CastTo(item, m_EntityInHands) && item.GetActionWidgetOverride(actionName))
+		{
+			ActionBase action = ActionManagerBase.GetAction(actionName);
+			if (action)
+			{
+				m_Single = action;
+			}
+		}
+	}
+	
+	protected IngameHud GetHud()
+	{
+		Mission mission = GetGame().GetMission();
+		if (mission)
+		{
+			IngameHud hud = IngameHud.Cast(mission.GetHud());
+			return hud;
+		}
+
+		return null;
 	}
 }

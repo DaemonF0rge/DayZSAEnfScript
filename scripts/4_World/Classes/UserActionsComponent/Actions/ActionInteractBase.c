@@ -53,13 +53,13 @@ class ActionInteractBaseCB : ActionBaseCB
 
 class ActionInteractBase : AnimatedActionBase
 {
+	//deprecated
 	string m_HUDCursorIcon;
 	
 	void ActionInteractBase() 
 	{
 		m_CallbackClass = ActionInteractBaseCB;
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONMOD_PICKUP_HANDS;
-		m_HUDCursorIcon = CursorIcons.Cursor;
 	}
 	
 	override void CreateConditionComponents()  
@@ -68,9 +68,10 @@ class ActionInteractBase : AnimatedActionBase
 		m_ConditionTarget = new CCTObject(UAMaxDistances.DEFAULT);
 	}
 	
+	//deprecated
 	string GetHUDCursorIcon()
 	{
-		return m_HUDCursorIcon;
+		return "";
 	}
 	
 	override typename GetInputType()

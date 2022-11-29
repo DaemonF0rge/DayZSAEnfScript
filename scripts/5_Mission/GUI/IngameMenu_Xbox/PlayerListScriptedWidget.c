@@ -1,7 +1,6 @@
 class PlayerListScriptedWidget extends ScriptedWidgetEventHandler
 {
 	protected Widget												m_Root;
-	//protected TextWidget											m_Header;
 	protected ScrollWidget											m_ScrollContainer;
 	protected Widget												m_Content;
 	protected ref map<string, ref PlayerListEntryScriptedWidget>	m_Entries;
@@ -9,60 +8,56 @@ class PlayerListScriptedWidget extends ScriptedWidgetEventHandler
 	protected int													m_TotalEntries;
 	protected PlayerListEntryScriptedWidget							m_SelectedEntry;
 	
-	void PlayerListScriptedWidget( Widget parent, string header_text )
+	void PlayerListScriptedWidget( Widget parent, string header_text = "" )
 	{
 		m_Root				= GetGame().GetWorkspace().CreateWidgets( "gui/layouts/xbox/ingamemenu_xbox/players_info_panel.layout", parent );
-		//m_Header			= TextWidget.Cast( m_Root.FindAnyWidget( "header_text" ) );
 		m_ScrollContainer	= ScrollWidget.Cast( m_Root.FindAnyWidget( "ScrollFrame" ) );
 		m_Content			= m_Root.FindAnyWidget( "Content" );
 		
 		m_Entries			= new map<string, ref PlayerListEntryScriptedWidget>;
-		
-		//m_Header.SetText( header_text );
-		OnlineServices.m_ServersAsyncInvoker.Insert( OnLoadServersAsync );
+
 		m_ScrollContainer.VScrollToPos01( 0 );
 	}
 	
 	void ~PlayerListScriptedWidget()
 	{
-		OnlineServices.m_ServersAsyncInvoker.Remove( OnLoadServersAsync );
 		delete m_Root;
 	}
 	
 	void FocusFirst()
 	{
-		if( m_Content && m_Content.GetChildren() )
+		if ( m_Content && m_Content.GetChildren() )
 			SetFocus( m_Content.GetChildren().FindAnyWidget( "Button" ) );
 		m_ScrollContainer.VScrollToPos01( 0 );
 	}
 	
 	void Reload( SyncPlayerList player_list )
 	{
-		if( player_list && player_list.m_PlayerList && m_Entries )
+		if ( player_list && player_list.m_PlayerList && m_Entries )
 		{
-			foreach( string UID, ref PlayerListEntryScriptedWidget widget : m_Entries )
+			foreach ( string UID, PlayerListEntryScriptedWidget widget : m_Entries )
 			{
 				SyncPlayer player_found;
-				foreach( SyncPlayer player : player_list.m_PlayerList )
+				foreach ( SyncPlayer player : player_list.m_PlayerList )
 				{
-					if( player && player.m_UID == UID )
+					if ( player && player.m_UID == UID )
 					{
 						player_found = player;
 						break;
 					}
 				}
-				if( !player_found )
+				if ( !player_found )
 				{
 					RemovePlayer( UID );
 				}
 			}
 			
-			for( int i = 0; i < player_list.m_PlayerList.Count(); i++ )
+			for ( int i = 0; i < player_list.m_PlayerList.Count(); i++ )
 			{
 				SyncPlayer player2 = player_list.m_PlayerList.Get( i );
 				PlayerListEntryScriptedWidget player_widget;
 				m_Entries.Find( player2.m_UID, player_widget );
-				if( !player_widget )
+				if ( !player_widget )
 				{
 					AddPlayer( player2.m_PlayerName, player2.m_UID, true );
 				}
@@ -77,44 +72,38 @@ class PlayerListScriptedWidget extends ScriptedWidgetEventHandler
 	
 	void OnLoadServersAsync( ref GetServersResult result_list, EBiosError error, string response )
 	{
-		string header_text = "Server";
-		GetServersResultRow info = OnlineServices.GetCurrentServerInfo();
-		if( info )
-		{
-			header_text = info.m_Name + " - " + info.m_HostIp + ":" + info.m_HostPort;
-		}
-		//m_Header.SetText( header_text );
+
 	}
 	
 	void Reload( BiosFriendInfoArray player_list )
 	{
-		if( player_list && m_Entries )
+		if ( player_list && m_Entries )
 		{
-			foreach( string UID, ref PlayerListEntryScriptedWidget widget : m_Entries )
+			foreach ( string UID, PlayerListEntryScriptedWidget widget : m_Entries )
 			{
 				BiosFriendInfo player_found;
 				int j = 0;
-				while( !player_found && j < player_list.Count() )
+				while ( !player_found && j < player_list.Count() )
 				{
-					if( player_list[j].m_Uid == UID )
+					if ( player_list[j].m_Uid == UID )
 						player_found = player_list[j];
 					j++;
 				}
 				
-				if( !player_found )
+				if ( !player_found )
 				{
 					RemovePlayer( UID );
 				}
 			}
 			
-			for( int i = 0; i < player_list.Count(); i++ )
+			for ( int i = 0; i < player_list.Count(); i++ )
 			{
 				BiosFriendInfo player2 = player_list.Get( i );
 				PlayerListEntryScriptedWidget player_widget;
 				m_Entries.Find( player2.m_Uid, player_widget );
-				if( !player_widget )
+				if ( !player_widget )
 				{
-					AddPlayer( player2.m_DisplayName, player2.m_Uid, false );
+					AddPlayer ( player2.m_DisplayName, player2.m_Uid, false );
 				}
 			}
 		}
@@ -122,11 +111,11 @@ class PlayerListScriptedWidget extends ScriptedWidgetEventHandler
 	
 	void Reload( BiosPrivacyUidResultArray player_list )
 	{
-		foreach( BiosPrivacyUidResult result : player_list )
+		foreach ( BiosPrivacyUidResult result : player_list )
 		{
 			PlayerListEntryScriptedWidget player_widget;
 			m_Entries.Find( result.m_Uid, player_widget );
-			if( player_widget )
+			if ( player_widget )
 			{
 				player_widget.LoadPermissions( result.m_Results );
 			}
@@ -135,15 +124,15 @@ class PlayerListScriptedWidget extends ScriptedWidgetEventHandler
 	
 	void ReloadLocal( map<string, bool> player_list )
 	{
-		if( player_list )
+		if ( player_list )
 		{
-			for( int i = 0; i < player_list.Count(); i++ )
+			for ( int i = 0; i < player_list.Count(); i++ )
 			{
 				string uid = player_list.GetKey( i );
 				bool muted = OnlineServices.IsPlayerMuted( uid );
 				PlayerListEntryScriptedWidget player_widget;
 				m_Entries.Find( uid, player_widget );
-				if( player_widget )
+				if ( player_widget )
 				{
 					player_widget.SetMute( muted );
 				}
@@ -153,11 +142,11 @@ class PlayerListScriptedWidget extends ScriptedWidgetEventHandler
 	
 	PlayerListEntryScriptedWidget FindEntryByWidget( Widget button )
 	{
-		if( button && m_Entries )
+		if ( button && m_Entries )
 		{
-			foreach( string UID, ref PlayerListEntryScriptedWidget widget : m_Entries )
+			foreach ( string UID, PlayerListEntryScriptedWidget widget : m_Entries )
 			{
-				if( widget && widget.GetButtonWidget() == button )
+				if ( widget && widget.GetButtonWidget() == button )
 				{
 					return widget;
 				}
@@ -169,11 +158,11 @@ class PlayerListScriptedWidget extends ScriptedWidgetEventHandler
 	
 	string FindPlayerByWidget( Widget button )
 	{
-		if( button && m_Entries )
+		if ( button && m_Entries )
 		{
-			foreach( string UID, ref PlayerListEntryScriptedWidget widget : m_Entries )
+			foreach ( string UID, PlayerListEntryScriptedWidget widget : m_Entries )
 			{
-				if( widget && widget.GetButtonWidget() == button )
+				if ( widget && widget.GetButtonWidget() == button )
 				{
 					return UID;
 				}
@@ -185,7 +174,7 @@ class PlayerListScriptedWidget extends ScriptedWidgetEventHandler
 	
 	void AddPlayer( string name, string UID, bool show_permissions )
 	{
-		if( m_Entries )
+		if ( m_Entries )
 		{
 			m_Entries.Insert( UID, new PlayerListEntryScriptedWidget( m_Content, name, UID, show_permissions, this ) );
 			m_TotalEntries++;
@@ -194,15 +183,15 @@ class PlayerListScriptedWidget extends ScriptedWidgetEventHandler
 	
 	void RemovePlayer( string UID )
 	{
-		if( m_Entries )
+		if ( m_Entries )
 		{
 			PlayerListEntryScriptedWidget next_entry;
 			
-			if( m_Entries.Get( UID ) == m_SelectedEntry )
+			if ( m_Entries.Get( UID ) == m_SelectedEntry )
 			{
-				for( int i = 0; i < m_Entries.Count() - 1; i++ )
+				for ( int i = 0; i < m_Entries.Count() - 1; i++ )
 				{
-					if( m_Entries.GetElement( i ) == m_Entries.Get( UID ) )
+					if ( m_Entries.GetElement( i ) == m_Entries.Get( UID ) )
 					{
 						next_entry = m_Entries.GetElement( i + 1 );
 					}
@@ -218,7 +207,7 @@ class PlayerListScriptedWidget extends ScriptedWidgetEventHandler
 	
 	bool IsMuted( string UID )
 	{
-		if( m_Entries && m_Entries.Get( UID ) )
+		if ( m_Entries && m_Entries.Get( UID ) )
 		{
 			return m_Entries.Get( UID ).IsMuted();
 		}
@@ -227,7 +216,7 @@ class PlayerListScriptedWidget extends ScriptedWidgetEventHandler
 	
 	bool IsGloballyMuted( string UID )
 	{
-		if( m_Entries && m_Entries.Get( UID ) )
+		if ( m_Entries && m_Entries.Get( UID ) )
 		{
 			return m_Entries.Get( UID ).IsGloballyMuted();
 		}
@@ -236,7 +225,7 @@ class PlayerListScriptedWidget extends ScriptedWidgetEventHandler
 	
 	void SetMute( string UID, bool mute )
 	{
-		if( m_Entries && m_Entries.Get( UID ) )
+		if ( m_Entries && m_Entries.Get( UID ) )
 		{
 			m_Entries.Get( UID ).SetMute( mute );
 		}
@@ -244,7 +233,7 @@ class PlayerListScriptedWidget extends ScriptedWidgetEventHandler
 	
 	void ToggleMute( string UID )
 	{
-		if( m_Entries && m_Entries.Get( UID ) )
+		if ( m_Entries && m_Entries.Get( UID ) )
 		{
 			m_Entries.Get( UID ).ToggleMute();
 		}
@@ -257,17 +246,17 @@ class PlayerListScriptedWidget extends ScriptedWidgetEventHandler
 	
 	void SelectPlayer( PlayerListEntryScriptedWidget entry )
 	{
-		if( m_SelectedEntry )
+		if ( m_SelectedEntry )
 			m_SelectedEntry.Deselect();
 		m_SelectedEntry = entry;
-		if( GetGame().GetUIManager().GetMenu() )
+		if ( GetGame().GetUIManager().GetMenu() )
 			GetGame().GetUIManager().GetMenu().Refresh();
 		ScrollToEntry( entry );
 	}
 	
 	void ScrollToEntry( PlayerListEntryScriptedWidget entry )
 	{
-		if( entry )
+		if ( entry )
 		{
 			float x, y;
 			float x_s, y_s;
@@ -276,9 +265,9 @@ class PlayerListScriptedWidget extends ScriptedWidgetEventHandler
 			Widget root			= entry.GetButtonWidget().GetParent();
 			Widget first_child	= root.GetParent().GetChildren();
 			Widget last_child	= first_child;
-			while( last_child )
+			while ( last_child )
 			{
-				if( last_child.GetSibling() )
+				if ( last_child.GetSibling() )
 					last_child = last_child.GetSibling();
 				else
 					break;
@@ -295,19 +284,19 @@ class PlayerListScriptedWidget extends ScriptedWidgetEventHandler
 			root.GetScreenPos( x_l, y_l );
 			root.GetScreenSize( x_s, y_s );
 			
-			if( root == first_child )
+			if ( root == first_child )
 			{
 				m_ScrollContainer.VScrollToPos01( 0 );
 			}
-			else if( root == last_child )
+			else if ( root == last_child )
 			{
 				m_ScrollContainer.VScrollToPos01( 1 );
 			}
-			else if( y_l + y_s >= bottom_pos )
+			else if ( y_l + y_s >= bottom_pos )
 			{
 				m_ScrollContainer.VScrollToPos( m_ScrollContainer.GetVScrollPos() + y_s );
 			}
-			else if( y_l <= y )
+			else if ( y_l <= y )
 			{
 				m_ScrollContainer.VScrollToPos( m_ScrollContainer.GetVScrollPos() - y_s );
 			}

@@ -20,6 +20,7 @@ class ActionFillCoolant: ActionContinuousBase
 		m_FullBody = true;
 		m_SpecialtyWeight = UASoftSkillsWeight.PRECISE_LOW;
 		m_LockTargetOnUse = false;
+		m_Text = "#refill_car";
 
 	}
 
@@ -27,11 +28,6 @@ class ActionFillCoolant: ActionContinuousBase
 	{
 		m_ConditionItem = new CCINonRuined;
 		m_ConditionTarget = new CCTParent(10);
-	}
-
-	override string GetText()
-	{
-		return "#refill_car";
 	}
 
 	override bool IsUsingProxies()

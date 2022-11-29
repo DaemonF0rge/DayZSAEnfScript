@@ -47,7 +47,7 @@ class WeaponFireAndChamberNext extends WeaponStateBase
 			int muzzleIndex = m_weapon.GetCurrentMuzzle();
 			float reloadTime = m_weapon.GetReloadTime(muzzleIndex);
 			
-			if ( m_dtAccumulator >= reloadTime && ( hic.IsUseButton() || (m_weapon.GetBurstCount() < m_weapon.GetCurrentModeBurstSize(muzzleIndex))))
+			if ( m_dtAccumulator >= reloadTime && ( hic.IsAttackButton() || (m_weapon.GetBurstCount() < m_weapon.GetCurrentModeBurstSize(muzzleIndex))))
 			{
 				if (m_weapon.CanProcessWeaponEvents())
 				{

@@ -9,21 +9,21 @@ class LargeTentBackPack extends Clothing
 	
 	void ~LargeTentBackPack()
 	{
-		SEffectManager.DestroySound( m_RepackingLoopSound );	
+		SEffectManager.DestroyEffect( m_RepackingLoopSound );	
 	}
 	
 	override void OnRPC(PlayerIdentity sender, int rpc_type,ParamsReadContext  ctx) 
 	{
 		super.OnRPC(sender, rpc_type, ctx);
 		
-		ref Param1<bool> p = new Param1<bool>(false);
+		Param1<bool> p = new Param1<bool>(false);
 				
-		if (ctx.Read(p))
-		{
-			bool play = p.param1;
-		}
+		if (!ctx.Read(p))
+			return;
 		
-		switch(rpc_type)
+		bool play = p.param1;
+		
+		switch (rpc_type)
 		{
 			case SoundTypeTent.REPACK:
 			
@@ -31,8 +31,7 @@ class LargeTentBackPack extends Clothing
 				{
 					PlayRepackingLoopSound();
 				}
-				
-				if ( !play )
+				else
 				{
 					StopRepackingLoopSound();
 				}
@@ -43,7 +42,7 @@ class LargeTentBackPack extends Clothing
 	
 	void PlayRepackingLoopSound()
 	{
-		if ( !m_RepackingLoopSound.IsSoundPlaying() )
+		if ( !m_RepackingLoopSound || !m_RepackingLoopSound.IsSoundPlaying() )
 		{
 			m_RepackingLoopSound = SEffectManager.PlaySound( "largetent_deploy_SoundSet", GetPosition(), 0.5, 0.5 );
 		}

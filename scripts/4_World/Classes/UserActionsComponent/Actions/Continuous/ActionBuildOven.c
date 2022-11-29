@@ -15,6 +15,7 @@ class ActionBuildOven: ActionContinuousBase
 		m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_CROUCH;
 		m_SpecialtyWeight = UASoftSkillsWeight.ROUGH_HIGH;
+		m_Text = "#build_oven";
 	}
 	
 	override void CreateConditionComponents()  
@@ -22,11 +23,6 @@ class ActionBuildOven: ActionContinuousBase
 		
 		m_ConditionTarget = new CCTNonRuined( UAMaxDistances.DEFAULT );
 		m_ConditionItem = new CCINotPresent;
-	}
-		
-	override string GetText()
-	{
-		return "#build_oven";
 	}
 	
 	override typename GetInputType()
@@ -42,7 +38,7 @@ class ActionBuildOven: ActionContinuousBase
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
 	{	
 		//Action not allowed if player has broken legs
-		if (player.m_BrokenLegState == eBrokenLegs.BROKEN_LEGS)
+		if (player.GetBrokenLegs() == eBrokenLegs.BROKEN_LEGS)
 			return false;
 		
 		Object target_object = target.GetObject();

@@ -34,7 +34,6 @@ class BarbedWire extends ItemBase
 		m_SparkEvent 	= new Timer( CALL_CATEGORY_SYSTEM );
 		m_TriggerActive = false;
 		m_IsPlaced 		= false;
-		m_DeployLoopSound = new EffectSound;
 		
 		//synchronized variables
 		RegisterNetSyncVariableBool( "m_IsSoundSynchRemote" );	
@@ -44,10 +43,7 @@ class BarbedWire extends ItemBase
 	
 	void ~BarbedWire()
 	{
-		if ( m_DeployLoopSound )
-		{
-			SEffectManager.DestroySound( m_DeployLoopSound );
-		}
+		SEffectManager.DestroyEffect( m_DeployLoopSound );
 	}
 	
 	override void EEInit()
@@ -155,9 +151,9 @@ class BarbedWire extends ItemBase
 
 	void PlayDeployLoopSound()
 	{		
-		if ( GetGame().IsMultiplayer() && GetGame().IsClient() || !GetGame().IsMultiplayer() )
+		if ( !GetGame().IsDedicatedServer() )
 		{		
-			if ( !m_DeployLoopSound.IsSoundPlaying() )
+			if ( !m_DeployLoopSound || !m_DeployLoopSound.IsSoundPlaying() )
 			{
 				m_DeployLoopSound = SEffectManager.PlaySound( GetLoopDeploySoundset(), GetPosition() );
 			}
@@ -166,7 +162,7 @@ class BarbedWire extends ItemBase
 	
 	void StopDeployLoopSound()
 	{
-		if ( GetGame().IsMultiplayer() && GetGame().IsClient() || !GetGame().IsMultiplayer() )
+		if ( !GetGame().IsDedicatedServer() )
 		{	
 			m_DeployLoopSound.SetSoundFadeOut(0.5);
 			m_DeployLoopSound.SoundStop();
@@ -304,7 +300,7 @@ class BarbedWire extends ItemBase
 	// Spawns spark particle effect and plays sound.
 	void Spark()
 	{
-		Particle.PlayOnObject( ParticleList.BARBED_WIRE_SPARKS, this);
+		ParticleManager.GetInstance().PlayOnObject( ParticleList.BARBED_WIRE_SPARKS, this);
 		SoundSpark();
 	}
 	

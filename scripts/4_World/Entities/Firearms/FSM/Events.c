@@ -165,7 +165,20 @@ class WeaponEventDetachMagazine extends WeaponEventBase
  **/
 class WeaponEventSwapMagazine extends WeaponEventBase
 {
-	void WeaponEventSwapMagazine (DayZPlayer p = NULL, Magazine m = NULL) { m_eventID = WeaponEventID.SWAP_MAGAZINE; }
+	ref InventoryLocation m_dst;
+	void WeaponEventSwapMagazine (DayZPlayer p = NULL, Magazine m = NULL, InventoryLocation il = NULL){ m_eventID = WeaponEventID.SWAP_MAGAZINE;m_dst = il; }
+	
+	override void ReadFromContext (ParamsReadContext ctx)
+	{
+		super.ReadFromContext(ctx);
+		m_dst = new InventoryLocation;
+		m_dst.ReadFromContext(ctx);
+	}
+	override void WriteToContext (ParamsWriteContext ctx)
+	{
+		super.WriteToContext(ctx);
+		m_dst.WriteToContext(ctx);
+	}
 };
 /**@brief		triggered when animation action finishes
  **/

@@ -4,17 +4,13 @@ class ActionRepairWithToolFromHands: ActionSingleUseBase
 	void ActionRepairWithToolFromHands()
 	{
 		m_SpecialtyWeight = UASoftSkillsWeight.PRECISE_HIGH;
+		m_Text = "#repair";
 	}
 	
 	override void CreateConditionComponents()  
 	{
 		m_ConditionItem = new CCINonRuined;
 		m_ConditionTarget = new CCTNonRuined(UAMaxDistances.DEFAULT);
-	}
-
-	override string GetText()
-	{
-		return "#repair";
 	}
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

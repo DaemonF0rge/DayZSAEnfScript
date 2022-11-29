@@ -19,7 +19,7 @@ class int
 	protected static string m_ZeroPad[ZERO_PAD_SIZE] = {"", "0", "00", "000", "0000", "00000", "000000", "0000000"};
 	
 	const int MAX = 2147483647;
-	const int MIN = -2147483647;
+	const int MIN = -2147483648;
 	
 	proto string ToString();
 	
@@ -89,6 +89,10 @@ class int
 
 class float
 {
+	const float MIN = FLT_MIN;
+	const float MAX = FLT_MAX;
+	const float LOWEST = -FLT_MAX;
+	
 	proto string ToString();
 };
 
@@ -216,6 +220,40 @@ class vector
 		dir_vec[2] = p2[2] - p1[2];
 		
 		return dir_vec;
+	}
+	
+	/**
+	\brief Returns randomly generated unit vector
+	    \return \p randomly generated unit vector
+		@code
+			vector vec = vector.RandomDir();
+			Print(vec);
+			Print(vec.Length());
+
+			>> <-0.179424,0.966825,0.181816>
+			>> 1
+		@endcode
+	*/
+	static vector RandomDir()
+	{
+		return Vector(Math.RandomFloatInclusive(-1,1),Math.RandomFloatInclusive(-1,1),Math.RandomFloatInclusive(-1,1)).Normalized();
+	}
+
+	/**
+	\brief Returns randomly generated XZ unit vector with the Y(up) axis set to 0
+	    \return \p randomly generated XZ unit vector
+		@code
+			vector vec = vector.RandomDir();
+			Print(vec);
+			Print(vec.Length());
+
+			>> <0.631697,0,0.775216>
+			>> 1
+		@endcode
+	*/
+	static vector RandomDir2D()
+	{
+		return Vector(Math.RandomFloatInclusive(-1,1),0,Math.RandomFloatInclusive(-1,1)).Normalized();
 	}
 	
 	/**
@@ -396,6 +434,32 @@ class vector
 	proto static native vector Lerp(vector v1, vector v2, float t);
 	
 	/**
+	\brief Rotate a vector around 0,0,0 by an angle in degrees
+		\param vec \p vector to rotate
+		\param axis \p axis to rotate around
+		\param cosAngle \p angle in degrees
+		\return \p vector transformed vector
+	*/
+	
+	static vector RotateAroundZeroDeg(vector vec, vector axis, float angle)
+	{
+		return (vec * Math.Cos(angle * Math.DEG2RAD)) + ((axis * vec) * Math.Sin(angle * Math.DEG2RAD)) + (axis * vector.Dot(axis, vec)) * (1 - Math.Cos(angle * Math.DEG2RAD));
+	}
+	
+	/**
+	\brief Rotate a vector around 0,0,0 by an angle in radians
+		\param vec \p vector to rotate
+		\param axis \p axis to rotate around
+		\param cosAngle \p angle in radians
+		\return \p vector transformed vector
+	*/
+	
+	static vector RotateAroundZeroRad(vector vec, vector axis, float angle)
+	{
+		return (vec * Math.Cos(angle)) + ((axis * vec) * Math.Sin(angle)) + (axis * vector.Dot(axis, vec)) * (1 - Math.Cos(angle));
+	}
+	
+	/**
 	\brief Rotate a vector around 0,0,0
 		\param pos \p vector to rotate
 		\param axis \p axis to rotate around
@@ -403,6 +467,7 @@ class vector
 		\param sinAngle \p sin of angle
 		\return \p vector transformed vector
 	*/
+	
 	static vector RotateAroundZero(vector pos, vector axis, float cosAngle, float sinAngle)
 	{
 		return (pos * cosAngle) + ((axis * pos) * sinAngle) + (axis * vector.Dot(axis, pos)) * (1 - cosAngle);
@@ -422,6 +487,18 @@ class vector
 		vector offsetPos = pos - point;
 		return RotateAroundZero(offsetPos, axis, cosAngle, sinAngle) + point;
 	}
+	
+	/**
+	\brief Covert static array of floats into a vector
+	    \param arr \p vector in array format
+		\return \p vector resulting vector
+	*/
+	static vector ArrayToVec(float arr[])
+	{
+		return Vector(arr[0], arr[1], arr[2]);
+	}
+	
+	
 };
 
 class typename
@@ -434,6 +511,12 @@ class typename
 		@endcode
 	*/
 	proto volatile Class Spawn();
+	
+	/**
+	\brief Get the name of the module the typename belongs to
+		\returns \p string Name of parent module (1_Core)
+	*/
+	proto owned string GetModule();
 	
 	//!Returns type name of variable as string
 	proto native owned string ToString();
@@ -498,3 +581,69 @@ class typename
 	    return -1;
 	}
 };
+
+class EnumTools
+{
+	private void EnumTools();
+	private void ~EnumTools();
+	
+	/**
+	\brief Return string name of enum value
+	@code
+		DialogPriority prio = DialogPriority.WARNING;
+		Print( EnumTools.EnumToString(DialogPriority, prio) );
+	@endcode
+	*/
+	static string EnumToString(typename e, int enumValue)
+	{
+		return typename.EnumToString(e, enumValue);
+	}
+	
+	/**
+	\brief Return enum value from string name
+	@code
+		Print( EnumTools.StringToEnum(DialogPriority, "WARNING") );
+	@endcode
+	*/
+	static int StringToEnum(typename e, string enumName)
+	{
+		return typename.StringToEnum(e, enumName);
+	}
+	
+	/**
+	\brief Return amount of values in enum
+	@code
+		Print( EnumTools.GetEnumSize(DialogPriority) );
+	@endcode
+	*/
+	static int GetEnumSize(typename e)
+	{
+		return e.GetVariableCount();
+	}
+	
+	/**
+	\brief Return the nth value in the enum
+	@code
+		Print( EnumTools.GetEnumValue(DialogPriority, 1) );
+	@endcode
+	*/
+	static int GetEnumValue(typename e, int idx)
+	{
+		int value;
+		e.GetVariableValue(null, idx, value);		
+		return value;
+	}
+	
+	/**
+	\brief Return amount of values in enum
+	@code
+		Print( EnumTools.GetLastEnumValue(DialogPriority) );
+	@endcode
+	*/
+	static int GetLastEnumValue(typename e)
+	{
+		int lastValue;
+		e.GetVariableValue(null, e.GetVariableCount() - 1, lastValue);		
+		return lastValue;
+	}
+}

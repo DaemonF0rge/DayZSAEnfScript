@@ -13,16 +13,12 @@ class ActionLoadMagazine: ActionContinuousBase
 		m_CallbackClass = ActionLoadMagazineCB;
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONMOD_FILLMAG;
 		m_CommandUIDProne = DayZPlayerConstants.CMD_ACTIONFB_FILLMAG;
+		m_Text = "#load_magazine";
 	}
 	
 	override bool HasProneException()
 	{
 		return true;
-	}
-
-	override string GetText()
-	{
-		return "#load_magazine";
 	}
 	
 	override void CreateConditionComponents()  

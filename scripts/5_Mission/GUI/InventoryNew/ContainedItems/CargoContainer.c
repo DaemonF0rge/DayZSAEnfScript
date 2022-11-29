@@ -1,8 +1,8 @@
+//cargo grid wrapper
 class CargoContainer extends Container
 {
 	protected const int ROWS_NUMBER_XBOX = 5;
 	
-	protected EntityAI												m_Entity;
 	protected CargoBase												m_Cargo;
 	protected int													m_CargoIndex = -1;
 	
@@ -16,6 +16,8 @@ class CargoContainer extends Container
 	protected float													m_SpaceSize;
 	
 	protected bool													m_IsAttachment;
+	protected TextWidget											m_FalseHeaderTextWidget;
+	protected TextWidget											m_AlternateFalseHeaderTextWidget; //to be set and updated along with the main one
 	protected Widget												m_CargoHeader;
 	protected Widget												m_CargoContainer;
 	protected Widget												m_ItemsContainer;
@@ -39,6 +41,7 @@ class CargoContainer extends Container
 		
 		m_RootWidget.FindAnyWidget( "grid_container" ).GetScript( m_Resizer2 );
 		m_CargoHeader.Show( is_attachment );
+		m_FalseHeaderTextWidget = TextWidget.Cast(m_CargoHeader.FindAnyWidget( "TextWidget0" ));
 		
 		m_MainWidget			= m_CargoContainer;
 		m_FocusedItemPosition	= -1;
@@ -46,7 +49,7 @@ class CargoContainer extends Container
 	
 	void ~CargoContainer()
 	{
-		if( m_Entity )
+		if ( m_Entity )
 		{
 			m_Entity.GetOnItemAddedIntoCargo().Remove( AddedToCargo );
 			m_Entity.GetOnItemRemovedFromCargo().Remove( RemovedFromCargo );
@@ -58,35 +61,37 @@ class CargoContainer extends Container
 	
 	int GetCargoIndex() { return m_CargoIndex; }
 	
-	void AddedToCargo( EntityAI item )
+	void AddedToCargoEx( EntityAI item, bool refresh = true )
 	{
 		InventoryLocation il = new InventoryLocation;
 		item.GetInventory().GetCurrentInventoryLocation( il );
 		int x = il.GetCol();
 		int y = il.GetRow();
 		
-		if( m_ShowedItemPositions.Contains( item ) )
+		if ( m_ShowedItemPositions.Contains( item ) )
 		{
 			Param3<ref Icon, int, int> item_pos = m_ShowedItemPositions.Get( item );
-			InitIcon( item_pos.param1, item, x, y );
+			InitIconEx( item_pos.param1, item, x, y, refresh );
 			item_pos.param2 = x;
 			item_pos.param3 = y;
 		}
 		else
 		{
-			ref Icon icon = new Icon( this );
+			ref Icon icon = new Icon( this, false );
 			m_Icons.Insert( icon );
-			InitIcon( icon, item, x, y );
+			InitIconEx( icon, item, x, y, refresh );
 			m_ShowedItemPositions.Insert( item, new Param3<ref Icon, int, int>( icon, x, y ) );
 		}
-		UpdateHeaderText();
+		
+		if (refresh)
+			UpdateHeaderText();
 		
 		#ifdef PLATFORM_CONSOLE
-		for( int i = 0; i < m_Cargo.GetItemCount(); i++ )
+		for ( int i = 0; i < m_Cargo.GetItemCount(); i++ )
 		{
 			EntityAI item2 = m_Cargo.GetItem( i );
 			Param3<ref Icon, int, int> data = m_ShowedItemPositions.Get( item2 );
-			if( data )
+			if ( data )
 			{
 				data.param1.SetCargoPos( i );
 				data.param1.SetPos();
@@ -95,8 +100,14 @@ class CargoContainer extends Container
 		
 		m_FocusedItemPosition = Math.Min( m_ShowedItemPositions.Count() - 1, m_FocusedItemPosition );
 		
-		Refresh();
+		if (refresh)
+			Refresh();
 		#endif
+	}
+	
+	void AddedToCargo( EntityAI item )
+	{
+		AddedToCargoEx( item );
 	}
 	
 	void RemovedFromCargo( EntityAI item )
@@ -173,7 +184,7 @@ class CargoContainer extends Container
 			{
 				GetGame().GetPlayer().GetHumanInventory().GetUserReservedLocation( index, il );
 				
-				ref Icon icon = new Icon( this );
+				ref Icon icon = new Icon( this, false );
 				m_Icons.Insert( icon );
 				icon.InitLock( m_Entity, item, il.GetCol(), il.GetRow(), il.GetFlip() );
 				m_ShowedLockPositions.Insert( item, new Param3<ref Icon, int, int>( icon, 1, 1 ) );
@@ -223,9 +234,9 @@ class CargoContainer extends Container
 			
 	}
 	
-	void SetEntity( EntityAI item, int cargo_index = 0 )
+	void SetEntity( EntityAI item, int cargo_index = 0, bool immedUpdate = true )
 	{
-		if( item )
+		if ( item )
 		{
 			m_Entity		= item;
 			m_Cargo			= item.GetInventory().GetCargoFromIndex(cargo_index);
@@ -236,28 +247,31 @@ class CargoContainer extends Container
 			m_Entity.GetOnItemMovedInCargo().Insert( MovedInCargo );
 			m_Entity.GetOnSetLock().Insert( SetLock );
 			m_Entity.GetOnReleaseLock().Insert( ReleaseLock );
-			UpdateHeaderText();
+			
+			if (immedUpdate)
+				UpdateHeaderText();
 
 			InitGridHeight();
 			m_MainWidget	= m_ItemsContainer;
 			
-			if( m_Cargo )
+			if ( m_Cargo )
 			{
 				int i;
 				int prev_count = m_ShowedItemPositions.Count();
 				
 				//START - Add new item Icons
-				for( i = 0; i < m_Cargo.GetItemCount(); i++ )
+				for ( i = 0; i < m_Cargo.GetItemCount(); i++ )
 				{
 					EntityAI cargo_item = m_Cargo.GetItem( i );
-					if( cargo_item )
+					if ( cargo_item )
 					{
-						AddedToCargo( cargo_item );
+						AddedToCargoEx( cargo_item, immedUpdate );
 					}
 				}
 				
 				#ifdef PLATFORM_CONSOLE
-				Refresh();
+				if (immedUpdate)
+					Refresh();
 				#endif
 			}
 		}
@@ -274,23 +288,28 @@ class CargoContainer extends Container
 		string name = m_Entity.GetDisplayName();
 		name.ToUpper();
 		
-		if( m_Entity.GetInventory().GetCargoFromIndex(m_CargoIndex) )
+		if ( m_Entity.CanDisplayCargo() && m_Entity.GetInventory().GetCargoFromIndex(m_CargoIndex) )
 		{
 			name = name + " (" + GetCargoCapacity().ToString() + "/" + GetMaxCargoCapacity() + ")";
-			if( m_IsAttachment && m_CargoHeader )
+			if ( m_IsAttachment && m_CargoHeader )
 			{
-				TextWidget.Cast( m_CargoHeader.FindAnyWidget( "TextWidget0" ) ).SetText( name );
+				m_FalseHeaderTextWidget.SetText(name);
 				float x, y;
-				m_CargoHeader.FindAnyWidget( "TextWidget0" ).Update();
-				m_CargoHeader.FindAnyWidget( "TextWidget0" ).GetScreenSize( x, y );
+				m_FalseHeaderTextWidget.Update();
+				m_FalseHeaderTextWidget.GetScreenSize( x, y );
 				m_CargoHeader.FindAnyWidget( "grid_container_header" ).SetSize( 1, y + InventoryMenu.GetHeightMultiplied( 10 ) );
 				m_CargoHeader.Update();
+				
+				if (m_AlternateFalseHeaderTextWidget)
+				{
+					m_AlternateFalseHeaderTextWidget.SetText(name);
+				}
 				return;
 			}
 		}
 		
-		if( Container.Cast( GetParent() ) && Container.Cast( GetParent() ).GetHeader() )
-			Container.Cast( GetParent() ).GetHeader().SetName( name );
+		if ( Container.Cast( GetParent() ) && Container.Cast( GetParent() ).GetHeader() )
+			Container.Cast( GetParent() ).GetHeader().SetName(name);
 	}
 	
 	void InitGridHeight()
@@ -315,11 +334,11 @@ class CargoContainer extends Container
 			
 			#ifdef PLATFORM_WINDOWS
 			#ifndef PLATFORM_CONSOLE
-			row.SetWidth( m_Entity.GetInventory().GetCargoFromIndex(m_CargoIndex).GetWidth() );
+			row.SetWidth( m_Entity.GetInventory().GetCargoFromIndex(m_CargoIndex).GetWidth(), false );
 			#endif
 			#endif
 			
-			row.GetRootWidget().SetSort( j );
+			row.GetRootWidget().SetSort( j, false );
 			m_Rows.Insert( row );
 		}
 		
@@ -332,6 +351,11 @@ class CargoContainer extends Container
 		#endif
 		
 		m_Resizer2.ResizeParentToChild();
+		m_Resizer1.ResizeParentToChild();
+	}
+	
+	void UpdateSize()
+	{
 		m_Resizer1.ResizeParentToChild();
 	}
 	
@@ -353,7 +377,7 @@ class CargoContainer extends Container
 		#endif
 		#endif
 		int total_size = 0;
-		for( int i = 0; i < m_Cargo.GetItemCount(); i++ )
+		for ( int i = 0; i < m_Cargo.GetItemCount(); ++i )
 		{
 			int x, y;
 			m_Cargo.GetItemSize( i, x, y );
@@ -374,7 +398,7 @@ class CargoContainer extends Container
 	
 	Icon GetIcon( EntityAI item )
 	{
-		if( item && m_ShowedItemPositions.Contains( item ) )
+		if ( item && m_ShowedItemPositions.Contains( item ) )
 		{
 			Param3<ref Icon, int, int> data = m_ShowedItemPositions.Get( item );
 			return data.param1;
@@ -480,9 +504,9 @@ class CargoContainer extends Container
 	override void Refresh()
 	{
 		#ifdef PLATFORM_CONSOLE
-		if( !m_ResizeTimer )
+		if ( !m_ResizeTimer )
 			m_ResizeTimer = new Timer();
-		if( m_ResizeTimer.IsRunning() )
+		if ( m_ResizeTimer.IsRunning() )
 			m_ResizeTimer.Stop();
 		m_ResizeTimer.Run( 0.05, this, "RefreshImpl" );
 		#endif
@@ -505,7 +529,7 @@ class CargoContainer extends Container
 		}
 	}
 
-	Icon InitIcon( Icon icon, EntityAI item, int pos_x, int pos_y )
+	Icon InitIconEx( Icon icon, EntityAI item, int pos_x, int pos_y, bool refresh = true )
 	{
 		#ifdef PLATFORM_CONSOLE
 			icon.SetSize( 1, 1 );
@@ -514,24 +538,27 @@ class CargoContainer extends Container
 			#endif
 			icon.SetCargoPos( pos_y );
 			icon.SetPosY( pos_y );
-			icon.SetPos();
+			icon.SetPosEx( refresh );
 		#else
 			int size_x, size_y;
 			GetGame().GetInventoryItemSize( InventoryItem.Cast( item ), size_x, size_y );
-			if( item.GetInventory().GetFlipCargo() )
-			{
+		
+			if ( item.GetInventory().GetFlipCargo() )
 				icon.SetSize( size_y, size_x );
-			}
 			else
-			{
 				icon.SetSize( size_x, size_y );
-			}
+		
 			icon.SetPosX( pos_x );
 			icon.SetPosY( pos_y );
-			icon.SetPos();
+			icon.SetPosEx( refresh );
 		#endif
-		icon.Init( item );
+		icon.InitEx( item, refresh );
 		return icon;
+	}
+	
+	Icon InitIcon( Icon icon, EntityAI item, int pos_x, int pos_y )
+	{
+		return InitIconEx( icon, item, pos_x, pos_y );
 	}
 	
 	bool HasItem( EntityAI item )
@@ -557,25 +584,27 @@ class CargoContainer extends Container
 		return false;
 	}
 	
-	void SetDefaultFocus( bool while_micromanagment_mode = false )
+	override void SetDefaultFocus( bool while_micromanagment_mode = false )
 	{
-		if( !while_micromanagment_mode && ItemManager.GetInstance().IsMicromanagmentMode() )
-		{
-			return;
-		}
+		super.SetDefaultFocus(while_micromanagment_mode);
 		
 		Unfocus();
+		m_FocusedItemPosition = 0;
 		UpdateSelection();
 	}
 	
-	void Unfocus()
+	override void SetLastFocus()
+	{
+		SetDefaultFocus();
+	}
+	
+	override void Unfocus()
 	{
 		Icon icon = GetFocusedIcon();
 		if ( icon )
 		{
 			icon.SetActive( false );
 		}
-		m_FocusedItemPosition = 0;
 	}
 	
 	override void UnfocusAll()
@@ -588,6 +617,92 @@ class CargoContainer extends Container
 			}
 		}
 		m_FocusedItemPosition = 0;
+	}
+	
+	override void SetNextActive()
+	{
+		Unfocus();
+		int focused_row = m_FocusedItemPosition / ROWS_NUMBER_XBOX;
+		int max_row = ( m_Icons.Count() - 1) / ROWS_NUMBER_XBOX;
+		
+		if ( max_row > focused_row )
+		{
+			m_FocusedItemPosition += ROWS_NUMBER_XBOX;
+			if ( m_FocusedItemPosition >= m_Icons.Count() )
+			{
+				m_FocusedItemPosition = m_Icons.Count() - 1;
+			}
+			UpdateSelection();
+		}
+		else
+		{
+			SetActive(false);
+		}
+	}
+	
+	override void SetPreviousActive( bool force = false )
+	{
+		Unfocus();
+		int focused_row = m_FocusedItemPosition / ROWS_NUMBER_XBOX;
+		
+		if ( focused_row > 0 )
+		{
+			m_FocusedItemPosition = m_FocusedItemPosition - ROWS_NUMBER_XBOX;
+			UpdateSelection();
+		}
+		else
+		{
+			SetActive(false);
+		}
+	}
+
+	
+	override void SetNextRightActive()
+	{
+		if ( m_Icons.Count() > 0)
+		{
+			Unfocus();
+			int focused_row = m_FocusedItemPosition / ROWS_NUMBER_XBOX;
+			int row_min = focused_row * ROWS_NUMBER_XBOX;
+			int row_max = row_min + ROWS_NUMBER_XBOX - 1;
+			
+			if ( row_max >= m_Icons.Count() )
+			{
+				row_max = m_Icons.Count() - 1;
+			}
+		
+			m_FocusedItemPosition++;
+			if( m_FocusedItemPosition > row_max )
+			{
+				m_FocusedItemPosition = row_min;
+			}
+		
+			UpdateSelection();
+		}
+	}
+	
+	override void SetNextLeftActive()
+	{
+		if ( m_Icons.Count() > 0)
+		{
+			Unfocus();
+			int focused_row = m_FocusedItemPosition / ROWS_NUMBER_XBOX;
+			int row_min = focused_row * ROWS_NUMBER_XBOX;
+			int row_max = row_min + ROWS_NUMBER_XBOX - 1;
+			
+			if ( row_max >= m_Icons.Count() )
+			{
+				row_max = m_Icons.Count() - 1;
+			}
+		
+			m_FocusedItemPosition--;
+			if( m_FocusedItemPosition < row_min )
+			{
+				m_FocusedItemPosition = row_max;
+			}
+		
+			UpdateSelection();
+		}
 	}
 	
 	override EntityAI GetFocusedItem()
@@ -603,6 +718,7 @@ class CargoContainer extends Container
 	
 	override void SetLastActive()
 	{
+		super.SetLastActive();
 		if( GetFocusedIcon() )
 		{
 			GetFocusedIcon().SetActive( false );
@@ -614,14 +730,7 @@ class CargoContainer extends Container
 	override void SetActive( bool active )
 	{
 		super.SetActive( active );
-		if( active )
-		{
-			SetDefaultFocus();
-		}
-		else
-		{
-			UnfocusAll();
-		}
+		UpdateSelection();
 	}
 	
 	override bool IsItemActive()
@@ -676,7 +785,7 @@ class CargoContainer extends Container
 			ItemBase entity			= ItemBase.Cast( GetFocusedIcon().GetObject() );
 			ItemBase item_in_hands	= ItemBase.Cast( GetGame().GetPlayer().GetHumanInventory().GetEntityInHands() );
 			
-			return ( ItemManager.GetCombinationFlags( entity, item_in_hands ) != 0 );
+			return ( ItemManager.GetCombinationFlags( item_in_hands, entity ) != 0 );
 		}
 		return false;
 	}
@@ -709,7 +818,7 @@ class CargoContainer extends Container
 		return false;
 	}
 	
-	override bool EquipItem()
+	override bool SplitItem()
 	{
 		if( GetFocusedIcon() )
 		{
@@ -726,11 +835,20 @@ class CargoContainer extends Container
 						icon.SetQuantity();
 					}
 				}
-				else
-				{
-					GetGame().GetPlayer().PredictiveTakeEntityToInventory( FindInventoryLocationType.ATTACHMENT, entity );
-					return true;
-				}
+			}
+		}
+		return false;
+	}
+	
+	override bool EquipItem()
+	{
+		if( GetFocusedIcon() )
+		{
+			ItemBase entity = ItemBase.Cast( GetFocusedIcon().GetObject() );
+			if( entity )
+			{
+				GetGame().GetPlayer().PredictiveTakeEntityToInventory( FindInventoryLocationType.ATTACHMENT, entity );
+				return true;
 			}
 		}
 		return false;
@@ -741,15 +859,18 @@ class CargoContainer extends Container
 		Icon focused_item = GetFocusedIcon();
 		if( focused_item )
 		{
-			ItemManager.GetInstance().SetSelectedItem( ItemBase.Cast( focused_item.GetObject() ), this, null, null );
-			return true;
+			ItemBase item = ItemBase.Cast(focused_item.GetObject());
+			if (item && item.IsTakeable())
+			{
+				ItemManager.GetInstance().SetSelectedItem( item, this, null, null );
+				return true;
+			}
 		}
 		return false;
 	}
 
 	override bool Select()
 	{
-		Icon focused_icon = GetFocusedIcon();
 		EntityAI focused_item = GetFocusedItem();
 		EntityAI selected_item = ItemManager.GetInstance().GetSelectedItem();
 		DayZPlayer player = GetGame().GetPlayer();
@@ -828,104 +949,21 @@ class CargoContainer extends Container
 				}
 			}
 		}
-		return true;
+		return false;
 	}
 	
-	override void MoveGridCursor( int direction )
+	void ShowFalseCargoHeader(bool show)
 	{
-		if( !ItemManager.GetInstance().IsMicromanagmentMode() )
+		m_CargoHeader.Show(show);
+	}
+	
+	void SetAlternateFalseTextHeaderWidget(TextWidget w)
+	{
+		bool update = !m_AlternateFalseHeaderTextWidget;
+		m_AlternateFalseHeaderTextWidget = w;
+		if (update)
 		{
-			Container cnt;
-			Icon icon = GetIcon( m_FocusedItemPosition );
-			if( icon )
-			{
-				icon.SetActive( false );
-				ItemManager.GetInstance().HideTooltip( );
-			}
-			
-			int focused_row = m_FocusedItemPosition / ROWS_NUMBER_XBOX;
-			int row_min = focused_row * ROWS_NUMBER_XBOX;
-			int row_max = row_min + ROWS_NUMBER_XBOX - 1;
-			
-			if(row_max >= m_Icons.Count() )
-			{
-				row_max = m_Icons.Count() - 1;
-			}
-			
-			if( direction == Direction.UP )
-			{
-				m_FocusedItemPosition -= ROWS_NUMBER_XBOX;
-				focused_row = m_FocusedItemPosition / ROWS_NUMBER_XBOX;
-				if( m_FocusedItemPosition < 0 || m_Icons.Count() == 1 )
-				{
-					m_FocusedItemPosition = 0;
-					cnt = Container.Cast( GetParent() );
-					if( cnt )
-					{
-						cnt.SetPreviousActive();
-					}
-					return;
-				}
-			}
-			else if( direction == Direction.DOWN )
-			{
-				m_FocusedItemPosition += ROWS_NUMBER_XBOX;
-				focused_row = m_FocusedItemPosition / ROWS_NUMBER_XBOX;
-				if( ( m_FocusedItemPosition > m_Icons.Count() - 1 && focused_row >= m_Icons.Count() / ROWS_NUMBER_XBOX ) || m_Icons.Count() == 0 )
-				{
-					cnt = Container.Cast( GetParent() );
-					m_FocusedItemPosition = 0;
-					if( cnt )
-					{
-						cnt.SetNextActive();
-					}
-					return;
-				}
-				else if( m_FocusedItemPosition > m_Icons.Count() - 1 )
-				{
-					m_FocusedItemPosition = m_Icons.Count() - 1;
-				}
-			}
-			else if( direction == Direction.RIGHT && m_Icons.Count() > 1 )
-			{
-				m_FocusedItemPosition++;
-				if( m_FocusedItemPosition > row_max  )
-				{
-					m_FocusedItemPosition = row_min;
-				}
-			}
-			else if( direction == Direction.LEFT && m_Icons.Count() > 1 )
-			{
-				m_FocusedItemPosition--;
-				if( m_FocusedItemPosition < row_min  )
-				{
-					m_FocusedItemPosition = row_max;
-				}
-			}
+			UpdateHeaderText();
 		}
-		else
-		{
-			if( direction == Direction.UP )
-			{
-				cnt = Container.Cast( GetParent() );
-				if( cnt )
-				{
-					cnt.SetPreviousActive();
-				}
-				m_FocusedItemPosition = 0;
-				return;
-			}
-			else if( direction == Direction.DOWN )
-			{
-				cnt = Container.Cast( GetParent() );
-				if( cnt )
-				{
-					cnt.SetNextActive();
-				}
-				m_FocusedItemPosition = 0;
-				return;
-			}
-		}
-		UpdateSelection();
 	}
 }

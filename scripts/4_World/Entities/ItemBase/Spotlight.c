@@ -47,7 +47,7 @@ class Spotlight extends ItemBase
 	void Spotlight()
 	{
 		m_EvaluateDeployment = false;
-		m_DeployLoopSound = new EffectSound;
+
 		RegisterNetSyncVariableBool("m_IsSoundSynchRemote");
 		RegisterNetSyncVariableBool("m_IsDeploySound");
 		RegisterNetSyncVariableBool("m_IsFolded");
@@ -55,10 +55,7 @@ class Spotlight extends ItemBase
 	
 	void ~Spotlight()
 	{
-		if ( m_DeployLoopSound )
-		{
-			SEffectManager.DestroySound( m_DeployLoopSound );
-		}
+		SEffectManager.DestroyEffect( m_DeployLoopSound );
 	}
 	
 	override bool IsElectricAppliance()
@@ -437,7 +434,7 @@ class Spotlight extends ItemBase
 	
 	void PlayDeployLoopSound()
 	{		
-		if ( GetGame().IsMultiplayer() && GetGame().IsClient() || !GetGame().IsMultiplayer() )
+		if ( !m_DeployLoopSound || !GetGame().IsDedicatedServer() )
 		{		
 			m_DeployLoopSound = SEffectManager.PlaySound( GetLoopDeploySoundset(), GetPosition());
 		}
@@ -445,7 +442,7 @@ class Spotlight extends ItemBase
 	
 	void StopDeployLoopSound()
 	{
-		if ( GetGame().IsMultiplayer() && GetGame().IsClient() || !GetGame().IsMultiplayer() )
+		if ( !GetGame().IsDedicatedServer() )
 		{	
 			m_DeployLoopSound.SetSoundFadeOut(0.5);
 			m_DeployLoopSound.SoundStop();

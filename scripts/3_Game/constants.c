@@ -1,6 +1,110 @@
+/**
+ * \defgroup CppEnums Internally defined enums
+ * \desc Various enums defined in C++
+ * @{
+ */
+enum ChatChannelType
+{
+	System, 				//!< CCSystem
+	Admin, 					//!< CCAdmin
+	Direct, 				//!< CCDirect
+	Megaphone, 				//!< CCMegaphone
+	Transmitter, 			//!< CCTransmitter
+	PublicAddressSystem, 	//!< CCPublicAddressSystem
+	BattlEye, 				//!< CCBattlEye
+}
+
+enum VoiceLevel
+{
+	Whisper, 	//!< VoiceLevelWhisper
+	Talk, 		//!< VoiceLevelTalk
+	Shout 		//!< VoiceLevelShout
+}
+
+enum VoiceEffectType
+{
+	Mumbling, 		//!< VoiceEffectMumbling
+	Extortion, 		//!< VoiceEffectExtortion
+	Obstruction 	//!< VoiceEffectObstruction
+}
+
+enum ObjIntersect
+{
+	Fire, 	//!< ObjIntersectFire: Fire Geometry
+	View, 	//!< ObjIntersectView: View Geometry
+	Geom,	//!< ObjIntersectGeom: Geometry
+	IFire, 	//!< ObjIntersectIFire: (Indirect) Fire Geometry
+	None 	//!< ObjIntersectNone: No Geometry
+}
+
+//! UserID of a parent widget usually matches this value, unless overriden in the 'InitWidgetSet' method
+enum EffectWidgetsTypes
+{
+	ROOT = -2, //used when handling the m_Root widget directly
+	NONE = 0,
+	
+	MASK_OCCLUDER = 1,
+	MASK_BREATH = 2,
+	
+	HELMET_OCCLUDER = 10,
+	HELMET_BREATH = 11,
+	
+	MOTO_OCCLUDER = 20,
+	MOTO_BREATH = 21,
+	
+	COVER_FLASHBANG = 50,
+	NVG_OCCLUDER = 51,
+	PUMPKIN_OCCLUDER = 52,
+	EYEPATCH_OCCLUDER = 53,
+	
+	BLEEDING_LAYER = 60,
+}
+
+enum EffectWidgetHandles
+{
+	FLASHBANG,
+}
+
+enum EffectWidgetSuspends
+{
+	BURLAPSACK,
+	UNCON,
+}
+
+class HitDirectionConstants
+{
+	const int ROTATION_DEFAULT = 0; //0 == random
+	const float DURATION_BASE = 2.0;
+	const float BREAKPOINT_BASE = 0.2;
+	const float DISTANCE_ADJUST = 0.0;
+	const float SCATTER = 10.0;
+	const int COLOR_DEFAULT = 0xffbb0a1e;
+}
+
+enum HitDirectionModes
+{
+	DISABLED,
+	STATIC,
+	DYNAMIC
+}
+
+enum HitIndicatorType
+{
+	SPLASH,
+	SPIKE,
+	ARROW
+}
+
+enum EInputRestrictors
+{
+	INVENTORY,
+	MAP
+}
+
+/** @}*/
+
 //! how often virtual hud checks if there is a difference since last sync
 const int VIRTUAL_HUD_UPDATE_INTERVAL = 1000;
-/** @}*/
 
 /**
  * \defgroup UI
@@ -80,6 +184,8 @@ const int MENU_INVITE_TIMER							= 37;
 const int MENU_LOGIN_TIME							= 38;
 const int MENU_WARNING_ITEMDROP						= 39;
 const int MENU_RESPAWN_DIALOGUE						= 40;
+const int MENU_WARNING_TELEPORT						= 41;
+const int MENU_CONNECT_ERROR						= 42;
 
 const int GUI_WINDOW_MISSION_LOADER = 1;
 
@@ -90,11 +196,14 @@ const string CFG_AMMO = "CfgAmmo";
 const string CFG_WORLDS = "CfgWorlds";
 const string CFG_SURFACES = "CfgSurfaces";
 const string CFG_RECIPESPATH = "CfgRecipes";
+const string CFG_SOUND_SHADERS = "CfgSoundShaders";
+const string CFG_SOUND_SETS = "CfgSoundSets";
+const string CFG_NONAI_VEHICLES = "CfgNonAIVehicles";
 
 /** @}*/
 
 /**
- * \defgroup Local data saving to files
+ * \defgroup CFGConstants Local data saving to files
  * \desc constants for saving local datas
  * @{
  */
@@ -112,7 +221,7 @@ const string	CFG_FILE_ADDITIONAL_INFO= "$profile:serverInfo.cfg";
 /** @}*/
 
 /**
- * \defgroup RPC commands
+ * \defgroup RPC RPC commands
  * \desc Constants for sending RPC commands on server
  * @{
  */
@@ -155,7 +264,7 @@ const int RPC_EM_IS_UNPLUGGED					= 36;
 
 
 /**
- * \defgroup Developer RPC commands
+ * \defgroup DeveloperRPC Developer RPC commands
  * \desc Constants for sending developer RPC commands on server
  * @{
  */
@@ -177,7 +286,7 @@ const int DEV_RPC_SPAWN_ITEM_ON_CURSOR          = 114;
 /** @}*/
 
 /**
- * \defgroup Sync update commands
+ * \defgroup SyncCMD Sync update commands
  * \desc Constants for synchronization update commands
  * @{
  */
@@ -189,7 +298,7 @@ const int DEV_AGENTS_UPDATE						= 3;
 /** @}*/
 
 /**
- * \defgroup Message commands
+ * \defgroup MessageCMD Message commands
  * \desc Messaging System - the numbers must be 0 or higher, and the highest number should not be bigger than NUM_OF_CHANNELS-1
  * @{
  */
@@ -213,27 +322,9 @@ const int MIN_TICK_NOTIFIERS = 1000;
 /** @}*/
 
 /**
- * \defgroup Emote ids
- * \desc These ids are stored in emotesProfile.cfg and defines which emote will be played after pressing emote shorcut keys
+ * \defgroup EmoteIDs Emote ids
  * @{
  */
-/*
-const int ID_EMOTE_LYINGDOWN	= 1;
-const int ID_EMOTE_DABBING 		= 2;
-const int ID_EMOTE_THUMB		= 3;
-const int ID_EMOTE_TAUNT 		= 4;
-const int ID_EMOTE_TIMEOUT 		= 5;
-const int ID_EMOTE_HEART 		= 6;
-const int ID_EMOTE_FACEPALM 	= 7;
-const int ID_EMOTE_CLAP 		= 8;
-const int ID_EMOTE_SILENT 		= 9;
-const int ID_EMOTE_GREETING 	= 10;
-const int ID_EMOTE_SALUTE 		= 11;
-const int ID_EMOTE_SOS 			= 12;
-const int ID_EMOTE_DANCE 		= 13;
-const int ID_EMOTE_RPS 			= 14;
-/** @}
-*/
 class EmoteConstants
 {
 	const int ID_EMOTE_GREETING			= 1;
@@ -280,7 +371,7 @@ class EmoteConstants
 	const int ID_EMOTE_DEBUG 		= 1000;
 	
 	/**
-	 * \defgroup Custom animation events ID for emotes
+	 * \defgroup CustomEmoteIDs Custom animation events ID for emotes
 	 * \desc used mainly in suicide emotes
 	 * @{
 	 */
@@ -291,7 +382,7 @@ class EmoteConstants
 }
 
 /**
- * \defgroup Configurations for ItemsGenerator class
+ * \defgroup ItemGeneratorCfg Configurations for ItemsGenerator class
  * \desc Configurations for ItemsGenerator class
  * @{
  */
@@ -304,7 +395,7 @@ const int		ITEMSGEN_ITEMS_AMOUNT = 5;
 
 
 /**
- * \defgroup Selectable action types ids
+ * \defgroup SATIDs Selectable action types ids
  * \desc These ids helsp diferentiate types of selectable actions 
  * @{
  */
@@ -314,7 +405,7 @@ const int SAT_DEBUG_ACTION		= 3;
 /** @}*/
 
 /**
- * \defgroup User action internal state machine states
+ * \defgroup UAIDs User action internal state machine states
  * \desc User action internal state machine states
  * @{
  */
@@ -348,7 +439,7 @@ const int		UA_SETEND_2 = 32;
 
 /**
 
- * \defgroup Agent transmission system
+ * \defgroup AGTIDs Agent transmission system
  * \desc Agent transmission system
  * @{
  */
@@ -365,6 +456,7 @@ const int AGT_ITEM_TO_FLESH		= 10;
 const int AGT_AIRBOURNE_CHEMICAL = 11;
 
 const int DEF_BIOLOGICAL		= 1;
+const int DEF_CHEMICAL			= 2;
 /** @}*/
 			
 const int QUANTITY_HIDDEN = 0;
@@ -403,6 +495,22 @@ const int LIQUID_SOLUTION = 65536;
 const int GROUP_LIQUID_BLOOD = 255;
 const int GROUP_LIQUID_ALL = -1;//-1 = all bits to 1
 /** @}*/
+
+/**
+ * \defgroup LiquidThroughputs
+ * \desc Constants for liquid transfer speeds
+ * @{
+ */
+const float LIQUID_THROUGHPUT_TINY = 0.1;
+const float LIQUID_THROUGHPUT_DEFAULT = 1.0;
+const float LIQUID_THROUGHPUT_GASOLINECANISTER = 10.0;
+const float LIQUID_THROUGHPUT_CAR_DEFAULT = 10.0;
+const float LIQUID_THROUGHPUT_GENERATOR = 10.0;
+const float LIQUID_THROUGHPUT_FUELSTATION = 20.0;
+const float LIQUID_THROUGHPUT_WELL = 15.0;
+const float LIQUID_THROUGHPUT_BARREL = 100.0;
+
+/** @}*/
 	
 /**
  * \defgroup ChatMessagesVisibility
@@ -426,13 +534,14 @@ const string PLAYER_CHAT_MSG 	= "player_chat_msg";
  */
 const string SHOW_QUICKBAR 		= "show_quickbar";
 const string SHOW_HUD 			= "show_hud";
+const string ENABLE_BLEEDINGINDICATION	= "enable_bleedingindication";
 //const string SHOW_HUD_AUTOHIDE 	= "hud_autohide";
 const string SHOW_CROSSHAIR 	= "show_crosshair";
 const string SHOW_SERVERINFO 	= "show_serverinfo";
 /** @}*/
 
 /**
- * \defgroup Controls locks
+ * \defgroup LockConstants Controls locks
  * \desc Constants for toggling of alternate 
  * @{
  */
@@ -442,7 +551,7 @@ const string LOCK_ZOOM 		= "lock_zoom";
 /** @}*/
 
 /**
- * \defgroup Item Variables
+ * \defgroup ItemVariables Item Variables
  * \desc Constants for Item Variables
  * @{
  */
@@ -469,17 +578,18 @@ const float MELEE_ITEM_DAMAGE = 1.0;
 
 const int HAIR_SELECTION_COUNT = 45;
 /**
-* \ input exclude types
+* \ input exclude types; DEPRECATED (confusing)
 */
 const int INPUT_EXCLUDE_ALL = 0;
 const int INPUT_EXCLUDE_INVENTORY = 1;
 const int INPUT_EXCLUDE_MOUSE_ALL = 2;
 const int INPUT_EXCLUDE_MOUSE_RADIAL = 3;
+const int INPUT_EXCLUDE_MAP = 4;
 
 class GameConstants
 {
 	/**
-	 * \defgroup Configurations for StaminaHandler class
+	 * \defgroup StaminaHandlerCfg Configurations for StaminaHandler class
 	 * \desc Configurations for StaminaHandler class
 	 * @{
 	 */
@@ -527,12 +637,12 @@ class GameConstants
 	const float STAMINA_REGEN_COOLDOWN_EXHAUSTION = 0.5;
 	const float STAMINA_WEIGHT_LIMIT_THRESHOLD = 6000; //! in grams (weight where the player is not penalized by stamina)
 	const float STAMINA_KG_TO_GRAMS = 1000; //for kg to g conversion
-	const float STAMINA_SYNC_RATE = 1; //in secs
+	const float STAMINA_SYNC_RATE = 0.5; //in secs
 	const float STAMINA_MAX = 100;
 	/** @}*/
 	
 	/**
-	 * \defgroup Configurations for Environment class
+	 * \defgroup EnvironmentCfg Configurations for Environment class
 	 * \desc Configurations for Environment class
 	 * @{
 	 */
@@ -554,8 +664,9 @@ class GameConstants
 	const float ENVIRO_DEFAULT_ENTITY_HEAT 				= 2.5;		//! heat entity generates if not moving
 	const float ENVIRO_TEMPERATURE_HEIGHT_REDUCTION 	= 0.02;		//! amount of ?C reduced for each 100 meteres of height above water level
 	const float ENVIRO_TEMPERATURE_INSIDE_COEF 			= 0.085;	//! increases temp in interiors
+	const float ENVIRO_TEMPERATURE_INSIDE_VEHICLE_COEF	= 0.051;	//! increases temp inside vehicles
 	const float ENVIRO_TEMPERATURE_UNDERROOF_COEF		= 0.072;
-	const float ENVIRO_TEMPERATURE_WIND_COEF			= 8.5;		//! windchill effect on base temperature
+	const float ENVIRO_TEMPERATURE_WIND_COEF			= 2.5;		//! windchill effect on base temperature
 	const float ENVIRO_WIND_EFFECT 						= 0.25;		//! amount of % wind affect drying/wetting
 	const float ENVIRO_HIGH_NOON 						= 12;		//! when is sun highest on sky
 	
@@ -584,10 +695,17 @@ class GameConstants
 	const float ENVIRO_ISOLATION_HEALTHFACTOR_DAMAGED	= 0.8;
 	const float ENVIRO_ISOLATION_HEALTHFACTOR_B_DAMAGED = 0.5;
 	const float ENVIRO_ISOLATION_HEALTHFACTOR_RUINED  	= 0.0;
+	
+	const float ENVIRO_TEMP_SOURCES_LOOKUP_RADIUS		= 20.0;
+	
+	// --
+	//! various damage per second constants
+	const float FIRE_ATTACHMENT_DAMAGE_PER_SECOND 		= 0.07;		//! damage per second dealt to attachment by fire
+	
 	/** @}*/
 	
 	/**
-	 * \defgroup Cars Fluids 
+	 * \defgroup CarFluidsConstants Cars Fluids 
 	 * \desc Constants for car fluids
 	 * @{
 	 */
@@ -598,7 +716,17 @@ class GameConstants
 	/** @}*/
 	
 	/**
-	 * \defgroup Item Health States (ItemBase.GetHealthLevel)
+	 * \defgroup CarContactConstants Cars Contact 
+	 * \desc Constants for car contact event
+	 * @{
+	 */
+	const float CARS_CONTACT_DMG_THRESHOLD = 750.0;
+	const float CARS_CONTACT_DMG_MIN = 150.0;
+	const float CARS_CONTACT_DMG_KILLCREW = 3000.0;
+	/** @}*/
+	
+	/**
+	 * \defgroup ItemHealth Item Health States (ItemBase.GetHealthLevel)
 	 * \desc Constants for Item Health States
 	 * @{
 	 */
@@ -610,7 +738,7 @@ class GameConstants
 	/** @}*/
 	
 	/**
-	 * \defgroup Item Damage Relative Values (ItemBase.GetHealth01)
+	 * \defgroup ItemDamage Item Damage Relative Values (ItemBase.GetHealth01)
 	 * \desc Constants for relative Item Health handling
 	 * @{
 	 */
@@ -622,7 +750,7 @@ class GameConstants
 	/** @}*/
 	
 	/**
-	 * \defgroup Item Wetness States (ItemBase.GetWet)
+	 * \defgroup ItemWetness Item Wetness States (ItemBase.GetWet)
 	 * \desc Constants for Item Wetness States
 	 * @{
 	 */
@@ -632,6 +760,10 @@ class GameConstants
 	const float STATE_DAMP			= 0.05;
 	const float STATE_DRY			= 0;
 	/** @}*/
+	
+	const int OPTICS_STATE_DAY	 		= 0; //default state for most optics
+	const int OPTICS_STATE_NIGHTVISION 	= 1;
+	//const int OPTICS_STATE_OTHER	 	= 2;
 	
 	const float WETNESS_RATE_WETTING_INSIDE = 0.0020;
 	const float WETNESS_RATE_WETTING_LIQUID = 0.015;
@@ -648,8 +780,8 @@ class GameConstants
 	const float HEATISO_THRESHOLD_HIGH = 0.8;
 	
 	/**
-	 * \defgroup Barel related functions constants
-	 * \desc Barel related functions constants
+	 * \defgroup Barrel Barrel related functions constants
+	 * \desc Barrel related functions constants
 	 * @{
 	 */
 	const int BAREL_LIME_PER_PELT = 100; //grams per pelt 
@@ -658,7 +790,7 @@ class GameConstants
 	/** @}*/
 	
 	/**
-	 * \defgroup FOV settings
+	 * \defgroup FOVSettings FOV settings
 	 * \desc Constats for setting of DayZPlayerCamera FOV
 	 */
 	
@@ -674,6 +806,8 @@ class GameConstants
 	
 	//! Camera shake
 	const int CAMERA_SHAKE_GRENADE_DISTANCE = 40;
+	const int CAMERA_SHAKE_ARTILLERY_DISTANCE = 200;
+	const int CAMERA_SHAKE_ARTILLERY_DISTANCE2 = 40000; // Square distance used for distance check
 	
 	//! Wood mining GameConstants, scaled by output. Should not be lower than ~1.5s!
 	const float MINING_WOOD_FAST = 2.0;
@@ -687,8 +821,11 @@ class GameConstants
 	
 	const float ROOF_CHECK_RAYCAST_DIST = 20.0;
 	
+	//! misc
+	const float ITEM_TEMPERATURE_TO_EXPLODE_MIN = 100;
+	
 	/**
-	 * \defgroup Lifetime Refresher functionality constants
+	 * \defgroup LifetimeRefresherConstants Lifetime Refresher functionality constants
 	 * \desc Constats for lifetime refresher (radius, default lifetime, frequency...)
 	 */
 	const int REFRESHER_MAX_DURATION_DEFAULT		= 3600 * 24 * 40; 	//max duration of refresher in seconds - 40 days (+ 5 days final refresh )
@@ -697,10 +834,11 @@ class GameConstants
 	// lifetime of refresher itself is in db (3600 * 24 * 7 = 604800 )
 	
 	/**
-	 * \defgroup Food decay constants
+	 * \defgroup FoodDecayConstants Food decay constants
 	 * \desc Constants for decay of various types of food.
 	 */
 	const float DECAY_FOOD_RAW_MEAT = 21600;
+	const float DECAY_FOOD_RAW_CORPSE = 32400;
 	const float DECAY_FOOD_RAW_FRVG = 43200;
 	const float DECAY_FOOD_BOILED_MEAT = 259200;
 	const float DECAY_FOOD_BOILED_FRVG = 172800;
@@ -721,6 +859,7 @@ class GameConstants
 	
 	const float AI_ATTACKSPEED = 1.5;
 	const float AI_MAX_BLOCKABLE_ANGLE = 60; // The angle under which an infected must be relative to player to be blockable
+	const float AI_CONTAMINATION_DMG_PER_SEC = 3; // The amount of damage AI agents take per contaminated area damage event
 	
 	//----------------------------------------------------------
 	//						   MELEE

@@ -57,7 +57,7 @@ class TutorialKeybinds extends ScriptedWidgetEventHandler
 		m_Root.SetHandler( this );
 	}
 	
-		// assembly all related binding at widget element
+	//! assemble all active bindings at widget element
 	bool SetElementTitle( UAInput pInput, int iDeviceFlags, out string output )
 	{
 		int a, i, countbind = 0;
@@ -109,6 +109,7 @@ class TutorialKeybinds extends ScriptedWidgetEventHandler
 		return ( countbind > 0 );
 	}
 	
+	//! Determine the active limiter of the bindings (currently unreliable, multiple limiters can be active on key combos!)
 	bool SetElementModifier( UAInput pInput, out string output )
 	{
 		if( pInput.IsLimited() )

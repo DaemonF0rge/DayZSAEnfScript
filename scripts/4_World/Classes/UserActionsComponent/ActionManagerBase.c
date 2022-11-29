@@ -30,11 +30,7 @@ class TSelectableActionInfoArray extends array<ref TSelectableActionInfo>
 
 class ActionManagerBase
 {
-
-
-	//ref ActionConstructor						m_ActionConstructor;
 	PlayerBase									m_Player;
-	ref HumanCommandActionCallback				m_Command;
 	
 	protected ActionTarget						m_TestedActionTarget;
 	protected ItemBase							m_TestedActionItem;
@@ -158,6 +154,22 @@ class ActionManagerBase
 	{
 	}
 	
+	static ActionBase GetActionVariant(typename actionName)
+	{
+		if (m_ActionNameActionMap)
+		{
+			ActionBase base_action = m_ActionNameActionMap.Get(actionName);
+			ActionBase new_action = ActionBase.Cast(actionName.Spawn());
+			
+			new_action.CreateConditionComponents();
+			new_action.SetID(base_action.GetID());
+			new_action.SetInput(base_action.GetInput());
+			
+			return new_action;
+		}
+		return null;
+	}
+	
 	static ActionBase GetAction(typename actionName)
 	{
 		if (m_ActionNameActionMap)
@@ -196,6 +208,22 @@ class ActionManagerBase
 	int GetSelectedActionIndex()
 	{
 		return m_SelectedActionIndex;
+	}
+	
+	typename GetSelectedActionCategory()
+	{
+	}
+	
+	void SelectFirstActionCategory()
+	{
+	}
+	
+	void SelectNextActionCategory()
+	{	
+	}
+	
+	void SelectPrevActionCategory()
+	{
 	}
 	
 	void SelectNextAction()
@@ -273,7 +301,7 @@ class ActionManagerBase
 	
 	void OnActionEnd( )
 	{
-		if( LogManager.IsActionLogEnable() )
+		if ( LogManager.IsActionLogEnable() )
 		{
 			if (m_CurrentActionData)
 				Debug.ActionLog("n/a", m_CurrentActionData.m_Action.ToString() , "n/a", "OnActionEnd", m_CurrentActionData.m_Player.ToString() );

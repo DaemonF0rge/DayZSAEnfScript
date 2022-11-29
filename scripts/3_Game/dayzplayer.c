@@ -25,6 +25,8 @@ class DayZPlayerCameraResult
 	bool		m_bUpdateWhenBlendOut;	//!< true - camera is updated when blending to new camera (Ironsights == false)
 	float 		m_fShootFromCamera;		//!< 1(default) - uses shoot from camera (+aiming sway), 0 pure weapon shoot (ironsights == 0)
 	float		m_fIgnoreParentRoll;	//!< 1 - resets base transforms roll
+	float		m_fIgnoreParentPitch;	//!< 1 - resets base transforms pitch
+	float		m_fIgnoreParentYaw;   //!< 1 - resets base transforms yaw
 	IEntity		m_CollisionIgnoreEntity;//!< ignore entity in 3rd person camera collision solver
 
 	//! cannot be instanced from script (always created from C++)
@@ -624,6 +626,11 @@ enum DayZPlayerConstants
 	MOVEMENTIDX_RUN		= 2,
 	MOVEMENTIDX_SPRINT  = 3,
 	MOVEMENTIDX_CROUCH_RUN = 4,
+	
+	//! melee hit type
+	MELEE_LIGHT = 0,
+	MELEE_HEAVY = 1,
+	
 
 	//! vehicle classes
 	VEHICLECLASS_CAR,
@@ -706,6 +713,9 @@ enum DayZPlayerConstants
 	CMD_ACTIONMOD_RESTRAINEDSTRUGGLE	= 23,		// erc,cro 			[end, end2]
 	CMD_ACTIONMOD_COVERHEAD_SELF		= 24,		// erc,cro 			[end, end2]
 	CMD_ACTIONMOD_COVERHEAD_TARGET		= 25,		// erc,cro 			[end, end2]
+	CMD_ACTIONMOD_SET_ALARM				= 250,
+	CMD_ACTIONMOD_SET_KITCHENTIMER		= 252,
+	CMD_ACTIONMOD_RESET_KITCHENTIMER	= 253,
 	
 	// onetime 
 	CMD_ACTIONMOD_PICKUP_HANDS			= 500,		// erc,cro
@@ -734,7 +744,9 @@ enum DayZPlayerConstants
 	CMD_ACTIONMOD_CLOSEITEM_ONCE		= 523,		// erc,cro,pne
 	CMD_ACTIONMOD_FOLDITEM_ONCE			= 524,		// erc,cro
 	CMD_ACTIONMOD_UNFOLDITEM_ONCE		= 525,		// erc,cro
-	
+	CMD_ACTIONMOD_PRESS_TRIGGER			= 526,		// erc,cro
+	CMD_ACTIONMOD_STOP_ALARM			= 251,
+
 	CMD_ACTIONMOD_DROPITEM_HANDS		= 900,		// erc, cro
 	CMD_ACTIONMOD_DROPITEM_INVENTORY	= 901,		// erc, cro
 	
@@ -804,6 +816,9 @@ enum DayZPlayerConstants
 	CMD_ACTIONFB_RESTRAINSELF			= 112,		// erc,cro 			[end]
 	CMD_ACTIONFB_ASSEMBLE				= 113,		// erc,cro			[end, end2]
 	CMD_ACTIONFB_DISASSEMBLE			= 114,		// erc,cro			[end, end2]
+	CMD_ACTIONFB_FLAME_REPAIR			= 115,		// erc, cro	
+	CMD_ACTIONFB_TURN_VALVE				= 116,		// erc
+	CMD_ACTIONFB_SET_ALARM				= 250,		// erc,cro			??not sure
 	
 	// onetime 
 	CMD_ACTIONFB_PICKUP_HANDS			= 500,		// pne
@@ -826,8 +841,10 @@ enum DayZPlayerConstants
 	CMD_ACTIONFB_ATTACHBARREL			= 517,		// pne
 	CMD_ACTIONFB_RESTRAIN				= 518,		// erc,cro,pne
 	CMD_ACTIONFB_PICKUP_HEAVY			= 519,		// erc
+	CMD_ACTIONFB_PRESS_TRIGGER			= 526,		// pne
 	CMD_ACTIONFB_RAISE_FLAG				= 600,		// erc?
 	CMD_ACTIONFB_LOWER_FLAG				= 601,		// erc?
+	CMD_ACTIONFB_STOP_ALARM				= 251,
 
 	CMD_ACTIONFB_DROPITEM_HANDS		= 900,			// pne, pne back
 	
@@ -991,10 +1008,9 @@ class SDayZPlayerHeadingModel
 	float 	m_fOrientationAngle;	//[in/out] 	- horizontal model orientation (where you face) - in rad
 	float 	m_fHeadingAngle;		//[in/out] 	- horizontal aim angle (where you aim) - in rad
 
-	//! cannot be created from script
-	protected void SDayZPlayerHeadingModel()
-	{
-	}
+	//! cannot be created from script	
+	private void SDayZPlayerHeadingModel() {}
+	private void ~SDayZPlayerHeadingModel() {}
 }
 
 
@@ -1014,15 +1030,13 @@ class SDayZPlayerAimingModel
 	float	m_fAimYHandsOffset;		//[out] 	- hands offset modifier
 	float	m_fAimXMouseShift;		//[out]		- shift like mouse does
 	float	m_fAimYMouseShift;		//[out]		- shift like mouse does
-	float	m_fAimSensitivity;		//[out]		- aim sensitivity
 	float 	m_fCamPosOffsetX;		//[out]		- camera (position) offset modifier
 	float 	m_fCamPosOffsetY;		//[out]		- camera (position) offset modifier
 	float 	m_fCamPosOffsetZ;		//[out]		- camera (position) offset modifier
 
 	//! cannot be created from script
-	protected void SDayZPlayerAimingModel()
-	{
-	}
+	private void SDayZPlayerAimingModel() {}
+	private void ~SDayZPlayerAimingModel() {}
 }
 
 
@@ -1078,13 +1092,24 @@ class DayZPlayer extends Human
 
 	//! gets current camera 
 	proto native 	DayZPlayerCamera		GetCurrentCamera();
+	
+	//! gets transform of current player camera
+	proto native 	void 					GetCurrentCameraTransform(out vector position, out vector direction, out vector rotation);
 
 	//! gets current camera 
 	proto native 	int 					GetCurrentPerItemCameraUD();
 	
 	proto native	bool					IsCameraBlending();
-	
-	
+
+
+	//! ---------------- animation graph functions -------------------------
+
+	//! functions usable only from CommandHandler
+	proto native void AnimCallCommand(int pCommand, int pParamInt, float pParamFloat);
+	proto native void AnimSetFloat(int pVar, float pFlt);
+	proto native void AnimSetInt(int pVar, int pInt);
+	proto native void AnimSetBool(int pVar, bool pBool);
+
 	//! ---------------- deterministic random numbers ------------------------
 
 	/**
@@ -1114,6 +1139,8 @@ class DayZPlayer extends Human
 	bool									IsHoldingBreath();
 	//! return true if player is currently performing FB gesture, otherwise false
 	bool									IsPerformingFBGesture();
+	//! return true if player is currently in 3pp, otherwise false
+	bool									IsInThirdPerson();
 
 	//! processes melee hit
 	proto native	MeleeCombatData			GetMeleeCombatData();
@@ -1156,8 +1183,8 @@ class DayZPlayer extends Human
 	{
 		HumanMovementState		state = new HumanMovementState;
 		GetMovementState(state);
+		
 		bool ret = ((1 << state.m_iStanceIdx) & pStanceMask) != 0;
-		delete state;
 		return ret;
 	}
 	

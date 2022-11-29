@@ -89,6 +89,7 @@ class RadialQuickbarMenu extends UIScriptedMenu
 {
 	protected Widget 								m_ItemCardPanel;
 	protected ref array<ref RadialQuickbarItem> 	m_Items;
+	protected Widget 								m_ToolbarPanel;
 	
 	protected bool 									m_IsMenuClosing;
 	protected int 									m_CurrentCategory;
@@ -114,10 +115,16 @@ class RadialQuickbarMenu extends UIScriptedMenu
 		{
 			instance = this;
 		}
+
+		GetGame().GetMission().GetOnInputPresetChanged().Insert(OnInputPresetChanged);
 	}
 	
 	void ~RadialQuickbarMenu()
 	{
+		if (GetGame() && GetGame().GetMission())
+		{
+			GetGame().GetMission().RemoveActiveInputExcludes({"radialmenu"},false);
+		}
 	}
 	
 	static void SetItemToAssign( EntityAI item )
@@ -130,12 +137,24 @@ class RadialQuickbarMenu extends UIScriptedMenu
 		return m_ItemToAssign;
 	}
 	
+	static RadialQuickbarMenu GetMenuInstance()
+	{
+		return instance;
+	}
+	
 	override void OnHide()
 	{
 		super.OnHide();
 		
 		//reset item to assign
 		RadialQuickbarMenu.SetItemToAssign( NULL );
+	}
+	
+	protected void OnInputPresetChanged()
+	{
+		#ifdef PLATFORM_CONSOLE
+		UpdateControlsElements();
+		#endif
 	}
 
 	//============================================
@@ -149,6 +168,7 @@ class RadialQuickbarMenu extends UIScriptedMenu
 	static void CloseMenu()
 	{
 		GetGame().GetUIManager().Back();
+		//GetGame().GetMission().RemoveActiveInputExcludes({"radialmenu"},false);
 	}
 		
 	//============================================
@@ -156,51 +176,28 @@ class RadialQuickbarMenu extends UIScriptedMenu
 	//============================================
 	override Widget Init()
 	{
-		layoutRoot = GetGame().GetWorkspace().CreateWidgets( "gui/layouts/radial_menu/radial_quickbar/radial_quickbar_menu.layout" );
-		m_ItemCardPanel = layoutRoot.FindAnyWidget( RadialMenu.RADIAL_ITEM_CARD_CONTAINER );
+		layoutRoot = GetGame().GetWorkspace().CreateWidgets("gui/layouts/radial_menu/radial_quickbar/radial_quickbar_menu.layout");
+		m_ItemCardPanel = layoutRoot.FindAnyWidget(RadialMenu.RADIAL_ITEM_CARD_CONTAINER);
 		
 		//register gestures menu
-		RadialMenu.GetInstance().RegisterClass( this );
+		RadialMenu.GetInstance().RegisterClass(this);
 		
 		//delay updates until fully initialized
 		RadialMenu.GetInstance().SetWidgetInitialized(false);
 		
 		//set radial menu properties
-		RadialMenu.GetInstance().SetWidgetProperties( "gui/layouts/radial_menu/radial_quickbar/radial_quickbar_delimiter.layout" );
+		RadialMenu.GetInstance().SetWidgetProperties("gui/layouts/radial_menu/radial_quickbar/radial_quickbar_delimiter.layout");
 
 		//create content (widgets) for items
 		RefreshQuickbar();
 		
 		//set controller toolbar icons
 		#ifdef PLATFORM_CONSOLE
-				ImageWidget toolbar_select = ImageWidget.Cast(layoutRoot.FindAnyWidget( "SelectIcon" ));
-				ImageWidget toolbar_back = ImageWidget.Cast(layoutRoot.FindAnyWidget( "CombineIcon" ));
-			#ifdef PLATFORM_XBOX
-				toolbar_select.LoadImageFile( 0, "set:xbox_buttons image:A" );
-				toolbar_back.LoadImageFile( 0, "set:xbox_buttons image:B" );
-			#endif		
-			#ifdef PLATFORM_PS4
-				string confirm = "cross";
-				string back = "circle";
-				if( GetGame().GetInput().GetEnterButton() == GamepadButton.A )
-				{
-					confirm = "cross";
-					back = "circle";
-				}
-				else
-				{
-					confirm = "circle";
-					back = "cross";
-				}
-				toolbar_select.LoadImageFile( 0, "set:playstation_buttons image:" + confirm );
-				toolbar_back.LoadImageFile( 0, "set:playstation_buttons image:" + back );
-			#endif
+		UpdateControlsElements();
 		#endif
 		
-		#ifdef PLATFORM_WINDOWS
-			Widget toolbar_panel = layoutRoot.FindAnyWidget( "toolbar_bg" );
-			toolbar_panel.Show( !RadialMenu.GetInstance().IsUsingMouse() );
-		#endif
+		m_ToolbarPanel = layoutRoot.FindAnyWidget( "toolbar_bg" );
+		m_ToolbarPanel.Show( true );
 				
 		return layoutRoot;
 	}
@@ -302,7 +299,7 @@ class RadialQuickbarMenu extends UIScriptedMenu
 				count++;
 			}
 		}
-		//nvg - eyewear check
+		//nvg/light - eyewear check
 		if ( eyewear )
 		{
 			entity = eyewear.FindAttachmentBySlotName("NVG");
@@ -311,17 +308,17 @@ class RadialQuickbarMenu extends UIScriptedMenu
 				items.Insert( new RadialQuickbarItem( count, entity, "", RadialQuickbarCategory.SPECIALIZED_LIGHTS ) );
 				count++;
 			}
+			else if ( eyewear.IsLightSource() && eyewear.HasEnergyManager() && eyewear.GetCompEM().CanWork() )
+			{
+				entity = eyewear;
+				items.Insert( new RadialQuickbarItem( count, entity, "", RadialQuickbarCategory.SPECIALIZED_LIGHTS ) );
+				count++;
+			}
 		}
 		//light
 		if ( headgear )
 		{
-			if ( headgear.IsLightSource() && headgear.HasEnergyManager() && headgear.GetCompEM().CanWork() )
-			{
-				entity = headgear;
-				items.Insert( new RadialQuickbarItem( count, entity, "", RadialQuickbarCategory.SPECIALIZED_LIGHTS ) );
-				count++;
-			}
-			else if ( headgear.GetInventory().AttachmentCount() > 0 )
+			if ( headgear.GetInventory().AttachmentCount() > 0 )
 			{
 				ItemBase attachment;
 				for (int i = 0; i < headgear.GetInventory().AttachmentCount(); i++)
@@ -340,12 +337,10 @@ class RadialQuickbarMenu extends UIScriptedMenu
 		//Add a category switchers
 		if (m_CurrentCategory == RadialQuickbarCategory.DEFAULT && count > 0)
 		{
-			//items.Insert( new RadialQuickbarItem(last_idx + 1,null,"#toggle_lights",RadialQuickbarCategory.DEFAULT,RadialQuickbarCategory.SPECIALIZED_LIGHTS) );
 			items.InsertAt( new RadialQuickbarItem(32,null,"#toggle_lights",RadialQuickbarCategory.DEFAULT,RadialQuickbarCategory.SPECIALIZED_LIGHTS),0 );
 		}
 		else if (m_CurrentCategory == RadialQuickbarCategory.SPECIALIZED_LIGHTS)
 		{
-			//items.Insert( new RadialQuickbarItem(count,null,"#menu_back",RadialQuickbarCategory.SPECIALIZED_LIGHTS,RadialQuickbarCategory.DEFAULT) );
 			items.InsertAt( new RadialQuickbarItem(32,null,"#menu_back",RadialQuickbarCategory.SPECIALIZED_LIGHTS,RadialQuickbarCategory.DEFAULT),0 );
 		}
 	}
@@ -506,6 +501,7 @@ class RadialQuickbarMenu extends UIScriptedMenu
 	{
 		m_CurrentCategory = category;
 		RefreshQuickbar(false);
+		UpdateControlsElements();
 	}
 	
 	//============================================
@@ -514,18 +510,35 @@ class RadialQuickbarMenu extends UIScriptedMenu
 	//Common
 	void OnControlsChanged( RadialMenuControlType type )
 	{
-		//show/hide controller toolbar
-		Widget toolbar_panel = layoutRoot.FindAnyWidget( "toolbar_bg" );
-		if ( type == RadialMenuControlType.CONTROLLER )
-		{
-			toolbar_panel.Show( true );
-		}
-		else
-		{
-			toolbar_panel.Show( true );
-		}
 	}
-		
+	
+	//Mouse
+	void OnMouseSelect( Widget w )
+	{
+		MarkSelected( w );
+	}
+
+	void OnMouseDeselect( Widget w )
+	{
+		UnmarkSelected( w );
+	}
+
+	void OnMouseExecute( Widget w )
+	{
+	}
+	
+	//! LMB
+	void OnMousePressLeft( Widget w )
+	{
+		PrimaryAction( w );
+	}
+	
+	//! RMB
+	void OnMousePressRight( Widget w )
+	{
+		BackOneLevel();
+	}
+	
 	//Controller
 	void OnControllerSelect( Widget w )
 	{
@@ -544,32 +557,35 @@ class RadialQuickbarMenu extends UIScriptedMenu
 	
 	void OnControllerPressBack( Widget w )
 	{
-		SecondaryAction( w );
-	}
-
-	/*void OnMouseClick( Widget w )
-	{
-		MarkSelected( w );
-		PrimaryAction( w );
 		//SecondaryAction( w );
-	}*/
+		BackOneLevel();
+	}
 	
 	//Actions
 	protected void MarkSelected( Widget w )
 	{
 		m_SelectedItem = w;
 		
-		/*
-		if ( w )
+		if (w)
 		{
 			RadialQuickbarItem quickbar_item;
 			w.GetUserData( quickbar_item );
-
+			ItemBase item;
+			
+			if (quickbar_item && Class.CastTo(item,quickbar_item.GetItem()))
+			{
+				w.SetFlags(WidgetFlags.DISABLED);
+			}
+			else
+			{
+				w.ClearFlags(WidgetFlags.DISABLED);
+			}
+/*
 			//is not category
 			if ( quickbar_item )
-			{	
+			{
 				if ( quickbar_item.GetItem() )
-				{	
+				{
 					//alter item visual
 					TextWidget text_widget = TextWidget.Cast( quickbar_item.GetRadialItemCard().FindAnyWidget( TEXT_ITEM_NAME ) );
 					text_widget.SetColor( ARGB( 255, 66, 175, 95 ) );
@@ -579,10 +595,10 @@ class RadialQuickbarMenu extends UIScriptedMenu
 					//alter item visual
 					TextWidget title_widget = TextWidget.Cast( quickbar_item.GetRadialItemCard().FindAnyWidget( TEXT_ITEM_TITLE ) );
 					title_widget.SetColor( ARGB( 255, 66, 175, 95 ) );
-				}				
-			}		
+				}
+			}
+*/
 		}
-		*/
 	}
 	
 	protected void UnmarkSelected( Widget w )
@@ -619,7 +635,7 @@ class RadialQuickbarMenu extends UIScriptedMenu
 	{
 		if ( instance.m_SelectedItem )
 		{
-			if ( !GetGame().IsMultiplayer() || GetGame().IsClient() )
+			if ( !GetGame().IsDedicatedServer() )
 			{
 				RadialQuickbarItem quickbar_item;
 				instance.m_SelectedItem.GetUserData( quickbar_item );
@@ -679,7 +695,7 @@ class RadialQuickbarMenu extends UIScriptedMenu
 	{
 		if ( instance.m_SelectedItem && m_CurrentCategory == RadialQuickbarCategory.DEFAULT )
 		{
-			if ( !GetGame().IsMultiplayer() || GetGame().IsClient() )
+			if ( !GetGame().IsDedicatedServer() )
 			{
 				RadialQuickbarItem quickbar_item;
 				instance.m_SelectedItem.GetUserData( quickbar_item );
@@ -689,14 +705,22 @@ class RadialQuickbarMenu extends UIScriptedMenu
 					PlayerBase player = PlayerBase.Cast( GetGame().GetPlayer() );
 					EntityAI item = quickbar_item.GetItem();
 					
-					//COMBINE					
 					if ( item )
 					{
-						player.RadialQuickBarCombine( quickbar_item.GetId() + 1 );					//id must begin with 1 (simulating key press 1-9)
+						player.RadialQuickBarCombine( quickbar_item.GetId() + 1 );	//id must begin with 1 (simulating key press 1-9)
 						RefreshQuickbar( false );
 					}	
 				}
 			}
+		}
+	}
+	
+	// returns to default, missing hierarchy to properly traverse ATM
+	protected void BackOneLevel()
+	{
+		if (m_CurrentCategory != RadialQuickbarCategory.DEFAULT)
+		{
+			ChangeCurrentCategory(RadialQuickbarCategory.DEFAULT);
 		}
 	}
 	
@@ -757,5 +781,35 @@ class RadialQuickbarMenu extends UIScriptedMenu
 	void SetMenuClosing(bool state)
 	{
 		m_IsMenuClosing = state;
+	}
+
+	protected void UpdateControlsElements()
+	{
+		Widget toolbarBackSpacer = layoutRoot.FindAnyWidget("BackSpacer");
+		//Widget toolbarNavigateSpacer = layoutRoot.FindAnyWidget("Navigate");
+		
+		RichTextWidget toolbarSelectIcon = RichTextWidget.Cast(layoutRoot.FindAnyWidget("SelectIcon"));
+		RichTextWidget toolbarBackIcon = RichTextWidget.Cast(layoutRoot.FindAnyWidget("BackIcon"));
+		
+		string selectAction;
+		string backAction;
+		int controllerID;
+		
+		if (GetGame().GetInput().IsEnabledMouseAndKeyboardEvenOnServer())
+		{
+			selectAction = "UAMenuSelect";
+			backAction = "UAMenuBack";
+			controllerID = EUAINPUT_DEVICE_KEYBOARDMOUSE;
+		}
+		else
+		{
+			selectAction = "UAUISelect";
+			backAction = "UAUIBack";
+			controllerID = EUAINPUT_DEVICE_CONTROLLER;
+		}
+		
+		toolbarSelectIcon.SetText(InputUtils.GetRichtextButtonIconFromInputAction(selectAction, "", controllerID, InputUtils.ICON_SCALE_TOOLBAR));
+		toolbarBackIcon.SetText(InputUtils.GetRichtextButtonIconFromInputAction(backAction, "", controllerID, InputUtils.ICON_SCALE_TOOLBAR));
+		toolbarBackSpacer.Show(m_CurrentCategory != RadialQuickbarCategory.DEFAULT);
 	}
 }

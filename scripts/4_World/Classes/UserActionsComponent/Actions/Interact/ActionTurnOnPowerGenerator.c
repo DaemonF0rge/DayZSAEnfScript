@@ -3,34 +3,30 @@ class ActionTurnOnPowerGenerator: ActionInteractBase
 	void ActionTurnOnPowerGenerator()
 	{
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONMOD_INTERACTONCE;
+		m_Text = "#switch_on";
 	}
 
-	override string GetText()
+	override bool ActionCondition(PlayerBase player, ActionTarget target, ItemBase item)
 	{
-		return "#switch_on";
-	}
+		PowerGenerator pg = PowerGenerator.Cast(target.GetObject());
 
-	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
-	{
-		Object targetObject = target.GetObject();
-		PowerGenerator target_PG = PowerGenerator.Cast( targetObject );
-
-		float c_index = target.GetComponentIndex();		
-		
-		if ( target_PG.HasEnergyManager()  &&  target_PG.GetCompEM().CanSwitchOn()  &&  target_PG.HasSparkplug() && target_PG.GetCompEM().CanWork())
+		if (pg)
 		{
-			return true;
+			if (pg.HasEnergyManager() && pg.GetCompEM().CanSwitchOn() && pg.HasSparkplug() && pg.GetCompEM().CanWork())
+			{
+				return true;
+			}
 		}
 		
 		return false;
 	}
 
-	override void OnExecuteServer( ActionData action_data )
+	override void OnExecuteServer(ActionData action_data)
 	{
 		Object targetObject = action_data.m_Target.GetObject();
 		if (targetObject)
 		{
-			ItemBase target_IB = ItemBase.Cast( targetObject );
+			ItemBase target_IB = ItemBase.Cast(targetObject);
 			target_IB.GetCompEM().SwitchOn();
 		}
 	}

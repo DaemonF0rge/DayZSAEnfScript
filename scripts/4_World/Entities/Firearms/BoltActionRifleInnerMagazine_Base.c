@@ -17,8 +17,8 @@ enum BARIMStableStateID
 
 class BARIMEmptyDischarged extends WeaponStableState
 {
-	override void OnEntry (WeaponEventBase e) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { EmptyDischarged C0"); super.OnEntry(e); }
-	override void OnExit (WeaponEventBase e) { super.OnExit(e); wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } EmptyDischarged C0"); }
+	override void OnEntry (WeaponEventBase e) { if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { EmptyDischarged C0"); } super.OnEntry(e); }
+	override void OnExit (WeaponEventBase e) { super.OnExit(e); if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } EmptyDischarged C0"); } }
 	override int GetCurrentStateID () { return BARIMStableStateID.EmptyDischarged; }
 	override bool HasBullet () { return false; }
 	override bool HasMagazine () { return false; }
@@ -28,8 +28,8 @@ class BARIMEmptyDischarged extends WeaponStableState
 };
 class BARIMLoadedCharged extends WeaponStableState
 {
-	override void OnEntry (WeaponEventBase e) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { LoadedCharged C1"); super.OnEntry(e); }
-	override void OnExit (WeaponEventBase e) { super.OnExit(e); wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } LoadedCharged C1"); }
+	override void OnEntry (WeaponEventBase e) { if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { LoadedCharged C1"); } super.OnEntry(e); }
+	override void OnExit (WeaponEventBase e) { super.OnExit(e); if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } LoadedCharged C1"); } }
 	override int GetCurrentStateID () { return BARIMStableStateID.LoadedCharged; }
 	override bool HasBullet () { return true; }
 	override bool HasMagazine () { return false; }
@@ -39,8 +39,8 @@ class BARIMLoadedCharged extends WeaponStableState
 };
 class BARIMLoadedDischarged extends WeaponStableState
 {
-	override void OnEntry (WeaponEventBase e) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { LoadedDischarged D1"); super.OnEntry(e); }
-	override void OnExit (WeaponEventBase e) { super.OnExit(e); wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } LoadedDischarged D1"); }
+	override void OnEntry (WeaponEventBase e) { if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { LoadedDischarged D1"); } super.OnEntry(e); }
+	override void OnExit (WeaponEventBase e) { super.OnExit(e); if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } LoadedDischarged D1"); } }
 	override int GetCurrentStateID () { return BARIMStableStateID.LoadedDischarged; }
 	override bool HasBullet () { return true; }
 	override bool HasMagazine () { return false; }
@@ -50,8 +50,8 @@ class BARIMLoadedDischarged extends WeaponStableState
 };
 class BARIMLoadedJammed extends WeaponStateJammed
 {
-	override void OnEntry (WeaponEventBase e) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { LoadedJammed JF"); super.OnEntry(e); }
-	override void OnExit (WeaponEventBase e) { super.OnExit(e); wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } LoadedJammed JF"); }
+	override void OnEntry (WeaponEventBase e) { if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { LoadedJammed JF"); } super.OnEntry(e); }
+	override void OnExit (WeaponEventBase e) { super.OnExit(e); if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } LoadedJammed JF"); } }
 	override int GetCurrentStateID () { return BARIMStableStateID.LoadedJammed; }
 	override bool HasBullet () { return true; }
 	override bool HasMagazine () { return false; }

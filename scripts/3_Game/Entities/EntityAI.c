@@ -23,26 +23,52 @@ enum WeightUpdateType
 	RECURSIVE_REMOVE
 }
 
+enum EItemManipulationContext
+{
+	UPDATE, //generic operation
+	ATTACHING,
+	DETACHING,
+}
+
+//! icon visibility, meant to be used in a bitmask
+enum EInventoryIconVisibility
+{
+	ALWAYS = 0,
+	HIDE_VICINITY = 1,
+	//further values yet unused, but nice to have anyway
+	HIDE_PLAYER_CONTAINER = 2,
+	HIDE_HANDS_SLOT = 4
+}
+
 class EntityAI extends Entity
 {
 	bool 								m_DeathSyncSent;
 	bool 								m_KilledByHeadshot;
 	bool 								m_PreparedToDelete = false;
 	bool 								m_RefresherViable = false;
+	ref DestructionEffectBase			m_DestructionBehaviourObj;
+	
+	
 	
 	ref KillerData 						m_KillerData;
 	private ref HiddenSelectionsData	m_HiddenSelectionsData;
+	
+	const int DEAD_REPLACE_DELAY		= 2000;
+	const int DELETE_CHECK_DELAY		= 100;
 	
 	ref array<EntityAI> 			m_AttachmentsWithCargo;
 	ref array<EntityAI> 			m_AttachmentsWithAttachments;
 	ref InventoryLocation 			m_OldLocation;
 	
 	protected ref DamageZoneMap 	m_DamageZoneMap;
-	private ref map<int, string> 	m_DamageDisplayNameMap = new map<int, string>;
+	private ref map<int, string> 	m_DamageDisplayNameMap = new map<int, string>; //values are localization keys as strings, use 'Widget.TranslateString' method to get the localized one
 	
 	float							m_Weight;
+	protected bool 					m_CanDisplayWeight;
 	private float 					m_LastUpdatedTime;
 	protected float					m_ElapsedSinceLastUpdate;
+	
+	protected UTemperatureSource m_UniversalTemperatureSource;
 	
 	bool m_PendingDelete = false;
 	bool m_Initialized = false;
@@ -85,8 +111,9 @@ class EntityAI extends Entity
 			RegisterNetSyncVariableBool("m_EM.m_IsSwichedOn");
 			RegisterNetSyncVariableBool("m_EM.m_CanWork");
 			RegisterNetSyncVariableBool("m_EM.m_IsPlugged");
-			RegisterNetSyncVariableInt ("m_EM.m_EnergySourceNetworkIDLow");
-			RegisterNetSyncVariableInt ("m_EM.m_EnergySourceNetworkIDHigh");
+			RegisterNetSyncVariableInt("m_EM.m_EnergySourceNetworkIDLow");
+			RegisterNetSyncVariableInt("m_EM.m_EnergySourceNetworkIDHigh");
+			RegisterNetSyncVariableFloat("m_EM.m_Energy");
 		}
 		
 		// Item preview index
@@ -100,6 +127,8 @@ class EntityAI extends Entity
 		//m_OldLocation 					= new InventoryLocation;
 		m_LastUpdatedTime = 0.0;
 		m_ElapsedSinceLastUpdate = 0.0;
+		
+		m_CanDisplayWeight = ConfigGetBool("displayWeight");
 		
 		InitDamageZoneMapping();
 		InitDamageZoneDisplayNameMapping();
@@ -117,6 +146,17 @@ class EntityAI extends Entity
 	void DeferredInit()
 	{
 		m_Initialized = true;
+	}
+	
+	bool IsInitialized()
+	{
+		return m_Initialized;
+	}
+	
+	//! should the item's icon be hidden in any part of the inventory?
+	int GetHideIconMask()
+	{
+		return EInventoryIconVisibility.ALWAYS;
 	}
 
 	private ref ComponentsBank m_ComponentsBank;
@@ -141,6 +181,16 @@ class EntityAI extends Entity
 	bool DeleteComponent(int comp_type)
 	{
 		return m_ComponentsBank.DeleteComponent(comp_type);
+	}
+	
+	string GetDestructionBehaviour()
+	{
+		return "";
+	}
+	
+	bool IsDestructionBehaviour()
+	{
+		return false;
 	}
 	
 	//! IsComponentExist
@@ -181,6 +231,15 @@ class EntityAI extends Entity
 		return m_RefresherViable;
 	}
 	
+	#ifdef DEVELOPER
+	override void SetDebugItem()
+	{
+		super.SetDebugItem();
+		_item = this;
+	}
+	#endif
+	
+	
 	//! Initializes script-side map of damage zones and their components (named selections in models)
 	void InitDamageZoneMapping()
 	{
@@ -193,6 +252,7 @@ class EntityAI extends Entity
 	{	
 		string path_base;
 		string path;
+		string component_name;
 		
 		if ( IsWeapon() )
 		{
@@ -211,7 +271,9 @@ class EntityAI extends Entity
 		
 		if ( !GetGame().ConfigIsExisting(path_base) )
 		{
-			m_DamageDisplayNameMap.Insert( "".Hash(), GetDisplayName() );
+			component_name = GetDisplayName();
+			GetGame().FormatRawConfigStringKeys(component_name);
+			m_DamageDisplayNameMap.Insert( "".Hash(), component_name );
 		}
 		else
 		{
@@ -222,10 +284,9 @@ class EntityAI extends Entity
 			{
 				path = string.Format( "%1 %2 displayName", path_base, zone_names[i] );
 				
-				string component_name;
-				if ( GetGame().ConfigIsExisting(path) )
+				if (GetGame().ConfigIsExisting(path) && GetGame().ConfigGetTextRaw(path,component_name))
 				{
-					GetGame().ConfigGetText(path,component_name);
+					GetGame().FormatRawConfigStringKeys(component_name);
 					m_DamageDisplayNameMap.Insert( zone_names[i].Hash(), component_name );
 				}
 			}
@@ -240,6 +301,12 @@ class EntityAI extends Entity
 	map<int, string> GetEntityDamageDisplayNameMap()
 	{
 		return m_DamageDisplayNameMap;
+	}
+	
+	//! 'displayWeight' in item config
+	bool CanDisplayWeight()
+	{
+		return m_CanDisplayWeight;
 	}
 
 	//! Log
@@ -423,6 +490,11 @@ class EntityAI extends Entity
 	{
 		return (!HasAnyCargo() && GetInventory().AttachmentCount() == 0);
 	}
+	
+	bool CanBeSplit()
+	{
+		return false;
+	}
 
 	//! is this container empty or not, checks only cargo
 	bool HasAnyCargo()
@@ -491,11 +563,21 @@ class EntityAI extends Entity
 	
 	bool CanBeTargetedByAI(EntityAI ai)
 	{
-		if ( !dBodyIsActive( this ) && !IsPlayer() )
+		if (ai && ai.IsBeingBackstabbed())
+		{
+			return false;
+		}
+		
+		if ( !dBodyIsActive( this ) && !IsMan() )
 			return false;
 		return !IsDamageDestroyed();
 	}
-
+	
+	bool CanBeBackstabbed()
+	{
+		return false;
+	}
+	
 	/**@brief Delete this object in next frame
 	 * @return \p void
 	 *
@@ -504,30 +586,37 @@ class EntityAI extends Entity
 	 *			item.Delete();
 	 * @endcode
 	**/
-	void Delete()
+	override void Delete()
 	{
 		m_PendingDelete = true;
-		GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).Call(GetGame().ObjectDelete, this);
+		super.Delete();
 	}
+	
 	void DeleteOnClient()
 	{
 		GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).Call(GetGame().ObjectDeleteOnClient, this);
 	}
 	
-	void DeleteSave()
+	// delete synchronized between server and client
+	void DeleteSafe()
 	{
-		
-		if (GetHierarchyRootPlayer() == NULL)
+		if (GetHierarchyRootPlayer() == null)
 		{
 			Delete();
 		}
 		else
 		{
-			if ( GetGame().IsMultiplayer() )
-				GetHierarchyRootPlayer().JunctureDeleteItem(this);
+			if ( GetGame().IsServer() && GetGame().IsMultiplayer() )
+				GetHierarchyRootPlayer().JunctureDeleteItem( this );
 			else
 				GetHierarchyRootPlayer().AddItemToDelete( this );
 		}
+	}
+	
+	//legacy, wrong name, use 'DeleteSafe()' instead
+	void DeleteSave()
+	{		
+		DeleteSafe();
 	}
 	
 	bool IsSetForDeletion()
@@ -544,6 +633,38 @@ class EntityAI extends Entity
 	{
 		return m_PreparedToDelete;
 	}
+	
+	
+	void CheckForDestroy()
+	{
+		if ( IsPrepareToDelete() )
+		{
+			GetGame().GetCallQueue( CALL_CATEGORY_SYSTEM ).CallLater( TryDelete, DELETE_CHECK_DELAY, false);
+		}
+	}
+	
+	bool IsPrepareToDelete()
+	{
+		return false;
+	}
+	
+	bool TryDelete()
+	{
+		if ( !IsPrepareToDelete() )
+			return false;
+		
+		if ( GetGame().HasInventoryJunctureItem(this) )
+		{
+			GetGame().GetCallQueue( CALL_CATEGORY_SYSTEM ).CallLater( TryDelete, DELETE_CHECK_DELAY, false);
+			return false;
+		}
+		
+		OnBeforeTryDelete();
+		DeleteSafe();
+		return true;
+	}
+	
+	void OnBeforeTryDelete() {}
 	
 	//! Returns root of current hierarchy (for example: if this entity is in Backpack on gnd, returns Backpack)
 	proto native EntityAI GetHierarchyRoot();
@@ -581,7 +702,7 @@ class EntityAI extends Entity
 					}
 				}
 			}
-			
+
 			UpdateWeight(WeightUpdateType.RECURSIVE_ADD);
 		}
 		
@@ -593,11 +714,23 @@ class EntityAI extends Entity
 	//! Called right before object deleting
 	void EEDelete(EntityAI parent)
 	{
+		m_PendingDelete = true;
 		GetInventory().EEDelete(parent);
 		
 		if (m_EM)
 			m_EM.OnDeviceDestroyed();
 	}
+	
+	override void OnExplosionEffects(Object source, Object directHit, int componentIndex, string surface, vector pos, vector surfNormal, float energyFactor, float explosionFactor, bool isWater, string ammoType) 
+	{
+		super.OnExplosionEffects(source, directHit, componentIndex, surface, pos, surfNormal, energyFactor, explosionFactor, isWater, ammoType);
+		
+		if (m_DestructionBehaviourObj && m_DestructionBehaviourObj.HasExplosionDamage())
+		{
+			m_DestructionBehaviourObj.OnExplosionEffects(source, directHit, componentIndex, surface, pos, surfNormal, energyFactor, explosionFactor, isWater, ammoType);
+		}
+	}
+	
 	
 	void OnItemLocationChanged(EntityAI old_owner, EntityAI new_owner) { }
 	
@@ -654,16 +787,83 @@ class EntityAI extends Entity
 		// Notify potential parent that this item was ruined
 		EntityAI parent = GetHierarchyParent();
 		
-		if (parent && newLevel == GameConstants.STATE_RUINED)
+		if (newLevel == GameConstants.STATE_RUINED)
 		{
-			parent.OnAttachmentRuined(this);
+			if (parent)
+			{
+				parent.OnAttachmentRuined(this);
+			}
+			if (!zone)
+			{
+				OnDamageDestroyed(oldLevel);
+			}
+			AttemptDestructionBehaviour(oldLevel,newLevel, zone);
 		}
 	}
-
+	
+	//! Called when the health gets to the min value, 'oldLevel' is previous health level, 'oldLevel' -1 means this entity was just spawned
+	void OnDamageDestroyed(int oldLevel);
+	
+	void AttemptDestructionBehaviour(int oldLevel, int newLevel, string zone) 
+	{
+		if (IsDestructionBehaviour() && GetDestructionBehaviour())
+		{
+			typename destType = GetDestructionBehaviour().ToType();
+			
+			if (destType)
+			{
+				if (!m_DestructionBehaviourObj)
+				{
+					m_DestructionBehaviourObj = DestructionEffectBase.Cast(destType.Spawn());
+				}
+				
+				if (m_DestructionBehaviourObj)
+				{
+					m_DestructionBehaviourObj.OnHealthLevelChanged(this, oldLevel, newLevel, zone);
+				}
+			}
+			else
+			{
+				ErrorEx("Incorrect destruction behaviour type, make sure the class returned in 'GetDestructionBehaviour()' is a valid type inheriting from 'DestructionEffectBase'");
+			}
+		}
+	}
+	
+	
+	void SetTakeable(bool pState);
+	
+	//! called on server when the entity is killed
 	void EEKilled(Object killer)
 	{
 		//analytics
 		GetGame().GetAnalyticsServer().OnEntityKilled( killer, this );
+		
+		if( ReplaceOnDeath() )
+			GetGame().GetCallQueue( CALL_CATEGORY_SYSTEM ).CallLater( DeathUpdate, DEAD_REPLACE_DELAY, false);
+	}
+	
+	bool ReplaceOnDeath()
+	{
+		return false;
+	}
+	
+	string GetDeadItemName()
+	{
+		return "";
+	}
+	
+	bool KeepHealthOnReplace()
+	{
+		return false;
+	}
+	
+	void DeathUpdate()
+	{
+		EntityAI dead_entity = EntityAI.Cast( GetGame().CreateObjectEx( GetDeadItemName(), GetPosition(), ECE_OBJECT_SWAP, RF_ORIGINAL ) );
+		dead_entity.SetOrientation(GetOrientation());
+		if ( KeepHealthOnReplace() )
+			dead_entity.SetHealth(GetHealth());
+		this.Delete();
 	}
 	
 	//! Called when some attachment of this parent is ruined. Called on server and client side.
@@ -719,13 +919,10 @@ class EntityAI extends Entity
 		
 		if ( m_OnItemAttached )
 			m_OnItemAttached.Invoke( item, slot_name, this );
-		//SwitchItemSelectionTexture(item, slot_name);
 	}
 	
-	// !switches materials and/or textures of cloting items on player
-	void SwitchItemSelectionTexture(EntityAI item, string slot_name)
-	{
-	}
+	void SwitchItemSelectionTexture(EntityAI item, string slot_name);
+	void SwitchItemSelectionTextureEx(EItemManipulationContext context, Param par = null);
 	
 	// !Called on PARENT when a child is detached from it.
 	void EEItemDetached(EntityAI item, string slot_name)
@@ -758,11 +955,10 @@ class EntityAI extends Entity
 				
 		if ( m_OnItemDetached )
 			m_OnItemDetached.Invoke( item, slot_name, this );
-		//SwitchItemSelectionTexture(item, slot_name);
 	}
 
 	void EECargoIn(EntityAI item)
-	{
+	{		
 		float weight = item.GetWeight();
 		if (weight > 0)
 			UpdateWeight(WeightUpdateType.RECURSIVE_ADD, weight);
@@ -1017,6 +1213,12 @@ class EntityAI extends Entity
 	{
 		return !IsHologram();
 	}
+
+	//If return true, item can be attached even from parent to this. Item will be switched during proccess. (only hands)
+	bool CanSwitchDuringAttach(EntityAI parent)
+	{
+		return false;
+	}
 	/**@fn		CanReleaseAttachment
 	 * @brief calls this->CanReleaseAttachment(attachment)
 	 * @return	true if action allowed
@@ -1223,7 +1425,36 @@ class EntityAI extends Entity
 	 **/	
 	bool CanDisplayAttachmentSlot( string slot_name )
 	{
+		Debug.LogWarning("Obsolete function - use CanDisplayAttachmentSlot with slot id parameter");
 		return InventorySlots.GetShowForSlotId(InventorySlots.GetSlotIdFromString(slot_name));
+	}
+	
+	/**@fn		CanDisplayAttachmentSlot
+	 * @param	slot_id->id of the attachment slot that will or won't be displayed
+	 * @return	true if attachment icon can be displayed in UI (inventory)
+	 **/	
+	bool CanDisplayAttachmentSlot( int slot_id )
+	{
+		return InventorySlots.GetShowForSlotId(slot_id);
+	}
+	
+	/**@fn		CanDisplayAnyAttachmentSlot
+	 * @return	true if any attachment slot can be shown
+	 **/	
+	bool CanDisplayAnyAttachmentSlot()
+	{
+		int count = GetInventory().GetAttachmentSlotsCount();
+		int slotID;
+		for (int i = 0; i < count; i++)
+		{
+			slotID = GetInventory().GetAttachmentSlotId(i);
+			if (CanDisplayAttachmentSlot(slotID))
+			{
+				return true;
+			}
+		}
+		
+		return false;
 	}
 
 	/**@fn		CanDisplayAttachmentCategory
@@ -1272,6 +1503,13 @@ class EntityAI extends Entity
 		
 	// !Called on CHILD when it's detached from parent.
 	void OnWasDetached( EntityAI parent, int slot_id ) { }
+	
+	void OnCargoChanged() { }
+	
+	bool IsTakeable()
+	{
+		return false;
+	}
 	
 	proto native GameInventory GetInventory ();
 	proto native void CreateAndInitInventory ();
@@ -1551,21 +1789,55 @@ class EntityAI extends Entity
 		il.SetGround(NULL, mat);
 		return SpawnEntity(object_name, il,ECE_PLACE_ON_SURFACE,RF_DEFAULT);
 	}
+	
+	//----------------------------------------------------------------
 
-	// Returns wetness value. This is just a necesarry forward declaration for Energy Manager which works with EntityAI. This function itself works in ItemBase where its overwritten.
+	bool CanSwapEntities(EntityAI otherItem, InventoryLocation otherDestination, InventoryLocation destination)
+	{
+		return true;
+	}
+	
+	// Forward declarations to allow lower modules to access properties that are modified from higher modules
+	// These are mainly used within the ItemBase
+	void SetWet(float value, bool allow_client = false) {};
+	void AddWet(float value) {};
+	void SetWetMax() {};
+
 	float GetWet()
 	{
-		return 0; // Only ItemBase objects have wetness!
+		return 0;
 	}
+	
+	float GetWetMax()
+	{
+		return 0;
+	}
+
+	float GetWetMin()
+	{
+		return 0;
+	}
+	
+	float GetWetInit()
+	{
+		return 0;
+	}
+	
+	bool HasWetness()
+	{
+		return GetWetMax() - GetWetMin() != 0;
+	}
+	
+	//----------------------------------------------------------------
 	
 	float GetQuantity()
 	{
-		return 0; // Only ItemBase objects quantity!
+		return 0;
 	}
 	
 	int GetQuantityMax()
 	{
-		return 0; // Only ItemBase objects quantity!
+		return 0;
 	}
 	
 	int GetTargetQuantityMax(int attSlotID = -1)
@@ -1577,6 +1849,34 @@ class EntityAI extends Entity
 	{
 		return 0;
 	}
+
+	//----------------------------------------------------------------
+
+	void SetTemperature(float value, bool allow_client = false) {};
+	void AddTemperature(float value) {};
+	void SetTemperatureMax() {};
+
+	float GetTemperature()
+	{
+		return 0;
+	}
+	
+	float GetTemperatureInit()
+	{
+		return 0;
+	}
+	
+	float GetTemperatureMin()
+	{
+		return 0;
+	}
+
+	float GetTemperatureMax()
+	{
+		return 0;
+	}
+	
+	//----------------------------------------------------------------
 		
 	HiddenSelectionsData GetHiddenSelectionsData()
 	{
@@ -1640,6 +1940,14 @@ class EntityAI extends Entity
 	 **/	
 	proto native void RegisterNetSyncVariableBool(string variableName);
 	
+	/**
+	 * @fn		RegisterNetSyncVariableBoolSignal
+	 * @brief	when bool variable is true, it's sent to clients and become false again
+	 *
+	 * @param[in]	variableName	\p		which variable should be synchronized
+	 **/	
+	proto native void RegisterNetSyncVariableBoolSignal(string variableName);
+
 	/**
 	 * @fn		RegisterNetSyncVariableInt
 	 * @brief	registers int variable synchronized over network
@@ -1903,6 +2211,31 @@ class EntityAI extends Entity
 		}
 	}
 	
+	string GetDebugText()
+	{
+		return "No debug text provided\nimplement the GetDebugText()\nmethod  on this item \nto see stuff ";
+	}
+	
+	
+	void GetDebugButtonNames(out string button1, out string button2, out string button3, out string button4)
+	{/*
+		button1 = "DebugButton1";
+		button2 = "DebugButton2";
+		button3 = "DebugButton3";
+		button4 = "DebugButton4";
+	*/
+	}
+	
+	void OnDebugButtonPressClient(int button_index)
+	{
+		// you can react here to debug button press, buttons are indexed starting at 1 and up
+	}
+	
+	void OnDebugButtonPressServer(int button_index)
+	{
+		// you can react here to debug button press, buttons are indexed starting at 1 and up
+	}
+	
 	Shape DebugBBoxDraw()
 	{
 		return GetComponent(COMP_TYPE_ETITY_DEBUG).DebugBBoxDraw();
@@ -1933,7 +2266,7 @@ class EntityAI extends Entity
 		GetComponent(COMP_TYPE_ETITY_DEBUG).DebugDirectionDelete();
 	}
 
-	//! Hides selection of the given name. Must be configed in config.hpp and models.cfg
+	//! Hides selection of the given name. Must be configed in config.cpp and models.cfg
 	void HideSelection( string selection_name )
 	{
 		if ( !ToDelete() )
@@ -2039,12 +2372,12 @@ class EntityAI extends Entity
 
 		if ( GetGame().IsClient() )
 		{
-			switch(rpc_type)
+			switch (rpc_type)
 			{
 				// BODY STAGING - server => client synchronization of skinned state.
 				case ERPCs.RPC_BS_SKINNED_STATE:
 				{
-					ref Param1<bool> p_skinned_state= new Param1<bool>(false);
+					Param1<bool> p_skinned_state= new Param1<bool>(false);
 					if (ctx.Read(p_skinned_state))
 					{
 						float state = p_skinned_state.param1;
@@ -2056,8 +2389,7 @@ class EntityAI extends Entity
 				
 				case ERPCs.RPC_EXPLODE_EVENT:
 				{
-					OnExplodeClient();
-					
+					OnExplodeClient();					
 					break;
 				}
 			}
@@ -2065,7 +2397,7 @@ class EntityAI extends Entity
 	}
 	///@} energy manager
 	
-	//calculates total weight of item
+	//returns total weight of item
 	int GetWeight()
 	{
 		return m_Weight;
@@ -2092,13 +2424,13 @@ class EntityAI extends Entity
 	//! Returns item preview index !!!! IF OVERRIDING with more dynamic events call GetOnViewIndexChanged() in constructor on client !!!!
 	int GetViewIndex()
 	{
-		if( MemoryPointExists( "invView2" ) )
+		if ( MemoryPointExists( "invView2" ) )
 		{
 			#ifdef PLATFORM_WINDOWS
 			InventoryLocation il = new InventoryLocation;
 			GetInventory().GetCurrentInventoryLocation( il );
 			InventoryLocationType type = il.GetType();
-			switch( type )
+			switch ( type )
 			{
 				case InventoryLocationType.CARGO:
 				{
@@ -2124,10 +2456,11 @@ class EntityAI extends Entity
 				{
 					return 0;
 				}
-			}
+			}			
+			#endif
+			
 			#ifdef PLATFORM_CONSOLE
 			return 1;
-			#endif
 			#endif
 		}
 		return 0;
@@ -2246,18 +2579,18 @@ class EntityAI extends Entity
 		string path;
 		int consumable_count;
 		
-		for(int i = 0; i < all_paths.Count(); i++)
+		for (int i = 0; i < all_paths.Count(); i++)
 		{
 			config_path = all_paths.Get(i);
 			int children_count = GetGame().ConfigGetChildrenCount(config_path);
 			
-			for(int x = 0; x < children_count; x++)
+			for (int x = 0; x < children_count; x++)
 			{
 				GetGame().ConfigGetChildName(config_path, x, child_name);
 				path = config_path + " " + child_name;
 				scope = GetGame().ConfigGetInt( config_path + " " + child_name + " scope" );
 				bool should_check = 1;
-				if( config_path == "CfgVehicles" && scope == 0)
+				if ( config_path == "CfgVehicles" && scope == 0)
 				{
 					should_check = 0;
 				}
@@ -2266,9 +2599,9 @@ class EntityAI extends Entity
 				{
 					string inv_slot;
 					GetGame().ConfigGetText( config_path + " " + child_name + " inventorySlot",inv_slot );
-					for(int z = 0; z < slots.Count(); z++)
+					for (int z = 0; z < slots.Count(); z++)
 					{
-						if(slots.Get(z) == inv_slot)
+						if (slots.Get(z) == inv_slot)
 						{
 							this.GetInventory().CreateInInventory( child_name );
 							continue;
@@ -2282,9 +2615,15 @@ class EntityAI extends Entity
 	
 	override EntityAI ProcessMeleeItemDamage(int mode = 0)
 	{
-		if ((GetGame().IsServer() || !GetGame().IsMultiplayer()))
+		if (GetGame().IsServer())
 			AddHealth("","Health",-MELEE_ITEM_DAMAGE);
 		return this;
+	}
+
+	//! Returns liquid throughput coeficient
+	float GetLiquidThroughputCoef()
+	{
+		return LIQUID_THROUGHPUT_DEFAULT;
 	}
 	
 	string GetInvulnerabilityTypeString()
@@ -2296,15 +2635,22 @@ class EntityAI extends Entity
 	{
 		if ( GetGame() && GetGame().IsMultiplayer() && GetGame().IsServer() )
 		{
-			
-			int invulnerability = GetGame().ServerConfigGetInt(servercfg_param);
+			int invulnerability;
+			switch (servercfg_param)
+			{
+				case "disableContainerDamage":
+					invulnerability = CfgGameplayHandler.GetDisableContainerDamage();
+				break;
+				
+				case "disableBaseDamage":
+					invulnerability = CfgGameplayHandler.GetDisableBaseDamage();
+				break;
+			}
+				
 			if (invulnerability > 0)
 			{
-				//Print("ProcessInvulnerabilityCheck: SetAllowDamage(false)");
 				SetAllowDamage(false);
 			}
-			/*else
-				Print("ProcessInvulnerabilityCheck: nothing happens");*/
 		}
 	}
 
@@ -2359,30 +2705,30 @@ class EntityAI extends Entity
 	void SoundHardTreeFallingPlay()
 	{
 		EffectSound sound =	SEffectManager.PlaySound( "hardTreeFall_SoundSet", GetPosition() );
-		sound.SetSoundAutodestroy( true );
+		sound.SetAutodestroy( true );
 	}
 		
 	void SoundSoftTreeFallingPlay()
 	{
 		EffectSound sound =	SEffectManager.PlaySound( "softTreeFall_SoundSet", GetPosition() );
-		sound.SetSoundAutodestroy( true );
+		sound.SetAutodestroy( true );
 	}
 		
 	void SoundHardBushFallingPlay()
 	{
 		EffectSound sound =	SEffectManager.PlaySound( "hardBushFall_SoundSet", GetPosition() );
-		sound.SetSoundAutodestroy( true );
+		sound.SetAutodestroy( true );
 	}
 		
 	void SoundSoftBushFallingPlay()
 	{
 		EffectSound sound =	SEffectManager.PlaySound( "softBushFall_SoundSet", GetPosition() );
-		sound.SetSoundAutodestroy( true );
+		sound.SetAutodestroy( true );
 	}
 	
 	void RegisterTransportHit(Transport transport)
 	{
-		if ( !m_TransportHitRegistered )
+		if (!m_TransportHitRegistered)
 		{	
 			m_TransportHitRegistered = true; 
 			m_TransportHitVelocity = GetVelocity(transport);
@@ -2391,20 +2737,20 @@ class EntityAI extends Entity
 			vector impulse;
 			
 			// a different attempt to solve hits from "standing" car to the players
-			if ( car.CastTo(car, transport) )
+			if (Car.CastTo(car, transport))
 			{
-				if ( car.GetSpeedometer() > 2 )
+				if (car.GetSpeedometerAbsolute() > 2 )
 				{
 					damage = m_TransportHitVelocity.Length();
-					ProcessDirectDamage( DT_CUSTOM, transport, "", "TransportHit", "0 0 0", damage );
+					ProcessDirectDamage(DT_CUSTOM, transport, "", "TransportHit", "0 0 0", damage);
 				}
 				else
 				{
-					m_TransportHitRegistered = false; // EEHitBy is not called if no damage
+					m_TransportHitRegistered = false;
 				}
 
 				// compute impulse and apply only if the body dies
-				if ( IsDamageDestroyed() && car.GetSpeedometer() > 3 )
+				if (IsDamageDestroyed() && car.GetSpeedometerAbsolute() > 3)
 				{
 					impulse = 40 * m_TransportHitVelocity;
 					impulse[1] = 40 * 1.5;
@@ -2414,19 +2760,18 @@ class EntityAI extends Entity
 			else //old solution just in case if somebody use it
 			{
 				// avoid damage because of small movements
-				if ( m_TransportHitVelocity.Length() > 0.1 )
+				if (m_TransportHitVelocity.Length() > 0.1)
 				{
 					damage = m_TransportHitVelocity.Length();
-					//Print("Transport damage: " + damage.ToString() + " velocity: " +  m_TransportHitVelocity.Length().ToString());
-					ProcessDirectDamage( DT_CUSTOM, transport, "", "TransportHit", "0 0 0", damage );
+					ProcessDirectDamage(DT_CUSTOM, transport, "", "TransportHit", "0 0 0", damage);
 				}
 				else
 				{
-					m_TransportHitRegistered = false; // EEHitBy is not called if no damage
+					m_TransportHitRegistered = false;
 				}
 				
 				// compute impulse and apply only if the body dies
-				if ( IsDamageDestroyed() && m_TransportHitVelocity.Length() > 0.3 )
+				if (IsDamageDestroyed() && m_TransportHitVelocity.Length() > 0.3)
 				{
 					impulse = 40 * m_TransportHitVelocity;
 					impulse[1] = 40 * 1.5;
@@ -2446,4 +2791,52 @@ class EntityAI extends Entity
 	{
 		return false;
 	}
+	
+	//! Universal Temperature Sources Helpers
+	bool IsUniversalTemperatureSource()
+	{
+		return GetUniversalTemperatureSource() != null && GetUniversalTemperatureSource().IsActive();
+	}
+	
+	UTemperatureSource GetUniversalTemperatureSource()
+	{
+		return m_UniversalTemperatureSource;
+	}
+	
+	void SetUniversalTemperatureSource(UTemperatureSource uts)
+	{
+		m_UniversalTemperatureSource = uts;
+	}
+	
+	vector GetUniversalTemperatureSourcePosition()
+	{
+		return GetPosition();
+	}
+
+	//! Remotely controlled devices helpers
+	void PairRemote(notnull EntityAI trigger);
+	void UnpairRemote();
+	EntityAI GetPairDevice();
+
+	//! Turnable Valve behaviour
+	bool HasTurnableValveBehavior();
+	bool IsValveTurnable(int pValveIndex);
+	int GetTurnableValveIndex(int pComponentIndex);
+	void ExecuteActionsConnectedToValve(int pValveIndex);
+	
+	//Returns a type of finisher attack based on internal logic (in childern's overrides)
+	/*int DetermineFinisherHitType(EntityAI source,int component)
+	{
+		return -1;
+	}*/
 };
+
+#ifdef DEVELOPER
+void SetDebugDeveloper_item(Object entity)//without a setter,the place where the setting happens is near impossible to find as way too many hits for "_item" exist
+{
+	if (entity)
+		entity.SetDebugItem();
+
+}
+Object _item;//watched item goes here(LCTRL+RMB->Watch)
+#endif

@@ -33,12 +33,19 @@ class ActionDismantlePart: ActionContinuousBase
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT;	
 		
 		m_SpecialtyWeight = UASoftSkillsWeight.ROUGH_HIGH;
+		m_Text = "#dismantle";
 	}
 	
 	override void CreateConditionComponents()  
 	{	
 		m_ConditionItem = new CCINonRuined;
 		m_ConditionTarget = new CCTNone;//CCTNonRuined( UAMaxDistances.BASEBUILDING );
+	}
+	
+	override void OnActionInfoUpdate( PlayerBase player, ActionTarget target, ItemBase item )
+	{
+		ConstructionActionData construction_action_data = player.GetConstructionActionData();
+		m_Text = "#dismantle " + construction_action_data.GetTargetPart().GetName();
 	}
 		
 	override string GetText()
@@ -57,6 +64,11 @@ class ActionDismantlePart: ActionContinuousBase
 		
 		return "";
 	}
+	
+	override bool CanBeUsedLeaning()
+	{
+		return false;
+	}
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
 	{	
@@ -64,7 +76,7 @@ class ActionDismantlePart: ActionContinuousBase
 			return false;
 		
 		//Action not allowed if player has broken legs
-		if (player.m_BrokenLegState == eBrokenLegs.BROKEN_LEGS)
+		if (player.GetBrokenLegs() == eBrokenLegs.BROKEN_LEGS)
 			return false;
 		
 		return DismantleCondition( player, target, item, true ) && player.m_MovementState.m_iStanceIdx != DayZPlayerConstants.STANCEIDX_PRONE;
@@ -128,7 +140,7 @@ class ActionDismantlePart: ActionContinuousBase
 	
 	protected bool DismantleCondition( PlayerBase player, ActionTarget target, ItemBase item, bool camera_check )
 	{	
-		if ( player && !player.IsLeaning() && !player.IsPlacingLocal() && !player.IsPlacingServer() )
+		if ( player && !player.IsPlacingLocal() && !player.IsPlacingServer() )
 		{
 			Object target_object = target.GetObject();
 			EntityAI target_entity;
@@ -169,7 +181,7 @@ class ActionDismantlePart: ActionContinuousBase
 						//Camera check (client-only)
 						if ( camera_check )
 						{
-							if ( GetGame() && ( !GetGame().IsMultiplayer() || GetGame().IsClient() ) )
+							if ( GetGame() && ( !GetGame().IsDedicatedServer() ) )
 							{
 								if ( base_building.IsFacingCamera( part_name ) )
 								{

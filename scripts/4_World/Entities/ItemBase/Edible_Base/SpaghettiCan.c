@@ -4,4 +4,9 @@ class SpaghettiCan : Edible_Base
 	{
 		ReplaceEdibleWithNew("SpaghettiCan_Opened");
 	}
+	
+	override bool IsOpen()
+	{
+		return false;
+	}
 }

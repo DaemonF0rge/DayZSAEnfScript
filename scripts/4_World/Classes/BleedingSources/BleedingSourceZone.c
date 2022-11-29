@@ -8,6 +8,7 @@ class BleedingSourceZone
 	float		m_FlowModifier;
 	int 		m_MaxTime;
 	string		m_ParticleName;
+	int			m_InventorySlotLocation;
 	
 	void BleedingSourceZone(string selection_name, int bit, vector offset, vector orientation, string bone, int max_time, float flow_modifier, string particle_name)
 	{
@@ -19,6 +20,17 @@ class BleedingSourceZone
 		m_FlowModifier = flow_modifier;
 		m_MaxTime = max_time;
 		m_ParticleName = particle_name;
+	}
+
+	//which inv location is associated(is covering) with this bleeding source ?
+	void SetInvLocation(int inv_slot)
+	{
+		m_InventorySlotLocation = inv_slot;
+	} 
+	
+	int GetInvLocation()
+	{
+		return m_InventorySlotLocation;
 	}
 
 	void ~BleedingSourceZone()

@@ -27,7 +27,7 @@ class ParticleTest extends ItemBase
 			
 			
 			
-			m_Particle = Particle.PlayOnObject( PARTICLE_PATH, this, GetPosition());
+			m_Particle = ParticleManager.GetInstance().PlayOnObject( PARTICLE_PATH, this, GetPosition());
 		}
 	}
 

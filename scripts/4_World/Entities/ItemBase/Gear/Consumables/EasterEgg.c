@@ -211,12 +211,12 @@ class EasterEgg : Inventory_Base
 	// ------------------------------
 	private void PlayVFX()
 	{
-		if ( !GetGame().IsMultiplayer() || GetGame().IsClient() )
+		if ( !GetGame().IsDedicatedServer() )
 		{
 			if ( !m_ParCapture && m_CaptureState != eCaptureState.STASIS )
 			{
 				//Ideally play a one time effect such as an explosion
-				m_ParCapture = Particle.PlayInWorld( ParticleList.EASTER_EGG_ACTIVATE, GetPosition() );
+				m_ParCapture = ParticleManager.GetInstance().PlayInWorld( ParticleList.EASTER_EGG_ACTIVATE, GetPosition() );
 				
 				//Resize, -1 signifies ALL emitors
 				m_ParCapture.SetParameter( -1, EmitorParam.SIZE, m_ParScale );
@@ -238,7 +238,7 @@ class EasterEgg : Inventory_Base
 	
 	private void PlaySFX( int releaseCase = eCaptureState.CAPTURE )
 	{
-		if ( !GetGame().IsMultiplayer() || GetGame().IsClient() )
+		if ( !GetGame().IsDedicatedServer() )
 		{
 			string soundSet = "";
 			if ( releaseCase == eCaptureState.CAPTURE )

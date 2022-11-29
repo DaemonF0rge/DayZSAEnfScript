@@ -94,6 +94,9 @@ class RestCallback : Managed
 // context API and request API
 class RestContext
 {
+	private void RestContext() {}
+	private void ~RestContext() {}
+	
 	/**
 	\brief Processes GET request and returns result (ERestResultState) and/ or data (timeout, error) when finished
 	*/
@@ -143,6 +146,9 @@ class RestContext
 // RestApi core for context create/ access + debug features
 class RestApi
 {
+	private void RestApi() {}
+	private void ~RestApi() {}
+
 	/**
 	\brief Get new or existing context for http comm GetRestContext("www.server915.com/interface/")
 	*/

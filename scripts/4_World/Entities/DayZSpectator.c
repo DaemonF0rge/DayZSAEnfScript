@@ -7,7 +7,6 @@ class DayZSpectator : Camera
 	void DayZSpectator()
 	{
 		SetEventMask(EntityEvent.FRAME);
-		//GetGame().GetMission().PlayerControlEnable(true);
 	}
 	
 	override void EOnFrame(IEntity other, float timeSlice)

@@ -36,11 +36,13 @@ class CAContinuousMineWood : CAContinuousBase
 		}
 		m_MaterialAndQuantityMap = new map<string,int>;
 		m_DataLoaded = GetMiningData(action_data);
+		
+		/*
 		for(int i = 0; i < m_MaterialAndQuantityMap.Count(); i++)
 		{
 			Print("material = " + m_MaterialAndQuantityMap.GetKey(i) + "; quantity = " + m_MaterialAndQuantityMap.GetElement(i));
 		}
-
+		*/
 		if (m_CycleTimeOverride > -1.0)
 		{
 			m_TimeBetweenMaterialDrops = m_CycleTimeOverride;
@@ -98,8 +100,8 @@ class CAContinuousMineWood : CAContinuousBase
 					{
 						WoodBase target_woodbase = WoodBase.Cast(targetObject);
 						
-						if (target_woodbase.m_SecondaryOutput != "")
-							CreateSecondaryItems(action_data,target_woodbase.m_SecondaryOutput,target_woodbase.m_SecondaryDropsAmount);
+						if (target_woodbase.GetSecondaryOutput() != "")
+							CreateSecondaryItems(action_data,target_woodbase.GetSecondaryOutput(),target_woodbase.GetSecondaryDropsAmount());
 					}
 					
 					if (action_data.m_MainItem)
@@ -140,15 +142,16 @@ class CAContinuousMineWood : CAContinuousBase
 	
 	bool GetMiningData(ActionData action_data )
 	{
+		MineActionData adata = MineActionData.Cast(action_data);
 		WoodBase ntarget;
 		if ( Class.CastTo(ntarget, action_data.m_Target.GetObject()) )
 		{
-			m_AmountOfDrops = /*Math.Max(1,*/ntarget.GetAmountOfDrops(action_data.m_MainItem)/*)*/;
-			m_CycleTimeOverride = ntarget.m_CycleTimeOverride; //TODO
+			m_AmountOfDrops = /*Math.Max(1,*/ntarget.GetAmountOfDropsEx(action_data.m_MainItem,adata.m_HarvestType)/*)*/;
+			m_CycleTimeOverride = ntarget.GetCycleTimeOverride(); //TODO
 			//m_Material = ntarget.GetMaterial(action_data.m_MainItem);
 			//m_AmountOfMaterialPerDrop = Math.Max(1,ntarget.GetAmountOfMaterialPerDrop(action_data.m_MainItem));
-			ntarget.GetMaterialAndQuantityMap(action_data.m_MainItem,m_MaterialAndQuantityMap);
-			m_DamageToMiningItemEachDrop = ntarget.GetDamageToMiningItemEachDrop(action_data.m_MainItem);
+			ntarget.GetMaterialAndQuantityMapEx(action_data.m_MainItem,m_MaterialAndQuantityMap, adata.m_HarvestType);
+			m_DamageToMiningItemEachDrop = ntarget.GetDamageToMiningItemEachDropEx(action_data.m_MainItem, adata.m_HarvestType );
 			m_AdjustedDamageToMiningItemEachDrop = action_data.m_Player.GetSoftSkillsManager().SubtractSpecialtyBonus( m_DamageToMiningItemEachDrop, m_Action.GetSpecialtyWeight(), true );
 			return true;
 		}
@@ -157,10 +160,6 @@ class CAContinuousMineWood : CAContinuousBase
 	
 	void CreatePrimaryItems(ActionData action_data)
 	{
-		//Object targetObject;
-		//Class.CastTo(targetObject, action_data.m_Target.GetObject());
-		
-		bool correct_pile = true;
 		string material;
 		int increment;
 		for (int i = 0; i < m_MaterialAndQuantityMap.Count(); i++)

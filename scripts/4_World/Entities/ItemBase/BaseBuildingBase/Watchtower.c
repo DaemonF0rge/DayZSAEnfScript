@@ -95,7 +95,7 @@ class Watchtower extends BaseBuildingBase
 		//because CanReceiveAttachment() method can be called on all clients in the vicinity, vertical distance check needs to be skipped on clients that don't
 		//interact with the object through attach action (AT_ATTACH_TO_CONSTRUCTION)
 		PlayerBase player;
-		if ( !GetGame().IsMultiplayer() || GetGame().IsClient() )
+		if ( !GetGame().IsDedicatedServer() )
 		{
 			//check action initiator (AT_ATTACH_TO_CONSTRUCTION)
 			player = PlayerBase.Cast( GetGame().GetPlayer() );
@@ -132,6 +132,9 @@ class Watchtower extends BaseBuildingBase
 	
 	override bool PerformRoofCheckForBase( string partName, PlayerBase player, out bool result )
 	{
+		if (CfgGameplayHandler.GetDisablePerformRoofCheck())
+			return false;
+		
 		if (partName != "level_1_base" && partName != "level_2_base" && partName != "level_3_base" && partName != "level_3_roof")
 		{
 			return false;
@@ -192,12 +195,13 @@ class Watchtower extends BaseBuildingBase
 	}
 	
 	// --- INVENTORY
-	override bool CanDisplayAttachmentSlot( string slot_name )
+	override bool CanDisplayAttachmentSlot( int slot_id )
 	{
 		//super
-		if ( !super.CanDisplayAttachmentSlot( slot_name ) )
+		if ( !super.CanDisplayAttachmentSlot( slot_id ) )
 			return false;
 
+		string slot_name = InventorySlots.GetSlotName(slot_id);
 		slot_name.ToLower();
 		PlayerBase player = PlayerBase.Cast( GetGame().GetPlayer() );
 		//base attachments
@@ -242,7 +246,7 @@ class Watchtower extends BaseBuildingBase
 	{
 		//super
 		if ( !super.CanDisplayAttachmentCategory( category_name ) )
-		return false;
+			return false;
 		//
 	
 		category_name.ToLower();
@@ -531,7 +535,7 @@ class Watchtower extends BaseBuildingBase
 		
 		vector test_position = test_angles.AnglesToVector() * len;
 		
-		if(test_position[0] > max[0] || test_position[0] < min[0] || test_position[2] > max[2] || test_position[2] < min[2] )
+		if (test_position[0] > max[0] || test_position[0] < min[0] || test_position[2] > max[2] || test_position[2] < min[2] )
 		{
 			return false;
 		}
@@ -567,47 +571,46 @@ class Watchtower extends BaseBuildingBase
 	//================================================================
 	// DEBUG
 	//================================================================
-			
+	
+	//! Excludes certain parts from being built by OnDebugSpawn, uses Contains to compare
+	override array<string> OnDebugSpawnBuildExcludes()
+	{
+		array<string> excludes;
+		
+		#ifdef DEVELOPER
+		bool bWood = DiagMenu.GetBool(DiagMenuIDs.DM_BUILD_WOOD);
+		#else
+		bool bWood = false;
+		#endif
+		
+		if (bWood)
+		{
+			excludes = {"_metal_"};
+		}
+		else
+		{
+			excludes = {"_wood_"};
+		}
+		
+		return excludes;
+	}
+	
 	//Debug menu Spawn Ground Special
 	override void OnDebugSpawn()
 	{
-		EntityAI entity;
-		if ( Class.CastTo(entity, this) )
-		{
-			ItemBase logs = ItemBase.Cast(entity.GetInventory().CreateInInventory( "WoodenLog" ));
- 			logs.SetQuantity(logs.GetQuantityMax());
+		super.OnDebugSpawn();
 		
-			entity.SpawnEntityOnGroundPos("Shovel", entity.GetPosition());
-			entity.SpawnEntityOnGroundPos("Hammer", entity.GetPosition());
-			entity.SpawnEntityOnGroundPos("Hammer", entity.GetPosition());
-			entity.SpawnEntityOnGroundPos("Hammer", entity.GetPosition());
-			entity.SpawnEntityOnGroundPos("Hammer", entity.GetPosition());
-			entity.SpawnEntityOnGroundPos("Pliers", entity.GetPosition());
-
-			for(int i0 = 0; i0 < 30; i0++)
-			{
-				entity.SpawnEntityOnGroundPos("WoodenPlank", entity.GetPosition());		
-			}
-			
-			for(int i1 = 0; i1 < 8; i1++)
-			{
-				entity.SpawnEntityOnGroundPos("WoodenLog", entity.GetPosition());		
-			}
-			
-			for(int i2 = 0; i2 < 15; i2++)
-			{
-				entity.SpawnEntityOnGroundPos("Nail", entity.GetPosition());		
-			}	
-			
-			for(int i3 = 0; i3 < 9; i3++)
-			{
-				entity.SpawnEntityOnGroundPos("CamoNet", entity.GetPosition());		
-			}	
-			
-			for(int i4 = 0; i4 < 6; i4++)
-			{
-				entity.SpawnEntityOnGroundPos("BarbedWire", entity.GetPosition());		
-			}
+		int i;
+				
+		for (i = 0; i < MAX_WATCHTOWER_FLOORS * MAX_WATCHTOWER_WALLS; ++i)
+		{
+			GetInventory().CreateInInventory("CamoNet");		
+		}	
+		
+		for (i = 0; i < 2 * MAX_WATCHTOWER_WALLS; ++i)
+		{
+			BarbedWire wire = BarbedWire.Cast(GetInventory().CreateInInventory("BarbedWire"));		
+			wire.SetMountedState(true);
 		}
 	}
 

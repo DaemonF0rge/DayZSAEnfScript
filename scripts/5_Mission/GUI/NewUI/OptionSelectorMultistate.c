@@ -1,7 +1,11 @@
 class OptionSelectorMultistate extends OptionSelector
 {
+	protected bool 	m_CanSwitch;
+	
 	void OptionSelectorMultistate( Widget parent, int current_index, ScriptedWidgetEventHandler parent_c, bool disabled, notnull array<string> options )
 	{
+		m_CanSwitch = true;
+		
 		m_SelectorType				= 2;
 		m_Options					= options;
 		if( options.Count() == 0 )
@@ -18,6 +22,8 @@ class OptionSelectorMultistate extends OptionSelector
 			m_SelectedOptionIndex = current_index;
 		}
 		
+		/*
+		//handled in the 'OptionSelector'
 		m_Enabled = !disabled;
 		if( m_Enabled )
 		{
@@ -26,8 +32,8 @@ class OptionSelectorMultistate extends OptionSelector
 		else
 		{
 			Disable();
-		}
-		
+		}*/
+	
 		m_SelectedOption.SetText( m_Options.Get( m_SelectedOptionIndex ) );
 	}
 	
@@ -39,26 +45,54 @@ class OptionSelectorMultistate extends OptionSelector
 	
 	override void SetNextOption()
 	{
-		m_SelectedOptionIndex++;
-		if( m_SelectedOptionIndex >= m_Options.Count() )
+		int idx = m_SelectedOptionIndex;
+		idx++;
+		if( idx >= m_Options.Count() )
 		{
-			m_SelectedOptionIndex = 0;
+			idx = 0;
 		}
 		
-		m_SelectedOption.SetText( m_Options.Get( m_SelectedOptionIndex ) );
-		m_OptionChanged.Invoke( m_SelectedOptionIndex );
+		m_AttemptOptionChange.Invoke(idx);
+		if (m_CanSwitch)
+		{
+			//m_SelectedOptionIndex = idx;
+			PerformSetOption(idx);
+		}
 	}
 	
 	override void SetPrevOption()
 	{
-		m_SelectedOptionIndex--;
-		if( m_SelectedOptionIndex < 0 )
+		int idx = m_SelectedOptionIndex;
+		idx--;
+		if( idx < 0 )
 		{
-			m_SelectedOptionIndex = m_Options.Count() - 1;
+			idx = m_Options.Count() - 1;
 		}
 		
-		m_SelectedOption.SetText( m_Options.Get( m_SelectedOptionIndex ) );
-		m_OptionChanged.Invoke( m_SelectedOptionIndex );
+		m_AttemptOptionChange.Invoke(idx);
+		if (m_CanSwitch)
+		{
+			//m_SelectedOptionIndex = idx;
+			PerformSetOption(idx);
+		}
+	}
+	
+	//actual set
+	void PerformSetOption(int index)
+	{
+		m_SelectedOptionIndex = index;
+		m_SelectedOption.SetText( m_Options.Get( index ) );
+		m_OptionChanged.Invoke( index );
+	}
+	
+	void SetCanSwitch(bool value)
+	{
+		m_CanSwitch = value;
+	}
+	
+	bool CanSwitch()
+	{
+		return m_CanSwitch;
 	}
 	
 	void SetValue( int value, bool fire_event = true )

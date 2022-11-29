@@ -37,6 +37,27 @@ class BleedingSourcesManagerServer extends BleedingSourcesManagerBase
 		
 		int inverse_bit_mask = ~bit;
 		m_Player.SetBleedingBits(m_Player.GetBleedingBits() & inverse_bit_mask );
+		
+		
+		//infection moved here to allow proper working in singleplayer
+		float chanceToInfect;
+		
+		if (m_Item)
+		{
+			chanceToInfect = m_Item.GetInfectionChance(0, CachedObjectsParams.PARAM1_BOOL);
+		}
+		else
+		{
+			chanceToInfect = PlayerConstants.BLEEDING_SOURCE_CLOSE_INFECTION_CHANCE;
+		}
+		float diceRoll = Math.RandomFloat01();
+		if (diceRoll < chanceToInfect)
+		{
+			m_Player.InsertAgent(eAgents.WOUND_AGENT);
+		}
+		
+		m_Item = null;//reset, so that next call, if induced by self-healing, will have no item
+		
 		return true;
 	}
 	
@@ -137,7 +158,7 @@ class BleedingSourcesManagerServer extends BleedingSourcesManagerBase
 		//Print("bleed_threshold = " + bleed_threshold);
 
 		//hackerino for zombino:
-		if (source.IsZombie())
+		if (source && source.IsZombie())
 		{
 			int chance = Math.RandomInt(0,100); //Cast die, probability comes from Blood damage in infected ammo config
 			if (chance <= damage)
@@ -185,7 +206,10 @@ class BleedingSourcesManagerServer extends BleedingSourcesManagerBase
 			if( (bit & active_bits) != 0 )
 			{
 				int active_time = GetBleedingSourceActiveTime(bit);
+				eBleedingSourceType type = GetBleedingSourceType(bit);
+				
 				ctx.Write(active_time);
+				ctx.Write(type);
 			}
 			bit_offset++;
 		}
@@ -215,12 +239,24 @@ class BleedingSourcesManagerServer extends BleedingSourcesManagerBase
 				{
 					SetBleedingSourceActiveTime(bit,active_time);
 				}
-				
+				if( version >= 121 )//type was added in this version
+				{
+					eBleedingSourceType type = eBleedingSourceType.NORMAL;
+					if (!ctx.Read(type))
+					{
+						return false;
+					}
+					else
+					{
+						SetBleedingSourceType(bit,type);
+					}
+				}
 			}
 			bit_offset++;
 		}
 		return true;
 	}
+	
 	
 	void ~BleedingSourcesManagerServer()
 	{

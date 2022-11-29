@@ -28,18 +28,20 @@ class ActionFillObject: ActionContinuousBase
 		m_ConditionTarget = new CCTNonRuined(UAMaxDistances.DEFAULT);
 		m_ConditionItem = new CCINonRuined;
 	}
-		
-	override string GetText()
+	
+	override void OnActionInfoUpdate(  PlayerBase player, ActionTarget target, ItemBase item )
 	{
-		if( m_ActionState == FILLED )
+		HescoBox hesco = HescoBox.Cast(target.GetObject());
+
+		if( hesco.GetState() == HescoBox.UNFOLDED )
 		{
-			return "#empty";
+			m_Text =  "#empty";
 		}
 		else
 		{
-			return "#fill";
+			m_Text =  "#fill";
 		}
-	}
+	}	
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
 	{

@@ -51,17 +51,13 @@ class ActionRepackTent: ActionContinuousBase
 		m_CommandUID = 0;
 		m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_CROUCH | DayZPlayerConstants.STANCEMASK_ERECT;
+		m_Text = "#repack_tent";
 	}
 
 	override void CreateConditionComponents()  
 	{	
 		m_ConditionItem = new CCINone;
 		m_ConditionTarget = new CCTNone;
-	}
-	
-	override string GetText()
-	{
-		return "#repack_tent";
 	}
 	
 	override bool HasTarget()

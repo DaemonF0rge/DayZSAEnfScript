@@ -8,12 +8,13 @@ class ModsMenuDetailed extends ScriptedWidgetEventHandler
 	
 	protected ModInfo											m_Highlighted;
 	
-	protected MainMenu											m_Menu;
+	//protected MainMenu											m_Menu;
+	protected UIScriptedMenu											m_Menu;
 	protected ModsMenuTooltip									m_Tooltip;
 	protected ref Timer											m_TooltipTimer;
 	protected ModInfo											m_TooltipMod;
 
-	void ModsMenuDetailed(array<ref ModInfo> data, Widget parent, ModsMenuTooltip tooltip, MainMenu menu_parent)
+	void ModsMenuDetailed(array<ref ModInfo> data, Widget parent, ModsMenuTooltip tooltip, UIScriptedMenu menu_parent)
 	{
 		m_Root = GetGame().GetWorkspace().CreateWidgets("gui/layouts/new_ui/mods_menu/mods_menu_detailed.layout", parent);
 		m_Content = m_Root.FindAnyWidget("ModsDetailedContent");

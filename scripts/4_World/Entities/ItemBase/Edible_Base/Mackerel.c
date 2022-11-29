@@ -10,7 +10,7 @@ class Mackerel extends Edible_Base
 		return false;
 	}	
 	
-	override bool IsMeat()
+	override bool IsCorpse()
 	{
 		return true;
 	}

@@ -79,6 +79,8 @@ class UATimeSpent
 	const float UNPACK = 2;
 	const float WASH_HANDS = 3;
 	const float DISARM_MINE = 15;
+	const float DISARM_EXPLOSIVE_REMOTE_PAIRED = 6;
+	const float DISARM_EXPLOSIVE_REMOTE_UNPAIRED = 12;
 	
 	const float MAG_EMPTY = 0.5;
 	const float MAG_LOAD = 0.5;
@@ -90,6 +92,8 @@ class UATimeSpent
 	
 	const float START_ENGINE = 0.5;
 	//const float INFINITE = -1;
+	
+	const float EXPLOSIVE_ARM = 6;
 };
 
 /**@class	Constants for maximal Distances where from the action can be done
@@ -98,10 +102,12 @@ class UAMaxDistances
 {
 	const float SMALL = 1.3;
 	const float DEFAULT = 2.0;
+	const float REPAIR = 3.0;
 	const float LARGE = 8.0;
 	const float LADDERS = 1.3;
 	const float BASEBUILDING = 20;
 	const float BASEBUILDING_SHORT = 1.0;
+	const float EXPLOSIVE_REMOTE_ACTIVATION = 100.0;
 };
 
 /**@class	Constants for specialty weight and type
@@ -120,13 +126,14 @@ class UASoftSkillsWeight
  */
 class UADamageApplied
 {
-	const float BUILD 		= 4;
-	const float DISMANTLE 	= 8;
-	const float REPAIR 		= 3;
-	const float DESTROY 	= 25;
-	const float SAW_LOCK 	= 150;
-	const float SKINNING 	= 4;
-	const float SAW_PLANKS	= 4;
+	const float BUILD 			= 4;
+	const float DISMANTLE 		= 8;
+	const float REPAIR 			= 3;
+	const float DESTROY 		= 25;
+	const float SAW_LOCK 		= 150;
+	const float SKINNING 		= 4;
+	const float SAW_PLANKS		= 4;
+	const float DEFUSE_TOOLS	= 2;
 };
 
 /**@class	Constants for water type

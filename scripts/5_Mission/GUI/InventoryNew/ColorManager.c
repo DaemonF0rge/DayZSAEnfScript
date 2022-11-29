@@ -62,7 +62,7 @@ class ColorManager
 			color = -1;
 		}
 
-		if( item ) 
+		if ( item ) 
 		{
 			float temperature = item.GetTemperature();
 			if ( temperature )

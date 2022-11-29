@@ -56,7 +56,7 @@ class PluginCameraTools extends PluginBase
 	void PlayPause()
 	{
 		if( GetGame().GetUIManager().GetMenu() )
-			GetGame().GetUIManager().GetMenu().OnKeyPress( null, 0, 0, KeyCode.KC_SPACE );
+			GetGame().GetUIManager().GetMenu().OnKeyPress( null, 0, 0, KeyCode.KC_P );
 	}
 	
 	void AddKeyframe()

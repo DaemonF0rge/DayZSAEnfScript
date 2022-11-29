@@ -13,6 +13,7 @@ class SlotsIcon: LayoutHolder
 	protected EntityAI				m_Obj;
 	protected ItemBase				m_Item;
 	protected EntityAI				m_SlotParent;
+	protected Container				m_Container;
 	protected int					m_SlotID;
 	protected bool					m_IsDragged			= false;
 	
@@ -107,6 +108,7 @@ class SlotsIcon: LayoutHolder
 		m_SlotID 				= -1;
 		m_Item					= null;
 		m_Obj					= null;
+		m_Container				= null;
 		
 		m_SlotParent			= slot_parent;
 		
@@ -124,14 +126,29 @@ class SlotsIcon: LayoutHolder
 		SetActive( false );
 	}
 	
+	override bool IsVisible()
+	{
+		return m_MainWidget.IsVisible();
+	}
+	
 	void SetSlotParent( EntityAI parent)
 	{
 		m_SlotParent = parent;
 	}
 	
+	void SetContainer( Container container )
+	{
+		m_Container = container;
+	}
+	
 	void SetSlotDisplayName( string text )
 	{
 		m_SlotDisplayName = text;
+	}
+	
+	Container GetContainer()
+	{
+		return m_Container;
 	}
 	
 	string GetSlotDisplayName( )
@@ -149,11 +166,16 @@ class SlotsIcon: LayoutHolder
 		return m_SlotDesc;
 	}
 	
-
-	
 	void ~SlotsIcon()
 	{
-		if( m_Obj )
+		if (m_IsDragged)
+		{
+			m_IsDragged = false;
+			ItemManager.GetInstance().HideDropzones();
+			ItemManager.GetInstance().SetIsDragging( false );
+		}
+		
+		if (m_Obj)
 		{
 			m_Obj.GetOnItemFlipped().Remove( UpdateFlip );
 			m_Obj.GetOnViewIndexChanged().Remove( SetItemPreview );
@@ -287,16 +309,17 @@ class SlotsIcon: LayoutHolder
 
 	override void SetActive( bool active )
 	{
+		super.SetActive( active );
 		float x, y;
 		if( active && GetObject() )
 		{
 			GetMainWidget().GetScreenPos( x, y );
-			ItemManager.GetInstance().PrepareTooltip( EntityAI.Cast( GetObject() ), x, y );
+			PrepareOwnedTooltip( EntityAI.Cast( GetObject() ), x, y );
 		}
 		else if (active)
 		{
 			GetMainWidget().GetScreenPos( x, y );
-			ItemManager.GetInstance().PrepareSlotsTooltip( m_SlotDisplayName, m_SlotDesc, x, y );
+			PrepareOwnedSlotsTooltip( GetMainWidget(), m_SlotDisplayName, m_SlotDesc, x, y );
 		}
 		
 		m_SelectedPanel.Show( active );
@@ -355,65 +378,51 @@ class SlotsIcon: LayoutHolder
 		}
 	}
 	
-	float GetQuantity()
-	{
-		if( m_Item )
-		{
-			if( m_IsMagazine )
-			{
-				return Magazine.Cast( m_Item ).GetAmmoCount();
-			}
-			else
-			{
-				return m_Item.GetQuantity();
-			}
-		}
-		return -1;
-	}
-
 	void SetQuantity()
 	{
-		if( m_Item && m_CurrQuantity != GetQuantity() )
+		if (m_Item)
 		{
-			m_CurrQuantity = GetQuantity();
-			int has_quantity = QuantityConversions.HasItemQuantity( m_Item );
-			
-			if( has_quantity == QUANTITY_COUNT )
+			int quantityType = QuantityConversions.HasItemQuantity(m_Item);
+			if (quantityType != QUANTITY_HIDDEN && m_CurrQuantity != QuantityConversions.GetItemQuantity(m_Item))
 			{
-				string q_text = QuantityConversions.GetItemQuantityText( m_Item , true);
-				if( q_text == "" )
+				m_CurrQuantity = QuantityConversions.GetItemQuantity(m_Item);
+	
+				if (quantityType == QUANTITY_COUNT)
 				{
-					m_QuantityStack.Show( false );
-					m_QuantityProgress.Show( false );
+					string q_text = QuantityConversions.GetItemQuantityText(m_Item, true);
+
+					if (QuantityConversions.GetItemQuantityMax(m_Item) == 1 || q_text == "")
+					{
+						m_QuantityStack.Show(false);
+					}
+					else
+					{
+						m_QuantityItem.SetText(q_text);
+						m_QuantityStack.Show(true);
+					}
+					
+					m_QuantityProgress.Show(false);
 				}
-				else
+				else if (quantityType == QUANTITY_PROGRESS)
 				{
-					m_QuantityItem.SetText( q_text );
-					m_QuantityStack.Show( true );
-					m_QuantityProgress.Show( false );
+					float progress_max	= m_QuantityProgress.GetMax();
+					int max 			= m_Item.GetQuantityMax();
+					int count 			= m_Item.ConfigGetInt("count");
+					float quantity 		= m_CurrQuantity;
+	
+					if (count > 0)
+					{
+						max = count;
+					}
+
+					if (max > 0)
+					{
+						float value = Math.Round((quantity / max) * 100);
+						m_QuantityProgress.SetCurrent(value);
+					}
+					m_QuantityStack.Show(false);
+					m_QuantityProgress.Show(true);
 				}
-
-			}
-			else if( has_quantity == QUANTITY_PROGRESS )
-			{
-
-				float progress_max = m_QuantityProgress.GetMax();
-				int max = m_Item.ConfigGetInt( "varQuantityMax" );
-				int count = m_Item.ConfigGetInt( "count" );
-				float quantity = QuantityConversions.GetItemQuantity( m_Item );
-
-				if( count > 0 )
-				{
-					max = count;
-				}
-				if( max > 0 )
-				{
-
-					float value = Math.Round( ( quantity / max ) * 100 );
-					m_QuantityProgress.SetCurrent( value );
-				}
-				m_QuantityStack.Show( false );
-				m_QuantityProgress.Show( true );
 			}
 		}
 	}
@@ -458,6 +467,7 @@ class SlotsIcon: LayoutHolder
 			m_Obj.GetOnItemFlipped().Insert( UpdateFlip );
 			m_Obj.GetOnViewIndexChanged().Insert( SetItemPreview );
 			m_Reserved = reservation;
+			m_Container	= null;
 			
 			if(reservation)
 			{
@@ -493,15 +503,7 @@ class SlotsIcon: LayoutHolder
 	{
 		if (m_IsDragged)
 		{
-			m_IsDragged = false;
-			ItemManager.GetInstance().HideDropzones();
-			ItemManager.GetInstance().SetIsDragging( false );
-			m_PanelWidget.ClearFlags( WidgetFlags.EXACTSIZE );
-			m_PanelWidget.SetSize( 1, 1 );
-			m_ColWidget.Show( false );
-			m_SelectedPanel.Show( false );
-			m_SelectedPanel.SetColor( ARGBF( 1, 1, 1, 1 ) );
-			m_ItemPreview.SetForceFlipEnable(true);
+			OnIconDrop(m_PanelWidget);
 			Widget a = CancelWidgetDragging();
 			ItemManager.GetInstance().SetWidgetDraggable( a, false );
 		}
@@ -509,10 +511,12 @@ class SlotsIcon: LayoutHolder
 		{
 			m_Obj.GetOnItemFlipped().Remove( UpdateFlip );
 			m_Obj.GetOnViewIndexChanged().Remove( SetItemPreview );
+			HideOwnedTooltip();
 		}
 			
 		m_Obj = null;
 		m_Item = null;
+		m_Container	= null;
 		
 		m_ItemPreview.Show( false );
 		m_ItemPreview.SetItem( null );
@@ -546,6 +550,7 @@ class SlotsIcon: LayoutHolder
 		
 		m_ColWidget.Show( false );
 		m_SelectedPanel.Show( false );
+		m_EmptySelectedPanel.Show( false );
 		m_MountedWidget.Show( false );
 		m_OutOfReachWidget.Show( false );
 		m_ReservedWidget.Show( false );
@@ -602,7 +607,6 @@ class SlotsIcon: LayoutHolder
 	bool IsOutOfReach()
 	{
 		bool oot = ( m_OutOfReachWidget.IsVisible() || m_MountedWidget.IsVisible() );
-		//Print( "WAT " + oot );
 		return oot;
 	}
 	
@@ -611,7 +615,7 @@ class SlotsIcon: LayoutHolder
 		if( m_Reserved )
 			return MouseEnterGhostSlot(w, x, y);
 		
-		ItemManager.GetInstance().PrepareTooltip( m_Item, x, y );
+		PrepareOwnedTooltip( m_Item, x, y );
 		if( GetDragWidget() != m_PanelWidget && !IsOutOfReach() )
 		{
 			m_SelectedPanel.Show( true );
@@ -627,8 +631,7 @@ class SlotsIcon: LayoutHolder
 		x = pos_x;
 		y = pos_y;
 		
-		ItemManager.GetInstance().PrepareSlotsTooltip( m_SlotDisplayName, m_SlotDesc, x, y );
-		
+		PrepareOwnedSlotsTooltip( m_MainWidget, m_SlotDisplayName, m_SlotDesc, x, y );
 		if( GetDragWidget() != m_PanelWidget )
 		{
 			m_EmptySelectedPanel.Show( true );
@@ -643,7 +646,7 @@ class SlotsIcon: LayoutHolder
 		if( m_Reserved )
 			return MouseLeaveGhostSlot(w, s, x, y);
 		
-		ItemManager.GetInstance().HideTooltip();
+		HideOwnedTooltip();
 		if( GetDragWidget() != m_PanelWidget )
 		{
 			m_SelectedPanel.Show( false );
@@ -653,7 +656,7 @@ class SlotsIcon: LayoutHolder
 	
 	bool MouseLeaveGhostSlot( Widget w, Widget s, int x, int y	)
 	{
-		ItemManager.GetInstance().HideTooltipSlot();
+		HideOwnedSlotsTooltip();
 		
 		if( GetDragWidget() != m_PanelWidget )
 		{
@@ -728,8 +731,6 @@ class SlotsIcon: LayoutHolder
 			m_ColWidget.Show( true );
 			m_SelectedPanel.Show( true );
 			
-			m_RadialIcon.Show( false );
-			
 			ItemManager.GetInstance().SetDraggedItem( m_Item );
 		}
 		m_IsDragged = true;
@@ -744,6 +745,7 @@ class SlotsIcon: LayoutHolder
 		w.SetSize( 1, 1 );
 		m_ColWidget.Show( false );
 		m_SelectedPanel.Show( false );
+		m_EmptySelectedPanel.Show( false );
 		m_SelectedPanel.SetColor( ARGBF( 1, 1, 1, 1 ) );
 		m_ItemPreview.SetForceFlipEnable(true);
 	}
@@ -758,4 +760,12 @@ class SlotsIcon: LayoutHolder
 		return m_NormalHeight;
 	}
 	
+	/*override void HideOwnedSlotsTooltip()
+	{
+		if (m_TooltipOwner)
+		{
+			ItemManager.GetInstance().HideTooltipSlot();
+			m_TooltipOwner = false;
+		}
+	}*/
 }

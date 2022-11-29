@@ -90,7 +90,7 @@ class WeaponEjectBullet extends WeaponStateBase
 				m_dstMagazine = e.m_magazine;
 			m_eject.m_dstMagazine = m_dstMagazine;
 			
-			wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponEjectBullet m_mag=" + m_dstMagazine.ToString() + ", e.mag=" + e.m_magazine.ToString());
+			if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponEjectBullet m_mag=" + m_dstMagazine.ToString() + ", e.mag=" + e.m_magazine.ToString()); }
 		}
 
 		super.OnEntry(e); // @NOTE: super after submachine init (prevent override from submachine start)

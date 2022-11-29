@@ -38,6 +38,7 @@ class DayZPlayerCamera3rdPersonVehicle extends DayZPlayerCameraBase
 			Transport transport = vehicleCommand.GetTransport();
 			if ( transport )
 			{
+				m_Transport			= transport;
 				m_fDistance			= transport.GetTransportCameraDistance();
 				m_CameraOffsetMS	= transport.GetTransportCameraOffset();
 			}
@@ -67,12 +68,12 @@ class DayZPlayerCamera3rdPersonVehicle extends DayZPlayerCameraBase
 		m_pPlayer.GetTransform(playerTransformWS);
 
 		//! get vehicle and set it as ignore entity for camera collision solver
-		IEntity vehicle = m_pPlayer.GetParent();
+		IEntity vehicle = m_Transport;
 		pOutResult.m_CollisionIgnoreEntity = vehicle;
 		
 		//! update camera offset
 		vector cameraPosition = vector.Zero;
-		if( vehicle )
+		if ( vehicle )
 		{
 			vector vehiclePositionWS = vehicle.GetOrigin();
 			vector vehiclePositionMS = vehiclePositionWS.InvMultiply4(playerTransformWS);
@@ -121,6 +122,8 @@ class DayZPlayerCamera3rdPersonVehicle extends DayZPlayerCameraBase
 		pOutResult.m_fInsideCamera 		= 0.0;
 		pOutResult.m_fIgnoreParentRoll 	= 1.0;
 		
+		StdFovUpdate(pDt, pOutResult);
+		
 		super.OnUpdate(pDt, pOutResult);
 	}	
 
@@ -152,4 +155,7 @@ class DayZPlayerCamera3rdPersonVehicle extends DayZPlayerCameraBase
 	protected	float	m_fLagOffsetVelocityYaw[1];
 	protected	float	m_fLagOffsetVelocityPitch[1];
 	protected	float	m_fLagOffsetVelocityRoll[1];
+	
+	//! cache
+	protected Transport m_Transport;
 }

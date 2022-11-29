@@ -12,6 +12,7 @@ class WorldData
 	protected float m_Sunset_Jan;
 	protected float m_Sunrise_Jul;
 	protected float m_Sunset_Jul;
+	protected ref array<vector> m_FiringPos; // Where we should fire from. On Init set the relevant data
 
 	void WorldData()
 	{
@@ -126,6 +127,12 @@ class WorldData
 	{
 		// default behaviour is same like setting MissionWeather (in Weather) to true
 		return false;
+	}
+	
+	// Used to return the artillery firing positions
+	array<vector> GetArtyFiringPos()
+	{
+		return m_FiringPos;
 	}
 
 	// debug

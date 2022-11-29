@@ -16,17 +16,13 @@ class ActionForceConsumeSingle: ActionSingleUseBase
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONFB_INJECTIONTARGET;
 		m_StanceMask = DayZPlayerConstants.STANCEIDX_ERECT | DayZPlayerConstants.STANCEIDX_CROUCH;
 		m_FullBody = true;
+		m_Text = "#feed";
 	}
 	
 	override void CreateConditionComponents()  
 	{	
 		m_ConditionItem = new CCINonRuined;
 		m_ConditionTarget = new CCTMan(UAMaxDistances.DEFAULT);
-	}
-		
-	override string GetText()
-	{
-		return "#feed";
 	}
 		
 	int GetConsumedQuantity()

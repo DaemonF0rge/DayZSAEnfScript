@@ -12,16 +12,13 @@ class UMP45_Base : RifleBoltLock_Base
 	//Debug menu Spawn Ground Special
 	override void OnDebugSpawn()
 	{
-		EntityAI entity;
-		if ( Class.CastTo(entity, this) )
-		{
-			entity.GetInventory().CreateInInventory( "PistolSuppressor" );
-			entity.GetInventory().CreateInInventory( "ReflexOptic" );
-			entity.GetInventory().CreateInInventory( "UniversalLight" );
-			entity.GetInventory().CreateInInventory( "Battery9V" );
-			entity.GetInventory().CreateInInventory( "Battery9V" );
-			entity.SpawnEntityOnGroundPos("Mag_UMP_25Rnd", entity.GetPosition());
-		}
+		GameInventory inventory = GetInventory();
+		inventory.CreateInInventory( "PistolSuppressor" );
+		inventory.CreateInInventory( "ReflexOptic" );
+		inventory.CreateInInventory( "UniversalLight" );
+		inventory.CreateInInventory( "Battery9V" );
+		inventory.CreateInInventory( "Battery9V" );
+		
+		SpawnAttachedMagazine("Mag_UMP_25Rnd");
 	}
-	
 };

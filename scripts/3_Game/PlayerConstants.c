@@ -2,6 +2,7 @@ class PlayerConstants
 {
 	static const float WEAPON_RAISE_BLEND_DELAY = 0.136;
 	static const float MELEE2_MOVEMENT_BLEND_DELAY = 0.35;
+	static const float HEAVY_HIT_THRESHOLD = 0.5; //defines what is considered a 'heavy hit' from the indicator's standpoint
 	//----------------------------------------------------------
 	//				SHOES DAMAGE/FEET BLEEDING
 	//----------------------------------------------------------
@@ -27,44 +28,48 @@ class PlayerConstants
 	static const float SL_BLOOD_HIGH = 4500;
 	
 	static const float SL_ENERGY_CRITICAL = 0;
-	static const float SL_ENERGY_LOW = 200;
-	static const float SL_ENERGY_NORMAL = 400;
-	static const float SL_ENERGY_HIGH = 4000;	// max is 20000 (playerstats)
+	static const float SL_ENERGY_LOW = 300;
+	static const float SL_ENERGY_NORMAL = 800;
+	static const float SL_ENERGY_HIGH = 3500;
+	static const float SL_ENERGY_MAX = 5000;
 	
 	static const float SL_WATER_CRITICAL = 0;
 	static const float SL_WATER_LOW = 300;
-	static const float SL_WATER_NORMAL = 600;
-	static const float SL_WATER_HIGH = 2400;	// max is 5000 (playerstats)
+	static const float SL_WATER_NORMAL = 800;
+	static const float SL_WATER_HIGH = 3500;
+	static const float SL_WATER_MAX = 5000;
 	//----------------------------------------------------------
 	//						STAT LEVELS END
 	//----------------------------------------------------------
 
 	//-------------------------------------------------------
-	static const float NORMAL_TEMPERATURE_L = 35.2;
-	static const float NORMAL_TEMPERATURE_H = 36.8;
+	static const float NORMAL_TEMPERATURE_L = 36.0;
+	static const float NORMAL_TEMPERATURE_H = 36.5;
 	static const float HIGH_TEMPERATURE_L 	= 38.5;
-	static const float HIGH_TEMPERATURE_H	= 39.9;
+	static const float HIGH_TEMPERATURE_H	= 39.0;
 	//-------------------------------------------------------
+	static const float DIGESTION_SPEED							= 1.7;	//quantity processed in the stomach per second
+	static const float CONSUMPTION_MULTIPLIER_BASE				= 1;	//must not be 0 or less
 	static const float STOMACH_ENERGY_TRANSFERED_PER_SEC 		= 3;	//amount of kcal transfered to energy per second(this should ideally be higher than what player burns under high metabolic load[sprint])
 	static const float STOMACH_WATER_TRANSFERED_PER_SEC 		= 6;	//amount of ml transfered to water per second(this should ideally be higher than what player burns under high metabolic load[sprint])
 	static const float STOMACH_SOLID_EMPTIED_PER_SEC 			= 7;	//amount of g/ml emptied from stomach per second
 
-	static const float LOW_WATER_THRESHOLD 						= PlayerConstants.SL_WATER_LOW;	//threshold from which water affects health
+	static const float LOW_WATER_THRESHOLD 						= SL_WATER_LOW;		//threshold from which water affects health
 
-	static const float LOW_ENERGY_THRESHOLD 					= 200;	//threshold from which energy affects health
+	static const float LOW_ENERGY_THRESHOLD 					= SL_ENERGY_LOW;	//threshold from which energy affects health
 
 	//--------------------------------------------------------
 	static const float METABOLIC_SPEED_ENERGY_BASAL		= 0.01;		//energy loss per second while idle
 	
-	static const float METABOLIC_SPEED_ENERGY_WALK		= 0.08;		//energy loss per second
+	static const float METABOLIC_SPEED_ENERGY_WALK		= 0.1;		//energy loss per second
 	static const float METABOLIC_SPEED_ENERGY_JOG		= 0.3;		//energy loss per second
 	static const float METABOLIC_SPEED_ENERGY_SPRINT	= 0.6;		//energy loss per second
 	
-	static const float METABOLIC_SPEED_WATER_BASAL		= 0.02;		//water loss per second while idle
+	static const float METABOLIC_SPEED_WATER_BASAL		= 0.01;		//water loss per second while idle
 	
-	static const float METABOLIC_SPEED_WATER_WALK		= 0.08;		//water loss per second
+	static const float METABOLIC_SPEED_WATER_WALK		= 0.1;		//water loss per second
 	static const float METABOLIC_SPEED_WATER_JOG		= 0.3;		//water loss per second
-	static const float METABOLIC_SPEED_WATER_SPRINT		= 0.5;		//water loss per second
+	static const float METABOLIC_SPEED_WATER_SPRINT		= 0.6;		//water loss per second
 	//--------------------------------------------------------
 	
 	static const float	THRESHOLD_HEAT_COMFORT_PLUS_WARNING		= 0.2;	//missing comment
@@ -119,8 +124,8 @@ class PlayerConstants
 	static const float WATER_LOSS_FEVER						= 0.2;
 	
 	//--------------------------------------------------------
-	static const float LOW_ENERGY_DAMAGE_PER_SEC			= 0.125;	//health loss per second while low on energy
-	static const float LOW_WATER_DAMAGE_PER_SEC				= 0.2;		//health loss per second while low on water
+	static const float LOW_ENERGY_DAMAGE_PER_SEC			= 0.05;	//health loss per second while low on energy
+	static const float LOW_WATER_DAMAGE_PER_SEC				= 0.05;	//health loss per second while low on water
 	
 	static const float HEALTH_REGEN_MIN						= 0.005;	//health regen rate at BLOOD_THRESHOLD_FATAL blood level
 	static const float HEALTH_REGEN_MAX						= 0.03;		//health regen rate at MAXIMUM blood level
@@ -147,11 +152,13 @@ class PlayerConstants
 	static const float BLEEDING_SOURCE_BLOODLOSS_PER_SEC 	= -20; 		// amount of blood loss per second from one bleeding source 
 	static const float BLEEDING_SOURCE_FLOW_MODIFIER_MEDIUM = 0.6; 		// modifier of the bloodloss given by BLEEDING_SOURCE_BLOODLOSS_PER_SEC, multiplying these two will give the resulting bloodloss
 	static const float BLEEDING_SOURCE_FLOW_MODIFIER_LOW	= 0.1; 		// modifier of the bloodloss given by BLEEDING_SOURCE_BLOODLOSS_PER_SEC, multiplying these two will give the resulting bloodloss
+	static const float BLEEDING_SOURCE_FLOW_MODIFIER_HIGH	= 1; 		// modifier of the bloodloss given by BLEEDING_SOURCE_BLOODLOSS_PER_SEC, multiplying these two will give the resulting bloodloss
 	static const int BLEEDING_SOURCE_DURATION_NORMAL = 300; 			// in seconds, how long will bleeding source exist until disapearing
 	static const float BLEEDING_LOW_PRESSURE_BLOOD = 4000.0;			// from which blood level we start lowering BLEEDING_SOURCE_BLOODLOSS_PER_SEC
 	static const float BLEEDING_LOW_PRESSURE_MIN_MOD = 0.3;				// minimal value for low pressure bleeding (lowest possible multiplier of BLEEDING_SOURCE_BLOODLOSS_PER_SEC)
 	
-	static const float BLEEDING_SOURCE_CLOSE_INFECTION_CHANCE = 0.40;
+	static const float BLEEDING_SOURCE_CLOSE_INFECTION_CHANCE = 0.40;	// a chance for wound infection when the wound is self-closing
+	static const float BLEEDING_SOURCE_BURN_MODIFIER = 0.65;			// modifies a bloodflow for any bleeding source obtained through skin burn from contaminated area
 
 	 
 	//----------------------------------------------------------
@@ -205,10 +212,12 @@ class PlayerConstants
 	//static const int	BROKEN_LEGS_FALL_STEP_COUNT = 10;			//Number of steps before falling over
 	static const float	BROKEN_LEGS_STAND_SHOCK = 0;				//Shock dealt when standing with broken legs
 	static const float	BROKEN_LEGS_ROLL_SHOCK = 10;				//Shock dealt when rolling with broken legs
+	static const float	BROKEN_CROUCH_MODIFIER = 0.5;				//Inflicted shock modifier for crouched stance
 	
 	//----------------------------------------------------------
 	//						AI SENSOR MULTIPLIER
 	//----------------------------------------------------------
+	static const float AI_NOISE_ROLL 			= 2;				//Multiplier for the noise generated while prone rolling
 	static const float AI_NOISE_SPRINT 			= 1;				//Multiplier for the noise generated while sprinting
 	static const float AI_NOISE_RUN 			= 0.8;				//Multiplier for the noise generated while jogging
 	static const float AI_NOISE_CROUCH_RUN 		= 0.6;				//Multiplier for the noise generated while Sprint crouch
@@ -223,4 +232,13 @@ class PlayerConstants
 	static const float AI_VISIBILITY_STANDING	= 1.5;				//Multiplier for the visibility of the player while standing
 	static const float AI_VISIBILITY_CROUCH		= 0.6;				//Multiplier for the visibility of the player while crouched
 	static const float AI_VISIBILITY_PRONE 		= 0.15;				//Multiplier for the visibility of the player while prone
+	//----------------------------------------------------------
+	//						DROWNING
+	//----------------------------------------------------------
+	
+																	//(positive values mean the distance under water surface, ie 0.1 --> 10cm under water, -0.1 --> 10cm above water)
+	static const float DROWNING_DEFAULT_THRESHOLD 			= 0.25;	//what water level value does it take for the player to be considered drowning while swimming - values <0.35 observed as the highest during swimming
+	static const float DROWNING_SWIMMING_THRESHOLD 			= 0.4;	//what water level value does it take for the player to be considered drowning while swimming - values <0.35 observed as the highest during swimming
+	static const float DROWNING_UNCONSCIOUS_THRESHOLD 		= 0.1;	//what water level value does it take for the player to be considered drowning while unconscious -  0.10 seemed a reasonable value based on visual observation and matching it to water depth values(can be adjust more precisely though)
+	
 }

@@ -10,6 +10,8 @@ class HemolyticReactionMdfr: ModifierBase
 		m_TickIntervalActive 	= DEFAULT_TICK_TIME_ACTIVE;
 		m_IsPersistent = true;
 		m_RunningTime = CalculateRunTime();
+		
+		DisableActivateCheck();
 	}
 	override bool ActivateCondition(PlayerBase player)
 	{

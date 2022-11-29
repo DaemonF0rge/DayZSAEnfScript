@@ -74,6 +74,5 @@ class BloodTest extends RecipeBase
 		Class.CastTo(pb_Player, player);
 		BloodContainerBase blood_container = BloodContainerBase.Cast(ingredient2);
 		blood_container.SetBloodTypeVisible( true );
-		pb_Player.MessageFriendly(message);
 	}
 };

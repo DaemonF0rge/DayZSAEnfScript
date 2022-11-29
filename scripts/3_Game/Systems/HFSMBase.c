@@ -49,7 +49,7 @@ class HFSMBase<Class FSMStateBase, Class FSMEventBase, Class FSMActionBase, Clas
 	 * @param[out] path  \p  current hierarchic state
 	 * @return	true if current state returned in path argument, false otherwise
 	 **/
-	bool GetHierarchyPath (FSMStateBase state, out ref array<FSMStateBase> path)
+	bool GetHierarchyPath (FSMStateBase state, out array<FSMStateBase> path)
 	{
 		FSMStateBase curr = state;
 		while (curr)
@@ -547,7 +547,7 @@ class HFSMBase<Class FSMStateBase, Class FSMEventBase, Class FSMActionBase, Clas
 
 /** cross-hierarchy transitions (for future use):
 
-	protected bool RemoveCommonParents (out ref array<WeaponStateBase> src_path, out ref array<WeaponStateBase> dst_path)
+	protected bool RemoveCommonParents (out array<WeaponStateBase> src_path, out array<WeaponStateBase> dst_path)
 	{
 		//for (int j = 0; j < src_path.Count(); ++j) fsmDebugPrint("[hfsm] curr state src_path[" + j + "] = " + src_path[j].ToString());
 		//for (int k = 0; k < dst_path.Count(); ++k) fsmDebugPrint("[hfsm] next state dst_path[" + k + "] = " + dst_path[k].ToString());

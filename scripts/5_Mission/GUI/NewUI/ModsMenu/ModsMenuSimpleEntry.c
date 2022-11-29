@@ -16,12 +16,13 @@ class ModsMenuSimpleEntry extends ScriptedWidgetEventHandler
 		m_Data			= data;
 		m_ParentMenu	= parent_menu;
 		
-		if( data.GetIsDLC() )
+		if ( data.GetIsDLC() )
 		{
+			bool isOwned = data.GetIsOwned();
 			m_ModButton.SetSort( index );
 			m_ModButton.FindAnyWidget("ModOwnership").Show( true );
-			m_ModButton.FindAnyWidget("Owned").Show( data.GetIsOwned() );
-			m_ModButton.FindAnyWidget("Unowned").Show( !data.GetIsOwned() );
+			m_ModButton.FindAnyWidget("Owned").Show( isOwned );
+			m_ModButton.FindAnyWidget("Unowned").Show( !isOwned );
 		}
 		else
 		{

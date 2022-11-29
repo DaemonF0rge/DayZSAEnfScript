@@ -18,7 +18,7 @@ class ActionContinuousBaseCB : ActionBaseCB
 		if ( !m_Interrupted && (GetState() == STATE_LOOP_LOOP || GetState() == STATE_LOOP_LOOP2 || m_inLoop) )
 		{
 			ActionContinuousBase actionS = ActionContinuousBase.Cast(m_ActionData.m_Action);	
-			if( m_ActionData.m_State == UA_INITIALIZE )
+			if ( m_ActionData.m_State == UA_INITIALIZE )
 			{
 				actionS.OnStartAnimationLoop( m_ActionData );
 				m_ActionData.m_State = UA_PROCESSING;
@@ -49,12 +49,14 @@ class ActionContinuousBaseCB : ActionBaseCB
 			{
 				m_inLoop = true;
 			//ActionContinuousBase.Cast(action).OnStartLoop( m_ActionData );
-			}else if ( !m_Interrupted && pEventID == UA_IN_END ) 
+			}
+			else if ( !m_Interrupted && pEventID == UA_IN_END ) 
 			{
 			
 				m_inLoop = false;
 				//ActionContinuousBase.Cast(action).OnCompleteLoop( m_ActionData );
-			}else if ( !m_Interrupted && pEventID == UA_ANIM_EVENT ) 
+			}
+			else if ( !m_Interrupted && pEventID == UA_ANIM_EVENT ) 
 			{
 				action.OnAnimationEvent( m_ActionData );
 				//action.OnCompleteLoop( m_ActionData );
@@ -170,12 +172,12 @@ class ActionContinuousBase : AnimatedActionBase
 	
 	void OnStartAnimationLoop( ActionData action_data )
 	{
-		if( LogManager.IsActionLogEnable() )
+		if ( LogManager.IsActionLogEnable() )
 		{
 			Debug.ActionLog("Time stamp: " + action_data.m_Player.GetSimulationTimeStamp(), this.ToString() , "n/a", "OnStartAnimationLoop", action_data.m_Player.ToString() );
 		}
 		
-		if(GetGame().IsServer())
+		if (GetGame().IsServer())
 		{
 			OnStartAnimationLoopServer(action_data);
 		}
@@ -188,11 +190,11 @@ class ActionContinuousBase : AnimatedActionBase
 	
 	void OnEndAnimationLoop( ActionData action_data )
 	{
-		if( LogManager.IsActionLogEnable() )
+		if ( LogManager.IsActionLogEnable() )
 		{
 			Debug.ActionLog("Time stamp: " + action_data.m_Player.GetSimulationTimeStamp(), this.ToString() , "n/a", "OnEndAnimationLoop", action_data.m_Player.ToString() );
 		}
-		if(GetGame().IsServer())
+		if (GetGame().IsServer())
 		{
 			OnEndAnimationLoopServer(action_data);
 		}
@@ -205,11 +207,11 @@ class ActionContinuousBase : AnimatedActionBase
 	
 	void OnFinishProgress( ActionData action_data )
 	{	
-		if( LogManager.IsActionLogEnable() )
+		if ( LogManager.IsActionLogEnable() )
 		{
 			Debug.ActionLog("Time stamp: " + action_data.m_Player.GetSimulationTimeStamp(), this.ToString() , "n/a", "OnFinishProgress", action_data.m_Player.ToString() );
 		}	
-		if(GetGame().IsServer())
+		if (GetGame().IsServer())
 		{
 			OnFinishProgressServer(action_data);
 			

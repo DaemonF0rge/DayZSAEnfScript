@@ -5,11 +5,7 @@ class ActionCreateIndoorFireplace: ActionSingleUseBase
 		m_CommandUID        = DayZPlayerConstants.CMD_ACTIONMOD_OPENDOORFW;
 		m_StanceMask        = DayZPlayerConstants.STANCEMASK_CROUCH | DayZPlayerConstants.STANCEMASK_ERECT;
 		m_SpecialtyWeight = UASoftSkillsWeight.PRECISE_LOW;
-	}
-
-	override string GetText()
-	{
-		return "#place_object";
+		m_Text = "#place_object";
 	}
 	
 	override void CreateConditionComponents()  

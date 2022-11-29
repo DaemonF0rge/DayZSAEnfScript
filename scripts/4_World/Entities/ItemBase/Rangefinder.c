@@ -17,7 +17,7 @@ class Rangefinder extends PoweredOptic_Base
 	
 	override void OnWorkStart()
 	{
-		if( GetGame().IsClient() || !GetGame().IsMultiplayer())
+		if( !GetGame().IsDedicatedServer())
 		{
 			PlayerBase player_this = PlayerBase.Cast( GetGame().GetPlayer() );
 			PlayerBase player_owner = PlayerBase.Cast( GetHierarchyRootPlayer() );
@@ -31,7 +31,7 @@ class Rangefinder extends PoweredOptic_Base
 	
 	override void OnWorkStop()
 	{
-		if( GetGame().IsClient() || !GetGame().IsMultiplayer())
+		if( !GetGame().IsDedicatedServer())
 		{
 			PlayerBase player_this = PlayerBase.Cast( GetGame().GetPlayer() );
 			PlayerBase player_owner = PlayerBase.Cast( GetHierarchyRootPlayer() );
@@ -109,5 +109,10 @@ class Rangefinder extends PoweredOptic_Base
 		
 		RemoveAction(ActionViewOptics);
 		AddAction(ActionViewBinoculars);
+	}
+	
+	override void OnDebugSpawn()
+	{
+		GetInventory().CreateInInventory( "Battery9V" );
 	}
 }

@@ -6,17 +6,13 @@ class ActionPlugTargetIntoThis: ActionSingleUseBase
 	{
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONMOD_INTERACTONCE;
 		m_Retoggle = false;
+		m_Text = "#connect_together";
 	}
 	
 	override void CreateConditionComponents()  
 	{
 		m_ConditionItem = new CCINonRuined;
 		m_ConditionTarget = new CCTNonRuined(UAMaxDistances.DEFAULT);
-	}
-	
-	override string GetText()
-	{
-		return "#connect_together";
 	}
 	
 	override bool Can( PlayerBase player, ActionTarget target, ItemBase item )

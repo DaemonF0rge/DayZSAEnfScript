@@ -30,6 +30,7 @@ class ActionRestrainSelf: ActionContinuousBase
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT | DayZPlayerConstants.STANCEMASK_CROUCH;
 		//m_Animation = "INJECTEPIPENS";
 		m_SpecialtyWeight = UASoftSkillsWeight.ROUGH_LOW;
+		m_Text = "#restrain_self";
 	}
 	
 	override void CreateConditionComponents()  
@@ -46,11 +47,6 @@ class ActionRestrainSelf: ActionContinuousBase
 	override bool HasAlternativeInterrupt()
 	{
 		return true;
-	}
-		
-	override string GetText()
-	{
-		return "#restrain_self";
 	}
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

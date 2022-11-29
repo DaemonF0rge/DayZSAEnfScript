@@ -29,7 +29,7 @@ class BiosUserManager
 	
 		@return EBiosError indicating if the operation is done.
 	*/
-	proto native EBiosError GetUserList(ref array<ref BiosUser> user_list);
+	proto native EBiosError GetUserList(array<ref BiosUser> user_list);
 	
 	//! Display a system dependant ui for log-on
 	proto native EBiosError LogOnUserAsync(BiosUser user);

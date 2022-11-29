@@ -32,28 +32,26 @@ class LargeTent extends TentBase
 		
 		m_ShowAnimationsWhenPacked.Insert( "Inventory" );
 		
-		m_RepackingLoopSound  = new EffectSound;
-		
 		m_HalfExtents = Vector(2.2, 0.3, 1.9);
 	}
 	
 	void ~LargeTent()
 	{		
-		SEffectManager.DestroySound( m_RepackingLoopSound );		
+		SEffectManager.DestroyEffect( m_RepackingLoopSound );		
 	}
 	
 	override void OnRPC(PlayerIdentity sender, int rpc_type,ParamsReadContext  ctx) 
 	{
 		super.OnRPC(sender, rpc_type, ctx);
 		
-		ref Param1<bool> p = new Param1<bool>(false);
+		Param1<bool> p = new Param1<bool>(false);
 				
 		if (ctx.Read(p))
 		{
 			bool play = p.param1;
 		}
 		
-		switch(rpc_type)
+		switch (rpc_type)
 		{
 			case SoundTypeTent.REPACK:
 			
@@ -73,7 +71,7 @@ class LargeTent extends TentBase
 	
 	void PlayRepackingLoopSound()
 	{
-		if ( !m_RepackingLoopSound.IsSoundPlaying() )
+		if ( !m_RepackingLoopSound || !m_RepackingLoopSound.IsSoundPlaying() )
 		{
 			m_RepackingLoopSound = SEffectManager.PlaySound( "largetent_deploy_SoundSet", GetPosition(), 0.5, 0.5 );
 		}

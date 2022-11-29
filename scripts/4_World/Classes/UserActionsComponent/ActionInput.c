@@ -6,6 +6,7 @@ enum ActionInputType
 	AIT_HOLDSINGLE,				//React to hold input - single use actions
 	AIT_CLICKCONTINUOUS,		//React to click input for start and click for end
 	AIT_NOINPUTCONTROL,
+	AIT_INVENTORYINPUT,			//Inventory specific actions
 }
 
 class ForcedActionData
@@ -19,9 +20,13 @@ class ActionInput : ActionInput_Basic
 {
 	UAIDWrapper m_input;			//Input ID automaticly generated from name.
 	int m_InputType;			//Use from action manager for handling input
+	int m_Priority;
+	bool m_DetectFromItem;		//Can be used action from item in hands?
 	bool m_DetectFromTarget;	//Can be used action from target in vicinity?
+	bool m_DetectFromPlayer;	//Can be used action from player?
 	bool m_Enabled;
 	bool m_JustActivate;
+	bool m_HasTarget;
 	
 	PlayerBase m_Player;
 	
@@ -42,15 +47,21 @@ class ActionInput : ActionInput_Basic
 		m_ForcedTarget = null;
 		m_ForcedActionData = null;
 		
+		m_HasTarget = false;
+		
 		m_JustActivate = false;
 		m_DetectFromTarget = false;
+		m_DetectFromItem = true;
+		m_DetectFromPlayer = true;
+		
+		m_Priority = 100;
 	}
 	
 	void Init(PlayerBase player, ActionManagerClient am)
 	{
 		m_Player = player;
 		
-		if( LogManager.IsActionLogEnable())
+		if ( LogManager.IsActionLogEnable())
 		{
 			Debug.ActionLog("n/a",this.ToString(), "n/a","Init()", player.ToString());
 		}
@@ -66,9 +77,9 @@ class ActionInput : ActionInput_Basic
 	{
 		m_input = GetUApi().GetInputByName(input_name).GetPersistentWrapper();
 		
-		if( LogManager.IsActionLogEnable())
+		if ( LogManager.IsActionLogEnable())
 		{
-			if(m_input && m_input.InputP())
+			if (m_input && m_input.InputP())
 				Debug.ActionLog("(+) input set to " + input_name ,this.ToString(), "n/a","SetInput()", "n/a");
 			else
 				Debug.ActionLog("(-) input is not set to " + input_name ,this.ToString(), "n/a","SetInput()","n/a");
@@ -198,6 +209,11 @@ class ActionInput : ActionInput_Basic
 		return -1;
 	}
 	
+	bool HasTarget()
+	{
+		return false;
+	}
+	
 	void OnActionStart()
 	{
 		ActionsSelectReset();
@@ -264,18 +280,20 @@ class ActionInput : ActionInput_Basic
 	{
 		return m_input != NULL;
 	}
+	
+	int GetPriority()
+	{
+		return m_Priority;
+	}
 }
 
-class ContinuousInteractActionInput : ActionInput
+class StandardActionInput : ActionInput
 {
 	ref array<ActionBase>	m_SelectActions;
 	int 					m_selectedActionIndex;
 	
-	void ContinuousInteractActionInput(PlayerBase player)
+	void StandardActionInput(PlayerBase player)
 	{
-		SetInput("UAAction");
-		m_InputType = ActionInputType.AIT_CONTINUOUS;
-		m_DetectFromTarget = true;
 		m_selectedActionIndex = 0;
 		m_SelectActions = new array<ActionBase>;
 	}
@@ -285,6 +303,50 @@ class ContinuousInteractActionInput : ActionInput
 		super.ForceAction(action, target, item);
 
 		m_selectedActionIndex = 0;
+	}
+	
+	void _GetSelectedActions( Object action_source_object, out array<ActionBase> select_actions_all, out bool has_any_action_target)
+	{
+		if ( !action_source_object )
+			return;
+		
+		array<ActionBase_Basic> possible_actions;
+		array<ref ActionBase> variant_actions;
+		action_source_object.GetActions(this.Type(), possible_actions);
+		ActionBase action;
+		
+		if(possible_actions)
+		{
+			for (int i = 0; i < possible_actions.Count(); i++)
+			{
+				action = ActionBase.Cast(possible_actions.Get(i));
+						
+				if ( action.HasVariants() )
+				{
+					action.UpdateVariants( m_MainItem, m_Target.GetObject(), m_Target.GetComponentIndex() );
+					action.GetVariants( variant_actions);
+					for (int j = 0; j < variant_actions.Count(); j++)
+					{
+						action = variant_actions[j];
+						if ( action.Can(m_Player, m_Target, m_MainItem, m_ConditionMask) )
+						{
+							select_actions_all.Insert(action);
+							if (action.HasTarget())
+								has_any_action_target = true;
+						}
+					}
+				}
+				else
+				{
+					if ( action.Can(m_Player, m_Target, m_MainItem, m_ConditionMask) )
+					{
+						select_actions_all.Insert(action);
+						if (action.HasTarget())
+							has_any_action_target = true;
+					}
+				}
+			}
+		}
 	}
 	
 	override void UpdatePossibleActions(PlayerBase player, ActionTarget target, ItemBase item, int action_condition_mask)
@@ -300,114 +362,100 @@ class ContinuousInteractActionInput : ActionInput
 		{
 			target = m_ForcedTarget;
 		}
-		array<ActionBase_Basic> possible_actions;
-		ActionBase action;
-		int i;
-		int last_index = 0;
+
+		array<ActionBase> select_actions_all = new array<ActionBase>;
+		int i, last_index;
+		bool change = false;
+		m_HasTarget = false;
 		
 		m_MainItem = item;
 		m_Target = target;
 		m_ConditionMask = action_condition_mask;
-
-		Object target_obj = target.GetObject();
-		
-		if(target_obj)
-			target_obj.GetActions(this.Type(), possible_actions);
-		
-		if(possible_actions)
-		{		
-			for (i = 0; i < possible_actions.Count(); i++)
-			{
-				action = ActionBase.Cast(possible_actions.Get(i));
-				if ( action.Can(player, target, item, action_condition_mask) )
-				{
-					if(m_SelectActions.Count() > last_index )
-					{
-						if(m_SelectActions[last_index] != action)
-						{
-							m_selectedActionIndex = 0;
-							m_SelectActions[last_index] = action;
-						}
-					}
-					else
-					{
-						m_selectedActionIndex = 0;
-						m_SelectActions.Insert(action);
-					}
-				
-					last_index++;
-				}
-			}
-			possible_actions = null;
-		}
-		
-		target_obj = target.GetParent();
-		
-		if(target_obj)
-			target_obj.GetActions(this.Type(), possible_actions);
-		
-		if(possible_actions)
-		{		
-			for (i = 0; i < possible_actions.Count(); i++)
-			{
-				action = ActionBase.Cast(possible_actions.Get(i));
-				if ( action.Can(player, target, item, action_condition_mask) )
-				{
-					if(m_SelectActions.Count() > last_index )
-					{
-						if(m_SelectActions[last_index] != action)
-						{
-							m_selectedActionIndex = 0;
-							m_SelectActions[last_index] = action;
-						}
-					}
-					else
-					{
-						m_selectedActionIndex = 0;
-						m_SelectActions.Insert(action);
-					}
-					last_index++;
-				}
-			}
-			possible_actions = null;
-		}
 		
 		
-		
-		player.GetActions(this.Type(), possible_actions);
-		if(possible_actions)
+		if( m_DetectFromItem )
 		{
-			for (i = 0; i < possible_actions.Count(); i++)
+			_GetSelectedActions( item, select_actions_all, m_HasTarget);
+		}
+		
+
+		if( m_DetectFromTarget )
+		{	
+			_GetSelectedActions( target.GetObject(), select_actions_all, m_HasTarget);
+			_GetSelectedActions( target.GetParent(), select_actions_all, m_HasTarget);
+		}
+		
+		if( m_DetectFromPlayer )
+		{
+			_GetSelectedActions( player, select_actions_all, m_HasTarget);
+		}
+		
+		if ( select_actions_all.Count() )
+		{
+			last_index = 0;
+			for ( i = 0; i < select_actions_all.Count(); i++ )
 			{
-				action = ActionBase.Cast(possible_actions.Get(i));
-				if ( action.Can(player, target, item, action_condition_mask) )
+				ActionBase action = select_actions_all[i];
+				if ( m_HasTarget )
 				{
-					if(m_SelectActions.Count() > last_index )
+					if ( action.HasTarget() )
 					{
-						if(m_SelectActions[last_index] != action)
+						if ( m_SelectActions.Count() > last_index )
 						{
-							m_selectedActionIndex = 0;
-							m_SelectActions[last_index] = action;
+							if ( m_SelectActions[last_index] != action )
+							{
+								change = true;
+								m_SelectActions[last_index] = action;
+							}
+						}
+						else
+						{
+							change = true;
+							m_SelectActions.Insert(action);
+						}
+						action.OnActionInfoUpdate(player, target, item);
+						last_index++;
+					}
+				}
+				else
+				{
+					if ( m_SelectActions.Count() > last_index )
+					{
+						if ( m_SelectActions[last_index] != action )
+						{
+							change = true;
+							m_SelectActions[last_index++] = action;
 						}
 					}
 					else
 					{
-						m_selectedActionIndex = 0;
+						change = true;
 						m_SelectActions.Insert(action);
 					}
+					action.OnActionInfoUpdate(player, target, item);
 					last_index++;
 				}
 			}
 		}
-		
+		else
+		{
+			m_selectedActionIndex = 0;
+			m_SelectActions.Clear();
+		}
 		
 		if (m_SelectActions.Count() > last_index)
 		{
-			m_selectedActionIndex = 0;
+			change = true;
 			for (i = last_index; i < m_SelectActions.Count(); i++)
 			{
 				m_SelectActions.Remove(last_index);
 			}
+		}
+		
+		if ( change )
+		{
+			m_selectedActionIndex = 0;
+			m_Player.GetActionManager().SelectFirstActionCategory();
 		}
 	}
 	
@@ -419,6 +467,11 @@ class ContinuousInteractActionInput : ActionInput
 	override int GetPossibleActionsCount()
 	{
 		return m_SelectActions.Count();
+	}
+	
+	override bool HasTarget()
+	{
+		return m_HasTarget;
 	}
 	
 	override int GetPossibleActionIndex()
@@ -462,6 +515,20 @@ class ContinuousInteractActionInput : ActionInput
 			}
 		}
 	}
+
+}
+
+class ContinuousInteractActionInput : StandardActionInput
+{
+	void ContinuousInteractActionInput(PlayerBase player)
+	{
+		SetInput("UAAction");
+		m_Priority = 60;
+		m_InputType = ActionInputType.AIT_CONTINUOUS;
+		m_DetectFromTarget = true;
+		m_DetectFromItem = false;
+		m_DetectFromPlayer = true;
+	}
 };
 
 class InteractActionInput : ContinuousInteractActionInput
@@ -469,6 +536,7 @@ class InteractActionInput : ContinuousInteractActionInput
 	void InteractActionInput(PlayerBase player)
 	{
 		m_InputType = ActionInputType.AIT_SINGLE;
+		m_Priority = 80;
 	}
 	
 	override void OnActionStart()
@@ -530,69 +598,21 @@ class NoIndicationActionInputBase : ActionInput
 	}
 }
 
-class ContinuousDefaultActionInput : ActionInput
+
+
+class ContinuousDefaultActionInput : StandardActionInput
 {
-	protected ActionBase m_SelectAction;
+	protected ActionBase m_SelectAction; //Do nothing only for back compatibilit, relevant only for inherited class
 	void ContinuousDefaultActionInput(PlayerBase player)
 	{
 		SetInput("UADefaultAction");
 		m_InputType = ActionInputType.AIT_CONTINUOUS;
+		m_Priority = 20;
 		m_DetectFromTarget = false;
+		m_DetectFromItem = true;
+		m_DetectFromPlayer = true;
+		
 		m_SelectAction = null;
-	}
-	
-	override void UpdatePossibleActions(PlayerBase player, ActionTarget target, ItemBase item, int action_condition_mask)
-	{
-		if ( ForceActionCheck(player))
-		{
-			m_SelectAction = m_ForcedActionData.m_Action;
-			return;
-		}
-		
-		if(m_ForcedTarget)
-		{
-			target = m_ForcedTarget;
-		}
-		m_SelectAction = NULL;
-		array<ActionBase_Basic> possible_actions;
-		ActionBase action;
-		int i;
-		
-		m_MainItem = item;
-		m_Target = target;
-		m_ConditionMask = action_condition_mask;
-		
-		if(item)
-		{
-			item.GetActions(this.Type(), possible_actions);
-			if(possible_actions)
-			{
-				for (i = 0; i < possible_actions.Count(); i++)
-				{
-					action = ActionBase.Cast(possible_actions.Get(i));
-					if ( action.Can(player, target, item, action_condition_mask) )
-					{
-						m_SelectAction = action;
-						return;
-					}
-				}
-				possible_actions = null;
-			}
-		}
-		
-		player.GetActions(this.Type(), possible_actions);
-		if(possible_actions)
-		{
-			for (i = 0; i < possible_actions.Count(); i++)
-			{
-				action = ActionBase.Cast(possible_actions.Get(i));
-				if ( action.Can(player, target, item, action_condition_mask) )
-				{
-					m_SelectAction = action;
-					return;
-				}
-			}
-		}
 	}
 	
 	override ActionBase GetPossibleAction()
@@ -600,13 +620,9 @@ class ContinuousDefaultActionInput : ActionInput
 		return m_SelectAction;
 	}
 	
-	override ActionBase GetAction()
-	{
-		return m_SelectAction;
-	}
-	
 	override void ActionsSelectReset()
 	{
+		super.ActionsSelectReset();
 		m_SelectAction = NULL;
 	}
 };
@@ -615,7 +631,8 @@ class DefaultActionInput : ContinuousDefaultActionInput
 {
 	void DefaultActionInput(PlayerBase player)
 	{
-		m_InputType = ActionInputType.AIT_SINGLE;	
+		m_InputType = ActionInputType.AIT_SINGLE;
+		m_Priority = 40;
 	}
 	
 	override void OnActionStart()
@@ -639,6 +656,93 @@ class DropActionInput : NoIndicationActionInputBase
 	}
 };
 
+class CarHornShortActionInput : ContinuousDefaultActionInput
+{
+	ref ActionTarget targetNew;
+
+	void CarHornShortActionInput(PlayerBase player)
+	{
+		SetInput("UACarHorn");
+		m_InputType 		= ActionInputType.AIT_SINGLE;
+		m_Priority 			= 100;
+		m_DetectFromItem 	= false;
+		m_DetectFromTarget	= false;
+		m_DetectFromPlayer	= false;
+	}
+	
+	override void UpdatePossibleActions(PlayerBase player, ActionTarget target, ItemBase item, int action_condition_mask)
+	{
+		if (ForceActionCheck(player))
+		{
+			m_SelectAction = m_ForcedActionData.m_Action;
+			return;
+		}
+		
+		m_SelectAction = null;
+		array<ActionBase_Basic> possibleActions;
+		ActionBase action;
+		int i;
+
+		m_MainItem = null;
+		if (player && player.IsInVehicle())
+		{
+			HumanCommandVehicle vehCommand = player.GetCommand_Vehicle();
+			if (vehCommand)
+			{
+				Transport trans = vehCommand.GetTransport();
+				if (trans)
+				{
+					targetNew = new ActionTarget(trans, null, -1, vector.Zero, -1);
+					ForceActionTarget(targetNew);
+				}
+			}
+			
+			if (!targetNew)
+			{
+				ClearForcedTarget();
+			}
+		}
+		
+		target = m_ForcedTarget;
+		m_Target = m_ForcedTarget;
+		
+		if (target && target.GetObject())
+		{
+			target.GetObject().GetActions(this.Type(), possibleActions);
+			if (possibleActions)
+			{
+				for (i = 0; i < possibleActions.Count(); i++)
+				{
+					action = ActionBase.Cast(possibleActions.Get(i));
+					if (action.Can(player, target, m_MainItem, action_condition_mask))
+					{
+						m_SelectAction = action;
+						return;
+					}
+				}
+			}
+		}
+	}
+	
+	override ActionBase GetAction()
+	{
+		return m_SelectAction;
+	}
+}
+
+class CarHornLongActionInput : CarHornShortActionInput
+{
+	void CarHornLongActionInput(PlayerBase player)
+	{
+		SetInput("UACarHorn");
+		m_InputType 		= ActionInputType.AIT_CONTINUOUS;
+		m_Priority 			= 101;
+		m_DetectFromItem 	= false;
+		m_DetectFromTarget	= false;
+		m_DetectFromPlayer	= false;
+	}
+}
+
 class ToggleLightsActionInput : DefaultActionInput
 {
 	ref ActionTarget target_new;
@@ -647,6 +751,7 @@ class ToggleLightsActionInput : DefaultActionInput
 	{
 		SetInput("UAToggleHeadlight");
 		m_InputType = ActionInputType.AIT_SINGLE;
+		m_Priority = 100;
 	}
 	
 	override void UpdatePossibleActions(PlayerBase player, ActionTarget target, ItemBase item, int action_condition_mask)
@@ -667,10 +772,17 @@ class ToggleLightsActionInput : DefaultActionInput
 		if ( player && !player.IsInVehicle() ) 
 		{
 			Clothing headgear = Clothing.Cast(player.FindAttachmentBySlotName("Headgear"));
-			if ( headgear )
+			Clothing eyewear = Clothing.Cast(player.FindAttachmentBySlotName("Eyewear"));
+			//TODO - extend this to allow for a switchable control over all possible light sources (depth 0 or 1 only?)
+			
+			if ( headgear && headgear.GetLightSourceItem() )
 			{
-				//m_MainItem = Headtorch_ColorBase.Cast(player.FindAttachmentBySlotName("Headgear"));
 				target_new = new ActionTarget(headgear, null, -1, vector.Zero, -1);
+				ForceActionTarget(target_new);
+			}
+			else if ( eyewear && eyewear.GetLightSourceItem() )
+			{
+				target_new = new ActionTarget(eyewear, null, -1, vector.Zero, -1);
 				ForceActionTarget(target_new);
 			}
 			else
@@ -713,6 +825,11 @@ class ToggleLightsActionInput : DefaultActionInput
 			}
 		}
 	}
+	
+	override ActionBase GetAction()
+	{
+		return m_SelectAction;
+	}
 };
 
 class ToggleNVGActionInput : DefaultActionInput
@@ -723,6 +840,7 @@ class ToggleNVGActionInput : DefaultActionInput
 	{
 		SetInput("UAToggleNVG");
 		m_InputType = ActionInputType.AIT_HOLDSINGLE;
+		m_Priority = 100;
 	}
 	
 	override void UpdatePossibleActions(PlayerBase player, ActionTarget target, ItemBase item, int action_condition_mask)
@@ -779,6 +897,11 @@ class ToggleNVGActionInput : DefaultActionInput
 			}
 		}
 	}
+	
+	override ActionBase GetAction()
+	{
+		return m_SelectAction;
+	}
 };
 
 class ContinuousWeaponManipulationActionInput : NoIndicationActionInputBase
@@ -805,6 +928,15 @@ class ExternalControlledActionInput : NoIndicationActionInputBase
 	{
 		//SetInput("UAReloadMagazine");
 		m_InputType = ActionInputType.AIT_NOINPUTCONTROL;
+	}
+};
+
+class InventoryOnlyActionInput : NoIndicationActionInputBase
+{	
+	void InventoryOnlyActionInput(PlayerBase player)
+	{
+		//SetInput("UAReloadMagazine");
+		m_InputType = ActionInputType.AIT_INVENTORYINPUT;
 	}
 };
 

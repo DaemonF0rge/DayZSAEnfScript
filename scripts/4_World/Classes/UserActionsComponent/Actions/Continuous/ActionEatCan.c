@@ -16,7 +16,7 @@ class ActionEatCan: ActionEatBig
 		
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
 	{	
-		return true;
+		return super.ActionCondition(player, target, item);
 		/* 
 		//if staging for cans is introduced
 		if ( item && item.IsOpen() )
@@ -48,6 +48,8 @@ class ActionEatSmallCan: ActionEatBig
 		
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
 	{	
+		if (!super.ActionCondition(player, target, item))
+			return false;
 		return true;
 		/* 
 		//if staging for cans is introduced

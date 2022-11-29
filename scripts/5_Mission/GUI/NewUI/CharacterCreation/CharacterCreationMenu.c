@@ -50,6 +50,35 @@ class CharacterCreationMenu extends UIScriptedMenu
 		return m_Scene.GetIntroCharacter().GetCharacterObj();
 	}
 	
+	protected void OnInputPresetChanged()
+	{
+		#ifdef PLATFORM_CONSOLE
+		UpdateControlsElements();
+		#endif
+	}
+	
+	protected void OnInputDeviceChanged(EInputDeviceType pInputDeviceType)
+	{
+		switch (pInputDeviceType)
+		{
+		case EInputDeviceType.CONTROLLER:
+			#ifdef PLATFORM_CONSOLE
+			UpdateControlsElements();
+			layoutRoot.FindAnyWidget("toolbar_bg").Show(true);
+			#endif
+		break;
+
+		default:
+			#ifdef PLATFORM_CONSOLE
+			if (GetGame().GetInput().IsEnabledMouseAndKeyboardEvenOnServer())
+			{
+				layoutRoot.FindAnyWidget("toolbar_bg").Show(false);
+			}
+			#endif
+		break;
+		}
+	}
+	
 	override Widget Init()
 	{
 		#ifdef PLATFORM_CONSOLE
@@ -131,39 +160,19 @@ class CharacterCreationMenu extends UIScriptedMenu
 		m_BottomSelector.m_OptionChanged.Insert( BottomChanged );
 		m_ShoesSelector.m_OptionChanged.Insert( ShoesChanged );
 		
-		#ifdef PLATFORM_PS4
-			string confirm = "cross";
-			string back = "circle";
-			if( GetGame().GetInput().GetEnterButton() == GamepadButton.A )
-			{
-				confirm = "cross";
-				back = "circle";
-			}
-			else
-			{
-				confirm = "circle";
-				back = "cross";
-			}
-		
-			ImageWidget toolbar_a = layoutRoot.FindAnyWidget( "SelectIcon" );
-			ImageWidget toolbar_b = layoutRoot.FindAnyWidget( "BackIcon" );
-			ImageWidget toolbar_b2 = layoutRoot.FindAnyWidget( "BackIcon0" );
-			ImageWidget toolbar_x = layoutRoot.FindAnyWidget( "RandomizeIcon" );
-			ImageWidget toolbar_x2 = layoutRoot.FindAnyWidget( "RandomizeIcon0" );
-			ImageWidget toolbar_y = layoutRoot.FindAnyWidget( "save_consoleIcon" );
-			ImageWidget toolbar_y2 = layoutRoot.FindAnyWidget( "save_consoleIcon0" );
-			toolbar_a.LoadImageFile( 0, "set:playstation_buttons image:" + confirm );
-			toolbar_b.LoadImageFile( 0, "set:playstation_buttons image:" + back );
-			toolbar_b2.LoadImageFile( 0, "set:playstation_buttons image:" + back );
-			toolbar_x.LoadImageFile( 0, "set:playstation_buttons image:square" );
-			toolbar_x2.LoadImageFile( 0, "set:playstation_buttons image:square" );
-			toolbar_y.LoadImageFile( 0, "set:playstation_buttons image:triangle" );
-			toolbar_y2.LoadImageFile( 0, "set:playstation_buttons image:triangle" );
+		#ifdef PLATFORM_CONSOLE
+		UpdateControlsElements();
 		#endif
 		
 		Refresh();
 		SetCharacter();
 		CheckNewOptions();
+		
+		GetGame().GetMission().GetOnInputPresetChanged().Insert(OnInputPresetChanged);
+		GetGame().GetMission().GetOnInputDeviceChanged().Insert(OnInputDeviceChanged);
+		
+		OnInputDeviceChanged(GetGame().GetInput().GetCurrentInputDevice());
+
 		return layoutRoot;
 	}
 	
@@ -202,17 +211,15 @@ class CharacterCreationMenu extends UIScriptedMenu
 	{
 		if ( m_Scene.GetIntroCharacter().IsDefaultCharacter() )
 		{
+			string name = m_NameSelector.GetValue();
+			if( name == "" )
+				name = GameConstants.DEFAULT_CHARACTER_NAME;
+			
+			m_Scene.GetIntroCharacter().SaveCharName(name);
 			m_Scene.GetIntroCharacter().SaveDefaultCharacter();
 			m_Scene.GetIntroCharacter().SetToDefaultCharacter();
 			SetCharacterSaved(true);
 		}
-		string name = m_NameSelector.GetValue();
-		if( name == "" )
-			name = GameConstants.DEFAULT_CHARACTER_NAME;
-		
-		m_Scene.GetIntroCharacter().SaveCharName(name);
-		
-		//GetGame().GetUIManager().Back();
 	}
 	
 	void Back()
@@ -510,9 +517,6 @@ class CharacterCreationMenu extends UIScriptedMenu
 		m_GenderSelector.Focus();
 		layoutRoot.FindAnyWidget( "play_panel_root" ).Show( GetGame().GetInput().IsEnabledMouseAndKeyboard() );
 		layoutRoot.FindAnyWidget( "toolbar_bg" ).Show( !GetGame().GetInput().IsEnabledMouseAndKeyboard() );
-		
-		//layoutRoot.FindAnyWidget( "play_panel_root" ).Show( true );
-		//layoutRoot.FindAnyWidget( "toolbar_bg" ).Show( true );
 #endif
 		CheckNewOptions();
 		
@@ -656,7 +660,7 @@ class CharacterCreationMenu extends UIScriptedMenu
 		if( w.IsInherited( ButtonWidget ) )
 		{
 			ButtonWidget button = ButtonWidget.Cast( w );
-			button.SetTextColor( ARGB( 255, 255, 255, 255 ) );
+			button.SetTextColor( ColorManager.COLOR_NORMAL_TEXT );
 		}
 		
 		TextWidget text1	= TextWidget.Cast(w.FindAnyWidget( w.GetName() + "_text" ) );
@@ -668,23 +672,23 @@ class CharacterCreationMenu extends UIScriptedMenu
 		
 		if( text1 )
 		{
-			text1.SetColor( ARGB( 255, 255, 255, 255 ) );
+			text1.SetColor( ColorManager.COLOR_NORMAL_TEXT );
 		}
 		
 		if( text2 )
 		{
-			text2.SetColor( ARGB( 255, 255, 255, 255 ) );
+			text2.SetColor( ColorManager.COLOR_NORMAL_TEXT );
 		}
 		
 		if( text3 )
 		{
-			text3.SetColor( ARGB( 255, 255, 255, 255 ) );
+			text3.SetColor( ColorManager.COLOR_NORMAL_TEXT );
 			w.SetAlpha(0);
 		}
 		
 		if( image )
 		{
-			image.SetColor( ARGB( 255, 255, 255, 255 ) );
+			image.SetColor( ColorManager.COLOR_NORMAL_TEXT );
 		}
 		
 		if ( option )
@@ -695,7 +699,7 @@ class CharacterCreationMenu extends UIScriptedMenu
 		#ifndef PLATFORM_CONSOLE
 		if ( option_label )
 		{
-			option_label.SetColor( ARGB( 255, 255, 255, 255 ) );
+			option_label.SetColor( ColorManager.COLOR_NORMAL_TEXT );
 		}
 		#endif
 	}
@@ -714,6 +718,46 @@ class CharacterCreationMenu extends UIScriptedMenu
 				button.SetTextColor( ColorManager.COLOR_DISABLED_TEXT );
 			}
 		}
+		
+		TextWidget text1	= TextWidget.Cast(w.FindAnyWidget( w.GetName() + "_text" ) );
+		TextWidget text2	= TextWidget.Cast(w.FindAnyWidget( w.GetName() + "_label" ) );
+		TextWidget text3	= TextWidget.Cast(w.FindAnyWidget( w.GetName() + "_text_1" ) );
+		ImageWidget image	= ImageWidget.Cast( w.FindAnyWidget( w.GetName() + "_image" ) );
+		Widget option		= Widget.Cast( w.FindAnyWidget( w.GetName() + "_option_wrapper" ) );
+		Widget option_label = w.FindAnyWidget( "option_label" );
+		
+		if( text1 )
+		{
+			text1.SetColor( ColorManager.COLOR_DISABLED_TEXT );
+		}
+		
+		if( text2 )
+		{
+			text2.SetColor( ColorManager.COLOR_DISABLED_TEXT );
+		}
+		
+		if( text3 )
+		{
+			text3.SetColor( ColorManager.COLOR_DISABLED_TEXT );
+			w.SetAlpha(1);
+		}
+		
+		if( image )
+		{
+			image.SetColor( ColorManager.COLOR_DISABLED_TEXT );
+		}
+		
+		if ( option )
+		{
+			option.SetColor( ColorManager.COLOR_DISABLED_TEXT );
+		}
+		
+		#ifndef PLATFORM_CONSOLE
+		if ( option_label )
+		{
+			option_label.SetColor( ColorManager.COLOR_DISABLED_TEXT );
+		}
+		#endif
 	}
 	
 	void SetCharacterSaved(bool state)
@@ -722,5 +766,23 @@ class CharacterCreationMenu extends UIScriptedMenu
 			m_CharacterSaved = state;
 			Refresh();
 		#endif
+	}
+
+	protected void UpdateControlsElements()
+	{
+		RichTextWidget toolbar_a	= RichTextWidget.Cast(layoutRoot.FindAnyWidget("SelectIcon"));
+		RichTextWidget toolbar_b	= RichTextWidget.Cast(layoutRoot.FindAnyWidget("BackIcon"));
+		RichTextWidget toolbar_b2	= RichTextWidget.Cast(layoutRoot.FindAnyWidget("BackIcon0"));
+		RichTextWidget toolbar_x	= RichTextWidget.Cast(layoutRoot.FindAnyWidget("RandomizeIcon"));
+		RichTextWidget toolbar_x2	= RichTextWidget.Cast(layoutRoot.FindAnyWidget("RandomizeIcon0"));
+		RichTextWidget toolbar_y	= RichTextWidget.Cast(layoutRoot.FindAnyWidget("save_consoleIcon"));
+		RichTextWidget toolbar_y2	= RichTextWidget.Cast(layoutRoot.FindAnyWidget("save_consoleIcon0"));
+		toolbar_a.SetText(InputUtils.GetRichtextButtonIconFromInputAction("UAUISelect", "", EUAINPUT_DEVICE_CONTROLLER, InputUtils.ICON_SCALE_TOOLBAR));
+		toolbar_b.SetText(InputUtils.GetRichtextButtonIconFromInputAction("UAUIBack", "", EUAINPUT_DEVICE_CONTROLLER, InputUtils.ICON_SCALE_TOOLBAR));
+		toolbar_b2.SetText(InputUtils.GetRichtextButtonIconFromInputAction("UAUIBack", "", EUAINPUT_DEVICE_CONTROLLER));
+		toolbar_x.SetText(InputUtils.GetRichtextButtonIconFromInputAction("UAUICtrlX", "", EUAINPUT_DEVICE_CONTROLLER, InputUtils.ICON_SCALE_TOOLBAR));
+		toolbar_x2.SetText(InputUtils.GetRichtextButtonIconFromInputAction("UAUICtrlX", "", EUAINPUT_DEVICE_CONTROLLER));
+		toolbar_y.SetText(InputUtils.GetRichtextButtonIconFromInputAction("UAUICtrlY", "", EUAINPUT_DEVICE_CONTROLLER, InputUtils.ICON_SCALE_TOOLBAR));
+		toolbar_y2.SetText(InputUtils.GetRichtextButtonIconFromInputAction("UAUICtrlY", "", EUAINPUT_DEVICE_CONTROLLER));
 	}
 }

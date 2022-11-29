@@ -2,17 +2,13 @@ class ActionPlugIntoFence: ActionSingleUseBase
 {
 	void ActionPlugIntoFence()
 	{
+		m_Text = "#plug_in";
 	}
 	
 	override void CreateConditionComponents()  
 	{
 		m_ConditionItem = new CCINonRuined;
 		m_ConditionTarget = new CCTNonRuined(UAMaxDistances.DEFAULT);
-	}
-	
-	override string GetText()
-	{
-		return "#plug_in";
 	}
 	
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

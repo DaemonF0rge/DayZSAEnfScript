@@ -36,17 +36,13 @@ class ActionSkinning: ActionContinuousBase
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONFB_ANIMALSKINNING;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_CROUCH;
 		m_FullBody = true;
+		m_Text = "#skin";
 	}
 	
 	override void CreateConditionComponents()  
 	{	
 		m_ConditionItem = new CCINonRuined;
 		m_ConditionTarget = new CCTDummy( );	
-	}
-		
-	override string GetText()
-	{
-		return "#skin";
 	}
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

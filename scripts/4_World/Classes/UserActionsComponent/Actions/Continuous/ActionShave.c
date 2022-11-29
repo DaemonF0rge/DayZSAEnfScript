@@ -16,6 +16,7 @@ class ActionShave: ActionContinuousBase
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONMOD_SHAVE;
 		m_FullBody = false;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT | DayZPlayerConstants.STANCEMASK_CROUCH;
+		m_Text = "#shave_myself";
 	}
 	
 	override void CreateConditionComponents()  
@@ -37,11 +38,6 @@ class ActionShave: ActionContinuousBase
 	override bool HasTarget()
 	{
 		return false;
-	}
-		
-	override string GetText()
-	{
-		return "#shave_myself";
 	}
 	
 	override bool IsShaveSelf()

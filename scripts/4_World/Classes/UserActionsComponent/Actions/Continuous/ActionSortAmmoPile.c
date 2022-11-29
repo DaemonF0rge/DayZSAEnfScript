@@ -12,17 +12,13 @@ class ActionSortAmmoPile: ActionContinuousBase
 	{
 		m_CallbackClass = ActionSortAmmoPileCB;
 		m_SpecialtyWeight = UASoftSkillsWeight.PRECISE_LOW;
+		m_Text = "#sort_ammunition";
 	}
 	
 	override void CreateConditionComponents()  
 	{	
 		m_ConditionItem = new CCINonRuined;
 		m_ConditionTarget = new CCTSelf;
-	}
-		
-	override string GetText()
-	{
-		return "#sort_ammunition";
 	}
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

@@ -1,3 +1,26 @@
+//max 32 synced modifiers supported
+enum eModifierSyncIDs 
+{
+
+	MODIFIER_SYNC_WOUND_INFECT_1 	= 0x00000001,
+	MODIFIER_SYNC_WOUND_INFECT_2 	= 0x00000002,
+	MODIFIER_SYNC_CONTAMINATION 	= 0x00000004,//stage1 
+	MODIFIER_SYNC_CONTAMINATION2 	= 0x00000008,//stage2 and stage3 share the same sync id
+	MODIFIER_SYNC_ZONE_EXPOSURE 	= 0x00000010,
+	MODIFIER_SYNC_DROWNING 			= 0x00000020,
+	//0x00000040,
+	//0x00000080,
+	//0x00000100,
+	//0x00000200,
+	//0x00000400,
+	//0x00000800,
+	//0x00001000,
+	LAST_INDEX,
+};
+
+
+
+
 enum EActivationType {
 
 	TRIGGER_EVENT_OFF,
@@ -50,6 +73,7 @@ class ModifiersManager
 {
 	PlayerBase m_Player;
 	ref map<int, ref ModifierBase> m_ModifierList;
+	ref array< ref ModifierBase> m_ModifierListArray = new array< ref ModifierBase>;
 	ref array<ref Param> m_ParamList;
 	bool m_AllowModifierTick = false;
 	const int STORAGE_VERSION = 121;
@@ -112,13 +136,24 @@ class ModifiersManager
 		AddModifier(new HeatBufferMdfr);
 		AddModifier(new DisinfectionMdfr);
 		AddModifier(new FatigueMdfr);
+		AddModifier(new ContaminationStage1Mdfr);
+		AddModifier(new ContaminationStage2Mdfr);
+		AddModifier(new ContaminationStage3Mdfr);
+		AddModifier(new AreaExposureMdfr);
+		AddModifier(new MaskMdfr);
+		AddModifier(new FliesMdfr);
+		AddModifier(new DrowningMdfr);
 	}
 
 	void SetModifiers(bool enable)
 	{
-		
 		m_AllowModifierTick = enable;
-		if( enable == false )
+		
+		#ifdef DEVELOPER
+		DiagMenu.SetValue(DiagMenuIDs.DM_CHEATS_MODIFIERS_ENABLE, enable);
+		#endif
+		
+		if ( !enable )
 		{
 			for(int i = 0; i < m_ModifierList.Count(); i++)
 			{
@@ -149,6 +184,7 @@ class ModifiersManager
 		
 		//TODO: add a check for duplicity
 		m_ModifierList.Insert(id, modifier);
+		m_ModifierListArray.Insert(modifier);
 	}
 	
 	bool IsModifierActive(eModifiers modifier_id)
@@ -160,9 +196,9 @@ class ModifiersManager
 	{
 		if(!m_AllowModifierTick) return;
 
-		for(int i = 0; i < m_ModifierList.Count(); i++)
+		foreach(ModifierBase m: m_ModifierListArray)
 		{
-			m_ModifierList.GetElement(i).Tick(delta_time);
+			m.Tick(delta_time);
 		}
 
 	}

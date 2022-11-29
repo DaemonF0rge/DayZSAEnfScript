@@ -14,17 +14,13 @@ class ActionSplintTarget: ActionContinuousBase
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONFB_BANDAGETARGET;
 		m_FullBody = true;
 		m_SpecialtyWeight = UASoftSkillsWeight.PRECISE_LOW;
+		m_Text = "#fix_persons_fracture";
 	}
 	
 	override void CreateConditionComponents()  
 	{	
 		m_ConditionItem = new CCINonRuined;
 		m_ConditionTarget = new CCTMan(UAMaxDistances.DEFAULT);
-	}
-		
-	override string GetText()
-	{
-		return "#fix_persons_fracture";
 	}
 
 	override void OnFinishProgressServer( ActionData action_data )
@@ -41,7 +37,7 @@ class ActionSplintTarget: ActionContinuousBase
 			action_data.m_Player.GetSoftSkillsManager().AddSpecialty( m_SpecialtyWeight );
 		}
 		
-		ntarget.m_BrokenLegState = eBrokenLegs.BROKEN_LEGS_SPLINT;
+		ntarget.SetBrokenLegs(eBrokenLegs.BROKEN_LEGS_SPLINT);
 		//action_data.m_MainItem.Delete();
 
 		action_data.m_Player.GetSoftSkillsManager().AddSpecialty( m_SpecialtyWeight );
@@ -50,7 +46,7 @@ class ActionSplintTarget: ActionContinuousBase
 	override bool ActionCondition(PlayerBase player, ActionTarget target, ItemBase item)
 	{
 		PlayerBase ntarget = PlayerBase.Cast( target.GetObject() );
-		if (ntarget.m_BrokenLegState != eBrokenLegs.BROKEN_LEGS || IsWearingSplint(ntarget))
+		if (ntarget.GetBrokenLegs() != eBrokenLegs.BROKEN_LEGS || IsWearingSplint(ntarget))
 		{
 			return false;
 		}

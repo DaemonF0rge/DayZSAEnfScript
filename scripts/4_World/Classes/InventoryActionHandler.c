@@ -54,7 +54,7 @@ class InventoryActionHandler
 		m_actionStartPos = m_player.GetPosition();
 		m_isActive = true;
 		
-		mngr.InjectAction( action, target, main_item );
+		//mngr.InjectAction( action, target, main_item );
 		mngr.ForceTarget(m_target.GetObject());
 		
 		GetGame().GetMission().HideInventory();

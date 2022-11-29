@@ -1,3 +1,4 @@
+// deprecated
 class ActionHandsPartSwitch: ActionSingleUseBase
 {
 	void ActionHandsPartSwitch()
@@ -8,6 +9,7 @@ class ActionHandsPartSwitch: ActionSingleUseBase
 	{		
 		m_ConditionItem = new CCINone; //'CCINotPresent' to perfom with empty hands only
 		m_ConditionTarget = new CCTCursor;
+		m_Text = "#switch_to_the_next_part";
 	}
 		
 	override bool IsInstant()
@@ -28,43 +30,10 @@ class ActionHandsPartSwitch: ActionSingleUseBase
 	override bool UseAcknowledgment()
 	{
 		return true;
-	}		
-	
-	override string GetText()
-	{
-		return "#switch_to_the_next_part";
 	}
 	
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
 	{
-		if ( player && !player.IsLeaning() )
-		{
-			Object target_object = target.GetObject();
-			if ( target_object && target_object.CanUseHandConstruction() )
-			{
-				BaseBuildingBase base_building = BaseBuildingBase.Cast( target_object );
-				ConstructionActionData construction_action_data = player.GetConstructionActionData();
-				construction_action_data.SetTarget( target_object );
-				
-				string main_part_name = target_object.GetActionComponentName( target.GetComponentIndex() );
-				construction_action_data.RefreshPartsToBuild( main_part_name, null, false );
-				
-				if ( construction_action_data.GetConstructionPartsCount() > 1 )
-				{
-					//Check validity of recipes
-					int valid_recipes;
-					for (int i = 0; i < construction_action_data.GetConstructionPartsCount(); i++)
-					{
-						string name = construction_action_data.GetBuildPartAtIndex(i).GetPartName();
-						if (MiscGameplayFunctions.ComplexBuildCollideCheckClient(player, target, item, name))
-							valid_recipes++;
-					}
-					if (valid_recipes > 1)
-						return true;
-				}
-			}
-		}
-		
 		return false;
 	}
 	

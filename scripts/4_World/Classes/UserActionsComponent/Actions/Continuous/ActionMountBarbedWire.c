@@ -20,17 +20,13 @@ class ActionMountBarbedWire: ActionContinuousBase
 		
 		m_DamageAmount = 2;
 		m_SpecialtyWeight = UASoftSkillsWeight.ROUGH_HIGH;
+		m_Text = "#mount";
 	}
 	
 	override void CreateConditionComponents()  
 	{
 		m_ConditionItem = new CCINonRuined;
 		m_ConditionTarget = new CCTNonRuined( UAMaxDistances.BASEBUILDING );
-	}
-		
-	override string GetText()
-	{
-		return "#mount";
 	}
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

@@ -15,10 +15,6 @@ class AreaDamageTriggerBase : Trigger
 	//! AreaDamageManager managing this instance
 	protected ref AreaDamageManager		m_AreaDamageManager;
 	
-	#ifdef DEVELOPER
-	private string 						m_DebugAreaType;
-	#endif
-	
 	//! ctor
 	void AreaDamageTriggerBase()
 	{
@@ -36,10 +32,6 @@ class AreaDamageTriggerBase : Trigger
 			if ( insObj )
 				Leave(m_insiders[n]);
 		}
-		
-		#ifdef DEVELOPER
-		CleanupDebugShapes(dbgTargets);
-		#endif
 	}
 	
 	//! AreaDamageTriggerBase configuration
@@ -235,11 +227,6 @@ class AreaDamageTriggerBase : Trigger
 			return;
 		
 		super.AddInsider(obj);
-		
-		//!DEBUG
-		#ifdef DEVELOPER
-		DebugSendDmgTrigger();
-		#endif
 	}
 	
 	//! Removing of TriggerInsider
@@ -249,11 +236,6 @@ class AreaDamageTriggerBase : Trigger
 			return;
 		
 		super.RemoveInsider(insider, index);
-		
-		//!DEBUG
-		#ifdef DEVELOPER
-		DebugSendDmgTrigger();
-		#endif
 	}
 	
 	//! Update the current TriggerInsider inside the Trigger
@@ -263,148 +245,6 @@ class AreaDamageTriggerBase : Trigger
 			return;
 	
 		super.UpdateInsiders(timeout);
-
-		//!DEBUG
-		#ifdef DEVELOPER
-		DebugSendDmgTrigger();
-		#endif
 	}
-	//@}
-	
-	//! DEBUGGING
-	//@{
-	override void OnRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
-	{	
-		super.OnRPC(sender, rpc_type, ctx);
-		#ifdef DEVELOPER
-		switch ( rpc_type )
-		{
-			case ERPCs.RPC_AREADAMAGE_DEBUGAREA:
-				Param5<vector, vector, vector, string, array<ref TriggerInsider>> pos = new Param5<vector, vector, vector, string, array<ref TriggerInsider>>(vector.Zero, vector.Zero, vector.Zero, "", null);
-				if ( ctx.Read( pos ) )
-				{
-					DebugDmgTrigger( pos.param1, pos.param2, pos.param3, pos.param4, pos.param5 );
-				}
-			break;
-		}
-		#endif
-	}
-	
-#ifdef DEVELOPER
-	
-	void DebugSendDmgTrigger()
-	{		
-		vector minmax[2];
-		GetCollisionBox(minmax);
-		
-		Param5<vector, vector, vector, string, array<ref TriggerInsider>> pos = new Param5<vector, vector, vector, string, array<ref TriggerInsider>>(vector.Zero, vector.Zero, vector.Zero, "", null);
-		pos.param1 = minmax[0] + GetPosition();
-		pos.param2 = minmax[1] + GetPosition();
-		pos.param3 = m_AreaDamageManager.GetOrientation();
-		pos.param4 = m_DebugAreaType;
-		pos.param5 = m_insiders;
-		
-		if ( GetGame().IsMultiplayer() && GetGame().IsServer() )
-			GetGame().RPCSingleParam(this, ERPCs.RPC_AREADAMAGE_DEBUGAREA, pos, true);
-		else
-			DebugDmgTrigger( pos.param1, pos.param2, pos.param3, pos.param4, pos.param5 );
-	}
-	
-	protected ref array<Shape> dbgTargets = new array<Shape>();
-	
-	void DebugDmgTrigger( vector pos1, vector pos2, vector orientation, string dmgType, array<ref TriggerInsider> insiders)
-	{
-		bool enableDebug = DiagMenu.GetBool(DiagMenuIDs.DM_SHOW_AREADMG_TRIGGER);
-		if ( enableDebug )
-		{
-			if ( GetGame().IsMultiplayer() && GetGame().IsServer() )
-			{
-				return;
-			}
-			
-			vector w_pos, w_pos_sphr, w_pos_lend;
-	
-			CleanupDebugShapes( dbgTargets );
-	
-			w_pos = this.GetPosition();
-			// sphere pos tweaks
-			w_pos_sphr = w_pos;
-			// line pos tweaks
-			w_pos_lend = w_pos;
-			
-			//Find way to change colour of box depending on ammoType in a more elegant fashion
-			m_DebugAreaType = dmgType;
-			Shape dbgShape;
-			vector pos = GetWorldPosition();
-			vector mat[4];
-			
-			switch ( m_DebugAreaType )
-			{
-				case "FireDamage":
-					dbgShape = Debug.DrawBox(pos1 - pos, pos2 - pos, COLOR_RED_A);
-				
-					GetTransform( mat );
-					dbgShape.CreateMatrix( mat );
-					dbgShape.SetMatrix(mat);
-				
-					dbgTargets.Insert( dbgShape );
-				break;
-				
-				case "BarbedWireHit":
-					dbgShape = Debug.DrawBox(pos1 - pos, pos2 - pos, COLOR_BLUE_A);
-					
-					GetTransform( mat );
-					dbgShape.CreateMatrix( mat );
-					dbgShape.SetMatrix(mat);
-				
-					dbgTargets.Insert( dbgShape );
-				break;
-				
-				default:
-					dbgShape = Debug.DrawBox(pos1 - pos, pos2 - pos, COLOR_GREEN_A);
-					
-					GetTransform( mat );
-					dbgShape.CreateMatrix( mat );
-					dbgShape.SetMatrix(mat);
-				
-					dbgTargets.Insert( dbgShape );
-				break;
-			}
-			
-			if ( GetGame().IsMultiplayer() )
-				m_insiders = insiders;
-		
-			if ( m_insiders.Count() > 0 )
-			{
-				//Change colour to make state clearer
-				dbgShape.SetColor( COLOR_YELLOW_A );
-				
-				for ( int i = 0; i < m_insiders.Count(); i++ )
-				{
-					EntityAI insider_EAI = EntityAI.Cast( m_insiders[i].GetObject() );
-					if ( insider_EAI )
-					{
-						vector insiderPos = insider_EAI.GetPosition() + "0 0.1 0";
-						
-						dbgTargets.Insert( Debug.DrawArrow( w_pos, insiderPos ) );
-					}
-				}
-			}
-		}
-		else
-			CleanupDebugShapes( dbgTargets );
-	}
-	
-	protected void CleanupDebugShapes( array<Shape> shapes )
-	{
-		for ( int it = 0; it < shapes.Count(); ++it )
-		{
-			Debug.RemoveShape( shapes[it] );
-		}
-
-		shapes.Clear();
-	}
-	
-#endif
 	//@}
 }

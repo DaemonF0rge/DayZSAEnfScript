@@ -55,14 +55,22 @@ enum NVTypes
 {
 	NONE = 0,
 	NV_GOGGLES,
+	NV_GOGGLES_OFF,
 	NV_OPTICS_ON,
 	NV_OPTICS_OFF,
+	NV_PUMPKIN,
+	NV_OPTICS_KAZUAR_DAY,
+	NV_OPTICS_KAZUAR_NIGHT,
+	NV_OPTICS_STARLIGHT_DAY,
+	NV_OPTICS_STARLIGHT_NIGHT,
 	MAX
 }
 
 
 class DayZPlayerCameraBase extends DayZPlayerCamera
 {
+	static const float 	CONST_NEARPLANE_OPTICS_MIN = 0.04; //Minimal safe near plane value, artifacts on the far plane otherwise!
+	
 	protected 	Weapon_Base		m_weaponUsed;
 	protected 	ItemOptics 		m_opticsUsed;
 	protected	ref CameraShake		m_CameraShake;
@@ -95,7 +103,30 @@ class DayZPlayerCameraBase extends DayZPlayerCamera
 		m_CameraPPDelay = 0;
 
 		m_CommandWeapons = pPlayer.GetCommandModifier_Weapons();
+		Init();
 	};
+	
+	
+	void ProcessCameraShake(float delta, out float leftRight, out float upDown)
+	{
+		if (m_CameraShake)
+		{
+			float x,y;
+			m_CameraShake.Update(delta, x, y);
+			leftRight += x;
+			upDown += y;
+		}
+	}
+	
+	void Init()
+	{
+		PlayerBase player = PlayerBase.Cast(m_pPlayer);
+		if ( player && player.IsNVGWorking() != IsCameraNV() )
+		{
+			SetCameraNV(player.IsNVGWorking());
+			SetCameraNVType(player.GetNVType());
+		}
+	}
 
 	float UpdateUDAngle(out float pAngle, out float pAngleAdd, float pMin, float pMax, float pDt)
 	{
@@ -211,6 +242,18 @@ class DayZPlayerCameraBase extends DayZPlayerCamera
 
 	override void OnUpdate(float pDt, out DayZPlayerCameraResult pOutResult)
 	{
+		if (!m_pPlayer || !PlayerBase.Cast(m_pPlayer))
+		{
+			Debug.Log("DayZPlayerCameraBase | OnUpdate | no player!");
+			return;
+		}
+		
+		if (PlayerBase.Cast(m_pPlayer).GetCurrentCamera() != this)
+		{
+			//Print("DayZPlayerCameraBase | OnUpdate | unused camera! | " + this + "/" + PlayerBase.Cast(m_pPlayer).GetCurrentCamera());
+			return;
+		}
+		
 		super.OnUpdate(pDt, pOutResult);
 		StdFovUpdate(pDt, pOutResult);
 		UpdateCameraNV(PlayerBase.Cast(m_pPlayer));
@@ -223,9 +266,9 @@ class DayZPlayerCameraBase extends DayZPlayerCamera
 		InitCameraOnPlayer(true);
 		SetCameraPPDelay(pPrevCamera);
 		
-		if (DayZPlayerCameraBase.Cast(pPrevCamera) && DayZPlayerCameraBase.Cast(pPrevCamera).IsCameraNV())
+		if (DayZPlayerCameraBase.Cast(pPrevCamera) && DayZPlayerCameraBase.Cast(pPrevCamera).IsCameraNV() && !IsCameraNV())
 		{
-			PPEffects.SetEVValuePP(0); //sets EV value immediately to avoid bright flashes at night
+			PPERequesterBank.GetRequester(PPERequesterBank.REQ_CAMERANV).Start( new Param1<int>(PPERequester_CameraNV.NV_TRANSITIVE) );
 		}
 		
 		GetGame().GetCallQueue(CALL_CATEGORY_GUI).CallLater(SetCameraPP,m_CameraPPDelay*1000,false,true,this); // this takes care of weapon/optics postprocessing
@@ -250,7 +293,7 @@ class DayZPlayerCameraBase extends DayZPlayerCamera
 	{
 	}
 	
-	void SetCameraNV(bool nightvision)
+	void SetCameraNV(bool nightvision) //TODO - revise use, may be set more often than needed
 	{
 		m_IsNightvision = nightvision;
 	}
@@ -260,14 +303,25 @@ class DayZPlayerCameraBase extends DayZPlayerCamera
 		return m_IsNightvision;
 	}
 	
+	void SetCameraNVType(int type)
+	{
+		m_NightvisionType = type;
+	}
+	
+	int GetCameraNVType()
+	{
+		return m_NightvisionType;
+	}
+	
 	void UpdateCameraNV(PlayerBase player)
 	{
 		if ( !player )
 			return;
 		
-		if ( player.IsNVGWorking() != IsCameraNV() )
+		if ( player.IsNVGWorking() != IsCameraNV() || player.GetNVType() != GetCameraNVType() )
 		{
 			SetCameraNV(player.IsNVGWorking());
+			SetCameraNVType(player.GetNVType()); //TODO - ???
 			SetCameraPP(true, this);
 		}
 	}
@@ -275,14 +329,11 @@ class DayZPlayerCameraBase extends DayZPlayerCamera
 	//! by default sets camera PP to zero, regardless of parameter. Override if needed.
 	void SetCameraPP(bool state, DayZPlayerCamera launchedFrom)
 	{
-		PPEffects.ResetPPMask();
-		PPEffects.SetLensEffect(0, 0, 0, 0);
-		PPEffects.OverrideDOF(false, 0, 0, 0, 0, 1);
-		PPEffects.SetBlurOptics(0);
+		PPERequesterBank.GetRequester(PPERequester_CameraADS).Stop();
 		
 		if (IsCameraNV())
 		{
-			SetNVPostprocess(NVTypes.NV_GOGGLES);
+			SetNVPostprocess(GetCameraNVType());
 		}
 		else
 		{
@@ -306,34 +357,65 @@ class DayZPlayerCameraBase extends DayZPlayerCamera
 		m_bForceFreeLook = state;
 	}
 	
-	
+	//TODO - better handling of distinct occluder types
+	//! DayZPlayerCameraOptics handles this separately, otherwise it takes active NVType from PlayerBase::GetCameraNVType
 	void SetNVPostprocess(int NVtype)
 	{
 		//Print("+++Setting NV type: " + NVtype + " +++");
 		switch (NVtype)
 		{
 			case NVTypes.NONE:
-				PPEffects.SetEVValuePP(0);
-				PPEffects.SetColorizationNV(1.0, 1.0, 1.0);
-				PPEffects.SetNVParams(1.0, 0.0, 2.35, 2.75); //default values
+			{
+				PPERequesterBank.GetRequester(PPERequester_CameraNV).Stop();
+				GetGame().GetMission().GetEffectWidgets().RemoveActiveEffects({EffectWidgetsTypes.NVG_OCCLUDER});
+				GetGame().GetMission().GetEffectWidgets().RemoveActiveEffects({EffectWidgetsTypes.PUMPKIN_OCCLUDER});
+			}
 			break;
 			
+			//night-vision modes
+			case NVTypes.NV_OPTICS_KAZUAR_NIGHT:
+			case NVTypes.NV_OPTICS_STARLIGHT_NIGHT:
 			case NVTypes.NV_OPTICS_ON:
-				PPEffects.SetEVValuePP(7);
-				PPEffects.SetColorizationNV(0.0, 1.0, 0.0);
-				PPEffects.SetNVParams(3.0, 2.0, 9.0, 1.0);
+			{
+				PPERequesterBank.GetRequester(PPERequesterBank.REQ_CAMERANV).Start( new Param1<int>(PPERequester_CameraNV.NV_DEFAULT_OPTICS) );
+				GetGame().GetMission().GetEffectWidgets().RemoveActiveEffects({EffectWidgetsTypes.NVG_OCCLUDER});
+				GetGame().GetMission().GetEffectWidgets().RemoveActiveEffects({EffectWidgetsTypes.PUMPKIN_OCCLUDER});
+			}
 			break;
 			
+			//daytime filter modes; TODO!
+			case NVTypes.NV_OPTICS_KAZUAR_DAY:
+			case NVTypes.NV_OPTICS_STARLIGHT_DAY:
+			{
+				PPERequesterBank.GetRequester(PPERequesterBank.REQ_CAMERANV).Start( new Param1<int>(PPERequester_CameraNV.NV_DAYTIME_OPTICS) );
+				GetGame().GetMission().GetEffectWidgets().RemoveActiveEffects({EffectWidgetsTypes.NVG_OCCLUDER});
+				GetGame().GetMission().GetEffectWidgets().RemoveActiveEffects({EffectWidgetsTypes.PUMPKIN_OCCLUDER});
+			}
+			break;
+			
+			case NVTypes.NV_GOGGLES_OFF:
 			case NVTypes.NV_OPTICS_OFF:
-				PPEffects.SetEVValuePP(-10);
-				PPEffects.SetColorizationNV(0.0, 0.0, 0.0);
-				PPEffects.SetNVParams(1.0, 0.0, 2.35, 2.75); //default values
+			{
+				PPERequesterBank.GetRequester(PPERequesterBank.REQ_CAMERANV).Start( new Param1<int>(PPERequester_CameraNV.NV_NO_BATTERY) );
+				GetGame().GetMission().GetEffectWidgets().RemoveActiveEffects({EffectWidgetsTypes.NVG_OCCLUDER});
+				GetGame().GetMission().GetEffectWidgets().RemoveActiveEffects({EffectWidgetsTypes.PUMPKIN_OCCLUDER});
+			}
 			break;
 			
 			case NVTypes.NV_GOGGLES:
-				PPEffects.SetEVValuePP(7);
-				PPEffects.SetColorizationNV(0.0, 1.0, 0.0);
-				PPEffects.SetNVParams(2.0, 1.0, 10.0, 1.0);
+			{
+				PPERequesterBank.GetRequester(PPERequesterBank.REQ_CAMERANV).Start( new Param1<int>(PPERequester_CameraNV.NV_DEFAULT_GLASSES) );
+				GetGame().GetMission().GetEffectWidgets().AddActiveEffects({EffectWidgetsTypes.NVG_OCCLUDER});
+				GetGame().GetMission().GetEffectWidgets().RemoveActiveEffects({EffectWidgetsTypes.PUMPKIN_OCCLUDER});
+			}
+			break;
+			
+			case NVTypes.NV_PUMPKIN:
+			{
+				PPERequesterBank.GetRequester(PPERequesterBank.REQ_CAMERANV).Start( new Param1<int>(PPERequester_CameraNV.NV_PUMPKIN) );
+				GetGame().GetMission().GetEffectWidgets().AddActiveEffects({EffectWidgetsTypes.PUMPKIN_OCCLUDER});
+				GetGame().GetMission().GetEffectWidgets().RemoveActiveEffects({EffectWidgetsTypes.NVG_OCCLUDER});
+			}
 			break;
 		}
 		
@@ -363,4 +445,5 @@ class DayZPlayerCameraBase extends DayZPlayerCamera
 	protected float 				m_CurrentCameraPitch;
 	protected HumanCommandWeapons	m_CommandWeapons;
 	protected bool 					m_IsNightvision;
+	protected int 					m_NightvisionType;
 }

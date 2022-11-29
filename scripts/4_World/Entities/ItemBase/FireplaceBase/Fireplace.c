@@ -50,46 +50,54 @@ class Fireplace extends FireplaceBase
 
 		ItemBase item = ItemBase.Cast( attachment );
 
-		//kindling items
-		if ( IsKindling ( item ) )
-			return true;
-		
-		//fuel items
-		if ( IsFuel ( item ) )
-			return true;
-		
 		//cookware
 		if ( ( item.Type() == ATTACHMENT_CAULDRON ) || ( item.Type() == ATTACHMENT_COOKING_POT ) )
 		{
-			if ( IsItemTypeAttached( ATTACHMENT_TRIPOD ) || IsOven() ) 
+			if ( FindAttachmentBySlotName( "CookingTripod" ) || IsOven() ) 
 				return true;
+			return false;
 		}
 		if ( item.Type() == ATTACHMENT_FRYING_PAN )
 		{
 			if ( IsOven() ) 
 				return true;
+			return false;
 		}
 
 		// food on direct cooking slots
-		if ( IsOven() )
+		if ( item.IsKindOf( "Edible_Base" ) )
 		{
-			if ( item.IsKindOf( "Edible_Base" ) )
+			if ( IsOven() )
 				return true;
+			return false;
 		}
 		//tripod
-		if ( item.Type() == ATTACHMENT_TRIPOD )
+		
+		if ( item.IsInherited(TripodBase) )
 		{
-			if ( !IsOven() && GetHierarchyParent() == NULL )
+			if (!IsOven() && !GetHierarchyParent())
 				return true;
+			return false;
 		}
 		
 		//stones
 		if ( item.Type() == ATTACHMENT_STONES )
 		{
-			if ( GetHierarchyParent() || IsBurning() )
-				return false;
-			
-			return true;
+			if ( !GetHierarchyParent() && !IsBurning() )
+				return true;
+			return false;
+		}
+		
+		return true;
+	}
+	
+	override bool CanDisplayAttachmentSlot( int slot_id )
+	{
+		string slot_name = InventorySlots.GetSlotName(slot_id);
+		if ( super.CanDisplayAttachmentSlot(slot_id) )
+		{
+			if ( slot_name != "CookingEquipment" || FindAttachmentBySlotName( "CookingTripod" ) )
+				return true;
 		}
 		
 		return false;
@@ -102,18 +110,10 @@ class Fireplace extends FireplaceBase
 
 		ItemBase item = ItemBase.Cast( attachment );
 
-		//kindling items
-		if ( IsKindling ( item ) )
-			return true;
-		
-		//fuel items
-		if ( IsFuel ( item ) )
-			return true;
-		
 		//cookware
 		if ( ( item.Type() == ATTACHMENT_CAULDRON ) || ( item.Type() == ATTACHMENT_COOKING_POT ) )
 		{
-			if ( IsItemTypeAttached( ATTACHMENT_TRIPOD ) /*|| IsOven()*/ ) 
+			//if ( IsItemTypeAttached( ATTACHMENT_TRIPOD ) /*|| IsOven()*/ ) 
 				return true;
 		}
 		if ( item.Type() == ATTACHMENT_FRYING_PAN )
@@ -144,307 +144,253 @@ class Fireplace extends FireplaceBase
 			return true;
 		}
 		
-		return false;
+		return true;
 	}
 
 	override bool CanReleaseAttachment( EntityAI attachment )
 	{
-		if( !super.CanReleaseAttachment( attachment ) )
-			return false;
-		
-		ItemBase item = ItemBase.Cast( attachment );
-		
-		//has last attachment and there are still items in cargo
-		if ( GetInventory().AttachmentCount() == 1 && GetInventory().GetCargo().GetItemCount() != 0 )
+		if (!super.CanReleaseAttachment(attachment))
 		{
 			return false;
 		}
 		
-		//kindling items
-		if ( IsKindling( item ) && !IsBurning() )
-		{
-			if ( HasLastFuelKindlingAttached() )
-			{
-				if ( HasLastAttachment() )
-				{
-					return true;
-				}
-				else
-				{
-					return false;
-				}
-			}
-			else
-			{
-				return true;
-			}
-		}
-		
-		//fuel items
-		if ( IsFuel( item ) && !IsBurning() )
-		{
-			if ( HasLastFuelKindlingAttached() )
-			{	
-				if ( HasLastAttachment() )
-				{
-					return true;
-				}
-				else
-				{
-					return false;
-				}
-			}
-			else
-			{
-				return true;
-			}
-		}
-		
-		//cookware
-		if ( item.Type() == ATTACHMENT_COOKING_POT )
-		{
-			return true;
-		}
-		if ( item.Type() == ATTACHMENT_CAULDRON )
-		{
-			return true;			
-		}
-		if ( item.Type() == ATTACHMENT_FRYING_PAN )
-		{
-			return true;
-		}
-
-		// food on direct cooking slots
-		if ( item.IsKindOf("Edible_Base") )
-			return true;
-
-		//tripod
-		if ( item.Type() == ATTACHMENT_TRIPOD && !GetCookingEquipment() )
-		{
-			return true;
-		}
-		
+		ItemBase item = ItemBase.Cast(attachment);
 		//stones
-		if ( item.Type() == ATTACHMENT_STONES )
+		if (item.Type() == ATTACHMENT_STONES)
 		{
-			if ( IsBurning() )
+			if (IsBurning())
+			{
 				return false;
+			}
 
 			int stone_quantity = item.GetQuantity();
-			if ( HasStoneCircle() && ( stone_quantity <= 8 ) )
+			if (HasStoneCircle() && stone_quantity <= 8)
 			{
 				return false;
 			}
-			if ( IsOven() )
+
+			if (IsOven())
 			{
 				return false;
 			}
-			
-			return true;
 		}
 		
-		return false;
+		return true;
 	}
 
-	override void EEItemAttached( EntityAI item, string slot_name ) 
+	override void EEItemAttached(EntityAI item, string slot_name)
 	{
-		super.EEItemAttached( item, slot_name );
+		super.EEItemAttached(item, slot_name);
 		
-		ItemBase item_base = ItemBase.Cast( item );
+		ItemBase item_base = ItemBase.Cast(item);
 		
-		//kindling / fuel
-		if ( IsKindling( item_base ) || IsFuel( item_base ) )
+		if (IsKindling(item_base) || IsFuel(item_base))
 		{
-			//add to consumables
-			AddToFireConsumables( item_base );
+			AddToFireConsumables(item_base);
 		}
 		
 		//cookware
-		if ( item_base.Type() == ATTACHMENT_COOKING_POT )
+		if (item_base.Type() == ATTACHMENT_COOKING_POT)
 		{
-			SetCookingEquipment( item_base );
+			SetCookingEquipment(item_base);
 			
 			//rotate handle (if not in 'Oven' stage)
-			if ( GetGame().IsServer() && !IsOven() )
+			if (GetGame().IsServer() && !IsOven())
 			{
-				item_base.SetAnimationPhase( ANIMATION_COOKWARE_HANDLE, 0 );
+				item_base.SetAnimationPhase(ANIMATION_COOKWARE_HANDLE, 0);
 			}
 		}
-		if ( item.Type() == ATTACHMENT_CAULDRON )
+		if (item.Type() == ATTACHMENT_CAULDRON)
 		{
-			SetCookingEquipment( item_base );
+			SetCookingEquipment(item_base);
 			
 			//rotate handle (if not in 'Oven' stage)
-			if ( GetGame().IsServer() && !IsOven() )
+			if (GetGame().IsServer() && !IsOven())
 			{
-				item_base.SetAnimationPhase( ANIMATION_CAULDRON_HANDLE, 0 );
+				item_base.SetAnimationPhase(ANIMATION_CAULDRON_HANDLE, 0);
 			}
 		}
 
-		// direct cooking slots, smoking slots
+		// direct cooking/smoking slots
 		bool edible_base_attached = false;
-		switch ( slot_name )
+		switch (slot_name)
 		{
-			case "DirectCookingA":
-				m_DirectCookingSlots[0] = item_base;
-				edible_base_attached = true;
-				break;
+		case "DirectCookingA":
+			m_DirectCookingSlots[0] = item_base;
+			edible_base_attached = true;
+		break;
+		case "DirectCookingB":
+			m_DirectCookingSlots[1] = item_base;
+			edible_base_attached = true;
+		break;
+		case "DirectCookingC":
+			m_DirectCookingSlots[2] = item_base;
+			edible_base_attached = true;
+		break;
 
-			case "DirectCookingB":
-				m_DirectCookingSlots[1] = item_base;
-				edible_base_attached = true;
-				break;
-
-			case "DirectCookingC":
-				m_DirectCookingSlots[2] = item_base;
-				edible_base_attached = true;
-				break;
-
-			case "SmokingA":
-				m_SmokingSlots[0] = item_base;
-				edible_base_attached = true;
-				break;
-
-			case "SmokingB":
-				m_SmokingSlots[1] = item_base;
-				edible_base_attached = true;
-				break;
-
-			case "SmokingC":
-				m_SmokingSlots[2] = item_base;
-				edible_base_attached = true;
-				break;
-
-			case "SmokingD":
-				m_SmokingSlots[3] = item_base;
-				edible_base_attached = true;
-				break;
+		case "SmokingA":
+			m_SmokingSlots[0] = item_base;
+			edible_base_attached = true;
+		break;
+		case "SmokingB":
+			m_SmokingSlots[1] = item_base;
+			edible_base_attached = true;
+		break;
+		case "SmokingC":
+			m_SmokingSlots[2] = item_base;
+			edible_base_attached = true;
+		break;
+		case "SmokingD":
+			m_SmokingSlots[3] = item_base;
+			edible_base_attached = true;
+		break;
 		}
 		
 		// reset cooking time (to prevent the cooking exploit)
-		if ( GetGame().IsServer() && edible_base_attached )
+		if (GetGame().IsServer() && edible_base_attached)
 		{
-			Edible_Base edBase = Edible_Base.Cast( item_base );
-			if ( edBase )
+			Edible_Base edBase = Edible_Base.Cast(item_base);
+			if (edBase)
 			{
-				if ( edBase.GetFoodStage() )
-					edBase.SetCookingTime( 0 );
+				if (edBase.GetFoodStage())
+				{
+					edBase.SetCookingTime(0);
+				}
 			}
 		}
 		
 		//TODO
 		//add SetViewIndex when attaching various attachments
 		
-		//refresh fireplace visuals
 		RefreshFireplaceVisuals();
 	}
 
-	override void EEItemDetached( EntityAI item, string slot_name ) 
+	override void EEItemDetached(EntityAI item, string slot_name)
 	{
-		super.EEItemDetached( item, slot_name );
+		super.EEItemDetached(item, slot_name);
 		
-		ItemBase item_base = ItemBase.Cast( item );
+		ItemBase item_base = ItemBase.Cast(item);
 		
-		//kindling / fuel
-		if ( IsKindling( item_base ) || IsFuel( item_base ) )
+		if (IsKindling(item_base) || IsFuel(item_base))
 		{
-			//remove from consumables
-			RemoveFromFireConsumables( GetFireConsumableByItem( item_base ) );
-			
-			//no attachments left, no cargo items & no ashes are present
-			CheckForDestroy();
+			RemoveFromFireConsumables(GetFireConsumableByItem(item_base));
 		}
 
 		//cookware
-		if ( item_base.Type() == ATTACHMENT_COOKING_POT )
+		if (item_base.Type() == ATTACHMENT_COOKING_POT)
 		{
-			ClearCookingEquipment();
+			ClearCookingEquipment(item_base);
 			
 			//rotate handle
-			if ( GetGame().IsServer() )
-				item_base.SetAnimationPhase( ANIMATION_COOKWARE_HANDLE, 1 );
+			if (GetGame().IsServer())
+			{
+				item_base.SetAnimationPhase(ANIMATION_COOKWARE_HANDLE, 1);
+			}
 			
 			//remove audio visuals
-			Bottle_Base cooking_pot = Bottle_Base.Cast( item );
+			Bottle_Base cooking_pot = Bottle_Base.Cast(item);
 			cooking_pot.RemoveAudioVisualsOnClient();
 		}
-		if ( item_base.Type() == ATTACHMENT_CAULDRON )
+		if (item_base.Type() == ATTACHMENT_CAULDRON)
 		{
-			ClearCookingEquipment();
-			
+			ClearCookingEquipment(item_base);
+
 			//rotate handle
-			if ( GetGame().IsServer() )
-				item_base.SetAnimationPhase( ANIMATION_CAULDRON_HANDLE, 1 );
+			if (GetGame().IsServer())
+			{
+				item_base.SetAnimationPhase(ANIMATION_CAULDRON_HANDLE, 1);
+			}
 			
 			//remove audio visuals
 			Bottle_Base cauldron = Bottle_Base.Cast( item );
 			cauldron.RemoveAudioVisualsOnClient();
 		}
-		if ( item_base.Type() == ATTACHMENT_FRYING_PAN )
+		if (item_base.Type() == ATTACHMENT_FRYING_PAN)
 		{
+			ClearCookingEquipment(item_base);
+
 			//remove audio visuals
-			FryingPan frying_pan = FryingPan.Cast( item );
+			FryingPan frying_pan = FryingPan.Cast(item);
 			frying_pan.RemoveAudioVisualsOnClient();
 		}
 
-		// direct cooking slots
-		switch ( slot_name )
+		// direct cooking/smoking slots
+		switch (slot_name)
 		{
-			case "DirectCookingA":
-				m_DirectCookingSlots[0] = NULL;
-				break;
+		case "DirectCookingA":
+			m_DirectCookingSlots[0] = null;
+		break;
+		case "DirectCookingB":
+			m_DirectCookingSlots[1] = null;
+		break;
+		case "DirectCookingC":
+			m_DirectCookingSlots[2] = null;
+		break;
 
-			case "DirectCookingB":
-				m_DirectCookingSlots[1] = NULL;
-				break;
-
-			case "DirectCookingC":
-				m_DirectCookingSlots[2] = NULL;
-				break;
+		case "SmokingA":
+			m_SmokingSlots[0] = null;
+		break;
+		case "SmokingB":
+			m_SmokingSlots[1] = null;
+		break;
+		case "SmokingC":
+			m_SmokingSlots[2] = null;
+		break;
+		case "SmokingD":
+			m_SmokingSlots[3] = null;
+		break;
 		}
-
-		// smoking slots
-		switch ( slot_name )
-		{
-			case "SmokingA":
-				m_SmokingSlots[0] = NULL;
-				break;
-
-			case "SmokingB":
-				m_SmokingSlots[1] = NULL;
-				break;
-
-			case "SmokingC":
-				m_SmokingSlots[2] = NULL;
-				break;
-
-			case "SmokingD":
-				m_SmokingSlots[3] = NULL;
-				break;
-		}
-
-		// food on direct cooking slots (removal of sound effects)
-		if ( item_base.IsKindOf( "Edible_Base" ) )
-		{
-			Edible_Base food_on_dcs = Edible_Base.Cast( item_base );
-			food_on_dcs.MakeSoundsOnClient( false );
-		}
+		
+		//no attachments left, no cargo items & no ashes are present
+		CheckForDestroy();
 
 		//TODO
 		//add SetViewIndex when detaching various attachments
-		
-		//refresh fireplace visuals
+
 		RefreshFireplaceVisuals();
+	}
+	
+	
+	override void SetCookingEquipment(ItemBase equipment)
+	{
+		super.SetCookingEquipment(equipment);
+		
+		TripodBase stand = TripodBase.Cast(FindAttachmentBySlotName("CookingTripod"));
+		if (stand)
+		{
+			if (equipment)
+			{
+				stand.LockToParent();
+			}
+			else
+			{
+				stand.UnlockFromParent();
+			}
+		}
+	}
+	
+	
+	override void OnBeforeTryDelete() 
+	{
+		super.OnBeforeTryDelete();
+		MiscGameplayFunctions.DropAllItemsInInventoryInBounds(this, m_HalfExtents);
+	}
+	
+	override bool IsPrepareToDelete()
+	{
+		return GetInventory().AttachmentCount() == 0 && !IsBurning() && !HasAshes();
 	}
 	
 	//CONDITIONS
 	//this into/outo parent.Cargo
-	override bool CanPutInCargo( EntityAI parent )
+	override bool CanPutInCargo(EntityAI parent)
 	{
-		if ( !super.CanPutInCargo( parent ) ) 
+		if (!super.CanPutInCargo(parent))
+		{
 			return false;
+		}
 		
-		if ( HasAshes() || IsBurning() || HasStones() || HasStoneCircle() || IsOven() || IsInAnimPhase( ANIMATION_TRIPOD ) || !IsCargoEmpty() )
+		if (HasAshes() || IsBurning() || HasStones() || HasStoneCircle() || IsOven() || !IsCargoEmpty() || HasCookingStand())
 		{
 			return false;
 		}
@@ -468,31 +414,24 @@ class Fireplace extends FireplaceBase
 	
 	override bool CanLoadItemIntoCargo( EntityAI item )
 	{
+		if (!super.CanLoadItemIntoCargo( item ))
+			return false;
+		
 		if ( GetHierarchyParent() )
 			return false;
 		
-		return super.CanLoadItemIntoCargo( item );
+		return true;
 	}
-/*
-	override bool CanReleaseCargo( EntityAI cargo )
+	
+	//hands
+	override bool CanPutIntoHands(EntityAI parent)
 	{
-
-		if ( IsBurning() )
+		if (!super.CanPutIntoHands(parent))
 		{
 			return false;
 		}
-
-		return true;
-	}
-*/
-	
-	//hands
-	override bool CanPutIntoHands( EntityAI parent )
-	{
-		if ( !super.CanPutIntoHands( parent ) )
-			return false;
 		
-		if ( HasAshes() || IsBurning() || HasStones() || HasStoneCircle() || IsOven() || IsInAnimPhase( ANIMATION_TRIPOD ) || !IsCargoEmpty() )
+		if (HasAshes() || IsBurning() || HasStones() || HasStoneCircle() || IsOven() || !IsCargoEmpty() || HasCookingStand())
 		{
 			return false;
 		}
@@ -638,15 +577,12 @@ class Fireplace extends FireplaceBase
 		return true;
 	}
 	
-	override bool CanBeIgnitedBy( EntityAI igniter = NULL )
+	override bool CanBeIgnitedBy(EntityAI igniter = NULL)
 	{
-		if ( HasAnyKindling() && !IsBurning() && !GetHierarchyParent() )
-			return true;
-			
-		return false;
+		return HasAnyKindling() && !IsBurning() && !GetHierarchyParent();
 	}
 	
-	override bool CanIgniteItem( EntityAI ignite_target = NULL )
+	override bool CanIgniteItem(EntityAI ignite_target = NULL)
 	{
 		return IsBurning();
 	}
@@ -790,83 +726,29 @@ class Fireplace extends FireplaceBase
 		
 		//start fire
 		fireplace.StartFire();
-		
-		//call event
-		fireplace.OnIgnitedThis( fire_source );
+		fireplace.OnIgnitedThis(fire_source);
 		
 		return fireplace;
 	}
 	
-	static bool CanIgniteEntityAsFireplace( notnull EntityAI entity )
+	static bool CanIgniteEntityAsFireplace(notnull EntityAI entity)
 	{
 		//check ceiling (enough space for smoke)
-		if ( MiscGameplayFunctions.IsUnderRoof( entity, FireplaceBase.MIN_CEILING_HEIGHT ) && IsEntityOnInteriorSurface( entity ) )
+		if (MiscGameplayFunctions.IsUnderRoof(entity, FireplaceBase.MIN_CEILING_HEIGHT) && IsEntityOnInteriorSurface(entity))
 		{
 			return false;
 		}
 		
 		//check surface
-		if ( FireplaceBase.IsEntityOnWaterSurface( entity ) )
+		if (FireplaceBase.IsEntityOnWaterSurface(entity))
 		{
 			return false;
 		}
 
-		//check wetness/rain/wind
-		/*if ( FireplaceBase.IsEntityWet( entity ) )
-		{
-			return false;
-		}*/
-
-		// check if the fireplace isnt below a roof
-		if ( !MiscGameplayFunctions.IsUnderRoof( entity ) )
-		{
-			// if not, check if there is strong rain or wind
-			if ( FireplaceBase.IsRainingAboveEntity( entity ) /*|| FireplaceBase.IsWindy()*/ )
-			{
-				return false;
-			}
-		}
+		if (!MiscGameplayFunctions.IsUnderRoof(entity))
+			return !FireplaceBase.IsRainingAboveEntity(entity);
 
 		return true;	
-	}
-	
-	override void OnRPC( PlayerIdentity sender, int rpc_type, ParamsReadContext ctx ) 
-	{
-		super.OnRPC( sender, rpc_type, ctx );
-		
-		ref Param1<bool> p = new Param1<bool>(false);
-				
-		if (ctx.Read(p))
-		{
-			bool failure = p.param1;
-		}
-		
-		switch ( rpc_type )
-		{
-			case FirePlaceFailure.WIND:
-			
-				if ( failure )
-				{
-					ParticleFireWindyNoIgniteStart();
-					SoundFireStop();
-					SoundFireWindyNoIgniteStart();
-					SoundFireNoFireStart();
-				}
-			
-			break;
-			
-			case FirePlaceFailure.WET:
-				
-				if ( failure )
-				{
-					ParticleWetNoIgniteStart();
-					SoundFireStop();
-					SoundFireWetNoIgniteStart();
-					SoundFireNoFireStart();
-				}
-			
-			break;
-		}
 	}
 
 	//================================================================
@@ -885,7 +767,6 @@ class Fireplace extends FireplaceBase
 		AddAction(ActionPlaceFireplaceIntoBarrel);
 		AddAction(ActionPlaceFireplaceIndoor);
 		AddAction(ActionPlaceOvenIndoor);
-		//AddAction(ActionLightItemOnFire);
 		AddAction(ActionTogglePlaceObject);
 		AddAction(ActionPlaceObject);
 		AddAction(ActionBuildOven);

@@ -89,13 +89,12 @@ class Flag_Base extends ItemBase
 	
 	override int GetViewIndex()
 	{
-		if( MemoryPointExists( "invView2" ) )
-		{
-			#ifdef PLATFORM_WINDOWS
+		if ( MemoryPointExists( "invView2" ) )
+		{		
 			InventoryLocation il = new InventoryLocation;
 			GetInventory().GetCurrentInventoryLocation( il );
 			InventoryLocationType type = il.GetType();
-			switch( type )
+			switch ( type )
 			{
 				case InventoryLocationType.ATTACHMENT:
 				{
@@ -106,7 +105,6 @@ class Flag_Base extends ItemBase
 					return 0;
 				}
 			}
-			#endif
 		}
 		return 0;
 	}

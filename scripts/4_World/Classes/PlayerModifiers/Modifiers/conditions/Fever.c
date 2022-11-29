@@ -16,7 +16,7 @@ class FeverMdfr: ModifierBase
 	}
 	override bool ActivateCondition(PlayerBase player)
 	{
-		return player.GetModifiersManager().IsModifierActive(eModifiers.MDF_INFLUENZA) || player.GetModifiersManager().IsModifierActive(eModifiers.MDF_WOUND_INFECTION2);
+		return (player.GetModifiersManager().IsModifierActive(eModifiers.MDF_CHOLERA) || player.GetModifiersManager().IsModifierActive(eModifiers.MDF_INFLUENZA) || player.GetModifiersManager().IsModifierActive(eModifiers.MDF_WOUND_INFECTION2));
 	}
 
 	override void OnActivate(PlayerBase player)

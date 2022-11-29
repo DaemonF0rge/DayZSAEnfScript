@@ -15,6 +15,7 @@ class ActionSplintSelf: ActionContinuousBase
 		m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_CROUCH;
 		m_SpecialtyWeight = UASoftSkillsWeight.PRECISE_LOW;
+		m_Text = "#apply_splint";
 	}
 	
 	override void CreateConditionComponents()  
@@ -27,11 +28,6 @@ class ActionSplintSelf: ActionContinuousBase
 	{
 		return false;
 	}
-		
-	override string GetText()
-	{
-		return "#apply_splint";
-	}
 	
 	override void OnFinishProgressServer( ActionData action_data )
 	{	
@@ -39,9 +35,9 @@ class ActionSplintSelf: ActionContinuousBase
 		action_data.m_Player.ApplySplint();
 		
 		//Double check to not enter splinted state if legs are not broken
-		if (action_data.m_Player.m_BrokenLegState == eBrokenLegs.BROKEN_LEGS)
+		if (action_data.m_Player.GetBrokenLegs() == eBrokenLegs.BROKEN_LEGS)
 		{
-			action_data.m_Player.m_BrokenLegState = eBrokenLegs.BROKEN_LEGS_SPLINT;
+			action_data.m_Player.SetBrokenLegs(eBrokenLegs.BROKEN_LEGS_SPLINT);
 	
 			ItemBase new_item = ItemBase.Cast(action_data.m_Player.GetInventory().CreateInInventory("Splint_Applied"));
 			if ( new_item )
@@ -55,7 +51,7 @@ class ActionSplintSelf: ActionContinuousBase
 	
 	override bool ActionCondition(PlayerBase player, ActionTarget target, ItemBase item)
 	{
-		if (player.m_BrokenLegState != eBrokenLegs.BROKEN_LEGS || IsWearingSplint(player))
+		if (player.GetBrokenLegs() != eBrokenLegs.BROKEN_LEGS || IsWearingSplint(player))
 		{
 			return false;
 		}

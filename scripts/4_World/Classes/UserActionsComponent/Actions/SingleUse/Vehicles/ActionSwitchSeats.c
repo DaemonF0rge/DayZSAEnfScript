@@ -7,17 +7,13 @@ class ActionSwitchSeats: ActionBase
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ALL;
 		m_SpecialtyWeight = 1.0;
 		m_LockTargetOnUse = false;
+		m_Text = "#change_seat";
 	}
 
 	override void CreateConditionComponents()  
 	{
 		m_ConditionItem = new CCINone;
 		m_ConditionTarget = new CCTObject;
-	}
-
-	override string GetText()
-	{
-		return "#change_seat";
 	}
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
@@ -69,7 +65,7 @@ class ActionSwitchSeats: ActionBase
 				{
 					//pTransportPositionIndex, int pVehicleSeat
 					vehCommand.SwitchSeat( nextSeat, seat );
-					if ( !GetGame().IsMultiplayer() || GetGame().IsClient() )
+					if ( !GetGame().IsDedicatedServer() )
 					{
 
 						action_data.m_Player.OnVehicleSwitchSeat( nextSeat );

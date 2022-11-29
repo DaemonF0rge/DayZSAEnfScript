@@ -11,17 +11,13 @@ class ActionPlaceOnGround: ActionContinuousBase
 	void ActionPlaceOnGround()
 	{
 		m_CallbackClass = ActionPlaceOnGroundCB;
+		m_Text = "#place_object";
 	}
 	
 	override void CreateConditionComponents()  
 	{		
 		m_ConditionTarget = new CCTNone;
 		m_ConditionItem = new CCIDummy;
-	}
-		
-	override string GetText()
-	{
-		return "#place_object";
 	}
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

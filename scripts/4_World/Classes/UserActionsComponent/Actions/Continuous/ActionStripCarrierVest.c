@@ -15,6 +15,7 @@ class ActionStripCarrierVest: ActionContinuousBase
 		m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_CROUCH;
 		m_SpecialtyWeight = UASoftSkillsWeight.PRECISE_LOW;
+		m_Text = "#strip_vest";
 	}
 	
 	override void CreateConditionComponents()  
@@ -35,11 +36,6 @@ class ActionStripCarrierVest: ActionContinuousBase
 	override bool HasTarget()
 	{
 		return false;
-	}
-
-	override string GetText()
-	{
-		return "#strip_vest";
 	}
 
 	override void OnFinishProgressServer( ActionData action_data )

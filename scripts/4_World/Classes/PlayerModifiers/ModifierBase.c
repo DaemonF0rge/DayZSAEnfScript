@@ -1,4 +1,11 @@
-// #include "Scripts\Classes\PlayerModifiers\Modifiers\_constants.c"
+enum eModifiersTickType//bitmask
+{
+	TICK 					= 1,
+	ACTIVATE_CHECK 			= 2,
+	DEACTIVATE_CHECK 		= 4,
+}
+
+
 class ModifierBase
 {
 	int					m_ID = 0;
@@ -15,10 +22,11 @@ class ModifierBase
 	float				m_AccumulatedTimeActive;
 	float				m_AccumulatedTimeInactive;
 	float				m_LastTickedActive;
+	int 				m_TickType = (eModifiersTickType.TICK | eModifiersTickType.ACTIVATE_CHECK | eModifiersTickType.DEACTIVATE_CHECK);//some modifiers do not need to check activate condition, as they get activated by request 
 	float				m_LastTickedInactive;
 	bool				m_IsLocked = false;
 	EActivationType		m_ActivationType;
-	
+	eModifierSyncIDs	m_SyncID;//max 32 synced modifiers supported, 0 == no sync
 	PluginPlayerStatus 		m_ModulePlayerStatus;
 
 	void ModifierBase()
@@ -67,32 +75,34 @@ class ModifierBase
 		return "";
 	}
 	
+	void DisableActivateCheck()
+	{
+		m_TickType = (m_TickType & ~eModifiersTickType.ACTIVATE_CHECK);
+	}	
 	
+	void DisableDeactivateCheck()
+	{
+		m_TickType = (m_TickType & ~eModifiersTickType.DEACTIVATE_CHECK);
+	}
 
 	void Tick(float delta_time)
 	{
+
 		if( !m_IsActive && m_ShouldBeActive )
 		{
 			Activate();
 		}
-		//PrintString(this.ToString() + " " +m_IsActive.ToString());
+
 		if( m_IsActive )
 		{
 			m_AccumulatedTimeActive += delta_time;
 			if( m_AccumulatedTimeActive > m_TickIntervalActive )
 			{
-				//------
-				/*
-				float time = GetGame().GetTime();
-				Print("ticking modifier "+ this.ClassName() +" for player " + m_Player.ToString() + " at time:" + time.ToString());
-				*/
-				//------
-				
-				if( DeactivateCondition(m_Player) && !IsLocked() )
+				if( m_TickType & eModifiersTickType.DEACTIVATE_CHECK && DeactivateCondition(m_Player) && !IsLocked() )
 				{
 					Deactivate();
 				}
-				else
+				else//if(m_TickType & eModifiersTickType.TICK)
 				{
 					m_ActivatedTime += m_AccumulatedTimeActive;
 					OnTick(m_Player, m_AccumulatedTimeActive);
@@ -100,7 +110,7 @@ class ModifierBase
 				m_AccumulatedTimeActive = 0;
 			}
 		}
-		else
+		else if(m_TickType & eModifiersTickType.ACTIVATE_CHECK)
 		{
 			m_AccumulatedTimeInactive += delta_time;
 			if( m_AccumulatedTimeInactive > m_TickIntervalInactive )
@@ -191,8 +201,10 @@ class ModifierBase
 	void Activate()
 	{
 		m_IsActive = true;
+		m_Player.m_SyncedModifiers = (m_Player.m_SyncedModifiers | m_SyncID);
 		if( m_ActivationType == EActivationType.TRIGGER_EVENT_ON_ACTIVATION ) OnActivate(m_Player);
 		else if(m_ActivationType == EActivationType.TRIGGER_EVENT_ON_CONNECT ) OnReconnect(m_Player);
+		m_Player.SetSynchDirty();
 	}
 	
 	void ActivateRequest(EActivationType trigger)
@@ -205,10 +217,12 @@ class ModifierBase
 	{
 		if(!m_IsActive)
 			return;
+		m_Player.m_SyncedModifiers = (m_Player.m_SyncedModifiers & ~m_SyncID);
 		m_ShouldBeActive = false;
 		m_IsActive = false;
 		m_ActivatedTime = 0;
-		if(trigger) OnDeactivate(m_Player);
+		if(trigger) 
+			OnDeactivate(m_Player);
 	}
 
 

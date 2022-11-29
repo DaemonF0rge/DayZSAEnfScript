@@ -59,13 +59,13 @@ class CutOutPumpkinSeeds extends CutOutSeeds
 		InsertIngredient(1,"Screwdriver");
 		InsertIngredient(1,"SledgeHammer");
 		InsertIngredient(1,"BaseballBat");
-		InsertIngredient(1,"NailedBaseballBat");
 		InsertIngredient(1,"Pickaxe");
 		InsertIngredient(1,"Sword");
 		InsertIngredient(1,"WoodAxe");
 		InsertIngredient(1,"FirefighterAxe");
 		InsertIngredient(1,"Hatchet");
 		InsertIngredient(1,"HandSaw");
+		InsertIngredient(1,"BoneKnife");
 		
 		m_IngredientAddHealth[1] = -0.5;// 0 = do nothing
 		m_IngredientSetHealth[1] = -1; // -1 = do nothing
@@ -120,7 +120,7 @@ class CutOutPumpkinSeeds extends CutOutSeeds
 	}
 
 	override void Do(ItemBase ingredients[], PlayerBase player, array<ItemBase> results, float specialty_weight)//gets called upon recipe's completion
-	{
+	{		
 		ItemBase pumpkin = ingredients[0];
 
 		ItemBase slice1 = results[1];	
@@ -136,14 +136,14 @@ class CutOutPumpkinSeeds extends CutOutSeeds
 			if ( slice1 )
 			{
 				slice1.SetQuantityNormalized(quantityMultiplier);
+				MiscGameplayFunctions.TransferItemProperties(pumpkin, slice1);
 			}
 			
 			if ( slice2 )
 			{
 				slice2.SetQuantityNormalized(quantityMultiplier);
+				MiscGameplayFunctions.TransferItemProperties(pumpkin, slice2);
 			}	
 		}
-		
-		super.Do( ingredients, player, results, specialty_weight);
 	}
 };

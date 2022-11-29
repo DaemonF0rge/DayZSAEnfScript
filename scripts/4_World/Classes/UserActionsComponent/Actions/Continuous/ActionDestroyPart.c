@@ -18,6 +18,7 @@ class ActionDestroyPart: ActionContinuousBase
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT;		
 		
 		m_SpecialtyWeight = UASoftSkillsWeight.ROUGH_HIGH;
+		m_Text = "#destroy";
 	}
 	
 	override void CreateConditionComponents()  
@@ -25,28 +26,22 @@ class ActionDestroyPart: ActionContinuousBase
 		m_ConditionItem = new CCINonRuined;
 		m_ConditionTarget = new CCTNone;
 	}
-		
-	override string GetText()
+	
+	override void OnActionInfoUpdate( PlayerBase player, ActionTarget target, ItemBase item )
 	{
-		PlayerBase player = PlayerBase.Cast( GetGame().GetPlayer() );
-		if ( player )
-		{
-			ConstructionActionData construction_action_data = player.GetConstructionActionData();
-			ConstructionPart constrution_part = construction_action_data.GetTargetPart();
-			
-			if ( constrution_part )
-			{
-				return "#destroy" + " " + constrution_part.GetName();
-			}
-		}
-		
-		return "";
+		ConstructionActionData construction_action_data = player.GetConstructionActionData();	
+		m_Text = "#destroy " + construction_action_data.GetTargetPart();
+	}
+	
+	override bool CanBeUsedLeaning()
+	{
+		return false;
 	}
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
 	{	
 		//Action not allowed if player has broken legs
-		if (player.m_BrokenLegState == eBrokenLegs.BROKEN_LEGS)
+		if (player.GetBrokenLegs() == eBrokenLegs.BROKEN_LEGS)
 			return false;
 		
 		return DestroyCondition( player, target, item, true );
@@ -91,39 +86,36 @@ class ActionDestroyPart: ActionContinuousBase
 	
 	protected bool DestroyCondition( PlayerBase player, ActionTarget target, ItemBase item, bool camera_check )
 	{	
-		if ( player && !player.IsLeaning() )
+		Object target_object = target.GetObject();
+		if ( target_object && target_object.CanUseConstruction() )
 		{
-			Object target_object = target.GetObject();
-			if ( target_object && target_object.CanUseConstruction() )
+			string part_name = target_object.GetActionComponentName( target.GetComponentIndex() );
+			
+			BaseBuildingBase base_building = BaseBuildingBase.Cast( target_object );
+			Construction construction = base_building.GetConstruction();		
+			ConstructionPart construction_part = construction.GetConstructionPartToDestroy( part_name );
+			
+			if ( construction_part )
 			{
-				string part_name = target_object.GetActionComponentName( target.GetComponentIndex() );
-				
-				BaseBuildingBase base_building = BaseBuildingBase.Cast( target_object );
-				Construction construction = base_building.GetConstruction();		
-				ConstructionPart construction_part = construction.GetConstructionPartToDestroy( part_name );
-				
-				if ( construction_part )
+				//camera and position checks
+				if ( !player.GetInputController().CameraIsFreeLook() && IsInReach(player, target, UAMaxDistances.DEFAULT) && !player.GetInputController().CameraIsFreeLook() )
 				{
-					//camera and position checks
-					if ( !player.GetInputController().CameraIsFreeLook() && IsInReach(player, target, UAMaxDistances.DEFAULT) && !player.GetInputController().CameraIsFreeLook() )
+					//Camera check (client-only)
+					if ( camera_check )
 					{
-						//Camera check (client-only)
-						if ( camera_check )
+						if ( GetGame() && ( !GetGame().IsDedicatedServer() ) )
 						{
-							if ( GetGame() && ( !GetGame().IsMultiplayer() || GetGame().IsClient() ) )
+							if ( !base_building.IsFacingCamera( part_name ) )
 							{
-								if ( !base_building.IsFacingCamera( part_name ) )
-								{
-									return false;
-								}
+								return false;
 							}
 						}
-						
-						ConstructionActionData construction_action_data = player.GetConstructionActionData();
-						construction_action_data.SetTargetPart( construction_part );
-						
-						return true;				
 					}
+					
+					ConstructionActionData construction_action_data = player.GetConstructionActionData();
+					construction_action_data.SetTargetPart( construction_part );
+					
+					return true;				
 				}
 			}
 		}

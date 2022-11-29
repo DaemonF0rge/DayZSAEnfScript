@@ -1,3 +1,4 @@
+//! Deprecated
 class KeybindingElement extends ScriptedWidgetEventHandler
 {
 	protected KeybindingsGroup				m_Group;

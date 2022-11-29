@@ -15,17 +15,13 @@ class ActionMeasureTemperatureTarget : ActionContinuousBase
 		m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT | DayZPlayerConstants.STANCEMASK_CROUCH;
 		m_SpecialtyWeight = UASoftSkillsWeight.PRECISE_LOW;
+		m_Text = "#measure_persons_temperature";
 	}
 	
 	override void CreateConditionComponents()  
 	{	
 		m_ConditionItem = new CCINonRuined;
 		m_ConditionTarget = new CCTMan(UAMaxDistances.DEFAULT);
-	}
-		
-	override string GetText()
-	{
-		return "#measure_persons_temperature";
 	}
 	
 	override void OnFinishProgressClient( ActionData action_data )

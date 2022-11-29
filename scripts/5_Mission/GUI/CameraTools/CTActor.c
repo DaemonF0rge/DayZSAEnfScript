@@ -67,13 +67,15 @@ class CTActor extends CTObjectFollower
 	void SetHandsItem( string item )
 	{
 		m_HandsItem = item;
-		if( m_HandsItemObj )
+		if ( m_HandsItemObj && m_FollowedObject)
 		{
 			HumanInventory.Cast( m_FollowedObject.GetInventory() ).LocalDestroyEntity( m_HandsItemObj );
 			GetGame().ObjectDelete( m_HandsItemObj );
 		}
-			
-		HumanInventory.Cast( m_FollowedObject.GetInventory() ).CreateInHands( item );
+		if (item)
+		{
+			HumanInventory.Cast( m_FollowedObject.GetInventory() ).CreateInHands( item );
+		}
 	}
 	
 	string GetHandsItem()

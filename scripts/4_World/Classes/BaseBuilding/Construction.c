@@ -79,7 +79,9 @@ class Construction
 		string damage_zone;
 		if (DamageSystem.GetDamageZoneFromComponentName(GetParent(),part_name,damage_zone))
 		{
+			GetParent().SetAllowDamage(true);
 			GetParent().SetHealthMax(damage_zone);
+			GetParent().ProcessInvulnerabilityCheck(GetParent().GetInvulnerabilityTypeString());
 		}
 		
 		//on action
@@ -250,7 +252,8 @@ class Construction
 					GetGame().ConfigGetChildName( part_path, j, part_name );
 					
 					string name;
-					GetGame().ConfigGetText( part_path + " " + part_name + " " + "name", name );							//name
+					GetGame().ConfigGetTextRaw( part_path + " " + part_name + " " + "name", name );							//name
+					GetGame().FormatRawConfigStringKeys(name);
 					bool show_on_init = GetGame().ConfigGetInt( part_path + " " + part_name + " " + "show_on_init" );		//show on init
 					int id = GetGame().ConfigGetInt( part_path + " " + part_name + " " + "id" );							//part id
 					bool is_base = GetGame().ConfigGetInt( part_path + " " + part_name + " " + "is_base" );					//is base (part)
@@ -1007,6 +1010,8 @@ class Construction
 	//Collisions (BBox and Trigger); deprecated
 	bool IsColliding( string part_name )
 	{
+		if (CfgGameplayHandler.GetDisableIsCollidingCheck())
+			return false;
 		ConstructionPart construction_part = GetConstructionPart( part_name );
 		
 		if ( construction_part )
@@ -1054,6 +1059,8 @@ class Construction
 	//! Collision check for building part
 	bool IsCollidingEx( CollisionCheckData check_data )
 	{
+		if (CfgGameplayHandler.GetDisableIsCollidingCheck())
+			return false;
 		ConstructionPart construction_part = GetConstructionPart( check_data.m_PartName );
 		
 		if ( construction_part )

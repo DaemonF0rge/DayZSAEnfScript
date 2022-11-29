@@ -35,6 +35,9 @@ class HumanInputController
 
 	//! returns true if freelook is active
 	proto native bool			CameraIsFreeLook();
+	
+	//! reset freelook toggle
+	proto native void			ResetFreeLookToggle();
 
 	//! returns if camera is tracking (using IR device)
 	proto native bool			CameraIsTracking();
@@ -87,35 +90,45 @@ class HumanInputController
 
 	//--------------------------------------------------------------
 	
-	//! returns true if Use/Attack button is pressed (== true for multiple ticks)
-	//! LButton now
+	/**
+	*	\brief Deprecated; returns true if Use/Attack button is pressed (== true for multiple ticks). Synced.
+	*	\note Returns state of both 'UADefaultAction' and 'UAFire' input actions. Those are now separated in the methods below.
+	*/
 	proto native bool			IsUseButton();
 
-	//! returns true if Use/Attack button has just been pressed (== true for 1 tick only)
-	//! LButton 
+	/**
+	*	\brief Deprecated; returns true if Use/Attack button has just been pressed (== true for 1 tick only). Synced.
+	*	\note Returns state of both 'UADefaultAction' and 'UAFire' input actions. Those are now separated in the methods below.
+	*/
 	proto native bool			IsUseButtonDown();
+	
+		//! returns true if 'UADefaultAction' button is pressed (== true for multiple ticks). Synced.
+		proto native bool			IsUseItemButton();
+		//! returns true if 'UADefaultAction' button has just been pressed (== true for 1 tick only). Synced.
+		proto native bool			IsUseItemButtonDown();
+		
+		//! returns true if 'UAFire' button is pressed (== true for multiple ticks). Synced.
+		proto native bool			IsAttackButton();
+		//! returns true if 'UAFire' button has just been pressed (== true for 1 tick only). Synced.
+		proto native bool			IsAttackButtonDown();
 
-	//! single use (== true for 1 tick only)
-	//! Lbutton + not raised !
+	//! single 'UADefaultAction' (== true for 1 tick only) + not raised
 	proto native bool			IsSingleUse();
 
-	//! Long click use (== true for multiple ticks)
-	//! long Lbutton + not raised !
+	//! Long click 'UADefaultAction' (== true for multiple ticks) + not raised
 	proto native bool			IsContinuousUse();
 
-	//! is start of cont use (== true for 1 tick only)
-	//! long Lbutton + not raised !
+	//! is start of cont. 'UADefaultAction' (== true for 1 tick only) + not raised
 	proto native bool			IsContinuousUseStart();
 
-	//! is end of cont use (== true for 1 tick only)
-	//! long Lbutton + not raised !
+	//! is end of cont. 'UADefaultAction' (== true for 1 tick only) + not raised
 	proto native bool			IsContinuousUseEnd();
 
 	//! is immediate action triggered - 1 tick only
 	//! Middle Button + not raised !
-	proto native bool			IsImmediateAction();
+	proto native bool			IsImmediateAction(); //TODO: revise, may be obsolete
 
-
+	//--------------------------------------------------------------
 	//! weapon handling 
 	
 	//! R - reloading / bolting  (== true for 1 tick only)
@@ -165,7 +178,8 @@ class HumanInputController
 
 	//--------------------------------------------------------------
 
-	//! returns 1..12 if some gesture slot is used, 0 otherwise
+	//! returns 1..12 if F1 - F12 us pressed, 0 otherwise
+	//! Deprecated; slots no longer used, bindable input actions instead
 	proto native int 			IsGestureSlot();
 
 	//! returns true, if player controls other entity (vehicle for example)
@@ -254,7 +268,10 @@ typedef 	int 	TAnimGraphEvent;
 
 //!
 class HumanAnimInterface
-{	
+{
+	private void HumanAnimInterface();
+	private void ~HumanAnimInterface();
+	
 	//-----------------------------------------------------
 	// Binds, returns -1 when error, otherwise if ok
 
@@ -279,12 +296,24 @@ class HumanAnimInterface
 // *************************************************************************************
 class HumanCommandActionCallback
 {
+	private void HumanCommandActionCallback();
+	private void ~HumanCommandActionCallback();
+	
+	//! get the human this cb belongs to
+	proto native Human 		GetHuman();
+	
 	//! cancels action 
-	proto native 	void 	Cancel();	
+	proto native 	void 	Cancel();
 
 	//! calls internal command 
 	//! pInternalCommandId is one of CMD_ACTIONINT_ ... 
 	proto native 	void 	InternalCommand(int pInternalCommandId);	
+	
+	//! enables character aligning to desired position and direction in world space
+	proto native	void	SetAligning(vector pPositionWS, vector pDirectionWS);
+
+	//! disables character aligning
+	proto native	void	ResetAligning();
 
 	//! enables calling cancel condition
 	//! default is disabled
@@ -391,6 +420,9 @@ class HumanCommandActionCallback
 // *************************************************************************************
 class HumanCommandMove
 {
+	private void HumanCommandMove() {}
+	private void ~HumanCommandMove() {}
+	
 	//! marks command to continue to combo 
 	//! -180 -90 0 90 180 angles of current movement 
 	proto native float 		GetCurrentMovementAngle();
@@ -408,6 +440,9 @@ class HumanCommandMove
 	
 	//! return true if character barrel rolling
 	proto native bool		IsInRoll();
+	
+	//! return true if character transitions out of uncon
+	proto native bool		IsLeavingUncon();
 
 	//! return true if prone on back is chaning to crounch/stand
 	proto native bool		IsStandingFromBack();
@@ -432,6 +467,25 @@ class HumanCommandMove
 	//!	pStanceIds is one of STANCEIDX_ERECT,STANCEIDX_CROUCH
 	//! this forces to stand up to required stance
 	proto native void 		ForceStanceUp(int pStanceIdx);
+
+
+	//! sets the multiplier for SHumanCommandMoveSettings::m_fRunSpringTimeout
+	proto native void		SetRunSprintFilterModifier(float value);
+
+	//! sets the multiplier for SHumanCommandMoveSettings::m_fDirFilterTimeout
+	proto native void		SetDirectionFilterModifier(float value);
+
+	//! sets the multiplier for SHumanCommandMoveSettings::m_fDirFilterSprintTimeout
+	proto native void		SetDirectionSprintFilterModifier(float value);
+
+	//! sets the multiplier for HumanItemBehaviorCfg::m_fMoveHeadingFilterSpan
+	proto native void		SetTurnSpanModifier(float value);
+
+	//! sets the multiplier for HumanItemBehaviorCfg::m_fMoveHeadingSprintFilterSpan
+	proto native void		SetTurnSpanSprintModifier(float value);
+	
+	//! sets water level (depth)
+	proto native void		SetCurrentWaterLevel(float value);
 }
 
 
@@ -441,6 +495,9 @@ class HumanCommandMove
 // *************************************************************************************
 class HumanCommandMelee
 {
+	private void HumanCommandMelee() {}
+	private void ~HumanCommandMelee() {}
+	
 	//! marks command to continue to combo 
 	proto native void 		ContinueCombo();
 
@@ -463,8 +520,16 @@ class HumanCommandMelee
 // *************************************************************************************
 class HumanCommandMelee2
 {
+	private void HumanCommandMelee2() {}
+	private void ~HumanCommandMelee2() {}
+	
+	static const int HIT_TYPE_LIGHT = 0;
+	static const int HIT_TYPE_HEAVY	= 1;
+	static const int HIT_TYPE_FINISHER = 2; //liver stab
+	static const int HIT_TYPE_FINISHER_NECK = 3;
+	
 	//! marks command to continue to combo 
-	proto native void 		ContinueCombo(bool pHeavyHit, float pComboValue);
+	proto native void 		ContinueCombo(bool pHeavyHit, float pComboValue, EntityAI target = null, vector hitPos = vector.Zero);
 
 	//! returns true if hit is in range, where person can continue to combo
 	proto native bool		IsInComboRange();
@@ -477,6 +542,12 @@ class HumanCommandMelee2
 
 	//! is on back in prone stance?
 	proto native bool		IsOnBack();
+	
+	proto native int		GetComboCount();
+	
+	proto native int		GetCurrentHitType();
+	
+	proto native bool		IsFinisher();
 }
 
 
@@ -485,6 +556,9 @@ class HumanCommandMelee2
 // *************************************************************************************
 class HumanCommandFall
 {
+	private void HumanCommandFall() {}
+	private void ~HumanCommandFall() {}
+	
 	static const int LANDTYPE_NONE = 0;
 	static const int LANDTYPE_LIGHT	= 1;
 	static const int LANDTYPE_MEDIUM = 2;
@@ -498,8 +572,6 @@ class HumanCommandFall
 	
 	//! returns true if fall is in landing state 
 	proto native bool	IsLanding();
-
-
 }
 
 // *************************************************************************************
@@ -518,7 +590,8 @@ class HumanCommandDeathCallback
 // *************************************************************************************
 class HumanCommandDeath
 {	
-	// nothing here for now 
+	private void HumanCommandDeath() {}
+	private void ~HumanCommandDeath() {}
 }
 
 
@@ -527,7 +600,10 @@ class HumanCommandDeath
 // *************************************************************************************
 class HumanCommandUnconscious
 {	
-	proto native void 	WakeUp();
+	private void HumanCommandUnconscious() {}
+	private void ~HumanCommandUnconscious() {}
+	
+	proto native void 	WakeUp(int targetStance = -1);
 	proto native bool	IsOnLand();
 	proto native bool	IsInWater();
 }
@@ -538,7 +614,8 @@ class HumanCommandUnconscious
 // *************************************************************************************
 class HumanCommandDamage
 {	
-	// nothing here for now 
+	private void HumanCommandDamage() {}
+	private void ~HumanCommandDamage() {}
 }
 
 // *************************************************************************************
@@ -546,7 +623,9 @@ class HumanCommandDamage
 // *************************************************************************************
 class HumanCommandLadder
 {	
-
+	private void HumanCommandLadder() {}
+	private void ~HumanCommandLadder() {}
+	
 	//! returns true if on exiting point
 	proto native bool				CanExit();
 
@@ -566,7 +645,10 @@ class HumanCommandLadder
 // ! HumanCommandLadder ladder
 // *************************************************************************************
 class HumanCommandSwim
-{	
+{
+	private void HumanCommandSwim() {}
+	private void ~HumanCommandSwim() {}
+	
 	//!
 	proto native void 				StopSwimming();
 
@@ -581,7 +663,10 @@ class HumanCommandSwim
 // ! HumanCommandVehicle vehicle
 // *************************************************************************************
 class HumanCommandVehicle
-{	
+{
+	private void HumanCommandVehicle() {}
+	private void ~HumanCommandVehicle() {}
+	
 	proto native Transport			GetTransport();
 	proto native int				GetVehicleClass();
 	proto native int				GetVehicleSeat();
@@ -638,7 +723,10 @@ enum ClimbStates
 
 //! command itself
 class HumanCommandClimb
-{	
+{
+	private void HumanCommandClimb() {}
+	private void ~HumanCommandClimb() {}
+	
 	//! returns the state of climb (enum value of ClimbStates);
 	proto native int				GetState();
 	
@@ -665,7 +753,8 @@ class HumanCommandClimb
 // *************************************************************************************
 class HumanCommandFullBodyDamage
 {	
-	// nothing here for now 
+	private void HumanCommandFullBodyDamage() {}
+	private void ~HumanCommandFullBodyDamage() {}
 }
 
 
@@ -840,6 +929,7 @@ enum WeaponEvents
 	HAMMER_UNCOCKED,
 	HAMMER_COCKED
 	CHANGE_HIDE,
+	CHANGE_SHOW,
 	CYLINDER_ROTATE,
 };
 
@@ -848,7 +938,10 @@ enum WeaponEvents
 // ! HumanCommandWeapons - weapon handling
 // *************************************************************************************
 class HumanCommandWeapons
-{	
+{
+	private void HumanCommandWeapons() {}
+	private void ~HumanCommandWeapons() {}
+	
 	//!
     proto native 	bool		IsActionFinished();
 	
@@ -903,6 +996,7 @@ class HumanCommandWeapons
 		RegisterEvent("Weapon_Hammer_Uncocked", WeaponEvents.HAMMER_UNCOCKED);
 		RegisterEvent("Weapon_Hammer_Cocked", WeaponEvents.HAMMER_COCKED);
 		RegisterEvent("Weapon_Change_Hide", WeaponEvents.CHANGE_HIDE);
+		RegisterEvent("Weapon_Change_Show", WeaponEvents.CHANGE_SHOW);
 		RegisterEvent("Weapon_CylinderRotate", WeaponEvents.CYLINDER_ROTATE);
 	}
 
@@ -955,7 +1049,9 @@ class HumanCommandWeapons
 // ! HumanCommandAdditives - additional damage 
 // *************************************************************************************
 class HumanCommandAdditives
-{	
+{
+	private void HumanCommandAdditives() {}
+	private void ~HumanCommandAdditives() {}
 
 	//! sets injury level 0..1, interpolate == false -> resets the value, otherwise it's interpolating towards the new value
 	proto native void 	SetInjured(float pValue, bool pInterpolate);
@@ -987,6 +1083,8 @@ class HumanMovementState
 	int 		m_iMovement;		//! current movement (0 idle, 1 walk, 2-run, 3-sprint), only if the command has a movement 
 	float		m_fLeaning;			//! leaning state (not all commands need to have all movements)
 	
+	int			m_LocalMovement = -1;
+	
 	//! 
 	bool		IsRaised()
 	{
@@ -1015,13 +1113,17 @@ class HumanMovementState
 	bool		IsLeaning()
 	{
 		return m_fLeaning != 0;
-	}	
+	}
 }
 
 
-// *************************************************************************************
-// ! HumanCommandScript fully scriptable command 
-// *************************************************************************************
+/**
+*\brief HumanCommandScript fully scriptable command
+*	\warning NON-MANAGED, will be managed by C++ once it is sent to the CommandHandler through Human.StartCommand_Script
+*	\note So ideally, it is best to set up the HumanCommandScript, not create any instances and start it through Human.StartCommand_ScriptInst
+*			In case an instance needs to be created, it needs manual deletion if not sent to the CommandHandler
+*			But deleting it while it is in the CommandHandler will cause crashes
+*/
 class HumanCommandScript
 {
 	//! constructor must have 1st parameter to be Human
@@ -1195,9 +1297,9 @@ class Human extends Man
 
 	proto native 	HumanCommandMelee			GetCommand_Melee();
 
-	//! starts command - melee
-	proto native 	HumanCommandMelee2			StartCommand_Melee2(EntityAI pTarget, bool pHeavyHit, float pComboValue);
-
+	//! starts command - melee2
+	proto native 	HumanCommandMelee2			StartCommand_Melee2(EntityAI pTarget, int pHitType, float pComboValue, vector hitPos = vector.Zero);
+	
 	proto native 	HumanCommandMelee2			GetCommand_Melee2();
 
 

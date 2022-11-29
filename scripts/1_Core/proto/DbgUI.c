@@ -58,6 +58,9 @@
 
 class DbgUI
 {
+	private void DbgUI() {}
+	private void ~DbgUI() {}
+	
 	static proto native void DoUnitTest(); ///< Creates all possible DbgUI widgets. Just for the testing purposes.
 	static proto native void Text(string label);
 	static proto native void ColoredText(int color, string label);

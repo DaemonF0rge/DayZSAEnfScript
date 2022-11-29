@@ -6,5 +6,6 @@ class Crowbar: Inventory_Base
 		
 		AddAction(ActionDismantlePart);
 		AddAction(ActionSkinning);
+		AddAction(ActionMineRock1H);
 	}
 };

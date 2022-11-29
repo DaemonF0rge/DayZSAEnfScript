@@ -4,6 +4,16 @@
 /*
 Lifespan plugin handles player facial hair, bloody hands, blood type in HUD
 */
+
+enum eBloodyHandsTypes
+{
+	CLEAN = 0,//clean needs to be 0
+	SALMONELA,
+	JUST_BLOOD,
+	//--- ONLY LAST_INDEX BELLOW !!!
+	LAST_INDEX,
+}
+
 enum LifeSpanState
 {
 	BEARD_NONE		= 0,
@@ -285,6 +295,8 @@ class PluginLifespan extends PluginBase
 
 	protected void SetPlayerLifespanLevel( PlayerBase player, LifespanLevel level )
 	{
+		if (player.m_CorpseState != 0)
+			return;
 		int slot_id = InventorySlots.GetSlotIdFromString("Head");	
 		EntityAI players_head = player.GetInventory().FindPlaceholderForSlot( slot_id );
 		
@@ -402,6 +414,14 @@ class PluginLifespan extends PluginBase
 // Bloody hands
 //-----------------------------
 	
+	void UpdateBloodyHandsVisibilityEx( PlayerBase player, eBloodyHandsTypes type )
+	{
+		if ( CanMakeHandsBloody( player ) )
+		{
+			SetBloodyHandsEx( player, type );			
+		}
+	}
+	
 	void UpdateBloodyHandsVisibility( PlayerBase player, bool show )
 	{
 		if ( CanMakeHandsBloody( player ) )
@@ -414,7 +434,23 @@ class PluginLifespan extends PluginBase
 	{
 		UpdateBloodyHandsVisibility( player, has_bloody_hands );
 	}
+	
 
+	void SetBloodyHandsEx( PlayerBase player, eBloodyHandsTypes type )
+	{
+		player.SetBloodyHandsEx( type );
+		
+		if ( type )
+		{
+			SetHandsMaterial( player, BloodyHands.MATERIAL_TYPE_BLOODY );
+		}
+		else
+		{
+			SetHandsMaterial( player, BloodyHands.MATERIAL_TYPE_NORMAL );
+		}
+		
+	}
+	
 	void SetBloodyHands( PlayerBase player, bool show )
 	{
 		player.SetBloodyHands( show );

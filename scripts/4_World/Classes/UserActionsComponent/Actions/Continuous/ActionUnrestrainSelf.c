@@ -11,10 +11,12 @@ class ActionUnrestrainSelfCB : ActionContinuousBaseCB
 			time = m_ActionData.m_MainItem.ConfigGetFloat("StruggleLength");
 		}
 		
+		#ifdef DEVELOPER
 		if ( m_ActionData.m_Player.IsQuickRestrain() )
 		{
 			time = DEBUG_QUICK_UNRESTRAIN_TIME;
 		}
+		#endif
 		
 		m_ActionData.m_ActionComponent = new CAContinuousTime(time);
 	}
@@ -49,7 +51,8 @@ class ActionUnrestrainSelf: ActionContinuousBase
 	{
 		m_CallbackClass = ActionUnrestrainSelfCB;
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONMOD_RESTRAINEDSTRUGGLE;
-		m_CommandUIDProne = DayZPlayerConstants.CMD_ACTIONFB_RESTRAINEDSTRUGGLE;	
+		m_CommandUIDProne = DayZPlayerConstants.CMD_ACTIONFB_RESTRAINEDSTRUGGLE;
+		m_Text = "#struggle";
 	}
 	
 	override void CreateConditionComponents()  
@@ -71,12 +74,6 @@ class ActionUnrestrainSelf: ActionContinuousBase
 	override bool HasTarget()
 	{
 		return false;
-	}
-
-
-	override string GetText()
-	{
-		return "#struggle";
 	}
 	
 	override void OnEndAnimationLoopServer( ActionData action_data )

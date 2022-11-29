@@ -11,4 +11,9 @@ class TunaCan : Edible_Base
 		
 		AddAction(ActionOpen);
 	}
+	
+	override bool IsOpen()
+	{
+		return false;
+	}
 }

@@ -1,28 +1,48 @@
 class ClosableContainer extends Container
 {
 	protected ref ClosableHeader	m_ClosableHeader;
-	protected bool					m_Closed;
-	protected EntityAI				m_Entity;
+	protected bool					m_LockCargo;
 
 	void ClosableContainer( LayoutHolder parent, int sort = -1 )
 	{
 		m_Body				= new array<ref LayoutHolder>;
 		m_ClosableHeader	= new ClosableHeader( this, "CloseButtonOnMouseButtonDown" );
 		
-		m_Body.Insert( m_ClosableHeader );
-		
 		if( sort > -1 )
 			m_RootWidget.SetSort( sort + 2 );
 		
 		m_MainWidget = m_MainWidget.FindWidget( "body" );
 	}
-
-	void Open()
+	
+	override bool IsDisplayable()
 	{
-		ItemManager.GetInstance().SetDefaultOpenState( m_Entity.GetType(), true );
-		m_Closed = false;
-		OnShow();
-		m_Parent.m_Parent.Refresh();
+		for(int i = 0; i < m_Body.Count(); i++)
+		{
+			LayoutHolder c = m_Body[i];
+			if( c && c.IsDisplayable())
+				return true;
+		}
+		return false;
+	}
+	
+	override void UpdateRadialIcon()
+	{
+		if ( m_SlotIcon )
+		{
+			bool show_radial_icon;
+			show_radial_icon = IsOpened();
+			show_radial_icon = show_radial_icon && ( ( m_Entity.GetInventory().GetCargo() && m_Entity.CanDisplayCargo()) || m_Entity.GetSlotsCountCorrect() > 0 );
+			show_radial_icon = show_radial_icon && !m_Entity.GetInventory().IsInventoryLockedForLockType( HIDE_INV_FROM_SCRIPT );
+			if ( IsDisplayable() )
+			{
+				m_SlotIcon.GetRadialIconPanel().Show( true );
+				SetOpenForSlotIcon(show_radial_icon);
+			}
+			else
+			{
+				m_SlotIcon.GetRadialIconPanel().Show( false );
+			}
+		}
 	}
 	
 	void SetOpenState( bool state )
@@ -43,19 +63,28 @@ class ClosableContainer extends Container
 	{
 		return m_ClosableHeader;
 	}
+	
+	override void Open()
+	{
+		if( IsDisplayable() )
+		{
+			super.Open();
+			ItemManager.GetInstance().SetDefaultOpenState( m_Entity.GetType(), true );
+			SetOpenForSlotIcon(true);
+			OnShow();
+			m_Parent.m_Parent.Refresh();
+		}
+	}
 
-	void Close()
+	override void Close()
 	{
 		ItemManager.GetInstance().SetDefaultOpenState( m_Entity.GetType(), false );
-		m_Closed = true;
-		this.OnHide();
+		super.Close();
+		SetOpenForSlotIcon(false);
+		OnHide();
+		m_Parent.m_Parent.Refresh(); //TODO: ???
 	}
-
-	bool IsOpened()
-	{
-		return !m_Closed;
-	}
-
+	
 	override void SetLayoutName()
 	{
 		m_LayoutName = WidgetLayoutName.ClosableContainer;
@@ -63,7 +92,7 @@ class ClosableContainer extends Container
 
 	override void OnShow()
 	{
-		if( !m_Closed )
+		if( IsOpened() )
 		{
 			super.OnShow();
 		}
@@ -86,15 +115,7 @@ class ClosableContainer extends Container
 
 	void CloseButtonOnMouseButtonDown()
 	{
-		m_Closed = true;
-		this.OnHide();
-		m_Parent.m_Parent.Refresh();
-	}
-	
-	override void SetActive( bool active )
-	{
-		super.SetActive( active );
-		m_ClosableHeader.SetActive( active );
+		Close();
 	}
 	
 	override float GetFocusedContainerHeight( bool contents = false )
@@ -125,5 +146,70 @@ class ClosableContainer extends Container
 		else if( GetRootWidget() )
 			GetRootWidget().GetScreenPos( x, y );
 		return y;
+	}
+	
+	void MoveContainerUp( Widget cont )
+	{
+		if( m_Entity )
+		{
+			InventoryLocation loc = new InventoryLocation;
+			m_Entity.GetInventory().GetCurrentInventoryLocation( loc );
+			if( loc.IsValid() )
+			{
+				int slot = loc.GetSlot();
+				Inventory.MoveAttachmentUp( slot );
+				UpdateSelectionIcons();
+			}
+		}
+	}
+	
+	void MoveContainerDown( Widget cont )
+	{
+		if( m_Entity )
+		{
+			InventoryLocation loc = new InventoryLocation;
+			m_Entity.GetInventory().GetCurrentInventoryLocation( loc );
+			if( loc.IsValid() )
+			{
+				int slot = loc.GetSlot();
+				Inventory.MoveAttachmentDown( slot );
+				UpdateSelectionIcons();
+			}
+		}
+	}
+	
+	override void CheckHeaderDragability()
+	{
+		super.CheckHeaderDragability();
+		
+		if (m_ClosableHeader && m_Entity) //TODO: do the entity check here?
+		{
+			int flag = m_ClosableHeader.GetMainWidget().GetFlags();
+			bool old = flag & WidgetFlags.DRAGGABLE;
+			bool current = ItemBase.Cast(m_Entity) && m_Entity.IsTakeable();
+			//bool changed = false;
+			if (old && !current)
+			{
+				m_ClosableHeader.GetMainWidget().ClearFlags( WidgetFlags.DRAGGABLE );
+				Widget drag = GetDragWidget();
+				if (drag && drag == m_ClosableHeader.GetMainWidget())
+				{
+					CancelWidgetDragging();
+					m_ClosableHeader.OnDropHeader(null);
+				}
+				
+				//changed = true;
+			}
+			else if (!old && current)
+			{
+				m_ClosableHeader.GetMainWidget().SetFlags( WidgetFlags.DRAGGABLE );
+				//changed = true;
+			}
+			/*if (old != current)
+			{
+				flag &= ~WidgetFlags.DRAGGABLE;
+				m_ClosableHeader.GetMainWidget().SetFlags( flag );
+			}*/
+		}
 	}
 }

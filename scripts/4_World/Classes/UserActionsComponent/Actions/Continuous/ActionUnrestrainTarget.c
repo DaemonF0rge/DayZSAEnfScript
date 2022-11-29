@@ -58,17 +58,13 @@ class ActionUnrestrainTarget: ActionContinuousBase
 		m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT | DayZPlayerConstants.STANCEMASK_CROUCH;
 		m_SpecialtyWeight = UASoftSkillsWeight.PRECISE_LOW;
+		m_Text = "#unrestrain";
 	}
 	
 	override void CreateConditionComponents()  
 	{	
 		m_ConditionTarget = new CCTMan(UAMaxDistances.DEFAULT, false);
 		m_ConditionItem = new CCINonRuined;
-	}
-		
-	override string GetText()
-	{
-		return "#unrestrain";
 	}
 	
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
@@ -151,25 +147,40 @@ class ReplaceAndDestroyLambda : TurnItemIntoItemLambdaAnimSysNotifyLambda
 	bool	m_Destroy;
 	bool	m_Drop;
 	
-	void ReplaceAndDestroyLambda (EntityAI old_item, string new_item_type, PlayerBase player, bool destroy = false)
+	void ReplaceAndDestroyLambda(EntityAI old_item, string new_item_type, PlayerBase player, bool destroy = false)
 	{
 		m_TargetPlayer = player;
 		m_Destroy = destroy;
 		m_OldItem = old_item;
 	}
-
-	override void CopyOldPropertiesToNew (notnull EntityAI old_item, EntityAI new_item)
-	{
-		super.CopyOldPropertiesToNew(old_item, new_item);
-	}
 	
-	override void OnSuccess (EntityAI new_item)
+	override void OnSuccess(EntityAI new_item)
 	{
 		super.OnSuccess(new_item);
 		
-		if( m_Destroy )
+		if ( m_Destroy )
 		{
 			new_item.SetHealth("","",0);
 		}
+	}
+};
+
+class ReplaceAndDestroyLambdaEx : ReplaceAndDestroyLambda
+{
+	void ReplaceAndDestroyLambdaEx(EntityAI old_item, string new_item_type, PlayerBase player, bool destroy = false, bool enableDrop = true)
+	{
+		m_Drop = enableDrop;
+	}
+	
+	override protected EntityAI CreateNewEntity()
+	{
+		EntityAI newItem = super.CreateNewEntity();
+		
+		if (!newItem && m_Drop)
+		{
+			newItem = EntityAI.Cast(GetGame().CreateObjectEx(m_NewItemType, m_TargetPlayer.GetPosition(), ECE_PLACE_ON_SURFACE|ECE_LOCAL));
+		}
+		
+		return newItem;
 	}
 };

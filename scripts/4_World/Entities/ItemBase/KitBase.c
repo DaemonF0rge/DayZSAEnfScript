@@ -5,17 +5,13 @@ class KitBase extends ItemBase
 
 	void KitBase()
 	{
-		m_DeployLoopSound = new EffectSound;
 		RegisterNetSyncVariableBool("m_IsSoundSynchRemote");
 		RegisterNetSyncVariableBool("m_IsDeploySound");
 	}
 
 	void ~KitBase()
 	{
-		if ( m_DeployLoopSound )
-		{
-			SEffectManager.DestroySound( m_DeployLoopSound );
-		}
+		SEffectManager.DestroyEffect( m_DeployLoopSound );
 	}
 
 	override bool IsBasebuildingKit()
@@ -79,7 +75,7 @@ class KitBase extends ItemBase
 		
 		if (item && slot_name == "Rope")
 		{
-			if ((GetGame().IsServer() || !GetGame().IsMultiplayer()) && !m_DeployedRegularly)
+			if (GetGame().IsServer() && !m_DeployedRegularly)
 			{
 				DisassembleKit(ItemBase.Cast(item));
 				Delete();
@@ -155,9 +151,9 @@ class KitBase extends ItemBase
 	
 	void PlayDeployLoopSound()
 	{		
-		if ( GetGame().IsMultiplayer() && GetGame().IsClient() || !GetGame().IsMultiplayer() )
+		if ( !GetGame().IsDedicatedServer() )
 		{		
-			if ( !m_DeployLoopSound.IsSoundPlaying() )
+			if ( !m_DeployLoopSound || !m_DeployLoopSound.IsSoundPlaying() )
 			{
 				m_DeployLoopSound = SEffectManager.PlaySound( GetLoopDeploySoundset(), GetPosition() );
 			}
@@ -166,7 +162,7 @@ class KitBase extends ItemBase
 	
 	void StopDeployLoopSound()
 	{
-		if ( GetGame().IsMultiplayer() && GetGame().IsClient() || !GetGame().IsMultiplayer() )
+		if ( !GetGame().IsDedicatedServer() )
 		{	
 			m_DeployLoopSound.SetSoundFadeOut(0.5);
 			m_DeployLoopSound.SoundStop();

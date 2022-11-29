@@ -18,6 +18,7 @@ class ActionWringClothes: ActionContinuousBase
 		m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_CROUCH;
 		m_SpecialtyWeight = UASoftSkillsWeight.ROUGH_LOW;
+		m_Text = "#wring_clothes";
 	}
 
 	override void CreateConditionComponents()
@@ -29,11 +30,6 @@ class ActionWringClothes: ActionContinuousBase
 	override bool HasTarget()
 	{
 		return false;
-	}
-
-	override string GetText()
-	{
-		return "#wring_clothes";
 	}
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

@@ -3,6 +3,7 @@ enum TabType
 	OFFICIAL,
 	COMMUNITY,
 	LAN,
+	FAVORITE,
 	NONE
 }
 
@@ -37,7 +38,7 @@ class ServerBrowserTab extends ScriptedWidgetEventHandler
 	protected bool											m_Initialized;
 	protected bool											m_BegunLoading;
 	protected bool											m_Loading;
-	protected int											m_TotalServers;
+	protected int											m_TotalServers; // UNUSED
 	protected int											m_TotalLoadedServers;
 	protected int											m_LastLoadedPage;
 	protected int											m_TotalPages;
@@ -65,11 +66,12 @@ class ServerBrowserTab extends ScriptedWidgetEventHandler
 	
 	protected ref map<ESortType, ref array<ref GetServersResultRow>> m_EntriesSorted;
 	protected ref map<ESortType, ESortOrder>				m_SortInverted;
-	
-	
+	protected ref set<string> 								m_OnlineFavServers;
+
 	void ServerBrowserTab( Widget parent, ServerBrowserMenuNew menu, TabType type )
 	{
 		Construct(parent, menu, type);
+		m_OnlineFavServers = new set<string>();
 	}
 	
 	protected void Construct( Widget parent, ServerBrowserMenuNew menu, TabType type )
@@ -82,10 +84,10 @@ class ServerBrowserTab extends ScriptedWidgetEventHandler
 	
 	void ~ServerBrowserTab()
 	{
-		if( m_Filters )
+		if ( m_Filters )
 			m_Filters.SaveFilters();
 		
-		if(m_Root)
+		if (m_Root)
 			delete m_Root;
 	}
 
@@ -106,7 +108,7 @@ class ServerBrowserTab extends ScriptedWidgetEventHandler
 	
 	void ScrollToEntry( ServerBrowserEntry entry )
 	{
-		if( entry )
+		if ( entry )
 		{
 			float x, y;
 			float x_s, y_s;
@@ -115,9 +117,9 @@ class ServerBrowserTab extends ScriptedWidgetEventHandler
 			Widget root			= entry.GetRoot();
 			Widget first_child	= root.GetParent().GetChildren();
 			Widget last_child	= first_child;
-			while( last_child )
+			while ( last_child )
 			{
-				if( last_child.GetSibling() )
+				if ( last_child.GetSibling() )
 					last_child = last_child.GetSibling();
 				else
 					break;
@@ -134,19 +136,19 @@ class ServerBrowserTab extends ScriptedWidgetEventHandler
 			root.GetScreenPos( x_l, y_l );
 			root.GetScreenSize( x_s, y_s );
 			
-			if( root == first_child )
+			if ( root == first_child )
 			{
 				m_ServerListScroller.VScrollToPos01( 0 );
 			}
-			else if( root == last_child )
+			else if ( root == last_child )
 			{
 				m_ServerListScroller.VScrollToPos01( 1 );
 			}
-			else if( y_l + y_s >= bottom_pos )
+			else if ( y_l + y_s >= bottom_pos )
 			{
 				m_ServerListScroller.VScrollToPos( m_ServerListScroller.GetVScrollPos() + y_s );
 			}
-			else if( y_l <= y )
+			else if ( y_l <= y )
 			{
 				m_ServerListScroller.VScrollToPos( m_ServerListScroller.GetVScrollPos() - y_s );
 			}
@@ -155,7 +157,7 @@ class ServerBrowserTab extends ScriptedWidgetEventHandler
 	
 	void Focus()
 	{
-		if( m_EntryWidgets.Contains( m_CurrentSelectedServer ) )
+		if ( m_EntryWidgets.Contains( m_CurrentSelectedServer ) )
 		{
 			m_EntryWidgets.Get( m_CurrentSelectedServer ).Focus();
 			ScrollToEntry( m_EntryWidgets.Get( m_CurrentSelectedServer ) );
@@ -191,7 +193,7 @@ class ServerBrowserTab extends ScriptedWidgetEventHandler
 	
 	override bool OnFocus( Widget w, int x, int y )
 	{
-		if( IsFocusable( w ) )
+		if ( IsFocusable( w ) )
 		{
 			if ( w == m_FilterSearchTextBox )
 			{
@@ -209,7 +211,7 @@ class ServerBrowserTab extends ScriptedWidgetEventHandler
 	
 	override bool OnFocusLost( Widget w, int x, int y )
 	{
-		if( IsFocusable( w ) )
+		if ( IsFocusable( w ) )
 		{
 			if ( w == m_FilterSearchTextBox )
 			{
@@ -227,7 +229,7 @@ class ServerBrowserTab extends ScriptedWidgetEventHandler
 	
 	override bool OnMouseEnter( Widget w, int x, int y )
 	{		
-		if( IsFocusable( w ) )
+		if ( IsFocusable( w ) )
 		{
 			ColorHighlight( w );
 			if ( w == m_FilterSearchText )
@@ -242,9 +244,9 @@ class ServerBrowserTab extends ScriptedWidgetEventHandler
 	
 	override bool OnMouseLeave( Widget w, Widget enterW, int x, int y )
 	{		
-		if( IsFocusable( w ) )
+		if ( IsFocusable( w ) )
 		{
-			if( enterW == m_FilterSearchText || enterW == m_FilterSearchTextBox )
+			if ( enterW == m_FilterSearchText || enterW == m_FilterSearchTextBox )
 			{
 			}
 			else
@@ -258,7 +260,7 @@ class ServerBrowserTab extends ScriptedWidgetEventHandler
 	
 	bool IsFocusable( Widget w )
 	{
-		if( w )
+		if ( w )
 		{
 			return ( w == m_ApplyFilter || w == m_RefreshList || w == m_ResetFilters || w == m_FilterSearchText || w == m_FilterSearchTextBox );
 		}
@@ -277,7 +279,7 @@ class ServerBrowserTab extends ScriptedWidgetEventHandler
 	
 	void PressX()
 	{
-		if( m_Menu.GetServersLoadingTab() == TabType.NONE )
+		if ( m_Menu.GetServersLoadingTab() == TabType.NONE )
 			RefreshList();
 	}
 	
@@ -301,15 +303,15 @@ class ServerBrowserTab extends ScriptedWidgetEventHandler
 	void GetNextEntry()
 	{
 		Widget focused = GetFocus();
-		if( !focused )
+		if ( !focused )
 			return;
 		Widget sibling = focused.GetSibling();
-		if( !sibling )
+		if ( !sibling )
 			return;
 		
-		if( focused.GetName() == "server_browser_list_entry_root" )
+		if ( focused.GetName() == "server_browser_list_entry_root" )
 		{
-			if( sibling )
+			if ( sibling )
 				SetFocus( focused.GetSibling() );
 			else
 				SetFocus( focused.GetParent().GetSibling().GetChildren() );
@@ -319,15 +321,15 @@ class ServerBrowserTab extends ScriptedWidgetEventHandler
 	void GetPrevEntry()
 	{
 		Widget focused = GetFocus();
-		if( focused && focused.GetName() == "server_browser_list_entry_root" )
+		if ( focused && focused.GetName() == "server_browser_list_entry_root" )
 		{
 			Widget sibling = focused.GetParent().GetChildren();
-			if( focused == sibling )
+			if ( focused == sibling )
 				return;
 			
-			while( sibling )
+			while ( sibling )
 			{
-				if( sibling && sibling.GetSibling() == focused )
+				if ( sibling && sibling.GetSibling() == focused )
 				{
 					SetFocus( sibling );
 				}
@@ -361,7 +363,7 @@ class ServerBrowserTab extends ScriptedWidgetEventHandler
 	
 	bool IsNotInitialized()
 	{
-		return !m_Initialized;
+		return !m_Initialized || !m_LoadingFinished;
 	}
 	
 	void ResetFilters()
@@ -392,22 +394,19 @@ class ServerBrowserTab extends ScriptedWidgetEventHandler
 		m_TotalLoadedServers = 0;
 		m_CurrentLoadedPage = 0;
 		
-		//m_Entries.Clear();
 		m_EntryWidgets.Clear();
 
 #ifndef PLATFORM_CONSOLE // PLATFORM_WINDOWS
 		m_CurrentFilterInput = m_Filters.GetFilterOptionsPC();
 		m_CurrentFilterInput.m_Page = 0;
 #else
-#ifdef PLATFORM_CONSOLE
 		m_CurrentFilterInput = m_Filters.GetFilterOptionsConsoles();
 		m_CurrentFilterInput.m_SortBy = GetSortOption();
 		m_CurrentFilterInput.m_SortOrder = m_SortOrder;
 		m_CurrentFilterInput.m_Page = GetCurrentPage();
 #endif
-#endif
 		m_Loading = true;
-		switch( m_TabType )
+		switch ( m_TabType )
 		{
 			case TabType.OFFICIAL:
 			{
@@ -428,12 +427,11 @@ class ServerBrowserTab extends ScriptedWidgetEventHandler
 				break;
 			}
 		}
-		
 	}
 	
 	void GetNextPage()
 	{
-		if( m_TotalPages > 0 && m_LastLoadedPage < m_TotalPages )
+		if ( m_TotalPages > 0 && m_LastLoadedPage < m_TotalPages )
 		{
 			m_CurrentFilterInput.m_Page = m_LastLoadedPage + 1;
 			OnlineServices.LoadServers( m_CurrentFilterInput );
@@ -474,44 +472,27 @@ class ServerBrowserTab extends ScriptedWidgetEventHandler
 	{
 		int max = max_ping.Substring( 1, max_ping.Length() - 1 ).ToInt();
 		
-		if( ping < max )
+		if ( ping < max )
 			return true;
 		return false;
 	}
-		
+	
 	bool PassFilter( GetServersResultRow result )
-	{	
+	{			
 		if ( !m_Menu || m_Menu.GetServersLoadingTab() != m_TabType )
 		{
 			return false;
 		}
 		
-		if( m_Filters.m_PingFilter.IsSet() )
+		if ( m_Filters.m_PingFilter.IsSet() )
 		{
 			if ( !IsPingInRange( result.m_Ping, m_Filters.m_PingFilter.GetStringValue() ) )
 			{
 				return false;
 			}
 		}
-		
-		#ifndef PLATFORM_CONSOLE
-		if( m_Filters.m_FavoritedFilter.IsSet() )
-		{
-			bool is_fav = result.m_Favorite;
-			
-			if ( !is_fav && m_Filters.m_FavoritedFilter.IsEnabled() )
-			{
-				return false;
-			}
-			
-			if ( is_fav && !m_Filters.m_FavoritedFilter.IsEnabled() )
-			{
-				return false;
-			}
-		}
-		#endif
 
-		if( m_Filters.m_PreviouslyPlayedFilter.IsSet() )
+		if ( m_Filters.m_PreviouslyPlayedFilter.IsSet() )
 		{
 			bool is_visited = g_Game.IsVisited( result.m_HostIp, result.m_HostPort );
 			
@@ -529,12 +510,18 @@ class ServerBrowserTab extends ScriptedWidgetEventHandler
 		return true;
 	}
 	
+	// Adds extra servers to the END of the list
+	protected void LoadExtraEntries(int index)
+	{
+		
+	}
+	
 	void Connect( ServerBrowserEntry server )
 	{
-		if( !m_Menu )
+		if ( !m_Menu )
 			return;
 		
-		if( m_Menu.GetServersLoadingTab() != TabType.NONE )
+		if ( m_Menu.GetServersLoadingTab() != TabType.NONE )
 			return;
 		
 		m_SelectedServer = server;
@@ -543,7 +530,7 @@ class ServerBrowserTab extends ScriptedWidgetEventHandler
 	
 	string GetSortOption()
 	{
-		switch( m_SortType )
+		switch ( m_SortType )
 		{
 			case ESortType.HOST:
 			{
@@ -577,7 +564,7 @@ class ServerBrowserTab extends ScriptedWidgetEventHandler
 	void Unfavorite( string uid )
 	{
 		ServerBrowserEntry entry;
-		if( m_EntryWidgets.Find( uid, entry ) )
+		if ( m_EntryWidgets.Find( uid, entry ) )
 		{
 			entry.SetFavorite( false );
 		}
@@ -603,7 +590,7 @@ class ServerBrowserTab extends ScriptedWidgetEventHandler
 	//Coloring functions (Until WidgetStyles are useful)
 	void ColorHighlight( Widget w )
 	{
-		if( w.IsInherited( ButtonWidget ) )
+		if ( w.IsInherited( ButtonWidget ) )
 		{
 			ButtonWidget button = ButtonWidget.Cast( w );
 			button.SetTextColor( ARGB( 255, 200, 0, 0 ) );
@@ -618,23 +605,23 @@ class ServerBrowserTab extends ScriptedWidgetEventHandler
 		Widget option		= Widget.Cast( w.FindAnyWidget( w.GetName() + "_option_wrapper" ) );
 		Widget option_label = w.FindAnyWidget( "option_label" );
 		
-		if( text1 )
+		if ( text1 )
 		{
 			text1.SetColor( ARGB( 255, 255, 0, 0 ) );
 		}
 		
-		if( text2 )
+		if ( text2 )
 		{
 			text2.SetColor( ARGB( 255, 255, 0, 0 ) );
 		}
 		
-		if( text3 )
+		if ( text3 )
 		{
 			text3.SetColor( ARGB( 255, 255, 0, 0 ) );
 			w.SetAlpha(1);
 		}
 		
-		if( image )
+		if ( image )
 		{
 			image.SetColor( ARGB( 255, 200, 0, 0 ) );
 		}
@@ -652,15 +639,12 @@ class ServerBrowserTab extends ScriptedWidgetEventHandler
 	
 	void ColorNormal( Widget w )
 	{
-		//Print("ColorNormal -> "+ w.GetName());
-		//DumpStack();
-		
 		if ( (w.GetFlags() & WidgetFlags.IGNOREPOINTER) == WidgetFlags.IGNOREPOINTER )
 		{
 			return;
 		}
 		
-		if( w.IsInherited( ButtonWidget ) )
+		if ( w.IsInherited( ButtonWidget ) )
 		{
 			ButtonWidget button = ButtonWidget.Cast( w );
 			button.SetTextColor( ARGB( 255, 255, 255, 255 ) );
@@ -673,23 +657,23 @@ class ServerBrowserTab extends ScriptedWidgetEventHandler
 		Widget option		= w.FindAnyWidget( w.GetName() + "_option_wrapper" );
 		Widget option_label = w.FindAnyWidget( "option_label" );
 		
-		if( text1 )
+		if ( text1 )
 		{
 			text1.SetColor( ARGB( 255, 255, 255, 255 ) );
 		}
 		
-		if( text2 )
+		if ( text2 )
 		{
 			text2.SetColor( ARGB( 255, 255, 255, 255 ) );
 		}
 		
-		if( text3 )
+		if ( text3 )
 		{
 			text3.SetColor( ARGB( 255, 255, 255, 255 ) );
 			w.SetAlpha(0);
 		}
 		
-		if( image )
+		if ( image )
 		{
 			image.SetColor( ARGB( 255, 255, 255, 255 ) );
 		}
@@ -714,7 +698,7 @@ class ServerBrowserTab extends ScriptedWidgetEventHandler
 		if ( w )
 		{
 			ButtonWidget button = ButtonWidget.Cast( w );
-			if( button )
+			if ( button )
 			{
 				button.SetTextColor( ColorManager.COLOR_DISABLED_TEXT );
 			}

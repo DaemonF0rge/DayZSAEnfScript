@@ -7,6 +7,7 @@ class ActionGagSelf: ActionContinuousBase
 		//m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT | DayZPlayerConstants.STANCEMASK_CROUCH;
 		m_SpecialtyWeight = UASoftSkillsWeight.ROUGH_LOW;
+		m_Text = "#gag_self";
 	}
 
 	override void CreateConditionComponents()  
@@ -18,11 +19,6 @@ class ActionGagSelf: ActionContinuousBase
 	override bool HasTarget()
 	{
 		return false;
-	}
-		
-	override string GetText()
-	{
-		return "#gag_self";
 	}
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
@@ -36,7 +32,6 @@ class ActionGagSelf: ActionContinuousBase
 			if ( headgear )
 			{		
 				bool headgear_restricted;
-				bool exists = headgear.ConfigIsExisting("noMask");
 				headgear_restricted = headgear.ConfigGetBool( "noMask" );
 				if (headgear_restricted)
 				{

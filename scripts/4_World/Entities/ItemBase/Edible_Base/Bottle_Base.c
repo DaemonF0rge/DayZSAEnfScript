@@ -50,9 +50,6 @@ class Bottle_Base extends Edible_Base
 		
 	void Bottle_Base()
 	{
-		m_PouringLoopSound  	= new EffectSound;
-		m_EmptyingLoopSound = new EffectSound;
-		
 		RegisterNetSyncVariableInt( "m_CookingMethod", CookingMethodType.NONE, CookingMethodType.COUNT );
 		RegisterNetSyncVariableBool("m_CookingIsDone");
 		RegisterNetSyncVariableBool("m_CookingIsEmpty");
@@ -63,8 +60,8 @@ class Bottle_Base extends Edible_Base
 	
 	void ~Bottle_Base()
 	{
-		SEffectManager.DestroySound( m_PouringLoopSound );
-		SEffectManager.DestroySound( m_EmptyingLoopSound );
+		SEffectManager.DestroyEffect( m_PouringLoopSound );
+		SEffectManager.DestroyEffect( m_EmptyingLoopSound );
 	}
 	
 	override void EEDelete( EntityAI parent )
@@ -94,14 +91,14 @@ class Bottle_Base extends Edible_Base
 	{
 		super.OnRPC(sender, rpc_type, ctx);
 		
-		ref Param1<bool> p = new Param1<bool>(false);
+		Param1<bool> p = new Param1<bool>(false);
 				
-		if (ctx.Read(p))
-		{
-			bool play = p.param1;
-		}
+		if (!ctx.Read(p))
+			return;
 		
-		switch(rpc_type)
+		bool play = p.param1;
+		
+		switch (rpc_type)
 		{
 			case SoundTypeBottle.POURING:
 			
@@ -109,8 +106,7 @@ class Bottle_Base extends Edible_Base
 				{
 					PlayPouringLoopSound();
 				}
-				
-				if ( !play )
+				else
 				{
 					StopPouringLoopSound();
 				}
@@ -123,8 +119,7 @@ class Bottle_Base extends Edible_Base
 				{
 					PlayEmptyingLoopSound();
 				}
-				
-				if ( !play )
+				else
 				{
 					StopEmptyingLoopSound();
 				}
@@ -250,12 +245,12 @@ class Bottle_Base extends Edible_Base
 			ParticleCookingStop();
 			
 			//create new
-			if ( GetGame() && ( !GetGame().IsMultiplayer() || GetGame().IsClient() ) )
+			if ( GetGame() && !GetGame().IsDedicatedServer() )
 			{
 				vector local_pos = MiscGameplayFunctions.GetSteamPosition( GetHierarchyParent() );
 				//TODO set steam position to pot (proxy) memory point (new hierarchy needed)
 				//m_ParticleCooking = Particle.Create( particle_id, this, local_pos );
-				m_ParticleCooking = Particle.PlayInWorld( particle_id, local_pos );
+				m_ParticleCooking = ParticleManager.GetInstance().PlayInWorld( particle_id, local_pos );
 				m_ParticlePlaying = particle_id;
 			}
 		}
@@ -263,41 +258,43 @@ class Bottle_Base extends Edible_Base
 	
 	void ParticleCookingStop()
 	{
-		if ( m_ParticleCooking && GetGame() && ( !GetGame().IsMultiplayer() || GetGame().IsClient() ) )
+		if ( m_ParticleCooking && GetGame() && !GetGame().IsDedicatedServer() )
 		{
 			m_ParticleCooking.Stop();
-			m_ParticleCooking = NULL;
+			m_ParticleCooking = null;
 			m_ParticlePlaying = ParticleList.INVALID;
 		}
 	}
 		
 	void PlayPouringLoopSound()
 	{
-		if ( !m_PouringLoopSound.IsSoundPlaying() )
+		if ( !m_PouringLoopSound || !m_PouringLoopSound.IsSoundPlaying() )
 		{
-			m_PouringLoopSound = SEffectManager.PlaySound( GetPouringSoundset(), GetPosition() );
+			m_PouringLoopSound = SEffectManager.PlaySoundOnObject( GetPouringSoundset(), this );
 		}
 	}
 	
 	void StopPouringLoopSound()
 	{
-		m_PouringLoopSound.SoundStop();
+		if (m_PouringLoopSound)
+			m_PouringLoopSound.SoundStop();
 	}
 		
 	void PlayEmptyingLoopSound()
 	{
-		if ( !m_EmptyingLoopSound.IsSoundPlaying() )
+		if ( !m_EmptyingLoopSound || !m_EmptyingLoopSound.IsSoundPlaying() )
 		{
-			m_EmptyingLoopSound = SEffectManager.PlaySound( GetEmptyingLoopSoundset(), GetPosition() );
+			m_EmptyingLoopSound = SEffectManager.PlaySoundOnObject( GetEmptyingLoopSoundset(), this );
 		}
 	}
 	
 	void StopEmptyingLoopSound()
 	{
-		m_EmptyingLoopSound.SoundStop();
+		if (m_EmptyingLoopSound)
+			m_EmptyingLoopSound.SoundStop();
 				
-		EffectSound sound =	SEffectManager.PlaySound( GetEmptyingEndSoundset(), GetPosition() );
-		sound.SetSoundAutodestroy( true );
+		EffectSound sound =	SEffectManager.PlaySoundOnObject( GetEmptyingEndSoundset(), this );
+		sound.SetAutodestroy( true );
 	}
 		
 	string GetEmptyingLoopSoundset()
@@ -306,11 +303,13 @@ class Bottle_Base extends Edible_Base
 		string surface_type = GetGame().GetPlayer().GetSurfaceType();
 		string sound_set = "";
 		
-		if ( !GetGame().IsSurfaceDigable( surface_type ) )
+		bool diggable = GetGame().IsSurfaceDigable( surface_type );
+		
+		if ( !diggable )
 		{
 			sound_set = GetEmptyingLoopSoundsetHard();
 		}
-		else if ( GetGame().IsSurfaceDigable( surface_type ) )
+		else if ( diggable )
 		{
 			sound_set = GetEmptyingLoopSoundsetSoft();
 		}
@@ -328,11 +327,13 @@ class Bottle_Base extends Edible_Base
 		string surface_type = GetGame().GetPlayer().GetSurfaceType();
 		string sound_set = "";
 		
-		if ( !GetGame().IsSurfaceDigable( surface_type ) )
+		bool diggable = GetGame().IsSurfaceDigable( surface_type );
+		
+		if ( !diggable )
 		{
 			sound_set = GetEmptyingEndSoundsetHard();
 		}
-		else if ( GetGame().IsSurfaceDigable( surface_type ) )
+		else if ( diggable )
 		{
 			sound_set = GetEmptyingEndSoundsetSoft();
 		}
@@ -358,18 +359,16 @@ class Bottle_Base extends Edible_Base
 	
 	string GetEmptyingEndSoundsetWater() {};
 	
+	//! Returns base liquid empty rate (absolute)..preferrably use the 'GetLiquidThroughputCoef' instead
 	float GetLiquidEmptyRate()
 	{
 		return m_LiquidEmptyRate;
 	}
-	
-	
 		
 	override void SetActions()
 	{
 		super.SetActions();
 		
-		AddAction(ActionWorldLiquidActionSwitch);
 		AddAction(ActionFillFuel);
 		AddAction(ActionFillCoolant);
 		AddAction(ActionFillGeneratorTank);
@@ -378,9 +377,10 @@ class Bottle_Base extends Edible_Base
 		AddAction(ActionWaterGardenSlot);
 		AddAction(ActionWaterPlant);
 		AddAction(ActionForceDrink);
-		AddAction(ActionTransferLiquid);
-		AddAction(ActionEmptyBottleBase);
+		AddAction(ActionDrainLiquid);
+		AddAction(ActionPourLiquid);
 		AddAction(ActionWashHandsItem);
 		AddAction(ActionDrink);
+		AddAction(ActionEmptyBottleBase);
 	}
 }

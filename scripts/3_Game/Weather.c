@@ -21,6 +21,9 @@ enum EWeatherPhenomenon
 */
 class WeatherPhenomenon
 {
+	private void WeatherPhenomenon() {}
+	private void ~WeatherPhenomenon() {}
+	
 	//! Returns type of this phenomenon.
 	proto native EWeatherPhenomenon GetType();
 
@@ -152,10 +155,12 @@ class Weather
 {
 	protected bool m_missionWeather;
 	
-	void Weather()
+	private void Weather()
 	{
 		m_missionWeather = false;
 	}
+	
+	private void ~Weather() {}
 	
 	//! Returns actual time from start of a server (how many seconds elapsed from server start).
 	proto native float GetTime();
@@ -177,6 +182,9 @@ class Weather
 		\param  timeOut   A minimal time in seconds between lightning during thunderstorm.
 	*/
 	proto native void SetStorm( float density, float threshold, float timeOut );
+	
+	//! enables/disables thunderbolt simulation on client (together with sounds)
+	proto native void SuppressLightningSimulation(bool state);
 
 	//! Returns wind vector (direction and speed as length of the vector).
 	proto native vector GetWind();

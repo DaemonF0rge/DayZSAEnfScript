@@ -10,15 +10,6 @@ class SymptomSoundEventBase extends PlayerSoundEventBase
 	{
 		return true;
 	}
-	
-	override bool CanPlay(PlayerBase player)
-	{
-		if( !super.CanPlay(player) )
-		{
-			return false;
-		}
-		return true;
-	}
 }
 
 class CoughSoundEvent extends SymptomSoundEventBase
@@ -59,7 +50,7 @@ class FatigueSoundEvent extends SymptomSoundEventBase
 	
 	override void OnPlay(PlayerBase player)
 	{
-		
+		super.OnPlay(player);
 	}
 	
 }

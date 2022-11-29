@@ -2,17 +2,13 @@ class ActionAttachToConstruction: ActionSingleUseBase
 {
 	void ActionAttachToConstruction()
 	{
+		m_Text = "#attach";
 	}
 
 	override void CreateConditionComponents() 
 	{
 		m_ConditionItem = new CCINonRuined;
 		m_ConditionTarget = new CCTCursor;
-	}
-		
-	override string GetText()
-	{
-		return "#attach";
 	}
 	
 	override ActionData CreateActionData()

@@ -29,10 +29,9 @@ class HandAnimatedMoveToDst_W4T extends HandStartAction
 	override void OnEntry (HandEventBase e)
 	{
 		Man player = e.m_Player;
-		EntityAI item = m_Dst.GetItem();
-
 		if (m_Dst && m_Dst.IsValid())
 		{
+			EntityAI item = m_Dst.GetItem();
 			InventoryLocation src = new InventoryLocation;
 			if (item.GetInventory().GetCurrentInventoryLocation(src))
 			{
@@ -41,7 +40,7 @@ class HandAnimatedMoveToDst_W4T extends HandStartAction
 				player.OnItemInHandsChanged();
 			}
 			else
-				Error("[hndfsm] " + Object.GetDebugName(e.m_Player) + " STS=" + e.m_Player.GetSimulationTimeStamp() + " HandAnimatedMoveToDst_W4T- item " + item + " has no Inventory or Location, inv=" + item.GetInventory());
+				Error("[hndfsm] " + Object.GetDebugName(e.m_Player) + " STS = " + e.m_Player.GetSimulationTimeStamp() + " HandAnimatedMoveToDst_W4T- item " + item + " has no Inventory or Location, inv=" + item.GetInventory());
 		}
 		else
 			Error("[hndfsm] HandAnimatedMoveToDst_W4T - event has no valid m_Dst");
@@ -109,7 +108,7 @@ class HandAnimatedMovingToAtt extends HandStateBase
 
 	override void OnAbort (HandEventBase e)
 	{
-		if( GetGame().IsClient() || !GetGame().IsMultiplayer())
+		if( !GetGame().IsDedicatedServer())
 		{
 			e.m_Player.GetHumanInventory().ClearInventoryReservationEx(m_Entity, m_ilEntity);
 		}
@@ -126,7 +125,7 @@ class HandAnimatedMovingToAtt extends HandStateBase
 
 	override void OnExit (HandEventBase e)
 	{
-		if( GetGame().IsClient() || !GetGame().IsMultiplayer())
+		if( !GetGame().IsDedicatedServer())
 		{
 			e.m_Player.GetHumanInventory().ClearInventoryReservationEx(m_Entity, m_ilEntity);
 		}

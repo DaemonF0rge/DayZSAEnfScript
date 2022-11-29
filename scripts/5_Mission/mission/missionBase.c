@@ -9,7 +9,7 @@ class MissionBase extends MissionBaseWorld
 	ref WorldLighting		m_WorldLighting;
 	
 	ref array<PlayerBase> m_DummyPlayers = new array<PlayerBase>;
-	
+
 	void MissionBase()
 	{
 		SetDispatcher(new DispatcherCaller);
@@ -34,6 +34,9 @@ class MissionBase extends MissionBaseWorld
 			GetDayZGame().GetAnalyticsClient().RegisterEvents();
 			m_WorldLighting	= new WorldLighting;
 		}
+		
+		// There is a possibility different maps/servers may be using different effects
+		SEffectManager.Cleanup();
 	}
 
 	void ~MissionBase()
@@ -44,6 +47,7 @@ class MissionBase extends MissionBaseWorld
 		{
 			GetDayZGame().GetAnalyticsClient().UnregisterEvents();	
 		}
+		TriggerEffectManager.DestroyInstance();
 	}
 	
 	void InitialiseWorldData()
@@ -162,7 +166,7 @@ class MissionBase extends MissionBaseWorld
 			menu = new TitleScreenMenu;
 			break;
 		case MENU_XBOX_CONTROLS:
-			menu = new ControlsXbox;
+			menu = new ControlsXboxNew;
 			break;
 		case MENU_RADIAL_QUICKBAR:
 			menu = new RadialQuickbarMenu;
@@ -197,8 +201,14 @@ class MissionBase extends MissionBaseWorld
 		case MENU_WARNING_ITEMDROP:
 			menu = new ItemDropWarningMenu;
 			break;
+		case MENU_WARNING_TELEPORT:
+			menu = new PlayerRepositionWarningMenu;
+			break;
 		case MENU_RESPAWN_DIALOGUE:
 			menu = new RespawnDialogue;
+			break;
+		case MENU_CONNECT_ERROR:
+			menu = new ConnectErrorScriptModuleUI;
 			break;
 		}
 
@@ -264,21 +274,11 @@ class MissionBase extends MissionBaseWorld
 	{
 		super.OnKeyPress(key);
 		
-#ifdef DEVELOPER
-		if ( GetGame().IsDebug() )
+#ifdef DIAG_DEVELOPER
+		if ( PluginKeyBinding.instance )
 		{
-			if ( PluginKeyBinding.instance != NULL )
-			{
-				PluginKeyBinding.instance.OnKeyPress(key);
-			}
+			PluginKeyBinding.instance.OnKeyPress(key);
 		}
-		/*
-		if ( key == KeyCode.KC_Q )
-		{
-			DumpCurrentUILayout();
-			
-		}
-		*/
 #endif
 	}
 	
@@ -437,6 +437,7 @@ class MissionBase extends MissionBaseWorld
 	{
 		m_DummyPlayers.Insert(PlayerBase.Cast( player ));
 	}
+
 }
 
 class MissionDummy extends MissionBase

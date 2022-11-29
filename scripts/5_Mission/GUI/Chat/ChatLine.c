@@ -79,14 +79,15 @@ class ChatLine
 			if (params.param2 != "")
 			{
 				m_NameWidget.SetText(GAME_PREFIX + ": " );
-			} 
-			SetColour(GAME_TEXT_COLOUR);
+			}
+			
+			SetColorByParam(params.param4, GAME_TEXT_COLOUR);
 		}
 		else if ( channel & CCAdmin )
 		{
 			// Admin
 			m_NameWidget.SetText(ADMIN_PREFIX + ": ");
-			SetColour(ADMIN_TEXT_COLOUR);			
+			SetColorByParam(params.param4, ADMIN_TEXT_COLOUR);
 		}
 		else if ( channel & CCTransmitter )
 		{
@@ -103,7 +104,7 @@ class ChatLine
 		}
 		
 		
-		m_TextWidget.SetText(params.param3);
+		m_TextWidget.SetText(params.param3);		
 		
 		m_FadeTimer.FadeIn(m_RootWidget, FADE_IN_DURATION);
 		m_TimeoutTimer.Run(FADE_TIMEOUT, m_FadeTimer, "FadeOut", new Param2<Widget, float>(m_RootWidget, FADE_OUT_DURATION));
@@ -114,11 +115,44 @@ class ChatLine
 		m_NameWidget.SetColor(colour);
 		m_TextWidget.SetColor(colour);
 	}
+	
+	protected void SetColorByParam(string pParamValue, int pFallback)
+	{
+		if (pParamValue != "")
+		{
+			SetColour(ColorNameToColor(pParamValue));
+			return;
+		}
+		
+		SetColour(pFallback);
+	}
 
 	void Clear()
 	{
 		m_RootWidget.Show( false );
 		m_TimeoutTimer.Stop();
 		m_FadeTimer.Stop();
+	}
+	
+	protected int ColorNameToColor(string pColorName)
+	{
+		int color = 0xFFFFFFFF;
+		switch (pColorName)
+		{
+		case "colorStatusChannel":
+			color = COLOR_BLUE;
+		break;
+		case "colorAction":
+			color = COLOR_YELLOW;
+		break;
+		case "colorFriendly":
+			color = COLOR_GREEN;
+		break;
+		case "colorImportant":
+			color = COLOR_RED;
+		break;
+		}
+		
+		return color;
 	}
 }

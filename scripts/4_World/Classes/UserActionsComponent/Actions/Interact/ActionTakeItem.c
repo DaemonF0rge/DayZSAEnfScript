@@ -11,18 +11,13 @@ class ActionTakeItem: ActionInteractBase
 	{
 		m_CommandUID        = DayZPlayerConstants.CMD_ACTIONMOD_PICKUP_INVENTORY;
 		m_CommandUIDProne	= DayZPlayerConstants.CMD_ACTIONFB_PICKUP_INVENTORY;
-		m_HUDCursorIcon     = CursorIcons.LootCorpse;
+		m_Text = "#take";
 	}
 
 	override void CreateConditionComponents()  
 	{
 		m_ConditionItem = new CCINone;
 		m_ConditionTarget = new CCTObject(UAMaxDistances.DEFAULT);
-	}
-
-	override string GetText()
-	{
-		return "#take";
 	}
 	
 	override bool HasProneException()
@@ -40,9 +35,6 @@ class ActionTakeItem: ActionInteractBase
 		ItemBase tgt_item = ItemBase.Cast( target.GetObject() );
 		if ( tgt_item && !tgt_item.IsTakeable() ) return false;
 		if ( tgt_item && tgt_item.IsBeingPlaced() ) return false;
-
-		if ( player.GetCommand_Vehicle() )
-			return false;
 		
 		EntityAI tgt_parent = EntityAI.Cast( target.GetParent() );
 		EntityAI tgt_entity = EntityAI.Cast( target.GetObject() );

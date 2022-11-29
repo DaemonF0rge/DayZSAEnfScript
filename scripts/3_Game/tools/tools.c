@@ -321,7 +321,10 @@ class TimerBase: Managed
 		m_loop = false;
 		m_time = 0;
 		m_running = false;
-		m_timerQueue = GetGame().GetTimerQueue(category);
+		if (GetGame())
+			m_timerQueue = GetGame().GetTimerQueue(category);
+		else
+			ErrorEx("Attempting to Init a timer when the game does not exist (GetGame() == null)");
 	}
 		
 	protected void OnStart(float duration, bool loop)
@@ -611,18 +614,17 @@ class Timer extends TimerBase
 
 //--------------------------------------------------------------------------
 /**
- \brief AnimatorTimer class. This timer is for animate float value.
+ \brief AnimationTimer class. This timer is for animating float value.
  \n usage:
  @code
  class MyObject
  {
-	ref AnimatorTimer myAnim;
+	ref AnimationTimer myAnim;
 	
 	void MyObject()
 	{
-		myAnim = new AnimatorTimer(this, "Refresh", CALL_CATEGORY_GUI);
-		myAnim.SetValue(6.0);
-		myAnim.Animate(10.0, 0.1);
+		myAnim = new AnimationTimer();
+		myAnim.Run(60, this, "Refresh");
 	}
 
 	void Refresh()
@@ -633,6 +635,103 @@ class Timer extends TimerBase
  @endcode
 
  */
+
+class AnimationTimer : TimerBase
+{
+	private bool m_Active;
+	private float m_TargetValue;
+	private float m_TargetValueOriginal;
+	private float m_Value;
+	protected Managed m_TargetObject;
+	protected string m_UpdateFunction;
+	protected string m_FinishedFunction;
+	protected ref Param m_Params;
+	
+	void AnimationTimer(int category = CALL_CATEGORY_SYSTEM)
+	{
+		OnInit(category);
+	}
+	
+	void ~AnimationTimer()
+	{
+		SetRunning(false);
+	}
+	
+	void Run(float targetVal, Managed obj, string updateFunc, string finishedFunc, float startingVal = 0, bool loop = false, float speed = 1.0, Param params = null, int category = CALL_CATEGORY_SYSTEM)
+	{
+		SetRunning(true);
+		m_TargetObject = obj;
+		m_UpdateFunction = updateFunc;
+		m_FinishedFunction = finishedFunc;
+		m_TargetValueOriginal = targetVal;
+		m_TargetValue = targetVal;
+		m_time = speed;
+		m_loop = loop;
+		m_Active = true;
+		m_Params = params;
+		m_Value = startingVal;
+	}
+
+	/**
+  \brief Returns actual animated value.
+	*/
+	float GetValue() {
+		return m_Value;
+	}	
+
+	override bool IsRunning()
+	{
+		return m_Active;
+	}
+	/**
+  \brief Ticks the timer, is called by timer subsystem.
+	*/
+	override void Tick(float timeslice)
+	{
+		if ( !m_Active ) 
+			return;
+		
+
+		float diff = Math.AbsFloat(m_TargetValue - m_Value);
+		float step = m_time * timeslice;
+
+		if (diff < step)
+		{
+			m_Value = m_TargetValue;
+			if (!m_loop)
+			{
+				m_Active = false;
+			}
+			else
+			{
+				if (m_TargetValue == m_TargetValueOriginal)
+				{
+					m_TargetValue = 0;
+				}
+				else
+				{
+					m_TargetValue = m_TargetValueOriginal;
+				}
+				
+			}
+			GetGame().GameScript.CallFunction(m_TargetObject, m_FinishedFunction, NULL, m_Params);
+		}
+		else
+		{
+			if (m_TargetValue > m_Value) 
+			{
+				m_Value += step;
+			}
+			else
+			{
+				m_Value -= step;
+			}
+		}
+		
+		GetGame().GameScript.CallFunction(m_TargetObject, m_UpdateFunction, NULL, m_Params);
+	}
+};
+
 class AnimatorTimer
 {
 	private bool m_active = false;
@@ -940,11 +1039,9 @@ void SetProfileValueBool(string name, bool value)
 }
 
 
-int GetNumberOfSetBits(int i)
+int GetNumberOfSetBits(int i)//leaving here for legacy/modding reasons
 {
-     i = i - ((i >> 1) & 0x55555555);
-     i = (i & 0x33333333) + ((i >> 2) & 0x33333333);
-     return (((i + (i >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
+	return Math.GetNumberOfSetBits(i);
 }
 
 /** @}*/

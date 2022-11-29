@@ -1,7 +1,12 @@
 class InventoryItem extends EntityAI
 {	
-	private string m_SoundImpactType;
 	static private const float SOUND_CONTACT_SKIP = 0.33;//second
+	
+#ifdef DEVELOPER
+	static private ref array<ref string> s_ImpactSoundsInfo = new array<ref string>();
+#endif
+
+	private SoundLookupTable m_SoundImpactTable;
 	private float m_SoundContactTickTime;
 	private bool m_IsMeleeWeapon = false;
 	
@@ -23,10 +28,7 @@ class InventoryItem extends EntityAI
 	
 	void InventoryItem()
 	{
-		if (GetGame().IsClient() || !GetGame().IsMultiplayer())
-		{
-			PreLoadSoundImpactType();
-		}
+		InitImpactSoundData();
 		
 		if (ConfigIsExisting("isMeleeWeapon"))
 			m_IsMeleeWeapon = ConfigGetBool("isMeleeWeapon");
@@ -83,22 +85,38 @@ class InventoryItem extends EntityAI
 	}
 	
 	// -------------------------------------------------------------------------------
-	// -------------------------------------------------------------------------------
-	protected void PreLoadSoundImpactType()
+	void PlayImpactSound(float weight, float velocity, int surfaceHash)
 	{
-		string impactType = "default";
+		if (!m_SoundImpactTable)
+			return;
 
-		if ( ConfigIsExisting("soundImpactType") )
+		SoundObjectBuilder soundBuilder = m_SoundImpactTable.GetSoundBuilder(surfaceHash);
+		if (soundBuilder != NULL)
 		{
-			impactType = ConfigGetString("soundImpactType");
+			soundBuilder.SetVariable("weight", weight);
+			soundBuilder.SetVariable("speed", velocity);
+			soundBuilder.UpdateEnvSoundControllers(GetPosition());
+				
+			SoundObject soundObject = soundBuilder.BuildSoundObject();
+			if (soundObject != NULL)
+			{
+				soundObject.SetKind(WaveKind.WAVEEFFECTEX);
+				PlaySound(soundObject, soundBuilder);
+			}
 		}
-		
-		m_SoundImpactType = impactType;
 	}
 	
-	string GetSoundImpactType()
-	{	
-		return m_SoundImpactType;
+	// -------------------------------------------------------------------------------
+	protected void InitImpactSoundData()
+	{
+		if ( GetGame().IsDedicatedServer() )
+			return;
+
+		string soundImpactType = "default";
+		if ( ConfigIsExisting("soundImpactType") )
+			soundImpactType = ConfigGetString("soundImpactType");
+		
+		m_SoundImpactTable = AnimSoundLookupTableBank.GetInstance().GetImpactTable(soundImpactType + "_Impact_LookupTable");
 	}
 	
 	// -------------------------------------------------------------------------------
@@ -115,6 +133,7 @@ class InventoryItem extends EntityAI
 		return wave;
 	}
 	
+	// -------------------------------------------------------------------------------
 	string GetImpactSurfaceType(IEntity other, Contact impact)
 	{
 		string surface;
@@ -126,59 +145,60 @@ class InventoryItem extends EntityAI
 		{
 			return surface;
 		}
-		else
-		{
-			int liquid;
-			GetGame().SurfaceUnderObject(this, surface, liquid);
-			return surface;
-		}
+		
+		int liquid;
+		GetGame().SurfaceUnderObject(this, surface, liquid);
+		return surface;
+	}
+	
+	//! returns ammo (projectile) used in melee if the item is destroyed. Override higher for specific use
+	string GetRuinedMeleeAmmoType()
+	{
+		return "MeleeSoft";
 	}
 
 	// -------------------------------------------------------------------------------
-/*	override void EOnContact(IEntity other, Contact extra)
+	float ProcessImpactSound(IEntity other, Contact extra, float weight, out int surfaceHash)
 	{
-		if( GetGame().IsMultiplayer() && GetGame().IsServer() )
-			return;
+		float impactVelocity = extra.RelativeVelocityBefore.Length();
+		if ( impactVelocity < 0.3 )
+			return 0.0;
 		
 		float tickTime = GetGame().GetTickTime();
-		if(m_SoundContactTickTime + SOUND_CONTACT_SKIP > tickTime)
-			return;
+		if ( m_SoundContactTickTime + SOUND_CONTACT_SKIP > tickTime )
+			return 0.0;
 		
-		float impactVelocity = extra.RelativeVelocityBefore.Length();
-		if(impactVelocity < 0.3)
-            return;
-		
-        if(impactVelocity > 1.0)
-            impactVelocity = 1;
-		else if(impactVelocity < 0.5)
-			impactVelocity = 0.5;
+		string surfaceName = GetImpactSurfaceType(other, extra);
+		if ( surfaceName == "" )
+			return 0.0;
 
-		string tableName = GetSoundImpactType() + "_Impact_LookupTable";
-		SoundLookupTable table = AnimSoundLookupTableBank.GetInstance().GetImpactTable(tableName);
-		if(table != NULL)
-		{
-			string surfaceName = GetImpactSurfaceType(other, extra);
-			float weight = ConfigGetFloat("weight");
-			//Print("[lukasikjak] surface: " + surfaceName + " speed: " + impactVelocity + " weight: " + weight);
-			if(surfaceName != "")
-			{
-				SoundObjectBuilder soundBuilder = table.GetSoundBuilder(surfaceName.Hash());
-				if (soundBuilder != NULL)
-				{
-					soundBuilder.SetVariable("weight", weight);
-					soundBuilder.SetVariable("speed", extra.RelativeVelocityBefore.Length());
-					soundBuilder.UpdateEnvSoundControllers(GetPosition());
-					
-					SoundObject soundObject = soundBuilder.BuildSoundObject();
-					if (soundObject != NULL)
-					{
-						soundObject.SetKind(WaveKind.WAVEEFFECTEX);
-						PlaySound(soundObject, soundBuilder);
-					}
-				}
-			}
-		}
+#ifdef DEVELOPER
+		string infoText = "Surface: " + surfaceName + ", Weight: " + weight + ", Speed: " + impactVelocity;
+		
+		if ( s_ImpactSoundsInfo.Count() == 10 )
+			s_ImpactSoundsInfo.Remove(9);
+		
+		s_ImpactSoundsInfo.InsertAt(infoText, 0);
+#endif
 
 		m_SoundContactTickTime = tickTime;
-	}*/
+
+		surfaceHash = surfaceName.Hash();
+		return impactVelocity;		
+	}
+	
+#ifdef DEVELOPER
+	static void DrawImpacts()
+	{
+		DbgUI.Begin("Item impact sounds", 10, 200);
+		
+		for ( int i = 0; i < s_ImpactSoundsInfo.Count(); ++i )
+		{
+			string line = (i + 1).ToString() + ". " + s_ImpactSoundsInfo.Get(i);
+			DbgUI.Text(line);
+		}
+		
+		DbgUI.End();
+	}
+#endif
 };

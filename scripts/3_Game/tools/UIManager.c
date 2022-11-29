@@ -13,6 +13,14 @@ class UIManager
 	proto native void CloseSpecificDialog(int id);
 	proto native void CloseDialog();
 	proto native void HideDialog();
+	
+	UIScriptedMenu CreateScriptedMenu(int id, UIMenuPanel parent)
+	{
+		UIScriptedMenu menu = EnterScriptedMenu(id, parent);
+		HideScriptedMenu( menu );
+		return menu;
+	}
+	
 	/**
   \brief Shows message dialog
 	@param caption 
@@ -146,12 +154,7 @@ class UIManager
 	//! Returns true if menu with specific ID is opened (see \ref MenuID)
 	bool IsMenuOpen(int id)
 	{
-		if (FindMenu(id) != NULL)
-		{
-			return true;
-		}
-
-		return false;
+		return FindMenu(id) != null;
 	}
 
 	//! Returns menu with specific ID if it is open (see \ref MenuID)

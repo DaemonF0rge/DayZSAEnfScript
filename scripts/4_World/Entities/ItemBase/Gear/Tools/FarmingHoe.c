@@ -9,7 +9,6 @@ class FarmingHoe: ItemBase
 	{
 		super.SetActions();
 		
-		AddAction(ActionBuildPartSwitch);
 		AddAction(ActionClapBearTrapWithThisItem);
 		AddAction(ActionTogglePlaceObject);
 		AddAction(ActionDigGardenPlot);

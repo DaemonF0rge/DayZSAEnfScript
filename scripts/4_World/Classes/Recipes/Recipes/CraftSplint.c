@@ -27,7 +27,7 @@ class CraftSplint extends RecipeBase
 		//ingredient 1
 		InsertIngredient(0,"BandageDressing");//you can insert multiple ingredients this way
 		InsertIngredient(0,"Rag");//you can insert multiple ingredients this way
-		//InsertIngredient(0,"DuctTape");//you can insert multiple ingredients this way
+		InsertIngredient(0,"DuctTape");//you can insert multiple ingredients this way
 		
 		m_IngredientAddHealth[0] = 0;// 0 = do nothing
 		m_IngredientSetHealth[0] = -1; // -1 = do nothing
@@ -77,6 +77,15 @@ class CraftSplint extends RecipeBase
 			
 			return false;
 		}
+		
+		if (ingredient1.Type() == DuctTape)
+		{
+			if (ingredient1.GetQuantity() >= (ingredient1.GetQuantityMax()/2))
+				return true;
+			
+			return false;
+		}
+		
 		return true;
 	}
 
@@ -96,6 +105,12 @@ class CraftSplint extends RecipeBase
 		{
 			//Print("We also get here then");
 			ingredient1.AddQuantity(-ingredient1.GetQuantityMax());
+		}
+		
+		if (ingredients[0].Type() == DuctTape)
+		{
+			//Print("We also get here then");
+			ingredient1.AddQuantity(-ingredient1.GetQuantityMax()/2);
 		}
 	}
 };

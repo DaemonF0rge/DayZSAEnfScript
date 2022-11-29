@@ -6,29 +6,17 @@ class ActionHarvestCrops: ActionInteractBase
 	{
 
 		m_SpecialtyWeight = UASoftSkillsWeight.PRECISE_MEDIUM;
-		
 		/*m_CommandUID = DayZPlayerConstants.CMD_ACTIONFB_INTERACT;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_CROUCH | DayZPlayerConstants.STANCEMASK_ERECT;
 		m_FullBody = true;*/
-	}
-
-	override string GetText()
-	{
-		return "#harvest";
 	}
 
 	override typename GetInputType()
 	{
 		return ContinuousInteractActionInput;
 	}
-
-	override void CreateConditionComponents()  
-	{
-		m_ConditionItem = new CCINone;
-		m_ConditionTarget = new CCTCursor(UAMaxDistances.SMALL);
-	}
 	
-	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
+	Slot GetPlantSlot(ActionTarget target)
 	{
 		GardenBase garden_base;
 		if ( Class.CastTo(garden_base, target.GetObject()))
@@ -49,13 +37,47 @@ class ActionHarvestCrops: ActionInteractBase
 			
 			if ( slot && slot.GetPlant() )
 			{
+				return slot;	
+			}
+		}
+		return null;
+	}
+	
+	override void OnActionInfoUpdate( PlayerBase player, ActionTarget target, ItemBase item )
+	{
+		m_Text =  "#harvest";
+		
+		Slot slot = GetPlantSlot(target);
+		
+		if (slot)
+		{
+			m_Plant = PlantBase.Cast(slot.GetPlant());
+			m_Text+=  " " +  MiscGameplayFunctions.GetItemDisplayName(m_Plant.GetCropsType());
+		}
+
+	}
+
+	override void CreateConditionComponents()  
+	{
+		m_ConditionItem = new CCINone;
+		m_ConditionTarget = new CCTCursor(UAMaxDistances.SMALL);
+	}
+	
+	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
+	{
+		GardenBase garden_base;
+		if ( Class.CastTo(garden_base, target.GetObject()))
+		{
+			Slot slot = GetPlantSlot(target);
+			
+			if (slot)
+			{
 				m_Plant = PlantBase.Cast(slot.GetPlant());
 				bool is_mature = m_Plant.IsMature();
 				bool is_spoiled = m_Plant.IsSpoiled();
 				bool has_crops = m_Plant.HasCrops();
 				int plant_state = m_Plant.GetPlantState();
-				
-				
+
 				if ( is_mature && has_crops )
 				{
 					return true;
@@ -63,24 +85,7 @@ class ActionHarvestCrops: ActionInteractBase
 			}
 		}
 		return false;
-		
-		/*Object targetObject = target.GetObject();
-		if ( targetObject.IsInherited(PlantBase) )
-		{
-			PlantBase plant = PlantBase.Cast( targetObject );
-			bool is_mature = plant.IsMature();
-			bool is_spoiled = plant.IsSpoiled();
-			bool has_crops = plant.HasCrops();
-			int plant_state = plant.GetPlantState();
-			
-			
-			if ( is_mature && has_crops )
-			{
-				return true;
-			}
-		}
-		
-		return false;*/
+
 	}
 
 	override void OnExecuteServer( ActionData action_data )
@@ -91,10 +96,5 @@ class ActionHarvestCrops: ActionInteractBase
 
 			action_data.m_Player.GetSoftSkillsManager().AddSpecialty( m_SpecialtyWeight );
 		}
-		/*Object targetObject = action_data.m_Target.GetObject();
-		PlantBase m_Plant = PlantBase.Cast( targetObject );
-		m_Plant.Harvest( action_data.m_Player );
-
-		action_data.m_Player.GetSoftSkillsManager().AddSpecialty( m_SpecialtyWeight );*/
 	}
 };

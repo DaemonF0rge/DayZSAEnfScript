@@ -2,8 +2,10 @@
 //! NOTE: The deltaTime passed in is the one for the Insider specifically.
 class TriggerEvents : ScriptedEntity
 {	
+	/** \name OnEnter
+ 		Called when an object enters the trigger
+	*/
 	///@{
-	//! Called when an object enters the trigger
 	protected void Enter(TriggerInsider insider)
 	{
 		#ifdef TRIGGER_DEBUG_BASIC
@@ -25,8 +27,10 @@ class TriggerEvents : ScriptedEntity
 	protected void OnEnterEndEvent(TriggerInsider insider) {}
 	///@}
 	
+	/** \name OnStayStart
+ 		Called at the beginning of an update loop
+	*/
 	///@{
-	//! Called at the beginning of an update loop
 	protected void StayStart(int nrOfInsiders)
 	{
 		#ifdef TRIGGER_DEBUG_SPAM
@@ -48,8 +52,10 @@ class TriggerEvents : ScriptedEntity
 	protected void OnStayStartEndEvent(int nrOfInsiders) {}
 	///@}
 	
+	/** \name OnStay
+ 		Called in the update loop
+	*/
 	///@{
-	//! Called in the update loop
 	protected void Stay(TriggerInsider insider, float deltaTime)
 	{
 		#ifdef TRIGGER_DEBUG_SPAM
@@ -71,8 +77,10 @@ class TriggerEvents : ScriptedEntity
 	protected void OnStayEndEvent(TriggerInsider insider, float deltaTime) {}
 	///@}
 	
+	/** \name OnStayFinish
+ 		Called at the end of an update loop
+	*/
 	///@{
-	//! Called at the end of an update loop
 	protected void StayFinish()
 	{
 		#ifdef TRIGGER_DEBUG_SPAM
@@ -94,8 +102,10 @@ class TriggerEvents : ScriptedEntity
 	protected void OnStayFinishEndEvent() {}
 	///@}
 	
+	/** \name OnLeave
+ 		Called when an object leaves the trigger
+	*/
 	///@{
-	//! Called when an object leaves the trigger
 	protected void Leave(TriggerInsider insider)
 	{
 		#ifdef TRIGGER_DEBUG_BASIC
@@ -104,7 +114,7 @@ class TriggerEvents : ScriptedEntity
 		
 		OnLeaveBeginEvent(insider);
 		
-		if ( GetGame().IsServer() )
+		if ( GetGame() && GetGame().IsServer() )
 			OnLeaveServerEvent(insider);
 		else
 			OnLeaveClientEvent(insider);

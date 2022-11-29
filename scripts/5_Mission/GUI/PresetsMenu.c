@@ -27,6 +27,7 @@ class PresetsMenu extends UIScriptedMenu
 		{
 			m_schemes_list.SelectRow(i);
 		}
+
 		return layoutRoot;
 	}
 
@@ -38,24 +39,18 @@ class PresetsMenu extends UIScriptedMenu
 		{
 		case IDC_CANCEL:
 			Close();
+
 			return true;
 
-			case IDC_OK:
+		case IDC_OK:
 			int index = m_schemes_list.GetSelectedRow();
 			if (index != -1)
 			{
 				GetGame().GetInput().SetProfile(index);
-
-				ref TIntArray keys = new TIntArray;
-
-/*				for (int i = 0; i < UAN; i++)
-				{
-					GetGame().GetInput().GetCurrentProfileActionKeys(i, keys);
-					GetGame().GetInput().SetActionKeys(i, keys);
-				}*/
-
+				GetGame().GetMission().GetOnInputPresetChanged().Invoke();
 				Close();
 			}
+			
 			return true;
 		}
 

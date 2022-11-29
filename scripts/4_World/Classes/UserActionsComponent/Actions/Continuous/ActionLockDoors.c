@@ -15,17 +15,13 @@ class ActionLockDoors: ActionContinuousBase
 		m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT | DayZPlayerConstants.STANCEMASK_CROUCH;
 		m_SpecialtyWeight = UASoftSkillsWeight.PRECISE_HIGH;
+		m_Text = "#lock_door";
 	}
 	
 	override void CreateConditionComponents()
 	{	
 		m_ConditionItem = new CCINonRuined;
 		m_ConditionTarget = new CCTCursor;
-	}
-		
-	override string GetText()
-	{
-		return "#lock_door";
 	}
 	
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

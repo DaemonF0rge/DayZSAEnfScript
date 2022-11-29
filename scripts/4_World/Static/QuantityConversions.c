@@ -14,8 +14,8 @@ class QuantityConversions
 				Magazine magazine_item;
 				Class.CastTo(magazine_item, item);
 				ammo = magazine_item.GetAmmoCount();
-				quantity_text = ammo.ToString();
-				return quantity_text;
+
+				return ammo.ToString();
 			}
 			else if ( item.IsInherited( ItemBook) )
 			{
@@ -67,18 +67,18 @@ class QuantityConversions
 			}
 		}
 		return quantity_text;
-	}
+	}	
 
-	static float GetItemQuantity( InventoryItem item )
+	static float GetItemQuantity(InventoryItem item)
 	{
 		float quantity = 0;
-		if ( item.IsInherited( InventoryItem ) )
+		if ( item.IsInherited(InventoryItem))
 		{
 			ItemBase item_base;
 			Class.CastTo(item_base, item);
-			if ( item_base )
+			if (item_base)
 			{
-				if ( item.IsMagazine() )
+				if (item.IsMagazine())
 				{
 					Magazine magazine_item;
 					Class.CastTo(magazine_item, item);
@@ -92,6 +92,30 @@ class QuantityConversions
 		}
 		return quantity;
 	}	
+	
+	static float GetItemQuantityMax(InventoryItem item)
+	{
+		float quantity = 0;
+		if (item.IsInherited(InventoryItem))
+		{
+			ItemBase item_base;
+			Class.CastTo(item_base, item);
+			if (item_base)
+			{
+				if (item.IsMagazine())
+				{
+					Magazine magazine_item;
+					Class.CastTo(magazine_item, item);
+					quantity = magazine_item.GetAmmoMax();
+				}
+				else
+				{
+					quantity = item_base.GetQuantityMax();
+				}
+			}
+		}
+		return quantity;
+	}
 	
 	static void GetItemQuantity( InventoryItem item, out float q_cur, out float q_min, out float q_max )
 	{

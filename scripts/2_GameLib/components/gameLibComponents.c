@@ -92,7 +92,7 @@ class ScriptComponent : GenericComponent
 	\param extra
 	Bitmask of touch types TODO
 	*/
-	private void EOnTouch(IEntity owner, int extra);
+	protected void EOnTouch(IEntity owner, int extra);
 
 	/*!
 	Event after component is initialized. At this point all entity's components have recieved OnComponentInsert.
@@ -100,7 +100,7 @@ class ScriptComponent : GenericComponent
 	\param extra
 	Number of entity
 	*/
-	private void EOnInit(IEntity owner, int extra);
+	protected void EOnInit(IEntity owner, int extra);
 
 	/*!
 	Extra event of various functional extensions. ATM it's used
@@ -110,7 +110,7 @@ class ScriptComponent : GenericComponent
 	\param extra
 	Extra value of event
 	*/
-	private void EOnExtra(IEntity owner, int extra);
+	protected void EOnExtra(IEntity owner, int extra);
 
 	/*!
 	Event when we are out of visibility
@@ -118,7 +118,7 @@ class ScriptComponent : GenericComponent
 	\param extra
 	Frame number
 	*/
-	private void EOnNotVisible(IEntity owner, int extra);
+	protected void EOnNotVisible(IEntity owner, int extra);
 
 	/*!
 	Event when we are visible
@@ -126,7 +126,7 @@ class ScriptComponent : GenericComponent
 	\param extra
 	Frame number
 	*/
-	private void EOnVisible(IEntity owner, int extra);
+	protected void EOnVisible(IEntity owner, int extra);
 
 	/*!
 	Event every frame
@@ -134,7 +134,7 @@ class ScriptComponent : GenericComponent
 	\param timeSlice
 	Time passed since last frame
 	*/
-	private void EOnFrame(IEntity owner, float timeSlice);
+	protected void EOnFrame(IEntity owner, float timeSlice);
 
 	/*!
 	Even after physics update
@@ -142,7 +142,7 @@ class ScriptComponent : GenericComponent
 	\param extra
 	Frame number
 	*/
-	private void EOnPostFrame(IEntity owner, int extra);
+	protected void EOnPostFrame(IEntity owner, int extra);
 
 	/*!
 	Event from animation system
@@ -150,7 +150,7 @@ class ScriptComponent : GenericComponent
 	\param extra
 	extra data
 	*/
-	private void EOnAnimEvent(IEntity owner, AnimEvent extra);
+	protected void EOnAnimEvent(IEntity owner, AnimEvent extra);
 
 	/*!
 	Event from sound system
@@ -158,7 +158,7 @@ class ScriptComponent : GenericComponent
 	\param extra
 	extra data
 	*/
-	private void EOnSoundEvent(IEntity owner, SoundEvent extra);
+	protected void EOnSoundEvent(IEntity owner, SoundEvent extra);
 
 	/*!
 	Event after simulated by physics engine (once per frame)
@@ -166,7 +166,7 @@ class ScriptComponent : GenericComponent
 	\param timeslice
 	Time slice of simulation step
 	*/
-	private void EOnPostSimulate(IEntity owner, float timeslice);
+	protected void EOnPostSimulate(IEntity owner, float timeslice);
 
 	/*!
 	Event before simulated by physics engine (called from sub-iterations!
@@ -174,7 +174,7 @@ class ScriptComponent : GenericComponent
 	\param timeslice
 	Time slice of simulation step
 	*/
-	private void EOnSimulate(IEntity owner, float timeslice);
+	protected void EOnSimulate(IEntity owner, float timeslice);
 
 	/*!
 	Event when joint attached to RigidBody of this entity is broken
@@ -183,7 +183,7 @@ class ScriptComponent : GenericComponent
 	\param extra
 	Not used ATM
 	*/
-	private void EOnJointBreak(IEntity owner, int extra);
+	protected void EOnJointBreak(IEntity owner, int extra);
 	/*!
 	Event when physics engine has moved with this Entity
 	\param owner
@@ -191,7 +191,7 @@ class ScriptComponent : GenericComponent
 	\param extra
 	Not used ATM
 	*/
-	private void EOnPhysicsMove(IEntity owner, int extra);
+	protected void EOnPhysicsMove(IEntity owner, int extra);
 
 	/*!
 	Event when physics engine registered contact with owner RigidBody
@@ -199,37 +199,37 @@ class ScriptComponent : GenericComponent
 	\param contact
 	Structure describing the contact
 	*/
-	private void EOnContact(IEntity owner, Contact extra);
+	protected void EOnContact(IEntity owner, Contact extra);
 
 	/**
     * Event when component is activated.
     */
-    private void EOnActivate(IEntity owner);
+    protected void EOnActivate(IEntity owner);
 
     /**
     * Event when component is deactivated.
     */
-    private void EOnDeactivate(IEntity owner);
+    protected void EOnDeactivate(IEntity owner);
 
 	/*!
 	Event when a component is created and added to Entity.
 	\param owner Entity into which component is added
 	\param other Component which is being added into Entity
 	*/
-	private void OnComponentInsert(IEntity owner, ScriptComponent other);
+	protected void OnComponentInsert(IEntity owner, ScriptComponent other);
 
 	/*!
 	Event when a component is being removed from Entity.
 	\param owner Entity from which component is being removed
 	\param other Component which is being removed from the Entity
 	*/
-	private void OnComponentRemove(IEntity owner, ScriptComponent other);
+	protected void OnComponentRemove(IEntity owner, ScriptComponent other);
 
 	/*!
 	Called when Entity is being to be destroyed (deleted) or component to be deleted (see Game::DeleteScriptComponent).
 	\param owner Entity which owns the component
 	*/
-	private void OnDelete(IEntity owner);
+	protected void OnDelete(IEntity owner);
 }
 
 typedef int[] SoundHandle;

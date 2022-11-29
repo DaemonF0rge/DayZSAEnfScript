@@ -3,6 +3,12 @@
  **/
 class WeaponFSM extends HFSMBase<WeaponStateBase, WeaponEventBase, WeaponActionBase, WeaponGuardBase>
 {
+	private static const int MAX_SYNCHRONIZE_ATTEMPTS = 12;
+	private static const int MIN_SYNCHRONIZE_INTERVAL = 3000; // ms
+	private static const int RESET_SYNCHRONIZE_THRESHOLD = 3600000; // ms
+	private int m_SynchronizeAttempts;
+	private int m_LastSynchronizeTime;
+	
 	protected int m_NextStateId = 0; /// counter for InternalID: each state in a fsm is assigned an unique number
 	protected ref array<WeaponStateBase> m_UniqueStates = new array<WeaponStateBase>; /// unique list of states in this machine (automation of save/load)
 
@@ -12,7 +18,7 @@ class WeaponFSM extends HFSMBase<WeaponStateBase, WeaponEventBase, WeaponActionB
 		{
 			state.SetInternalStateID(m_NextStateId);
 
-			//wpnDebugSpam("[wpnfsm] " + Object.GetDebugName(m_weapon) + " unique state=" + state + " has id=" + m_NextStateId);
+			//if (LogManager.IsWeaponLogEnable()) { wpnDebugSpam("[wpnfsm] " + Object.GetDebugName(m_weapon) + " unique state=" + state + " has id=" + m_NextStateId); }
 			m_UniqueStates.Insert(state);
 			++m_NextStateId;
 		}
@@ -100,7 +106,7 @@ class WeaponFSM extends HFSMBase<WeaponStateBase, WeaponEventBase, WeaponActionB
 		if (state)
 		{
 			Terminate();
-			wpnDebugPrint("[wpnfsm] synced current state=" + state + " id=" + curr_state_id);	
+			if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] synced current state=" + state + " id=" + curr_state_id); }	
 			m_State = state;	
 			Start(null, true);
 			return true;
@@ -119,7 +125,7 @@ class WeaponFSM extends HFSMBase<WeaponStateBase, WeaponEventBase, WeaponActionB
 		if (LoadAndSetCurrentFSMState(ctx, version))
 		{
 			bool res = m_State.LoadCurrentFSMState(ctx, version);
-			wpnDebugSpam("[wpnfsm] LoadCurrentFSMState - loaded current state=" + GetCurrentState());
+			if (LogManager.IsWeaponLogEnable()) { wpnDebugSpam("[wpnfsm] LoadCurrentFSMState - loaded current state=" + GetCurrentState()); }
 			return res;
 		}
 		return false;
@@ -133,7 +139,7 @@ class WeaponFSM extends HFSMBase<WeaponStateBase, WeaponEventBase, WeaponActionB
 			int state_count = m_UniqueStates.Count();
 			for (int idx = 0; idx < state_count; ++idx)
 			{
-				wpnDebugSpam("[wpnfsm] LoadCurrentUnstableFSMState " + idx + "/" + state_count + " id=" + m_UniqueStates.Get(idx).GetInternalStateID() + " state=" + m_UniqueStates.Get(idx));
+				if (LogManager.IsWeaponLogEnable()) { wpnDebugSpam("[wpnfsm] LoadCurrentUnstableFSMState " + idx + "/" + state_count + " id=" + m_UniqueStates.Get(idx).GetInternalStateID() + " state=" + m_UniqueStates.Get(idx)); }
 				if (!m_UniqueStates.Get(idx).LoadCurrentFSMState(ctx, version))
 					Error("[wpnfsm] LoadCurrentUnstableFSMState - cannot load unique state " + idx + "/" + state_count + " with id=" + m_UniqueStates.Get(idx).GetInternalStateID() + " state=" + m_UniqueStates.Get(idx));
 			}
@@ -149,7 +155,7 @@ class WeaponFSM extends HFSMBase<WeaponStateBase, WeaponEventBase, WeaponActionB
 	{
 		WeaponStateBase state = GetCurrentState();
 		int curr_state_id = state.GetInternalStateID();
-		wpnDebugPrint("[wpnfsm] SaveCurrentFSMState - saving current state=" + GetCurrentState() + " id=" + curr_state_id);
+		if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] SaveCurrentFSMState - saving current state=" + GetCurrentState() + " id=" + curr_state_id); }
 
 		if (!ctx.Write(curr_state_id))
 		{
@@ -170,7 +176,7 @@ class WeaponFSM extends HFSMBase<WeaponStateBase, WeaponEventBase, WeaponActionB
 	{
 		WeaponStateBase state = GetCurrentState();
 		int curr_state_id = state.GetInternalStateID();
-		wpnDebugPrint("[wpnfsm] SaveCurrentUnstableFSMState - saving current state=" + GetCurrentState() + " id=" + curr_state_id);
+		if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] SaveCurrentUnstableFSMState - saving current state=" + GetCurrentState() + " id=" + curr_state_id); }
 		
 		if (!ctx.Write(curr_state_id))
 		{
@@ -185,7 +191,7 @@ class WeaponFSM extends HFSMBase<WeaponStateBase, WeaponEventBase, WeaponActionB
 			int state_id = m_UniqueStates.Get(idx).GetInternalStateID();
 			if (state_id != -1)
 			{
-				wpnDebugSpam("[wpnfsm] SaveCurrentUnstableFSMState " + idx + "/" + state_count + " id=" + state_id + " name=" + m_UniqueStates.Get(idx));
+				if (LogManager.IsWeaponLogEnable()) { wpnDebugSpam("[wpnfsm] SaveCurrentUnstableFSMState " + idx + "/" + state_count + " id=" + state_id + " name=" + m_UniqueStates.Get(idx)); }
 				if (!m_UniqueStates.Get(idx).SaveCurrentFSMState(ctx))
 					Error("SaveCurrentUnstableFSMState - cannot save unique state=" + m_UniqueStates.Get(idx) + " idx=" + idx + "/" + state_count + " with id=" + state_id);
 			}
@@ -205,7 +211,7 @@ class WeaponFSM extends HFSMBase<WeaponStateBase, WeaponEventBase, WeaponActionB
 	
 	/**@fn		Internal_ValidateAndRepair
 	 * @brief	validate the state of the gun and repair if mismatch
-	 * @return	bool whether it performed reparing or not
+	 * @return	bool whether it performed repairing or not
 	 **/
 	protected bool Internal_ValidateAndRepair()
 	{
@@ -217,10 +223,10 @@ class WeaponFSM extends HFSMBase<WeaponStateBase, WeaponEventBase, WeaponActionB
 		{		
 			Weapon_Base weapon = state.m_weapon;
 			if (weapon)
-			{
+			{				
 				repaired |= ValidateAndRepairHelper(weapon,
 						"MagazineRepair",
-						state.HasMagazine(), ( weapon.GetMagazine(weapon.GetCurrentMuzzle()) != null ),
+						state.HasMagazine(), ( weapon.GetMagazine(0) != null ),
 						new WeaponEventAttachMagazine, new WeaponEventDetachMagazine,
 						state);
 				
@@ -233,14 +239,44 @@ class WeaponFSM extends HFSMBase<WeaponStateBase, WeaponEventBase, WeaponActionB
 				if (weapon.IsJammed())
 					return repaired;
 				
-				// Sadly, multi muzzle and fired out bullets are a bit too tricky
-				if (weapon.GetMuzzleCount() == 1)
+				int nMuzzles = weapon.GetMuzzleCount();
+				switch (nMuzzles)
 				{
-					repaired |= ValidateAndRepairHelper(weapon,
-						"ChamberRepair",
-						state.HasBullet(), weapon.IsChamberFull(weapon.GetCurrentMuzzle()),
-						new WeaponEventLoad1Bullet, new WeaponEventMechanism,
-						state);
+					case 1:
+					{
+						repaired |= ValidateAndRepairHelper(weapon,
+							"ChamberFiredRepair",
+							state.IsChamberFiredOut(0), weapon.IsChamberFiredOut(0),
+							new WeaponEventTrigger, new WeaponEventMechanism,
+							state);
+					
+						repaired |= ValidateAndRepairHelper(weapon,
+							"ChamberRepair",
+							state.IsChamberFull(0), weapon.IsChamberFull(0),
+							new WeaponEventLoad1Bullet, new WeaponEventMechanism,
+							state);
+						
+						break;
+					}
+					default:
+					{		
+						for (int i = 0; i < nMuzzles; ++i)
+						{
+							repaired |= ValidateAndRepairHelper(weapon,
+								"ChamberFiredRepair",
+								state.IsChamberFiredOut(i), weapon.IsChamberFiredOut(i),
+								null, null, // A bit brute forced, not really any clean way to transition
+								state);
+					
+							repaired |= ValidateAndRepairHelper(weapon,
+								"ChamberRepair",
+								state.IsChamberFull(i), weapon.IsChamberFull(i),
+								null, null, // A bit brute forced, not really any clean way to transition
+								state);
+						}
+					
+						break;
+					}
 				}
 			}
 		}
@@ -249,14 +285,22 @@ class WeaponFSM extends HFSMBase<WeaponStateBase, WeaponEventBase, WeaponActionB
 	}
 	
 	protected bool ValidateAndRepairHelper(Weapon_Base weapon, string name, bool stateCondition, bool gunCondition, WeaponEventBase e1, WeaponEventBase e2, out WeaponStableState state)
-	{	
-		wpnDebugPrint("[wpnfsm] " + weapon.GetDebugName(weapon) + " ValidateAndRepair - " + name + " - " + m_State + " - state: " + stateCondition + " & weapon: " + gunCondition);
+	{
+		if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + weapon.GetDebugName(weapon) + " ValidateAndRepair - " + name + " - " + m_State + " - state: " + stateCondition + " & weapon: " + gunCondition); }
 		
 		if (stateCondition != gunCondition)
 		{
-			Error("[wpnfsm] ValidateAndRepair Attempting to repair: " + weapon.GetDebugName(weapon) + " - " + name + " - " + m_State + " - state: " + stateCondition + " != weapon: " + gunCondition);
+			WeaponStableState repairedState;
 			
-			WeaponStableState repairedState = ValidateAndRepairStateFinder(gunCondition, e1, e2, state);
+			// Seeing this message is not TOO bad, it just means this system is working
+			// It is simply being listed in the logs to identify how much the FSM state and weapon state still desyncs
+			// Which can be because of a myriad of causes, such as incorrectly set up transitions
+			// Or simply certain timings of certain actions or interrupts lined up perfectly, which can have repro rates such as 1/300
+			Error(string.Format("[wpnfsm] ValidateAndRepair Attempting to repair: %1 - %2 - %3 - state: %4 != weapon: %5",
+				weapon.GetDebugName(weapon), name, m_State, stateCondition, gunCondition));
+			
+			if (e1 && e2)
+				repairedState = ValidateAndRepairStateFinder(gunCondition, e1, e2, state);
 			
 			if (repairedState)
 			{
@@ -266,14 +310,57 @@ class WeaponFSM extends HFSMBase<WeaponStateBase, WeaponEventBase, WeaponActionB
 				state = repairedState;
 				weapon.SyncSelectionState(state.HasBullet(), state.HasMagazine());
 				repairedState.SyncAnimState();
-				wpnDebugPrint("[wpnfsm] " + weapon.GetDebugName(weapon) + " ValidateAndRepair - " + name + " - Result - " + m_State);
+
+				if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + weapon.GetDebugName(weapon) + " ValidateAndRepair - " + name + " - Result - " + m_State); }
 				return true;
 			}
 			else
-				Error("[wpnfsm] " + weapon.GetDebugName(weapon) + " ValidateAndRepair FAILED - " + name + " - " + m_State + " - state: " + stateCondition + " != weapon: " + gunCondition);
+			{
+				// Last ditch effort
+				if (m_SynchronizeAttempts < MAX_SYNCHRONIZE_ATTEMPTS)
+				{
+					int currentTime = g_Game.GetTime();
+					int timeDiff = currentTime - m_LastSynchronizeTime;
+					
+					// Careful with calling synchronize
+					if (timeDiff > MIN_SYNCHRONIZE_INTERVAL)
+					{
+						// If a lot of time passed since last attempt
+						// There is a possibility the weapon was fixed for a period
+						if (timeDiff > RESET_SYNCHRONIZE_THRESHOLD)
+							m_SynchronizeAttempts = 0;
+						
+						// Only call this on server or in SP
+						// Synchronize will ask the server for its FSM state anyways
+						if (g_Game.IsServer())
+							weapon.RandomizeFSMState();
+						
+						weapon.Synchronize();
+							
+						++m_SynchronizeAttempts;
+						m_LastSynchronizeTime = currentTime;
+					}
+				}
+				else
+				{
+					OnFailThresholdBreached(weapon, name, stateCondition, gunCondition);
+				}
+			}
 		}
 		
 		return false;
+	}
+	
+	protected void OnFailThresholdBreached(Weapon weapon, string name, bool stateCondition, bool gunCondition)
+	{
+		// Now seeing THIS one, after the one above, THIS one CAN be bad
+		// As the state was identified as being desynced with the actual weapon state
+		// But the system was unable to fix it, so the weapon is now working improperly or not at all
+		// There is even the possibility that this weapon is now permanently broken
+		Error(string.Format("[wpnfsm] %1 ValidateAndRepair THRESHOLD BREACH - %2 - %3 - state: %4 != weapon: %5",
+					weapon.GetDebugName(weapon), name, m_State, stateCondition, gunCondition));
+		
+		// At this point might even consider just deleting the weapon :c
 	}
 	
 	protected WeaponStableState ValidateAndRepairStateFinder(bool condition, WeaponEventBase e1, WeaponEventBase e2, WeaponStableState state)
@@ -284,7 +371,8 @@ class WeaponFSM extends HFSMBase<WeaponStateBase, WeaponEventBase, WeaponActionB
 		else
 			interState = FindTransitionState(state, e2);
 			
-		return WeaponStableState.Cast(FindGuardedTransitionState(interState, new WeaponEventHumanCommandActionFinished));
+		WeaponEventBase e = new WeaponEventHumanCommandActionFinished;
+		return WeaponStableState.Cast(FindGuardedTransitionState(interState, e));
 	}
 	
 	/**@fn		OnStoreLoad
@@ -298,7 +386,7 @@ class WeaponFSM extends HFSMBase<WeaponStateBase, WeaponEventBase, WeaponActionB
 		if (state)
 		{
 			Terminate();
-			wpnDebugPrint("[wpnfsm] OnStoreLoad - loading current state=" + state + " id=" + id);	
+			if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] OnStoreLoad - loading current state=" + state + " id=" + id); }	
 			m_State = state;
 			Start(null, true);
 		}
@@ -359,23 +447,66 @@ class WeaponFSM extends HFSMBase<WeaponStateBase, WeaponEventBase, WeaponActionB
 	void OnStoreSave(ParamsWriteContext ctx)
 	{
 		int id = GetCurrentStableStateID();
-		wpnDebugSpamALot("[wpnfsm] OnStoreSave - saving current state=" + GetCurrentState() + " id=" + id);
+		if (LogManager.IsWeaponLogEnable()) { wpnDebugSpamALot("[wpnfsm] OnStoreSave - saving current state=" + GetCurrentState() + " id=" + id); }
 		ctx.Write(id);
 	}
 
 	/**@fn		RandomizeFSMState
-	 * @brief	Engine callback - loot randomization of FSM's state. not intended to direct use.
+	 * @brief	Deprecated, use RandomizeFSMStateEx for better results
 	 **/
 	void RandomizeFSMState(bool hasBullet, bool hasMagazine, bool isJammed)
 	{
+		array<MuzzleState> muzzleStates;
+		if (hasBullet)
+			muzzleStates = { MuzzleState.L };
+		else
+			muzzleStates = { MuzzleState.E };
+		
+		RandomizeFSMStateEx(muzzleStates, hasMagazine, isJammed);
+	}
+	
+	/**@fn		RandomizeFSMStateEx
+	 * @brief	With the parameters given, selects a random suitable state for the FSM of the weapon
+	 * @NOTE:	It is better to use Weapon_Base.RandomizeFSMState instead of calling this one
+	 * @WARNING:	Weapon_Base.Synchronize call might be needed, if this method is called while clients are connected
+	 **/
+	void RandomizeFSMStateEx(array<MuzzleState> muzzleStates, bool hasMagazine, bool isJammed)
+	{
 		array<WeaponStableState> candidates = new array<WeaponStableState>;
 		int tc = m_Transitions.Count();
-		for (int i = 0; i < tc; ++i)
+		foreach (WeaponTransition trans : m_Transitions)
 		{
-			WeaponTransition trans = m_Transitions.Get(i);
 			WeaponStableState state = WeaponStableState.Cast(trans.m_srcState);
-			if (state && state.HasBullet() == hasBullet && state.HasMagazine() == hasMagazine && state.IsJammed() == isJammed)
-				candidates.Insert(state);
+			if (state && state.HasMagazine() == hasMagazine && state.IsJammed() == isJammed)
+			{
+				if (state.IsSingleState())
+				{
+					// There is only one, insert it and stop
+					candidates.Insert(state);
+					break;
+				}
+				
+				int nMuzzles = muzzleStates.Count();
+				int nMuzzlesState = state.GetMuzzleStateCount();
+				if (nMuzzles != nMuzzlesState)
+				{
+					ErrorEx(string.Format("Number of muzzles on the weapon (%1) does not correspond with what state has configured (%2).", nMuzzles, nMuzzlesState));
+					continue;
+				}
+				
+				bool equal = true;
+				for (int i = 0; i < nMuzzles; ++i)
+				{
+					if (muzzleStates[i] != state.GetMuzzleState(i))
+					{
+						equal = false;
+						break;
+					}
+				}
+
+				if (equal)
+					candidates.Insert(state);
+			}
 		}
 
 		int cc = candidates.Count();
@@ -387,12 +518,12 @@ class WeaponFSM extends HFSMBase<WeaponStateBase, WeaponEventBase, WeaponActionB
 			m_State = selected;
 			if (!Internal_ValidateAndRepair())
 				Start(null, true);
-			wpnDebugPrint("[wpnfsm] RandomizeFSMState - randomized current state=" + m_State + " id=" + selected.GetCurrentStateID());
+			if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] RandomizeFSMState - randomized current state=" + m_State + " id=" + selected.GetCurrentStateID()); }
 			selected.SyncAnimState();
 		}
 		else
 		{
-			wpnDebugPrint("[wpnfsm] RandomizeFSMState - warning - cannot randomize, no states available");
+			if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] RandomizeFSMState - warning - cannot randomize, no states available"); }
 		}
 	}
 };

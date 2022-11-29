@@ -14,6 +14,8 @@ enum ErrorCategory
 	ConnectErrorScript,
 	//! Error group for when Client is kicked from server
 	ClientKicked,
+	//! Error group for BIOS errors
+	BIOSError,
 };
 
 /**
@@ -38,21 +40,7 @@ class ErrorModuleHandler
 			>> errorCode = 196607
 		@endcode
 	*/	
-	static proto native int 				ThrowError(ErrorCategory category, int code, string additionalInfo = "");
-	
-	/**
-	\brief Creates full error code.
-		\param category \p ErrorCategory Category the error is thrown from
-		\param code \p int The code that the error belongs to inside the category between [-32768, 32767]
-		\return \p int The full error code
-		@code
-			int errorCode = ErrorModuleHandler.CreateError( ErrorCategory.ConnectErrorClient, -1 );
-			Print( errorCode );
-
-			>> errorCode = 196607
-		@endcode
-	*/
-	static proto native int 				CreateError(ErrorCategory category, int code);
+	static proto int 						ThrowError(ErrorCategory category, int code, string additionalInfo = "");
 	
 	/**
 	\brief Throws the error code and sends it to the handler of the category.
@@ -66,7 +54,21 @@ class ErrorModuleHandler
 			>> errorCode = 196607
 		@endcode
 	*/
-	static proto native int					ThrowErrorCode(int errorCode, string additionalInfo = "");
+	static proto int						ThrowErrorCode(int errorCode, string additionalInfo = "");
+	
+	/**
+	\brief Creates full error code.
+		\param category \p ErrorCategory Category the error is thrown from
+		\param code \p int The code that the error belongs to inside the category between [-32768, 32767]
+		\return \p int The full error code
+		@code
+			int errorCode = ErrorModuleHandler.CreateError( ErrorCategory.ConnectErrorClient, -1 );
+			Print( errorCode );
+
+			>> errorCode = 196607
+		@endcode
+	*/
+	static proto int 						CreateError(ErrorCategory category, int code);
 	
 	/**
 	\brief Returns the category the error was thrown from.
@@ -79,7 +81,7 @@ class ErrorModuleHandler
 			>> category = 2
 		@endcode
 	*/
-	static proto native ErrorCategory 		GetCategoryFromError(int errorCode);
+	static proto ErrorCategory 				GetCategoryFromError(int errorCode);
 	
 	/**
 	\brief Returns the code of the error.
@@ -92,7 +94,7 @@ class ErrorModuleHandler
 			>> code = -1
 		@endcode
 	*/
-	static proto native int 				GetCodeFromError(int errorCode);
+	static proto int 						GetCodeFromError(int errorCode);
 	
 	/**
 	\brief Returns a formatted string of the error code.
@@ -105,7 +107,9 @@ class ErrorModuleHandler
 			>> formattedCode = '0x0002FFFF'
 		@endcode
 	*/
-	static proto native string				GetErrorHex(int errorCode);
+	static proto owned string				GetErrorHex(int errorCode);
+	
+	
 	
 	/**
 	\brief Adds a module handler to the ErrorModuleHandler.
@@ -113,14 +117,16 @@ class ErrorModuleHandler
 		\param errorModule \p ErrorHandlerModule The class containing the information and codes for the category.
 		\return \p bool Whether the adding of the module was successful or not
 	*/
-	static proto native bool				AddModule(ErrorCategory category, ErrorHandlerModule errorModule);
+	static proto bool						AddModule(ErrorCategory category, notnull ErrorHandlerModule errorModule);
 	
 	/**
 	\brief Removes a module handler from the ErrorModuleHandler.
 		\param category \p ErrorCategory Category the module is for
 		\return \p bool Whether the removing of the module was successful or not
 	*/
-	static proto native bool				RemoveModule(ErrorCategory category);
+	static proto bool						RemoveModule(ErrorCategory category);
+	
+	
 	
 	/**
 	\brief Gets the Client Message for specified error
@@ -129,7 +135,7 @@ class ErrorModuleHandler
 		\param additionalInfo \p string Any additional info regarding the error, usually data
 		\return \p string The message which would appear on Client
 	*/	
-	static proto native string				GetClientMessage(ErrorCategory category, int code, string additionalInfo = "");
+	static proto string						GetClientMessage(ErrorCategory category, int code, string additionalInfo = "");
 	
 	/**
 	\brief Gets the Client Message for specified error
@@ -137,7 +143,22 @@ class ErrorModuleHandler
 		\param additionalInfo \p string Any additional info regarding the error, usually data
 		\return \p string The message which would appear on Client
 	*/
-	static proto native string				GetClientMessageByCode(int errorCode, string additionalInfo = "");
+	static proto string						GetClientMessageByCode(int errorCode, string additionalInfo = "");
+	
+	/**
+	\brief Gets the Client Message for specified error, while attempting to restore information on the most recent error
+		\param category \p ErrorCategory Category the error is thrown from
+		\param code \p int The code that the error belongs to inside the category between [-32768, 32767]
+		\return \p string The message which would appear on Client
+	*/	
+	static proto string						GetLastClientMessage(ErrorCategory category, int code);
+	
+	/**
+	\brief Gets the Client Message for specified error, while attempting to restore information on the most recent error
+		\param errorCode \p int The full error code
+		\return \p string The message which would appear on Client
+	*/
+	static proto string						GetLastClientMessageByCode(int errorCode);
 	
 	/**
 	\brief Gets the Server Message for specified error
@@ -146,7 +167,7 @@ class ErrorModuleHandler
 		\param additionalInfo \p string Any additional info regarding the error, usually data
 		\return \p string The message which would appear on Server
 	*/	
-	static proto native string				GetServerMessage(ErrorCategory category, int code, string additionalInfo = "");
+	static proto string						GetServerMessage(ErrorCategory category, int code, string additionalInfo = "");
 	
 	/**
 	\brief Gets the Server Message for specified error
@@ -154,7 +175,24 @@ class ErrorModuleHandler
 		\param additionalInfo \p string Any additional info regarding the error, usually data
 		\return \p string The message which would appear on Server
 	*/
-	static proto native string				GetServerMessageByCode(int errorCode, string additionalInfo = "");
+	static proto string						GetServerMessageByCode(int errorCode, string additionalInfo = "");
+	
+	/**
+	\brief Gets the Server Message for specified error, while attempting to restore information on the most recent error
+		\param category \p ErrorCategory Category the error is thrown from
+		\param code \p int The code that the error belongs to inside the category between [-32768, 32767]
+		\return \p string The message which would appear on Server
+	*/	
+	static proto string						GetLastServerMessage(ErrorCategory category, int code);
+	
+	/**
+	\brief Gets the Server Message for specified error, while attempting to restore information on the most recent error
+		\param errorCode \p int The full error code
+		\return \p string The message which would appear on Server
+	*/
+	static proto string						GetLastServerMessageByCode(int errorCode);
+	
+	
 	
 	/**
 	\brief Gets the EMH Instance
@@ -162,7 +200,9 @@ class ErrorModuleHandler
 	*/
 	static proto native ErrorModuleHandler	GetInstance();
 	
-	static proto native void				GetErrorModules(notnull out array<ErrorHandlerModule> errorModules);
+	static proto void						GetErrorModules(notnull out array<ErrorHandlerModule> errorModules);
+	
+	
 	
 	/**
 	\brief Wrapper for AddModule to give feedback whether it succeeded or not.
@@ -199,10 +239,14 @@ class ErrorModuleHandler
 	*/
 	private void Init()
 	{
-		SafeAddModule(new ConnectErrorClientModule);
-		SafeAddModule(new ConnectErrorServerModule);		
-		SafeAddModule(new ConnectErrorScriptModule);
+		if (!g_Game.IsDedicatedServer())
+		{
+			SafeAddModule(new ConnectErrorClientModule);
+			SafeAddModule(new ConnectErrorServerModule);		
+			SafeAddModule(new ConnectErrorScriptModule);
+		}
 		SafeAddModule(new ClientKickedModule);
+		SafeAddModule(new BIOSErrorModule);
 	}
 	
 	/**

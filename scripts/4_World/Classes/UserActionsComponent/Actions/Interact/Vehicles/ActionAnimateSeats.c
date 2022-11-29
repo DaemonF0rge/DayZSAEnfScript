@@ -1,8 +1,8 @@
 class ActionAnimateSeats: ActionAnimateCarSelection
 {
-	override string GetText()
+	void ActionAnimateSeats()
 	{
-		return "#move_seat";
+		m_Text = "#move_seat";
 	}
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

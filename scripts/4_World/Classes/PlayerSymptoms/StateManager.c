@@ -5,7 +5,6 @@ enum AnimType
 }
 
 enum SymptomIDs {
-
 	SYMPTOM_COUGH = 1,
 	SYMPTOM_VOMIT,
 	SYMPTOM_BLINDNESS,
@@ -499,9 +498,9 @@ class SymptomManager
 	//! Removes a single Symptom
 	void RemoveSecondarySymptom(int symptom_id)
 	{
-		for(int i = 0; i < m_SymptomQueueSecondary.Count();i++)
+		for (int i = 0; i < m_SymptomQueueSecondary.Count();i++)
 		{
-			if( m_SymptomQueueSecondary.Get(i) && m_SymptomQueueSecondary.Get(i).GetType() == symptom_id )
+			if ( m_SymptomQueueSecondary.Get(i) && m_SymptomQueueSecondary.Get(i).GetType() == symptom_id )
 			{
 				m_SymptomQueueSecondary.Get(i).RequestDestroy();
 				return;
@@ -511,16 +510,16 @@ class SymptomManager
 	
 	SymptomBase GetCurrentPrimaryActiveSymptom()
 	{
-		if( GetGame().IsServer() || !GetGame().IsMultiplayer() )
+		if ( GetGame().IsServer() )
 		{ 
-			if( m_ActiveSymptomIndexPrimary >= 0 && m_ActiveSymptomIndexPrimary < m_SymptomQueuePrimary.Count() )
+			if ( m_ActiveSymptomIndexPrimary >= 0 && m_ActiveSymptomIndexPrimary < m_SymptomQueuePrimary.Count() )
 			{
-				if( m_SymptomQueuePrimary.Get(m_ActiveSymptomIndexPrimary) ) return m_SymptomQueuePrimary.Get(m_ActiveSymptomIndexPrimary);
+				if ( m_SymptomQueuePrimary.Get(m_ActiveSymptomIndexPrimary) ) return m_SymptomQueuePrimary.Get(m_ActiveSymptomIndexPrimary);
 			}
 		}
-		if( GetGame().IsClient() || !GetGame().IsMultiplayer() )
+		if ( !GetGame().IsDedicatedServer() )
 		{
-			if( m_SymptomQueuePrimary.Count() > 0 ) 
+			if ( m_SymptomQueuePrimary.Count() > 0 ) 
 				return m_SymptomQueuePrimary.Get(0);
 		}
 		return NULL;
@@ -528,9 +527,9 @@ class SymptomManager
 	
 	int FindFirstAvailableSymptomIndex()
 	{
-		for(int i = 0; i < m_SymptomQueuePrimary.Count();i++)
+		for (int i = 0; i < m_SymptomQueuePrimary.Count();i++)
 		{
-			if( m_SymptomQueuePrimary.Get(i).CanActivate() )
+			if ( m_SymptomQueuePrimary.Get(i).CanActivate() )
 			{
 				return i;
 			}
@@ -540,7 +539,7 @@ class SymptomManager
 	
 	int ComparePriority( int prio1, int prio2 )
 	{
-		if( prio1 > prio2 )
+		if ( prio1 > prio2 )
 		{
 			return 1;
 		}
@@ -564,9 +563,9 @@ class SymptomManager
 		
 		bool is_primary = m_AvailableSymptoms.Get(symptom_id).IsPrimary();
 		
-		if( rpc_type == ERPCs.RPC_PLAYER_SYMPTOM_ON )
+		if ( rpc_type == ERPCs.RPC_PLAYER_SYMPTOM_ON )
 		{
-			if( is_primary )
+			if ( is_primary )
 			{
 				CleanUpPrimaryQueue();
 				QueueUpPrimarySymptom(symptom_id,uid);
@@ -576,9 +575,9 @@ class SymptomManager
 				QueueUpSecondarySymptom(symptom_id,uid);
 			}
 		}
-		else if( rpc_type == ERPCs.RPC_PLAYER_SYMPTOM_OFF )
+		else if ( rpc_type == ERPCs.RPC_PLAYER_SYMPTOM_OFF )
 		{
-			if( is_primary )
+			if ( is_primary )
 			{
 				CleanUpPrimaryQueue();
 			}
@@ -591,8 +590,11 @@ class SymptomManager
 
 	void OnRPCDebug(int rpc_type, ParamsReadContext ctx)
 	{
-		if( !GetGame().IsDebug() ) return;
-		if( rpc_type == ERPCs.RPC_PLAYER_SYMPTOMS_DEBUG )
+		#ifndef DEVELOPER
+		return;
+		#endif
+
+		if ( rpc_type == ERPCs.RPC_PLAYER_SYMPTOMS_DEBUG )
 		{
 			int primary_Symptoms_count;
 			int secondary_Symptoms_count;
@@ -615,14 +617,14 @@ class SymptomManager
 			m_SymptomQueueServerDbgSecondary.Clear();
 
 			int overall_count = primary_Symptoms_count + secondary_Symptoms_count;
-			for(int i = 0; i < overall_count ; i++)
+			for (int i = 0; i < overall_count ; i++)
 			{
 				Param3<bool, int, int> p3 = new Param3<bool, int, int>(false,0,0);
 				ctx.Read(p3);
 				bool is_primary = p3.param1;
 				
 				
-				if(is_primary)  
+				if (is_primary)  
 				{
 					m_SymptomQueueServerDbgPrimary.Insert(p3);//   m_SymptomQueueServerDbg.Insert(p3);
 				}
@@ -642,18 +644,18 @@ class SymptomManager
 			}*/
 			
 		}
-		else if( rpc_type == ERPCs.RPC_PLAYER_SYMPTOMS_EXIT )
+		else if ( rpc_type == ERPCs.RPC_PLAYER_SYMPTOMS_EXIT )
 		{
 			ctx.Read(CachedObjectsParams.PARAM1_INT);
 			int SYMPTOM_uid = CachedObjectsParams.PARAM1_INT.param1;
 			RequestSymptomExit(SYMPTOM_uid);
 		}
 
-		else if( rpc_type == ERPCs.RPC_PLAYER_SYMPTOMS_DEBUG_ON)
+		else if ( rpc_type == ERPCs.RPC_PLAYER_SYMPTOMS_DEBUG_ON)
 		{
 			ctx.Read(CachedObjectsParams.PARAM1_INT);
 			int id = CachedObjectsParams.PARAM1_INT.param1;
-			if( IsSymptomPrimary(id) )
+			if ( IsSymptomPrimary(id) )
 			{
 				QueueUpPrimarySymptom(id);
 			}
@@ -667,7 +669,10 @@ class SymptomManager
 	
 	void SendServerDebugToClient()
 	{
-		if( !GetGame().IsDebug() && !GetPlayer().IsPlayerSelected() ) return;
+		#ifndef DEVELOPER
+		if ( !GetPlayer().IsPlayerSelected() ) return;
+		#endif		
+		
 		array<ref Param> debug_list = new array<ref Param>;
 		
 		Param1<int> p1 = new Param1<int>(0);
@@ -686,7 +691,7 @@ class SymptomManager
 		int symptom_id;
 		int SYMPTOM_uid;
 
-		for( int i = 0; i < m_SymptomQueuePrimary.Count(); i++ )
+		for ( int i = 0; i < m_SymptomQueuePrimary.Count(); i++ )
 		{
 			is_primary = m_SymptomQueuePrimary.Get(i).IsPrimary();
 			symptom_id = m_SymptomQueuePrimary.Get(i).GetType();
@@ -696,7 +701,7 @@ class SymptomManager
 			debug_list.Insert(p);
 		}
 
-		for( i = 0; i < m_SymptomQueueSecondary.Count(); i++ )
+		for ( i = 0; i < m_SymptomQueueSecondary.Count(); i++ )
 		{
 
 			is_primary = m_SymptomQueueSecondary.Get(i).IsPrimary();
@@ -734,7 +739,7 @@ class SymptomManager
 
 	bool OnStoreLoad( ParamsReadContext ctx, int version )
 	{
-		ref array<int> m_SaveQueue;
+		array<int> m_SaveQueue;
 		
 		if(ctx.Read(m_SaveQueue))
 		{

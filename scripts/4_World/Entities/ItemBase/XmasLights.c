@@ -114,6 +114,7 @@ class XmasLights extends Inventory_Base
 	{
 		super.SetActions();
 		
+		AddAction(ActionAttachOnProxy);
 		AddAction(ActionPlugIn);
 		AddAction(ActionUnplugThisByCord);
 	}

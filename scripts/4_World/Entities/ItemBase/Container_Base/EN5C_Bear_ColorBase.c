@@ -9,12 +9,12 @@ class Bear_ColorBase extends Container_Base
 	{
 		if( !super.CanPutInCargo(parent) ) {return false;}	
 		//better use something like super.GetName()
-		if ( !(parent.IsKindOf("Bear_ColorBase")) )
+		if ( parent && (parent.IsKindOf("Bear_ColorBase")) )
 		{
-			return true;
+			return false;
 		}
 		
-		return false;
+		return true;
 	}
 }
 

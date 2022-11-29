@@ -17,6 +17,10 @@ class MainMenuVideo extends UIScriptedMenu
 		m_VideoPlayTimer		= new Timer();
 		m_VideoFadeTimer		= new WidgetFadeTimer();
 		
+		layoutRoot.FindAnyWidget("ConsoleToolbar").Show(true);
+		RichTextWidget toolbar_b = RichTextWidget.Cast(layoutRoot.FindAnyWidget("BackIcon"));
+		toolbar_b.SetText(InputUtils.GetRichtextButtonIconFromInputAction("UAUIBack", "", EUAINPUT_DEVICE_CONTROLLER, InputUtils.ICON_SCALE_TOOLBAR));
+		
 		#ifdef PLATFORM_PS4
 			m_Video.LoadVideo( "/app0/video/DayZ_onboarding_MASTER.mp4", 0 );
 		#else

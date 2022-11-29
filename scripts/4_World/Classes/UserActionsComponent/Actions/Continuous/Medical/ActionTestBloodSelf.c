@@ -15,6 +15,7 @@ class ActionTestBloodSelf: ActionContinuousBase
 		m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_CROUCH;
 		m_SpecialtyWeight = UASoftSkillsWeight.PRECISE_LOW;
+		m_Text = "#test_blood";
 	}
 	
 	override void CreateConditionComponents()  
@@ -26,11 +27,6 @@ class ActionTestBloodSelf: ActionContinuousBase
 	override bool HasTarget()
 	{
 		return false;
-	}
-		
-	override string GetText()
-	{
-		return "#test_blood";
 	}
 
 	override void OnFinishProgressServer( ActionData action_data )

@@ -8,7 +8,7 @@ class ActionMineRockCB : ActionContinuousBaseCB
 	}
 };
 
-class ActionMineRock: ActionContinuousBase
+class ActionMineRock: ActionMineBase
 {
 	void ActionMineRock()
 	{
@@ -17,6 +17,7 @@ class ActionMineRock: ActionContinuousBase
 		m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT;
 		m_SpecialtyWeight = UASoftSkillsWeight.ROUGH_HIGH;
+		//m_Text = "#mine";
 	}
 	
 	override void CreateConditionComponents()  
@@ -28,7 +29,7 @@ class ActionMineRock: ActionContinuousBase
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
 	{	
 		//Action not allowed if player has broken legs
-		if (player.m_BrokenLegState == eBrokenLegs.BROKEN_LEGS)
+		if (player.GetBrokenLegs() == eBrokenLegs.BROKEN_LEGS)
 			return false;
 		
 		Object targetObject = target.GetObject();
@@ -37,11 +38,6 @@ class ActionMineRock: ActionContinuousBase
 			return true;
 		}
 		return false;
-	}
-		
-	override string GetText()
-	{
-		return "#mine";
 	}
 	
 	override void OnFinishProgressServer( ActionData action_data )

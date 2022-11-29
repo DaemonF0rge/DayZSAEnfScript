@@ -13,13 +13,10 @@ class RespawnDialogue extends UIScriptedMenu
 	
 	void RespawnDialogue()
 	{
-		//GetGame().GetMission().PlayerControlDisable(INPUT_EXCLUDE_ALL);
 	}
 
 	void ~RespawnDialogue()
 	{
-		/*if ( GetGame() && GetGame().GetMission() && !GetGame().GetUIManager().IsMenuOpen(MENU_INGAME) )
-			GetGame().GetMission().PlayerControlEnable(true);*/
 	}
 	
 	override Widget Init()
@@ -50,20 +47,22 @@ class RespawnDialogue extends UIScriptedMenu
 	{
 		super.OnClick(w, x, y, button);
 		
-		if (w.GetUserID() == IDC_CANCEL)
+		switch (w.GetUserID())
 		{
-			Close();
-			return true;
+			case IDC_CANCEL:
+			{
+				Close();
+				return true;
+			}
+			case ID_RESPAWN_CUSTOM:
+			{
+				return RequestRespawn(false);
+			}
+			case ID_RESPAWN_RANDOM:
+			{
+				return RequestRespawn(true);
+			}
 		}
-		if (w.GetUserID() == ID_RESPAWN_CUSTOM)
-		{
-			return RequestRespawn(false);
-		}
-		if (w.GetUserID() == ID_RESPAWN_RANDOM)
-		{
-			return RequestRespawn(true);
-		}
-
 		return false;
 	}
 	

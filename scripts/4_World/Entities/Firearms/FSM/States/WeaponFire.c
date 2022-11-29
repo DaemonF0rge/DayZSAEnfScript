@@ -26,7 +26,7 @@ class WeaponDryFire extends WeaponStartAction
 
 			int muzzleIndex = m_weapon.GetCurrentMuzzle();
 			float reloadTime = m_weapon.GetReloadTime(muzzleIndex);
-			if ( hic.IsUseButton() && m_dtAccumulator >= reloadTime)
+			if ( hic.IsAttackButton() && m_dtAccumulator >= reloadTime)
 				if (m_weapon.CanProcessWeaponEvents())
 					m_weapon.ProcessWeaponEvent(new WeaponEventDryFireTimeout(p));
 		}
@@ -53,7 +53,7 @@ class WeaponFire extends WeaponStartAction
 		{
 			m_dtAccumulator = 0;
 	
-			wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponFire bang!");
+			if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponFire bang!"); }
 			//m_weapon.Fire();
 			int mi = m_weapon.GetCurrentMuzzle();
 			if (TryFireWeapon(m_weapon, mi))
@@ -101,7 +101,7 @@ class WeaponFireWithEject extends WeaponFire
 	{
 		m_dtAccumulator = 0;
 
-		wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponFire bang!");
+		if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponFire bang!"); }
 		//m_weapon.Fire();
 		int mi = m_weapon.GetCurrentMuzzle();
 		if (TryFireWeapon(m_weapon, mi))
@@ -129,7 +129,7 @@ class WeaponFireMultiMuzzle extends WeaponStartAction
 		{
 			m_dtAccumulator = 0;
 	
-			wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponFire bang bang!");
+			if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponFire bang bang!"); }
 
 			int mi = m_weapon.GetCurrentMuzzle();
 			int b = m_weapon.GetCurrentModeBurstSize(mi);
@@ -273,7 +273,7 @@ class WeaponFireToJam extends WeaponStartAction
 		{
 			m_dtAccumulator = 0;
 
-			wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponFire bang! and jam?");
+			if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponFire bang! and jam?"); }
 			//m_weapon.Fire();
 			int mi = m_weapon.GetCurrentMuzzle();
 			if (TryFireWeapon(m_weapon, mi))
@@ -320,7 +320,7 @@ class WeaponFireAndChamber extends WeaponFire
 		{
 			if (!m_weapon.IsJammed())
 			{
-				wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " ejected fired out casing");
+				if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " ejected fired out casing"); }
 				int mi = m_weapon.GetCurrentMuzzle();
 				m_weapon.EjectCasing(mi);
 				m_weapon.EffectBulletHide(mi);
@@ -340,7 +340,7 @@ class WeaponFireAndChamberFromInnerMagazine extends WeaponFire
 		
 		if (!m_weapon.IsJammed())
 		{
-			wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " ejected fired out casing");
+			if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " ejected fired out casing"); }
 			int mi = m_weapon.GetCurrentMuzzle();
 			m_weapon.EjectCasing(mi);
 			m_weapon.EffectBulletHide(mi);

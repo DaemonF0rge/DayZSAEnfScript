@@ -17,8 +17,8 @@ enum RBFStableStateID
 
 class RBF_CLO_BU0_MA0 extends WeaponStableState
 {
-	override void OnEntry (WeaponEventBase e) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { close nobull nomag"); super.OnEntry(e); }
-	override void OnExit (WeaponEventBase e) { super.OnExit(e); wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } close nobull nomag"); }
+	override void OnEntry (WeaponEventBase e) { if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { close nobull nomag"); } super.OnEntry(e); }
+	override void OnExit (WeaponEventBase e) { super.OnExit(e); if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } close nobull nomag"); } }
 	override int GetCurrentStateID () { return RBFStableStateID.RBF_CLO_BU0_MA0; }
 	override bool HasBullet () { return false; }
 	override bool HasMagazine () { return false; }
@@ -28,8 +28,8 @@ class RBF_CLO_BU0_MA0 extends WeaponStableState
 };
 class RBF_CLO_BU1_MA0 extends WeaponStableState
 {
-	override void OnEntry (WeaponEventBase e) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { close bullet nomag"); super.OnEntry(e);}
-	override void OnExit (WeaponEventBase e) { super.OnExit(e); wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } close bullet nomag"); }
+	override void OnEntry (WeaponEventBase e) { if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { close bullet nomag"); } super.OnEntry(e);}
+	override void OnExit (WeaponEventBase e) { super.OnExit(e); if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } close bullet nomag"); } }
 	override int GetCurrentStateID () { return RBFStableStateID.RBF_CLO_BU1_MA0; }
 	override bool HasBullet () { return true; }
 	override bool HasMagazine () { return false; }
@@ -40,7 +40,7 @@ class RBF_CLO_BU1_MA0 extends WeaponStableState
 class RBF_CLO_BU1_MA1 extends WeaponStableState
 {
 	override void OnEntry (WeaponEventBase e) { /*Print("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { close bullet mag");*/ super.OnEntry(e);}
-	override void OnExit (WeaponEventBase e) { super.OnExit(e); wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } close bullet mag"); }
+	override void OnExit (WeaponEventBase e) { super.OnExit(e); if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } close bullet mag"); } }
 	override int GetCurrentStateID () { return RBFStableStateID.RBF_CLO_BU1_MA1; }
 	override bool HasBullet () { return true; }
 	override bool HasMagazine () { return true; }
@@ -50,8 +50,8 @@ class RBF_CLO_BU1_MA1 extends WeaponStableState
 };
 class RBF_CLO_BU0_MA1 extends WeaponStableState
 {
-	override void OnEntry (WeaponEventBase e) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { close nobull mag"); super.OnEntry(e); }
-	override void OnExit (WeaponEventBase e) { super.OnExit(e); wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } close nobull mag"); }
+	override void OnEntry (WeaponEventBase e) { if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { close nobull mag"); } super.OnEntry(e); }
+	override void OnExit (WeaponEventBase e) { super.OnExit(e); if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } close nobull mag"); } }
 	override int GetCurrentStateID () { return RBFStableStateID.RBF_CLO_BU0_MA1; }
 	override bool HasBullet () { return false; }
 	override bool HasMagazine () { return true; }
@@ -62,7 +62,7 @@ class RBF_CLO_BU0_MA1 extends WeaponStableState
 class RBF_JAM_BU1_MA0 extends WeaponStateJammed
 {
 	override void OnEntry (WeaponEventBase e) { Print("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { jammed bullet nomag"); super.OnEntry(e); }
-	override void OnExit (WeaponEventBase e) { super.OnExit(e); wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } jammed bullet nomag"); }
+	override void OnExit (WeaponEventBase e) { super.OnExit(e); if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } jammed bullet nomag"); } }
 	override int GetCurrentStateID () { return RBFStableStateID.RBF_JAM_BU1_MA0; }
 	override bool HasBullet () { return true; }
 	override bool HasMagazine () { return false; }
@@ -74,7 +74,7 @@ class RBF_JAM_BU1_MA0 extends WeaponStateJammed
 class RBF_JAM_BU1_MA1 extends WeaponStateJammed
 {
 	override void OnEntry (WeaponEventBase e) { Print("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { jammed bullet mag"); super.OnEntry(e); }
-	override void OnExit (WeaponEventBase e) { super.OnExit(e); wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } jammed bullet mag"); }
+	override void OnExit (WeaponEventBase e) { super.OnExit(e); if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } jammed bullet mag"); } }
 	override int GetCurrentStateID () { return RBFStableStateID.RBF_JAM_BU1_MA1; }
 	override bool HasBullet () { return true; }
 	override bool HasMagazine () { return true; }
@@ -106,10 +106,10 @@ class RifleBoltFree_Base extends Rifle_Base
 	override void InitStateMachine()
 	{
 
-		m_abilities.Insert(new AbilityRecord(WeaponActions.RELOAD, GetWeaponSpecificCommand(WeaponActions.RELOAD, WeaponActionReloadTypes.RELOADSRIFLE_MAGAZINE_BULLET)));
-		m_abilities.Insert(new AbilityRecord(WeaponActions.RELOAD, GetWeaponSpecificCommand(WeaponActions.RELOAD, WeaponActionReloadTypes.RELOADSRIFLE_NOMAGAZINE_BULLET)));
-		m_abilities.Insert(new AbilityRecord(WeaponActions.RELOAD, GetWeaponSpecificCommand(WeaponActions.RELOAD, WeaponActionReloadTypes.RELOADSRIFLE_MAGAZINE_NOBULLET)));
-		m_abilities.Insert(new AbilityRecord(WeaponActions.RELOAD, GetWeaponSpecificCommand(WeaponActions.RELOAD, WeaponActionReloadTypes.RELOADSRIFLE_NOMAGAZINE_NOBULLET)));
+		m_abilities.Insert(new AbilityRecord(WeaponActions.RELOAD, GetWeaponSpecificCommand(WeaponActions.RELOAD, WeaponActionReloadTypes.RELOADRIFLE_MAGAZINE_BULLET)));
+		m_abilities.Insert(new AbilityRecord(WeaponActions.RELOAD, GetWeaponSpecificCommand(WeaponActions.RELOAD, WeaponActionReloadTypes.RELOADRIFLE_NOMAGAZINE_BULLET)));
+		m_abilities.Insert(new AbilityRecord(WeaponActions.RELOAD, GetWeaponSpecificCommand(WeaponActions.RELOAD, WeaponActionReloadTypes.RELOADRIFLE_MAGAZINE_NOBULLET)));
+		m_abilities.Insert(new AbilityRecord(WeaponActions.RELOAD, GetWeaponSpecificCommand(WeaponActions.RELOAD, WeaponActionReloadTypes.RELOADRIFLE_NOMAGAZINE_NOBULLET)));
 		m_abilities.Insert(new AbilityRecord(WeaponActions.RELOAD, GetWeaponSpecificCommand(WeaponActions.RELOAD, WeaponActionReloadTypes.RELOADRIFLE_MAGAZINE_DETACH)));
 
 		m_abilities.Insert(new AbilityRecord(WeaponActions.CHAMBERING, GetWeaponSpecificCommand(WeaponActions.CHAMBERING, WeaponActionChamberingTypes.CHAMBERING_ONEBULLET_CLOSED)));
@@ -167,7 +167,7 @@ class RifleBoltFree_Base extends Rifle_Base
 	
 		WeaponReplacingMagAndChamberNext Reload_C11 = new WeaponReplacingMagAndChamberNext(this, NULL, WeaponActions.RELOAD, GetWeaponSpecificCommand(WeaponActions.RELOAD, WeaponActionReloadTypes.RELOADRIFLE_MAGAZINE_BULLET));
 		WeaponReplacingMagAndChamberNext Reload_C01 = new WeaponReplacingMagAndChamberNext(this, NULL, WeaponActions.RELOAD, GetWeaponSpecificCommand(WeaponActions.RELOAD, WeaponActionReloadTypes.RELOADRIFLE_MAGAZINE_NOBULLET));
-		WeaponReplacingMagAndChamberNext Reload_JF1 = new WeaponReplacingMagAndChamberNext(this, NULL, WeaponActions.RELOAD, GetWeaponSpecificCommand(WeaponActions.RELOAD, WeaponActionReloadTypes.RELOADRIFLE_MAGAZINE_NOBULLET));
+		WeaponReplacingMagAndChamberNext Reload_JF1 = new WeaponReplacingMagAndChamberNext(this, NULL, WeaponActions.RELOAD, GetWeaponSpecificCommand(WeaponActions.RELOAD, WeaponActionReloadTypes.RELOADRIFLE_MAGAZINE_BULLET));
 	
 		WeaponDetachingMag Detach_C11 = new WeaponDetachingMag(this, NULL, WeaponActions.RELOAD, GetWeaponSpecificCommand(WeaponActions.RELOAD, WeaponActionReloadTypes.RELOADRIFLE_MAGAZINE_DETACH));
 		WeaponDetachingMag Detach_C01 = new WeaponDetachingMag(this, NULL, WeaponActions.RELOAD, GetWeaponSpecificCommand(WeaponActions.RELOAD, WeaponActionReloadTypes.RELOADRIFLE_MAGAZINE_DETACH));

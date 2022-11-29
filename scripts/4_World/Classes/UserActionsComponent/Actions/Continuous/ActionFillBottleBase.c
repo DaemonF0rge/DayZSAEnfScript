@@ -27,22 +27,15 @@ class ActionFillBottleBase: ActionContinuousBase
 		m_CallbackClass = ActionFillBottleBaseCB;
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONFB_FILLBOTTLEPOND;
 		m_FullBody = true;
-		m_StanceMask = 0;
+		m_StanceMask = DayZPlayerConstants.STANCEMASK_CROUCH | DayZPlayerConstants.STANCEMASK_ERECT;;
 		m_SpecialtyWeight = UASoftSkillsWeight.PRECISE_LOW;
+		m_Text = "#fill";
 	}
 	
 	override void CreateConditionComponents()  
 	{
 		m_ConditionItem = new CCINonRuined;
 		m_ConditionTarget = new CCTCursorNoObject(UAMaxDistances.DEFAULT);
-	}
-
-	override string GetText()
-	{
-		PlayerBase player = PlayerBase.Cast( GetGame().GetPlayer() );
-		ItemBase item = player.GetItemInHands();
-
-		return "#fill";
 	}
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

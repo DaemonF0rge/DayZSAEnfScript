@@ -585,23 +585,25 @@ class CargoContainerRow: LayoutHolder
 		return m_Width;
 	}
 
-	void SetWidth( int width )
+	void SetWidth( int width, bool immedUpdate = true )
 	{
 		m_Width = width;
 		int i;
 		
-		for( i = width; i < m_MaxColumns; i++ )
+		for ( i = width; i < m_MaxColumns; i++ )
 		{
-			GetMainWidget().FindAnyWidget( "Icon" + i ).Show( false );
-			GetMainWidget().FindAnyWidget( "Spacer" + i ).Show( false );
+			GetMainWidget().FindAnyWidget( "Icon" + i ).Show( false, false );
+			GetMainWidget().FindAnyWidget( "Spacer" + i ).Show( false, false );
 		}
 		
-		GetMainWidget().FindAnyWidget( "Spacer10" ).Show( m_Width != 0 );
-		m_Resizer2.Refresh();
-		GetMainWidget().Update();
+		GetMainWidget().FindAnyWidget( "Spacer10" ).Show( m_Width != 0, false );
 		
-		m_Resizer1.ResizeParentToChild();
+		if (immedUpdate)
+		{			
+			m_Resizer2.Refresh();
+			GetMainWidget().Update();	
+		}
 		
-		
+		m_Resizer1.ResizeParentToChild();	
 	}
 }

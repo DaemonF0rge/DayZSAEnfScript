@@ -61,6 +61,7 @@ class DeCraftGhillieAttachment extends RecipeBase
 		InsertIngredient(1,"M9A1_Bayonet");
 		InsertIngredient(1,"Mosin_Bayonet");
 		InsertIngredient(1,"SKS_Bayonet");	
+		InsertIngredient(1,"BoneKnife");
 		
 		m_IngredientAddHealth[1] = -5;// 0 = do nothing
 		m_IngredientSetHealth[1] = -1; // -1 = do nothing

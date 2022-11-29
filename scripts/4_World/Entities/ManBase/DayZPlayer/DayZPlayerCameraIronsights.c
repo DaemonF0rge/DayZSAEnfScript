@@ -11,7 +11,9 @@ class DayZPlayerCameraIronsights extends DayZPlayerCameraBase
 	
 	protected 	bool 			m_isEntering 	= false;
 	protected	bool			m_opticsHasWeaponOverride = false;
-	protected ref array<float> 	temp_array;
+	protected ref array<float> 	temp_array; //DOF only
+	
+	protected PPERequester_CameraADS m_RequesterADS;
 
 	//! camera dynamics
 	float m_velocityYaw[1];
@@ -29,7 +31,6 @@ class DayZPlayerCameraIronsights extends DayZPlayerCameraBase
 
 	void 	DayZPlayerCameraIronsights(DayZPlayer pPlayer, HumanInputController pInput)
 	{
-		
 		if (!temp_array)
 			temp_array = new array<float>;
 		m_iBoneIndex = pPlayer.GetBoneIndexByName("RightHand_Dummy");
@@ -52,6 +53,10 @@ class DayZPlayerCameraIronsights extends DayZPlayerCameraBase
 		m_movementAmplitudeY = 1;
 		m_movementFrequencyX = 1;
 		m_movementFrequencyY = 2;
+		
+		Class.CastTo(m_RequesterADS,PPERequester_CameraADS.Cast(PPERequesterBank.GetRequester(PPERequester_CameraADS)));
+		
+		Init();
 	}
 	
 	void SetupSightEntities()
@@ -229,16 +234,20 @@ class DayZPlayerCameraIronsights extends DayZPlayerCameraBase
 	override void SetCameraPP(bool state, DayZPlayerCamera launchedFrom)
 	{
 		//Print("SetCameraPP - ADS");
-		if (!state || !m_weaponUsed || (PlayerBase.Cast(m_pPlayer) && launchedFrom != PlayerBase.Cast(m_pPlayer).GetCurrentPlayerCamera()))
+		if (PlayerBase.Cast(m_pPlayer) && launchedFrom.Type() != PlayerBase.Cast(m_pPlayer).GetCurrentPlayerCamera().Type())
 		{
-			PPEffects.ResetPPMask();
-			PPEffects.SetLensEffect(0, 0, 0, 0);
-			PPEffects.OverrideDOF(false, 0, 0, 0, 0, 1);
-			PPEffects.SetBlurOptics(0);
+			//Print("DayZPlayerCameraIronsights | SetCameraPP | skipping, wrong camera type active!");
+			return;
+		}
+		
+		//if (!state || !m_weaponUsed || (PlayerBase.Cast(m_pPlayer) && launchedFrom != PlayerBase.Cast(m_pPlayer).GetCurrentPlayerCamera()))
+		if (!state || !m_weaponUsed)
+		{
+			m_RequesterADS.Stop();
 			
 			if (IsCameraNV())
 			{
-				SetNVPostprocess(NVTypes.NV_GOGGLES);
+				SetNVPostprocess(GetCameraNVType());
 			}
 			else
 			{
@@ -247,9 +256,8 @@ class DayZPlayerCameraIronsights extends DayZPlayerCameraBase
 		}
 		else
 		{
-			PPEffects.ResetPPMask();
-			//PPEffects.AddPPMask(0.5, 0.5, 0.3, 0.05);
-			PPEffects.SetLensEffect(0, 0, 0, 0);
+			temp_array = {false, 0.0, 0.0, 0.0, 0.0, 1.0};
+			
 			if (m_weaponUsed.GetWeaponDOF() || (m_opticsUsed && m_opticsUsed.GetOpticsDOF()))
 			{
 				if (m_opticsUsed && m_opticsUsed.GetOpticsDOF().Count() == 6)
@@ -260,16 +268,15 @@ class DayZPlayerCameraIronsights extends DayZPlayerCameraBase
 				{
 					temp_array = m_weaponUsed.GetWeaponDOF();
 				}
-				if (temp_array.Count() == 6)
-					PPEffects.OverrideDOF(temp_array[0],temp_array[1],temp_array[2],temp_array[3],temp_array[4],temp_array[5]);
+				if (temp_array.Count() != 6)
+					temp_array = {false, 0.0, 0.0, 0.0, 0.0, 1.0};
 			}
-			else
-				PPEffects.OverrideDOF(false, 0, 0, 0, 0, 1);
-			PPEffects.SetBlurOptics(0);
+			
+			m_RequesterADS.SetValuesIronsights(temp_array); //DOF only
 			
 			if (IsCameraNV())
 			{
-				SetNVPostprocess(NVTypes.NV_GOGGLES);
+				SetNVPostprocess(GetCameraNVType());
 			}
 			else
 			{
@@ -338,6 +345,18 @@ class DayZPlayerCameraOptics : DayZPlayerCameraIronsights
 		m_fShootFromCamera = 0;
 	}
 	
+	override void Init()
+	{
+		if (m_opticsUsed && m_opticsUsed.IsNVOptic() && m_opticsUsed.IsWorking())
+		{
+			SetCameraNV(true);
+		}
+		else
+		{
+			SetCameraNV(false);
+		}
+	}
+	
 	override EntityAI GetCurrentSightEntity ()
 	{
 		return m_opticsUsed;
@@ -358,11 +377,6 @@ class DayZPlayerCameraOptics : DayZPlayerCameraIronsights
 	{
 		super.OnActivate(pPrevCamera,pPrevCameraResult);
 		
-		if (DayZPlayerCameraBase.Cast(pPrevCamera) && DayZPlayerCameraBase.Cast(pPrevCamera).IsCameraNV())
-		{
-			PPEffects.SetEVValuePP(0); //sets EV value immediately to avoid bright flashes at night
-			//PPEffects.SetColorizationNV(0.0, 0.0, 0.0);
-		}
 		PlayerBase player = PlayerBase.Cast(m_pPlayer);
 		if (player)
 		{
@@ -423,16 +437,19 @@ class DayZPlayerCameraOptics : DayZPlayerCameraIronsights
 	override void SetCameraPP(bool state,DayZPlayerCamera launchedFrom)
 	{
 		//Print("SetCameraPP - optics");
-		if (!state || !m_opticsUsed || (PlayerBase.Cast(m_pPlayer) && launchedFrom != PlayerBase.Cast(m_pPlayer).GetCurrentPlayerCamera()))
+		if (PlayerBase.Cast(m_pPlayer) && launchedFrom.Type() != PlayerBase.Cast(m_pPlayer).GetCurrentPlayerCamera().Type())
 		{
-			PPEffects.ResetPPMask();
-			PPEffects.SetLensEffect(0, 0, 0, 0);
-			PPEffects.OverrideDOF(false, 0, 0, 0, 0, 1);
-			PPEffects.SetBlurOptics(0);
+			//Print("DayZPlayerCameraOptics | SetCameraPP | skipping, wrong camera type active!");
+			return;
+		}
+		
+		if (!state || !m_opticsUsed)
+		{
+			m_RequesterADS.Stop();
 			
 			if (IsCameraNV())
 			{
-				SetNVPostprocess(NVTypes.NV_GOGGLES);
+				SetNVPostprocess(GetCameraNVType());
 			}
 			else
 			{
@@ -446,12 +463,14 @@ class DayZPlayerCameraOptics : DayZPlayerCameraIronsights
 		}
 		else
 		{
-			PPEffects.ResetPPMask();
+			array<float> lens_values = new array<float>;
+			array<float> mask_values = new array<float>;
+			float gauss = 0.0;
+			temp_array = {false, 0.0, 0.0, 0.0, 0.0, 1.0};
 			
 			// 1x scopes only
 			if (m_opticsUsed.AllowsDOF() && !NVGoggles.Cast(m_opticsUsed))
 			{
-				PPEffects.SetLensEffect(0, 0, 0, 0);
 				if (m_weaponUsed)
 				{
 					if (m_opticsUsed.GetOpticsDOF().Count() == 6)
@@ -463,33 +482,23 @@ class DayZPlayerCameraOptics : DayZPlayerCameraIronsights
 						temp_array = m_weaponUsed.GetWeaponDOF(); //TODO should some optics have own DOF settings (different eye point)?
 					}
 					
-					if (temp_array.Count() == 6)
-					{
-						PPEffects.OverrideDOF(temp_array[0],temp_array[1],temp_array[2],temp_array[3],temp_array[4],temp_array[5]);
-					}
+					if (temp_array.Count() != 6)
+						temp_array = {false, 0.0, 0.0, 0.0, 0.0, 1.0};
 				}
-				else
-					PPEffects.OverrideDOF(false, 0, 0, 0, 0, 1);
+				
+				m_RequesterADS.SetValuesIronsights(temp_array); //DOF only
 				
 				// optics NV mode
 				if (m_opticsUsed.IsNVOptic())
 				{
-					if (m_opticsUsed.IsWorking())
-					{
-						SetCameraNV(true);
-						SetNVPostprocess(NVTypes.NV_OPTICS_ON);
-					}
-					else
-					{
-						SetCameraNV(false);
-						SetNVPostprocess(NVTypes.NV_OPTICS_OFF);
-					}
+					SetCameraNV(true);
+					SetNVPostprocess(m_opticsUsed.GetCurrentNVType());
 				}
 				else
 				{
 					if (IsCameraNV())
 					{
-						SetNVPostprocess(NVTypes.NV_GOGGLES);
+						SetNVPostprocess(GetCameraNVType());
 					}
 					else
 					{
@@ -502,50 +511,32 @@ class DayZPlayerCameraOptics : DayZPlayerCameraIronsights
 				// optics mask
 				if (m_opticsUsed.GetOpticsPPMask() && m_opticsUsed.GetOpticsPPMask().Count() == 4)
 				{
-					temp_array = m_opticsUsed.GetOpticsPPMask();
-					
-					PPEffects.AddPPMask(temp_array[0], temp_array[1], temp_array[2], temp_array[3]);
-					//PPEffects.AddPPMask(0.5, 0.5, 0.4, 0.05);
+					mask_values = m_opticsUsed.GetOpticsPPMask();
 				}
 				
 				//optics lens
 				if (m_opticsUsed.GetOpticsPPLens() && m_opticsUsed.GetOpticsPPLens().Count() == 4)
 				{
-					temp_array = m_opticsUsed.GetOpticsPPLens();
-					
-					PPEffects.SetLensEffect(temp_array[0], temp_array[1], temp_array[2], temp_array[3]);
-					//PPEffects.SetLensEffect(1, 0.15, 0, 0 );
-				}
-				else
-				{
-					PPEffects.SetLensEffect(0, 0, 0, 0);
+					lens_values = m_opticsUsed.GetOpticsPPLens();
 				}
 				
 				//optics blur
 				if (m_opticsUsed.GetOpticsPPBlur() != 0)
 				{
-					PPEffects.SetBlurOptics(m_opticsUsed.GetOpticsPPBlur());
+					gauss = m_opticsUsed.GetOpticsPPBlur();
 				}
-				else
-					PPEffects.SetBlurOptics(0);
+				
+				m_RequesterADS.SetValuesOptics(mask_values,lens_values,gauss);
 				
 				// optics NV mode
 				if (m_opticsUsed.IsNVOptic())
 				{
-					if (m_opticsUsed.IsWorking())
-					{
-						SetCameraNV(true);
-						SetNVPostprocess(NVTypes.NV_OPTICS_ON);
-					}
-					else
-					{
-						SetCameraNV(false);
-						SetNVPostprocess(NVTypes.NV_OPTICS_OFF);
-					}
+					SetCameraNV(true);
+					SetNVPostprocess(m_opticsUsed.GetCurrentNVType());
 				}
 				else
 				{
-					SetNVPostprocess(NVTypes.NONE);
+					SetNVPostprocess(NVTypes.NONE); //magnifying optics do not combine with other NV sources (would render NV optics obsolete)
 				}
 			}
 			
@@ -578,23 +569,6 @@ class DayZPlayerCameraOptics : DayZPlayerCameraIronsights
 		else
 		{
 			m_CameraPPDelay = DayZPlayerCameras.TIME_CAMERACHANGE_02 - 0.05;
-		}
-	}
-	
-	//different handling in optics; no NV outside designated NV scopes
-	override void UpdateCameraNV(PlayerBase player)
-	{
-		if ( !m_opticsUsed || (m_opticsUsed && !m_opticsUsed.IsNVOptic()) )
-		{
-			if (m_opticsUsed && m_opticsUsed.AllowsDOF()) //1x scopes
-			{
-				super.UpdateCameraNV(player);
-			}
-			else if ( IsCameraNV() )
-			{
-				//super.UpdateCameraNV(player);
-				SetCameraNV(false);
-			}
 		}
 	}
 	

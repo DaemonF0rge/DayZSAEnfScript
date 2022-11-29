@@ -56,4 +56,26 @@ class FenceKit extends KitBase
 			CreateRope(rope);
 		}
 	}
+	
+	//Debug menu Spawn Ground Special
+	override void OnDebugSpawn()
+	{
+		SpawnEntityOnGroundPos("Shovel", GetPosition());
+		SpawnEntityOnGroundPos("Hammer", GetPosition());
+		SpawnEntityOnGroundPos("Hammer", GetPosition());
+		SpawnEntityOnGroundPos("Pliers", GetPosition());
+
+		SpawnEntityOnGroundPos("WoodenLog", GetPosition());
+		SpawnEntityOnGroundPos("WoodenLog", GetPosition());
+		SpawnEntityOnGroundPos("Nail", GetPosition());
+		SpawnEntityOnGroundPos("CamoNet", GetPosition());
+		SpawnEntityOnGroundPos("BarbedWire", GetPosition());
+		SpawnEntityOnGroundPos("BarbedWire", GetPosition());
+		SpawnEntityOnGroundPos("MetalWire", GetPosition());
+		SpawnEntityOnGroundPos("CombinationLock", GetPosition());
+		SpawnEntityOnGroundPos("WoodenPlank", GetPosition());
+		SpawnEntityOnGroundPos("WoodenPlank", GetPosition());
+		SpawnEntityOnGroundPos("WoodenPlank", GetPosition());
+		SpawnEntityOnGroundPos("WoodenPlank", GetPosition());
+	}
 }

@@ -4,11 +4,7 @@ class ActionRemovePlant: ActionInteractBase
 	
 	void ActionRemovePlant()
 	{
-	}
-
-	override string GetText()
-	{
-		return "#remove_plant";
+		m_Text = "#remove_plant";
 	}
 	
 	override typename GetInputType()

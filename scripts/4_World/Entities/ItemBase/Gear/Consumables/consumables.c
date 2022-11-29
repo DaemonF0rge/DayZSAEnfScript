@@ -47,7 +47,16 @@ class Bandana_Pink: Bandana_ColorBase {};
 class Bandana_Yellow: Bandana_ColorBase {};
 
 class BatteryD: ItemBase {};
-class Bone:  ItemBase {};
+class Bone: ItemBase 
+{
+	override void SetActions()
+	{
+		super.SetActions();
+		
+		AddAction(ActionCraftBoneKnife);
+		AddAction(ActionCraftBoneKnifeEnv);
+	}
+};
 class BoneBait: ItemBase {};
 class BoneHook:  ItemBase {};
 class BurlapStrip: ItemBase {};
@@ -67,12 +76,97 @@ class DuctTape: ItemBase
 };
 class Flashbang: ItemBase {};
 class Hook:  ItemBase {};
-class LargeGasCanister: ItemBase {};
-class MediumGasCanister: ItemBase {};
+class LargeGasCanister: ItemBase
+{
+	override bool CanSwitchDuringAttach(EntityAI parent)
+	{
+		return true;
+	}
+	
+	override string GetDestructionBehaviour()
+    {
+        return "DestructionEffectGasCanister";
+    }
+ 
+    override bool IsDestructionBehaviour()
+    {	
+		
+		if (GetQuantity() > 0)
+		{
+			return true;
+		}
+		        
+		else
+		{
+			return false;
+		}
+    }
+};
+
+class MediumGasCanister: ItemBase
+{
+	override bool CanSwitchDuringAttach(EntityAI parent)
+	{
+		return true;
+	}
+	
+	override string GetDestructionBehaviour()
+    {
+        return "DestructionEffectGasCanister";
+    }
+ 
+    override bool IsDestructionBehaviour()
+    {	
+		
+		if (GetQuantity() > 0)
+		{
+			return true;
+		}
+		        
+		else
+		{
+			return false;
+		}
+    }
+};
+
 class NailBox: Box_Base {};
 class Netting: ItemBase {};
-class SmallGasCanister: ItemBase {};
-class SmallStone: ItemBase {};
+class SmallGasCanister: ItemBase
+{
+	override bool CanSwitchDuringAttach(EntityAI parent)
+	{
+		return true;
+	}
+	
+	override string GetDestructionBehaviour()
+    {
+        return "DestructionEffectGasCanister";
+    }
+ 
+    override bool IsDestructionBehaviour()
+    {	
+		
+		if (GetQuantity() > 0)
+		{
+			return true;
+		}
+		        
+		else
+		{
+			return false;
+		}
+    }
+};
+class SmallStone: ItemBase
+{
+	override void SetActions()
+	{
+		super.SetActions();
+		
+		AddAction(ActionCraftStoneKnifeEnv);
+	}
+};
 class Spraycan_ColorBase: ItemBase {};
 class Spraycan_Black: Spraycan_ColorBase {};
 class Spraycan_Green: Spraycan_ColorBase {};

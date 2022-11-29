@@ -8,17 +8,15 @@ class M4A1_Base : RifleBoltLock_Base
 	//Debug menu Spawn Ground Special
 	override void OnDebugSpawn()
 	{
-		EntityAI entity;
-		if ( Class.CastTo(entity, this) )
-		{
-			entity.GetInventory().CreateInInventory( "M9A1_Bayonet" );
-			entity.GetInventory().CreateInInventory( "M4_OEBttstck" );	
-			entity.GetInventory().CreateInInventory( "M4_RISHndgrd" );
-			entity.GetInventory().CreateInInventory( "UniversalLight" );		
-			entity.GetInventory().CreateInInventory( "M4_T3NRDSOptic" );	
-			entity.GetInventory().CreateInInventory( "Battery9V" );
-			entity.GetInventory().CreateInInventory( "Battery9V" );	
-			entity.SpawnEntityOnGroundPos("Mag_STANAGCoupled_30Rnd", entity.GetPosition());
-		}
+		super.OnDebugSpawn();
+		
+		GameInventory inventory = GetInventory();
+		inventory.CreateInInventory( "M9A1_Bayonet" );
+		inventory.CreateInInventory( "M4_OEBttstck" );	
+		inventory.CreateInInventory( "M4_RISHndgrd" );
+		inventory.CreateInInventory( "UniversalLight" );		
+		inventory.CreateInInventory( "M4_T3NRDSOptic" );	
+		inventory.CreateInInventory( "Battery9V" );
+		inventory.CreateInInventory( "Battery9V" );	
 	}
 };

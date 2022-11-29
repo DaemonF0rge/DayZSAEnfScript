@@ -26,7 +26,7 @@ reference - hint for tools (Material editor), that the variable may be used
 
 
 /*===================================================================*/
-/*							Enforce engine API										*/
+/*							Enforce engine API						 */
 /*===================================================================*/
 
 //placeholder

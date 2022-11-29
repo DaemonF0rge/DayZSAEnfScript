@@ -7,6 +7,25 @@ class PumpkinHelmet : Clothing
 		SetEventMask(EntityEvent.INIT); // Enable EOnInit event
 	}
 	
+	override bool CanPutAsAttachment( EntityAI parent )
+	{
+		if(!super.CanPutAsAttachment(parent)) {return false;}
+		
+		Clothing eyewear = Clothing.Cast(parent.FindAttachmentBySlotName("Eyewear"));
+		if ( eyewear && eyewear.ConfigGetBool("isStrap") )
+		{
+			return false;
+		}
+		
+		Clothing mask = Clothing.Cast(parent.FindAttachmentBySlotName("Mask"));
+		if ( mask && (mask.ConfigGetBool("noHelmet") && !HockeyMask.Cast(mask) && !SantasBeard.Cast(mask)) ) //TODO
+		{
+			return false;
+		}
+		
+		return true;
+	}
+	
 	override void OnMovedInsideCargo(EntityAI container)
 	{
 		UpdateGlowState();
@@ -53,7 +72,7 @@ class PumpkinHelmet : Clothing
 		}
 		else
 		{
-			int id = GetInventory().GetSlotId(0);
+			int id = InventorySlots.HEADGEAR;
 			InventoryLocation IL = new InventoryLocation();
 			GetInventory().GetCurrentInventoryLocation( IL );
 			
@@ -69,4 +88,28 @@ class PumpkinHelmet : Clothing
 
 		SetPilotLight(do_glow);
 	}
+	
+	override void UpdateNVGStatus(PlayerBase player, bool attaching = false, bool force_disable = false)
+	{
+		if ( !GetGame().IsDedicatedServer() ) //SP only
+		{
+			if (force_disable)
+			{
+				player.RemoveActiveNV(NVTypes.NV_PUMPKIN);
+			}
+			else
+			{
+				if ( attaching && (!player.IsNVGWorking() || player.GetNVType() != NVTypes.NV_PUMPKIN) )
+				{
+					player.AddActiveNV(NVTypes.NV_PUMPKIN);
+				}
+				else if ( !attaching && player.IsNVGWorking() )
+				{
+					player.RemoveActiveNV(NVTypes.NV_PUMPKIN);
+				}
+			}
+		}
+	}
 };
+
+// boo!

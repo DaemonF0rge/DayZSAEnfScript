@@ -20,6 +20,7 @@ class PluginRecipesManagerBase extends PluginBase
 		RegisterRecipe(new SharpenLongStick);
 		RegisterRecipe(new PokeHolesBarrel);
 		RegisterRecipe(new CraftBaseBallBatNailed);
+		RegisterRecipe(new CraftBaseBallBatBarbed);
 		RegisterRecipe(new CraftGhillieHood);
 		RegisterRecipe(new DeCraftGhillieHood);
 		RegisterRecipe(new CraftGhillieAttachment);
@@ -36,6 +37,9 @@ class PluginRecipesManagerBase extends PluginBase
 		RegisterRecipe(new CraftSuppressor);
 		RegisterRecipe(new CleanWeapon);
 		RegisterRecipe(new RepairWithTape);
+		RegisterRecipe(new RepairWithRags);
+		RegisterRecipe(new RepairEyePatch);
+		RegisterRecipe(new CraftBoneKnife);
 		//RegisterRecipe(new CraftArrow);
 		//RegisterRecipe(new CraftArrowBone);
 		RegisterRecipe(new CraftBoneHook);
@@ -44,6 +48,7 @@ class PluginRecipesManagerBase extends PluginBase
 		RegisterRecipe(new CraftCourierBag);
 		RegisterRecipe(new CraftImprovisedBag);
 		RegisterRecipe(new CraftImprovisedLeatherBag);
+		RegisterRecipe(new CraftImprovisedExplosive);
 		RegisterRecipe(new CraftLeatherSack);
 		RegisterRecipe(new DeCraftLeatherCourierBag);
 		RegisterRecipe(new DeCraftCourierBag);
@@ -56,9 +61,10 @@ class PluginRecipesManagerBase extends PluginBase
 		RegisterRecipe(new CraftSplint); // craft splint
 		RegisterRecipe(new DeCraftSplint);
 		RegisterRecipe(new CraftHandDrillKit);
-		//RegisterRecipe(new CraftSpear);
+		RegisterRecipe(new CraftSpearBone);
+		RegisterRecipe(new CraftSpearStone);
 		RegisterRecipe(new DeCraftHandDrillKit);
-		//RegisterRecipe(new DeCraftSpear);
+		RegisterRecipe(new DeCraftSpear);
 		RegisterRecipe(new PatchItem);
 		RegisterRecipe(new CutOutZucchiniSeeds);
 		RegisterRecipe(new CutOutPepperSeeds);
@@ -74,8 +80,8 @@ class PluginRecipesManagerBase extends PluginBase
 		//RegisterRecipe(new CraftCamoNetShelter);
 		RegisterRecipe(new DeCraftCamoNetShelter);
 		RegisterRecipe(new FuelChainsaw);
-		//RegisterRecipe(new CraftTripWire);
-		//RegisterRecipe(new CraftRabbitSnare);
+		RegisterRecipe(new CraftTripWire);
+		RegisterRecipe(new CraftRabbitSnare);
 		RegisterRecipe(new DeCraftSnareTrap);
 		RegisterRecipe(new DeCraftTripWire);
 		RegisterRecipe(new DisinfectItem);
@@ -85,7 +91,7 @@ class PluginRecipesManagerBase extends PluginBase
 		RegisterRecipe(new RepairEpoxy);
 		RegisterRecipe(new CraftArmbandRaincoat);
 		RegisterRecipe(new RepairElectric);
-		RegisterRecipe(new RefuelTorch);
+		//RegisterRecipe(new RefuelTorch);
 		RegisterRecipe(new ExtinguishTorch);
 		RegisterRecipe(new AttachHolsterPouch);
 		RegisterRecipe(new AttachPouchesHolster);
@@ -94,7 +100,11 @@ class PluginRecipesManagerBase extends PluginBase
 		RegisterRecipe(new SawoffMosin);
 		//RegisterRecipe(new SawoffMosinPainted);
 		RegisterRecipe(new SawOffIzh18);
-		RegisterRecipe(new CleanRags);
+		RegisterRecipe(new SawOffIzh18Shotgun);
+		RegisterRecipe(new SawoffFAMAS);
+		RegisterRecipe(new SawOffMagnum);
+		RegisterRecipe(new SawOFFB95);
+		//RegisterRecipe(new CleanRags);
 		RegisterRecipe(new CraftArmbandRag);
 		RegisterRecipe(new CraftRag);
 		RegisterRecipe(new CraftGutsRope);
@@ -115,7 +125,19 @@ class PluginRecipesManagerBase extends PluginBase
 		RegisterRecipe(new CraftShelterKit);
 		RegisterRecipe(new CraftTruck01DoubleWheel);
 		RegisterRecipe(new DeCraftTruck01DoubleWheel);
-		
+		RegisterRecipe(new CraftFishNetTrap);
+		RegisterRecipe(new DeCraftFishNetTrap);
+		RegisterRecipe(new PrepareChicken);
+		RegisterRecipe(new PrepareRabbit);
+		RegisterRecipe(new CraftSmallFishTrap);
+		RegisterRecipe(new CraftMetalWire);
+		RegisterRecipe(new CraftGasMask_Filter_Improvised);
+		RegisterRecipe(new FillGasMask_Filter);
+		RegisterRecipe(new CraftCookingStand);
+		RegisterRecipe(new DeCraftCookingStand);
+		RegisterRecipe(new CraftArmbandFlag);
+		RegisterRecipe(new DeCraftDetonator);		
+		RegisterRecipe(new RepairPlanks);
 		//"paint" recipes
 		/*RegisterRecipe(new PaintFirefighterAxe);
 		RegisterRecipe(new PaintGhillieHoodGreen);

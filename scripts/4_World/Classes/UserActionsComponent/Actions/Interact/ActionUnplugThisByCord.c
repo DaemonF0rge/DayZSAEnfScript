@@ -2,11 +2,7 @@ class ActionUnplugThisByCord: ActionInteractBase
 {
 	void ActionUnplugThisByCord()
 	{
-	}
-		
-	override string GetText()
-	{
-		return "#unplug_by_cord";
+		m_Text = "#unplug_by_cord";
 	}
 
 	override bool HasProgress()

@@ -10,25 +10,25 @@ class ReplaceItemWithNewLambdaBase
 	protected bool m_RemoveFromLocationPassed = false;
 	private bool m_RemoveNetworkObjectInfoPassed = false;
 
-	void ReplaceItemWithNewLambdaBase (EntityAI old_item, string new_item_type)
+	void ReplaceItemWithNewLambdaBase(EntityAI old_item, string new_item_type)
 	{
 		m_OldItem = old_item;
 		m_NewItemType = new_item_type;
 	}
 
-	void OverrideNewLocation (InventoryLocation newLocation)
+	void OverrideNewLocation(InventoryLocation newLocation)
 	{
 		m_NewLocation = newLocation;
 	}
 	
-	void VerifyItemTypeBySlotType () {}
+	void VerifyItemTypeBySlotType() {}
 
-	protected bool WantCreateNewEntity ()
+	protected bool WantCreateNewEntity()
 	{
 		return m_NewLocation && m_NewItemType != string.Empty;
 	}
 
-	protected bool CanExecuteLambda ()
+	protected bool CanExecuteLambda()
 	{
 		if (m_OldItem)
 			if (GameInventory.LocationCanRemoveEntity(m_OldLocation))
@@ -40,7 +40,7 @@ class ReplaceItemWithNewLambdaBase
 	/**@fn		PrepareLocations
 	 * @brief	Step A. - prepare inventory locations
 	 **/
-	protected bool PrepareLocations ()
+	protected bool PrepareLocations()
 	{
 		hndDebugPrint("[inv] ReplaceItemWithNewLambdaBase Step A) Prepare inventory locations, old_item=" + m_OldItem);
 		m_OldLocation = new InventoryLocation;
@@ -83,7 +83,7 @@ class ReplaceItemWithNewLambdaBase
 	 * @brief	Step B. - free location for new item
 	 * @NOTE	this operation does not delete the object, only removes it from inventory location
 	 **/
-	protected void RemoveOldItemFromLocation ()
+	protected void RemoveOldItemFromLocation()
 	{
 		if (!GameInventory.LocationRemoveEntity(m_OldLocation)) // B) remove entity from old inventory location (making it free for new item)
 		{
@@ -93,7 +93,7 @@ class ReplaceItemWithNewLambdaBase
 		Print("[inv] ReplaceItemWithNewLambdaBase Step B) remove OK, loc=" + InventoryLocation.DumpToStringNullSafe(m_OldLocation));
 		m_RemoveFromLocationPassed = true;
 	}
-	protected void UndoRemoveOldItemFromLocation ()
+	protected void UndoRemoveOldItemFromLocation()
 	{
 		if (!GameInventory.LocationAddEntity(m_OldLocation)) // B) undo
 			Error("[inv] ReplaceItemWithNewLambdaBase Step B) failed to undo remove");
@@ -104,13 +104,13 @@ class ReplaceItemWithNewLambdaBase
 	 * @brief	Step C. - remove network part of the object
 	 * @NOTE	this operation does not delete the object, only removes its network part (and deletes it on client)
 	 **/
-	protected void RemoveNetworkObjectInfo ()
+	protected void RemoveNetworkObjectInfo()
 	{
 		GetGame().RemoteObjectTreeDelete(m_OldItem); // C) this forces server to send DeleteObject Message to client. This is needed for preserving the appearance of network operations on client (so that DeleteObject(old) arrives before CreateVehicle(new)). @NOTE: this does not delete the object on server, only it's network representation.
 		// @NOTE: the item is not deleted right now on server, but rather after copying the properties in Step E)
 		m_RemoveNetworkObjectInfoPassed = true;
 	}
-	protected void UndoRemoveNetworkObjectInfo ()
+	protected void UndoRemoveNetworkObjectInfo()
 	{
 		GetGame().RemoteObjectTreeCreate(m_OldItem);
 	}
@@ -120,23 +120,32 @@ class ReplaceItemWithNewLambdaBase
 	 *
 	 * @NOTE: if (!m_NewLocation || m_NewItemType.Empty) ==> this function does not create a new entity
 	 **/
-	protected EntityAI CreateNewEntity ()
+	protected EntityAI CreateNewEntity()
 	{
 		if (WantCreateNewEntity())
 		{
 			VerifyItemTypeBySlotType();
 			EntityAI new_item;
-			if (m_NewLocation.GetType() == InventoryLocationType.GROUND)
+			
+			switch (m_NewLocation.GetType())
 			{
-				new_item = EntityAI.Cast(GetGame().CreateObjectEx(m_NewItemType,m_NewLocation.GetPos(),ECE_PLACE_ON_SURFACE|ECE_LOCAL));
-				string path = "" + CFG_VEHICLESPATH + " " + m_NewItemType + " inherit_rotation";
-				bool keep_rotation = GetGame().ConfigIsExisting(path) && GetGame().ConfigGetInt(path) > 0;
-				if (keep_rotation)
-					new_item.SetOrientation(m_OldItem.GetOrientation()); //this one actually works...debug InventoryLocation
-			}
-			else
-			{
-				new_item = GameInventory.LocationCreateLocalEntity(m_NewLocation, m_NewItemType,ECE_OBJECT_SWAP,RF_NONE); // create LOCAL new one in the place of old one
+				case InventoryLocationType.GROUND:
+					new_item = EntityAI.Cast(GetGame().CreateObjectEx(m_NewItemType,m_NewLocation.GetPos(),ECE_PLACE_ON_SURFACE|ECE_LOCAL));
+					string path = "" + CFG_VEHICLESPATH + " " + m_NewItemType + " inherit_rotation";
+					bool keep_rotation = GetGame().ConfigIsExisting(path) && GetGame().ConfigGetInt(path) > 0;
+					if (keep_rotation)
+					{
+						new_item.SetOrientation(m_OldItem.GetOrientation()); //this one actually works...debug InventoryLocation
+					}
+				break;
+				case InventoryLocationType.ATTACHMENT:
+					// forces rawlocation in C++ to make location Valid
+					m_NewLocation.SetAttachment(m_NewLocation.GetParent(), null, m_NewLocation.GetSlot());
+					new_item = GameInventory.LocationCreateEntity(m_NewLocation, m_NewItemType, ECE_OBJECT_SWAP, RF_NONE);
+				break;
+				default:
+					new_item = GameInventory.LocationCreateLocalEntity(m_NewLocation, m_NewItemType, ECE_OBJECT_SWAP, RF_NONE);
+				break;
 			}
 			
 			hndDebugPrint("[inv] ReplaceItemWithNewLambdaBase Step D) Created new new_item=" + new_item);
@@ -173,7 +182,7 @@ class ReplaceItemWithNewLambdaBase
 	 *
 	 * @NOTE: This is supposed to be overriden in derived classes
 	 **/
-	void CopyOldPropertiesToNew (notnull EntityAI old_item, EntityAI new_item)
+	void CopyOldPropertiesToNew(notnull EntityAI old_item, EntityAI new_item)
 	{
 		hndDebugPrint("[inv] ReplaceItemWithNewLambdaBase Step E) Copying props " + old_item + " --> " + new_item);
 	}
@@ -181,7 +190,7 @@ class ReplaceItemWithNewLambdaBase
 	/**@fn		DeleteOldEntity
 	 * @brief	Step F. - deletes physically old item
 	 **/
-	protected void DeleteOldEntity ()
+	protected void DeleteOldEntity()
 	{
 		hndDebugPrint("[inv] ReplaceItemWithNewLambdaBase Step F) delete old item=" + m_OldItem);
 		GetGame().ObjectDelete(m_OldItem);
@@ -192,7 +201,7 @@ class ReplaceItemWithNewLambdaBase
 	 *
 	 * @NOTE: new_item can be null if the lambda did not create any item (intentionaly)
 	 **/
-	protected void CreateNetworkObjectInfo (EntityAI new_item)
+	protected void CreateNetworkObjectInfo(EntityAI new_item)
 	{
 		hndDebugPrint("[inv] ReplaceItemWithNewLambdaBase Step G) CreateNetworkObjectInfo =" + new_item);
 		if (new_item)
@@ -204,7 +213,7 @@ class ReplaceItemWithNewLambdaBase
 	 *
 	 * @NOTE: new_item can be null if the lambda did not create any item (intentionaly)
 	 **/
-	protected void OnSuccess (EntityAI new_item)
+	protected void OnSuccess(EntityAI new_item)
 	{
 		hndDebugPrint("[inv] ReplaceItemWithNewLambdaBase Step H) OnSuccess=" + new_item);
 	}
@@ -214,12 +223,12 @@ class ReplaceItemWithNewLambdaBase
 	 *
 	 * @NOTE: new_item can be null if the lambda did not create any item (intentionaly)
 	 **/
-	protected void OnAbort ()
+	protected void OnAbort()
 	{
 		Print("Error [inv] ReplaceItemWithNewLambdaBase OnAbort");
 	}
 
-	void Execute (HumanInventoryWithFSM fsm_to_notify = null)
+	void Execute(HumanInventoryWithFSM fsm_to_notify = null)
 	{
 		int t = GetGame().GetTime();
 		hndDebugPrint("[syncinv] t=" + t + " lambda.Execute start ");
@@ -282,7 +291,7 @@ class ReplaceItemWithNewLambdaBase
 		hndDebugPrint("[syncinv] te=" + te + " lambda.Execute end, exec time=" + dt);
 	}
 
-	string DumpToString ()
+	string DumpToString()
 	{
 		string s = "{ old=" + m_OldItem + " newType=" + m_NewItemType + "}";
 		return s;

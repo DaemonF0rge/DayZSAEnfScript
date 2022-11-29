@@ -17,7 +17,7 @@ class RainProcurementManager
 
 		//m_ProcuringItem.SetQuantity(0); /*set to 0 for debug purposses*/
 
-		if( !m_IsUnderRoof )
+		if ( !m_IsUnderRoof )
 		{
 			m_UpdateTimer = new Timer();
 			m_UpdateTimer.Run( 10, this, "RainProcurementCheck", NULL, true ); 

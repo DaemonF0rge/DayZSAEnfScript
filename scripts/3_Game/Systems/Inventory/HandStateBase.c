@@ -51,7 +51,7 @@ class HandStateBase
 		if (HasFSM() && !m_FSM.IsRunning())
 		{
 			if (e)
-				hndDebugPrint("[hndfsm] { " + Object.GetDebugName(e.m_Player) + " STS=" + e.m_Player.GetSimulationTimeStamp() + " " + this.Type().ToString() + "  Has Sub-FSM! Starting submachine...");
+				hndDebugPrint("[hndfsm] { " + Object.GetDebugName(e.m_Player) + " STS = " + e.m_Player.GetSimulationTimeStamp() + " " + this.Type().ToString() + "  Has Sub-FSM! Starting submachine...");
 			else
 			hndDebugPrint("[hndfsm] { " + this.Type().ToString() + "  Has Sub-FSM! Starting submachine...");
 			m_FSM.Start(e);
@@ -59,7 +59,7 @@ class HandStateBase
 		else
 		{
 			if (e)
-				hndDebugPrint("[hndfsm] { " + Object.GetDebugName(e.m_Player) + " STS=" + e.m_Player.GetSimulationTimeStamp() + " " + this.Type().ToString());
+				hndDebugPrint("[hndfsm] { " + Object.GetDebugName(e.m_Player) + " STS = " + e.m_Player.GetSimulationTimeStamp() + " " + this.Type().ToString());
 		else
 			hndDebugPrint("[hndfsm] { " + this.Type().ToString());
 	}
@@ -87,7 +87,8 @@ class HandStateBase
 			hndDebugPrint("[hndfsm] OnAbort " + this.Type().ToString() + "  Has Sub-FSM! Aborting submachine...");
 			m_FSM.Abort(e);
 		}
-		hndDebugPrint("[hndfsm] } " + Object.GetDebugName(e.m_Player) + " STS=" + e.m_Player.GetSimulationTimeStamp() + " ABORTED " + this.Type().ToString());
+		//Debug.InventoryHFSMLog("ABORTED " + e.m_Player.GetSimulationTimeStamp(), ""/*typename.EnumToString(HandEventID, GetEventID()) */, "n/a", "OnAbort", m_Player.ToString() );
+		hndDebugPrint("[hndfsm] } " + Object.GetDebugName(e.m_Player) + " STS = " + e.m_Player.GetSimulationTimeStamp() + " ABORTED " + this.Type().ToString());
 	}
 
 	/**@fn		OnExit
@@ -96,7 +97,7 @@ class HandStateBase
 	 **/
 	void OnExit (HandEventBase e)
 	{
-		hndDebugPrint("[hndfsm] } " + Object.GetDebugName(e.m_Player) + " STS=" + e.m_Player.GetSimulationTimeStamp() + " " + this.Type().ToString());
+		hndDebugPrint("[hndfsm] } " + Object.GetDebugName(e.m_Player) + " STS = " + e.m_Player.GetSimulationTimeStamp() + " " + this.Type().ToString());
 	}
 
 	/**@fn			IsWaitingForActionFinish

@@ -2,6 +2,7 @@ class ActionNextCombinationLockDial: ActionSingleUseBase
 {
 	void ActionNextCombinationLockDial()
 	{
+		m_Text = "#next_combination_lock_dial";
 	}
 	
 	override void CreateConditionComponents()  
@@ -28,11 +29,6 @@ class ActionNextCombinationLockDial: ActionSingleUseBase
 	override bool UseAcknowledgment()
 	{
 		return true;
-	}	
-	
-	override string GetText()
-	{
-		return "#next_combination_lock_dial";
 	}
 	
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

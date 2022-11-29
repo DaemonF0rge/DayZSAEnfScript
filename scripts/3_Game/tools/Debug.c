@@ -18,7 +18,11 @@ class Debug
 	static private const string	LOG_DEBUG_INV_MOVE			= "Inv Move";
 	static private const string	LOG_DEBUG_INV_RESERVATION	= "Inv Rrsv";
 	static private const string	LOG_DEBUG_INV_HFSM			= "HFSM";
-	static private const string LOG_DEBUG_TRIGGER					= "Trigger";
+	static private const string LOG_DEBUG_TRIGGER			= "Trigger";
+	static private const string LOG_DEBUG_PARTICLE			= "Particle";
+	static private const string LOG_DEBUG_TF				= "TestFramework";
+	static private const string LOG_DEBUG_WEIGHT			= "Weight";
+	static private const string LOG_DEBUG_MELEE				= "Melee";
 	
 	static private const string	LOG_INFO					= "Info";
 	static private const string	LOG_WARNING					= "Warning";
@@ -29,6 +33,18 @@ class Debug
 	
 	static Widget m_DebugLayoutCanvas;
 	static CanvasWidget m_CanvasDebug;
+	
+	static string GetDebugName(Managed entity)
+	{
+		if (!entity)
+			return "";
+		
+		Object obj;
+		if (CastTo(obj, entity))
+			return obj.GetDebugNameNative();
+		
+		return entity.GetDebugName();
+	}
 	
 	static void InitCanvas()
 	{
@@ -146,6 +162,27 @@ class Debug
 		LogMessage(LOG_DEBUG_TRIGGER, plugin, entity, author, label, message);
 	}
 	
+	static void	ParticleLog(string message = LOG_DEFAULT, Managed caller = null, string function = "", Managed entity = null)
+	{
+		LogMessage(LOG_DEBUG_PARTICLE, GetDebugName(caller), GetDebugName(entity), "", function, message);
+	}
+	
+	static void	TFLog(string message = LOG_DEFAULT, TestFramework caller = null, string function = "")
+	{
+		LogMessage(LOG_DEBUG_TF, GetDebugName(caller), "", "", function, message);
+	}
+	
+	static void	WeightLog(string message = LOG_DEFAULT, Managed caller = null, string function = "", Managed entity = null)
+	{
+		//LogMessage(LOG_DEBUG_WEIGHT, GetDebugName(caller), GetDebugName(entity), "", function, message);
+	}
+	
+	static void	MeleeLog(Entity entity, string message = LOG_DEFAULT, string plugin = LOG_DEFAULT, string author = LOG_DEFAULT, string label = LOG_DEFAULT)
+	{
+		string logMessage = string.Format("%1: %2", entity.GetSimulationTimeStamp(), message);
+		LogMessage(LOG_DEBUG_MELEE, plugin, GetDebugName(entity), author, label, message);
+	}
+	
 	/**
 	\brief Prints debug message with normal prio
 		\param msg \p string Debug message for print
@@ -223,8 +260,14 @@ class Debug
 
 	static Shape DrawBox(vector pos1, vector pos2, int color = 0x1fff7f7f)
 	{
-		Shape shape = Shape.Create(ShapeType.BBOX, color, ShapeFlags.TRANSP|ShapeFlags.NOZWRITE, pos1, pos2);
-		m_DebugShapes.Insert(shape);
+		return DrawBoxEx(pos1, pos2, color, ShapeFlags.TRANSP|ShapeFlags.NOZWRITE);
+	}
+	
+	static Shape DrawBoxEx(vector pos1, vector pos2, int color = 0x1fff7f7f, ShapeFlags flags = ShapeFlags.TRANSP|ShapeFlags.NOZWRITE)
+	{
+		Shape shape = Shape.Create(ShapeType.BBOX, color, flags, pos1, pos2);
+		if (( flags & ShapeFlags.ONCE ) == 0)
+			m_DebugShapes.Insert(shape);
 		return shape;
 	}
 	
@@ -251,6 +294,14 @@ class Debug
 	static Shape DrawSphere(vector pos, float size = 1, int color = 0x1fff7f7f, ShapeFlags flags = ShapeFlags.TRANSP|ShapeFlags.NOOUTLINE)
 	{
 		Shape shape = Shape.CreateSphere(color, flags, pos, size);
+		if (( flags & ShapeFlags.ONCE ) == 0)
+			m_DebugShapes.Insert(shape);
+		return shape;
+	}
+	
+	static Shape DrawFrustum(float horizontalAngle, float verticalAngle, float length, int color = 0x1fff7f7f, ShapeFlags flags = ShapeFlags.TRANSP|ShapeFlags.WIREFRAME)
+	{
+		Shape shape = Shape.CreateFrustum(horizontalAngle, verticalAngle, length, color, flags);
 		if (( flags & ShapeFlags.ONCE ) == 0)
 			m_DebugShapes.Insert(shape);
 		return shape;
@@ -317,7 +368,7 @@ class Debug
 		return shape;
 	}
 	
-	static Shape DrawArrow(vector from, vector to, float size = 0.5, int color = 0xFFFFFFFF, float flags = 0)
+	static Shape DrawArrow(vector from, vector to, float size = 0.5, int color = 0xFFFFFFFF, int flags = 0)
 	{
 		Shape shape = Shape.CreateArrow(from, to, size, color, flags);
 		m_DebugShapes.Insert(shape);
@@ -339,7 +390,9 @@ class Debug
 		base_classes.Insert(CFG_AMMO);
 		base_classes.Insert(CFG_WORLDS);
 		base_classes.Insert(CFG_SURFACES);
-		base_classes.Insert(CFG_RECIPESPATH);
+		base_classes.Insert(CFG_SOUND_SETS);
+		base_classes.Insert(CFG_SOUND_SHADERS);
+		base_classes.Insert(CFG_NONAI_VEHICLES);
 	}
 	
 	/**
@@ -494,7 +547,7 @@ class LogManager
 	static bool m_DoInventoryMoveLog;
 	static bool m_DoInventoryReservationLog;
 	static bool m_DoInventoryHFSMLog;
-	
+	static bool m_DoWeaponLog;
 	
 	static void Init()
 	{
@@ -509,6 +562,7 @@ class LogManager
 		m_DoInventoryMoveLog = IsCLIParam("doInvMoveLog");
 		m_DoInventoryReservationLog = IsCLIParam("doInvReservLog");
 		m_DoInventoryHFSMLog = IsCLIParam("doInvHFSMLog");
+		m_DoWeaponLog = IsCLIParam("doWeaponLog");
 	}
 	
 	static bool IsLogsEnable()
@@ -571,4 +625,13 @@ class LogManager
 		m_DoSymptomDebugLog = enable;
 	}
 	
+	static bool IsWeaponLogEnable()
+	{
+		return m_DoWeaponLog;
+	}
+	
+	static void WeaponLogEnable(bool enable)
+	{
+		m_DoWeaponLog = enable;
+	}
 }

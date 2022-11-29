@@ -16,17 +16,13 @@ class ActionDisinfectTarget: ActionDisinfectBase
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONFB_INTERACT;
 		m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT | DayZPlayerConstants.STANCEMASK_CROUCH;
+		m_Text = "#disinfect_target";
 	}
 	
 	override void CreateConditionComponents()  
 	{	
 		m_ConditionItem = new CCINonRuined;
 		m_ConditionTarget = new CCTMan(UAMaxDistances.DEFAULT);
-	}
-		
-	override string GetText()
-	{
-		return "#disinfect_target";
 	}
 	
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
@@ -35,10 +31,10 @@ class ActionDisinfectTarget: ActionDisinfectBase
 		{
 			PlayerBase target_player = PlayerBase.Cast(target.GetObject());
 			if(target_player)
-				return (target_player.IsBleeding() || (target_player.m_Agents & eAgents.WOUND_AGENT));
+				return (target_player.IsBleeding() || (player.m_SyncedModifiers & eModifierSyncIDs.MODIFIER_SYNC_WOUND_INFECT_1) || (player.m_SyncedModifiers & eModifierSyncIDs.MODIFIER_SYNC_WOUND_INFECT_2));
+			
 		}
 		return false;
-		
 	}
 
 	override void OnFinishProgressServer( ActionData action_data )

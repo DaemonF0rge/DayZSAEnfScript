@@ -30,7 +30,8 @@ class InGameMenuXbox extends UIScriptedMenu
 	
 	void InGameMenuXbox()
 	{
-		ControlSchemeManager.SetControlScheme( EControlSchemeState.UI );
+		GetGame().GetMission().GetOnInputPresetChanged().Insert(OnInputPresetChanged);
+		GetGame().GetMission().GetOnInputDeviceChanged().Insert(OnInputDeviceChanged);
 	}
 
 	void ~InGameMenuXbox()
@@ -44,12 +45,36 @@ class InGameMenuXbox extends UIScriptedMenu
 			IngameHud hud = IngameHud.Cast( mission.GetHud() );
 			if ( hud )
 			{
-				hud.ShowHudUI( true );
+				hud.ShowHudUI(true);
+				hud.ShowQuickbarUI(true);
 			}
 		}
-		PPEffects.SetBlurMenu( 0 );
-		
-		ControlSchemeManager.SetControlScheme( EControlSchemeState.None );
+		PPERequesterBank.GetRequester(PPERequester_MenuEffects).Stop();
+	}
+	
+	protected void OnInputPresetChanged()
+	{
+		#ifdef PLATFORM_CONSOLE
+		UpdateControlsElements();
+		#endif
+	}
+	
+	protected void OnInputDeviceChanged(EInputDeviceType pInputDeviceType)
+	{
+		switch (pInputDeviceType)
+		{
+		case EInputDeviceType.CONTROLLER:
+			UpdateControlsElements();
+			layoutRoot.FindAnyWidget("toolbar_bg").Show(true);
+		break;
+
+		default:
+			if (GetGame().GetInput().IsEnabledMouseAndKeyboardEvenOnServer())
+			{
+				layoutRoot.FindAnyWidget("toolbar_bg").Show(false);
+			}
+		break;
+		}
 	}
 	
 	override Widget Init()
@@ -95,20 +120,10 @@ class InGameMenuXbox extends UIScriptedMenu
 		{
 			m_OnlineButton.Show( true );
 			
-			string header_text = "#server_browser_tab_server";
-			GetServersResultRow info = OnlineServices.GetCurrentServerInfo();
-			if( info )
-			{
-				header_text = info.m_Name + " - " + info.m_HostIp + ":" + info.m_HostPort;
-				TextWidget w_text = TextWidget.Cast(m_OnlineMenu.FindAnyWidget("OnlineTextWidget"));
-				w_text.SetText(info.m_Name);
-			}
-			else
-			{
-				g_Game.RefreshCurrentServerInfo();
-			}
+			TextWidget w_text = TextWidget.Cast(m_OnlineMenu.FindAnyWidget("OnlineTextWidget"));
+			w_text.SetText(g_Game.GetHostName());
 			
-			m_ServerInfoPanel = new PlayerListScriptedWidget( m_OnlineMenu.FindAnyWidget( "ServerInfoPanel" ), header_text );
+			m_ServerInfoPanel = new PlayerListScriptedWidget( m_OnlineMenu.FindAnyWidget( "ServerInfoPanel" ) );
 			
 			OnlineServices.m_PermissionsAsyncInvoker.Insert( OnPermissionsUpdate );
 			ClientData.SyncEvent_OnPlayerListUpdate.Insert( SyncEvent_OnRecievedPlayerList );
@@ -117,9 +132,9 @@ class InGameMenuXbox extends UIScriptedMenu
 			m_ServerInfoPanel.ReloadLocal( OnlineServices.GetMuteList() );
 			
 			string uid = m_ServerInfoPanel.FindPlayerByWidget( GetFocus() );
-			if( uid != "" )
+			if ( uid != "" )
 			{
-				if( IsLocalPlayer( uid ) || m_ServerInfoPanel.IsEmpty() )
+				if ( IsLocalPlayer( uid ) || m_ServerInfoPanel.IsEmpty() )
 				{
 					layoutRoot.FindAnyWidget( "Mute" ).Show( false );
 					layoutRoot.FindAnyWidget( "Gamercard" ).Show( false );
@@ -133,7 +148,7 @@ class InGameMenuXbox extends UIScriptedMenu
 					SetMuteButtonText(OnlineServices.IsPlayerMuted( uid ));
 				}
 				
-				if( m_ServerInfoPanel.IsGloballyMuted( uid ) )
+				if ( m_ServerInfoPanel.IsGloballyMuted( uid ) )
 				{
 					layoutRoot.FindAnyWidget( "Mute" ).Show( false );
 				}
@@ -167,7 +182,7 @@ class InGameMenuXbox extends UIScriptedMenu
 		//
 		
 		#ifdef BULDOZER
-			delete restart_btn;
+		delete restart_btn;
 		#endif
 		
 		Mission mission = GetGame().GetMission();
@@ -176,35 +191,16 @@ class InGameMenuXbox extends UIScriptedMenu
 			IngameHud hud = IngameHud.Cast( mission.GetHud() );
 			if ( hud )
 			{
-				hud.ShowHudUI( false );
+				hud.ShowHudUI(false);
+				hud.ShowQuickbarUI(false);
 			}
 		}
-		PPEffects.SetBlurMenu( 0.6 );
+		
+		PPERequester_MenuEffects requester;
+		Class.CastTo(requester,PPERequesterBank.GetRequester(PPERequester_MenuEffects));
+		requester.SetVignetteIntensity(0.6);
 			
-		#ifdef PLATFORM_PS4
-			string confirm = "cross";
-			string back = "circle";
-			if( GetGame().GetInput().GetEnterButton() == GamepadButton.A )
-			{
-				confirm = "cross";
-				back = "circle";
-			}
-			else
-			{
-				confirm = "circle";
-				back = "cross";
-			}
-			ImageWidget toolbar_a = layoutRoot.FindAnyWidget( "SelectIcon" );
-			ImageWidget toolbar_b = layoutRoot.FindAnyWidget( "BackIcon" );
-			ImageWidget toolbar_b2 = layoutRoot.FindAnyWidget( "BackIcon0" );
-			ImageWidget toolbar_x = layoutRoot.FindAnyWidget( "MuteIcon" );
-			ImageWidget toolbar_y = layoutRoot.FindAnyWidget( "GamercardIcon" );
-			toolbar_a.LoadImageFile( 0, "set:playstation_buttons image:" + confirm );
-			toolbar_b.LoadImageFile( 0, "set:playstation_buttons image:" + back );
-			toolbar_b2.LoadImageFile( 0, "set:playstation_buttons image:" + back );
-			toolbar_x.LoadImageFile( 0, "set:playstation_buttons image:square" );
-			toolbar_y.LoadImageFile( 0, "set:playstation_buttons image:triangle" );
-		#endif
+		UpdateControlsElements();
 
 		/*#ifdef PLATFORM_XBOX
 		if ( CGame.IsDigitalCopy() )
@@ -221,6 +217,8 @@ class InGameMenuXbox extends UIScriptedMenu
 		LoadTextStrings();
 		LoadFooterButtonTexts();
 		
+		OnInputDeviceChanged(GetGame().GetInput().GetCurrentInputDevice());
+		
 		return layoutRoot;
 	}
 	
@@ -228,8 +226,6 @@ class InGameMenuXbox extends UIScriptedMenu
 	{
 		super.OnClick(w, x, y, button);
 		
-		Mission mission = GetGame().GetMission();
-
 		switch ( w.GetUserID() )
 		{
 			case IDC_MAIN_CONTINUE:
@@ -288,17 +284,17 @@ class InGameMenuXbox extends UIScriptedMenu
 		
 		if( w == layoutRoot.FindAnyWidget( "backbtn" ) )
 		{
-			CloseOnline();		
+			CloseOnline();
 		}
 		else if ( w == m_RestartDeadButton )
 		{
-			if ( !GetGame().IsMultiplayer() )
+			if ( GetGame().GetMission().GetRespawnModeClient() == GameConstants.RESPAWN_MODE_CUSTOM )
 			{
-				GetGame().GetUIManager().ShowDialog("#main_menu_restart", "Are you sure you want to restart?", IDC_INT_RETRY, DBT_YESNO, DBB_YES, DMT_QUESTION, this);
+				GetGame().GetCallQueue(CALL_CATEGORY_GUI).Call(GetGame().GetUIManager().EnterScriptedMenu,MENU_RESPAWN_DIALOGUE,this);
 			}
 			else
 			{
-				GetGame().GetUIManager().ShowDialog("#main_menu_respawn", "#main_menu_respawn_question", IDC_INT_RETRY, DBT_YESNO, DBB_YES, DMT_QUESTION, this);
+				GameRetry(true);
 			}
 			return true;
 		}
@@ -399,11 +395,11 @@ class InGameMenuXbox extends UIScriptedMenu
 	
 	SyncPlayerList CreateFakePlayerList( int player_count )
 	{
-		ref SyncPlayerList player_list = new SyncPlayerList;
+		SyncPlayerList player_list = new SyncPlayerList;
 		player_list.m_PlayerList = new array<ref SyncPlayer>;
-		for( int i = 0; i < player_count; i++ )
+		for ( int i = 0; i < player_count; i++ )
 		{
-			ref SyncPlayer sync_player = new SyncPlayer;
+			SyncPlayer sync_player = new SyncPlayer;
 			sync_player.m_UID = "uid" + i;
 			sync_player.m_PlayerName = "Player " + i;
 			player_list.m_PlayerList.Insert( sync_player );
@@ -443,11 +439,7 @@ class InGameMenuXbox extends UIScriptedMenu
 		if (player)
 		{
 			int life_state = player.GetPlayerState();
-
-			if (life_state == EPlayerStates.ALIVE)
-			{
-				m_PlayerAlive = true;
-			}
+			m_PlayerAlive = life_state == EPlayerStates.ALIVE;
 		}
 		
 		if ( m_PlayerAlive )
@@ -554,7 +546,6 @@ class InGameMenuXbox extends UIScriptedMenu
 			}
 		
 			warning.Show( mk );
-			layoutRoot.FindAnyWidget( "toolbar_bg" ).Show( !mk_server );
 		#endif
 	}
 	
@@ -759,22 +750,22 @@ class InGameMenuXbox extends UIScriptedMenu
 		m_UnmuteButtonTextID		= "#ps4_ingame_menu_unmute";
 		m_BackButtonTextID			= "#ps4_ingame_menu_back";
 		m_SelectButtonTextID		= "#ps4_ingame_menu_select";
-		m_OpenGameCardButtonTextID	= "#ps4_ingame_menu_opencard";	
+		m_OpenGameCardButtonTextID	= "#ps4_ingame_menu_opencard";
 		#else
 		m_MuteButtonTextID			= "#xbox_ingame_menu_mute";
 		m_UnmuteButtonTextID		= "#xbox_ingame_menu_unmute";
 		m_BackButtonTextID			= "#STR_rootFrame_toolbar_bg_ConsoleToolbar_Back_BackText0";
 		m_SelectButtonTextID		= "#layout_xbox_ingame_menu_select";
-		m_OpenGameCardButtonTextID	= "#layout_xbox_ingame_menu_gamecard";		
+		m_OpenGameCardButtonTextID	= "#layout_xbox_ingame_menu_gamecard";
 		#endif	
 	}
 	
 	/// Initial texts load for the footer buttons
 	protected void LoadFooterButtonTexts()
 	{
-		TextWidget uiGamecardText 	= TextWidget.Cast(layoutRoot.FindAnyWidget( "GamercardText" ));			
-		TextWidget uiBackText 		= TextWidget.Cast(layoutRoot.FindAnyWidget( "BackText" ));			
-		TextWidget uiSelectText 	= TextWidget.Cast(layoutRoot.FindAnyWidget( "SelectText" ));	
+		TextWidget uiGamecardText 	= TextWidget.Cast(layoutRoot.FindAnyWidget( "GamercardText" ));
+		TextWidget uiBackText 		= TextWidget.Cast(layoutRoot.FindAnyWidget( "BackText" ));
+		TextWidget uiSelectText 	= TextWidget.Cast(layoutRoot.FindAnyWidget( "SelectText" ));
 		
 		if (uiGamecardText)
 		{
@@ -808,6 +799,20 @@ class InGameMenuXbox extends UIScriptedMenu
 		{
 			SetFocus( m_RestartDeadButton );
 		}
+	}
+	
+	protected void UpdateControlsElements()
+	{
+		RichTextWidget toolbar_a	= RichTextWidget.Cast(layoutRoot.FindAnyWidget("SelectIcon"));
+		RichTextWidget toolbar_b	= RichTextWidget.Cast(layoutRoot.FindAnyWidget("BackIcon"));
+		RichTextWidget toolbar_b2	= RichTextWidget.Cast(layoutRoot.FindAnyWidget("BackIcon0"));
+		RichTextWidget toolbar_x	= RichTextWidget.Cast(layoutRoot.FindAnyWidget("MuteIcon"));
+		RichTextWidget toolbar_y	= RichTextWidget.Cast(layoutRoot.FindAnyWidget("GamercardIcon"));
+		toolbar_a.SetText(InputUtils.GetRichtextButtonIconFromInputAction("UAUISelect", "", EUAINPUT_DEVICE_CONTROLLER, InputUtils.ICON_SCALE_TOOLBAR));
+		toolbar_b.SetText(InputUtils.GetRichtextButtonIconFromInputAction("UAUIBack", "", EUAINPUT_DEVICE_CONTROLLER, InputUtils.ICON_SCALE_TOOLBAR));
+		toolbar_b2.SetText(InputUtils.GetRichtextButtonIconFromInputAction("UAUIBack", "", EUAINPUT_DEVICE_CONTROLLER));
+		toolbar_x.SetText(InputUtils.GetRichtextButtonIconFromInputAction("UAUICtrlX", "", EUAINPUT_DEVICE_CONTROLLER, InputUtils.ICON_SCALE_TOOLBAR));
+		toolbar_y.SetText(InputUtils.GetRichtextButtonIconFromInputAction("UAUICtrlY", "", EUAINPUT_DEVICE_CONTROLLER, InputUtils.ICON_SCALE_TOOLBAR));
 	}
 //#endif
 }

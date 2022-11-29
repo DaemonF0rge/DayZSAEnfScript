@@ -15,17 +15,13 @@ class ActionPackTent : ActionContinuousBase
 		m_CommandUID		= 0;
 		m_FullBody			= true;
 		m_StanceMask		= DayZPlayerConstants.STANCEMASK_CROUCH | DayZPlayerConstants.STANCEMASK_ERECT;
+		m_Text = "#pack_tent";
 	}
 
 	override void CreateConditionComponents()  
 	{
 		m_ConditionItem = new CCINone;
 		m_ConditionTarget = new CCTCursorParent(UAMaxDistances.DEFAULT);
-	}
-
-	override string GetText()
-	{
-		return "#pack_tent";
 	}
 
 	override typename GetInputType()

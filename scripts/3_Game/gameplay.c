@@ -174,6 +174,9 @@ const string NullStringArray[1] = { "" };
 //! Selection class
 class Selection
 {
+	private void Selection() {}
+	private void ~Selection() {}
+	
 	proto native owned string GetName();
 	proto native int GetVertexCount();
 	proto native int GetLODVertexIndex(int sel_vertex_index);
@@ -181,7 +184,7 @@ class Selection
 	vector GetVertexPosition(LOD lod, int index)
 	{
 		int lodIndex = GetLODVertexIndex(index);
-		if(lodIndex == -1)
+		if (lodIndex == -1)
 		{
 			Error("Vertex doesn't exist");
 			return vector.Zero;
@@ -195,6 +198,16 @@ class Selection
 //! LOD class
 class LOD
 {
+	// standard(BI) LOD names in p3d
+	static const string NAME_GEOMETRY 		= "geometry";
+	static const string NAME_VIEW		 	= "view";
+	static const string NAME_FIRE	 		= "fire";
+	static const string NAME_MEMORY 		= "memory";
+	static const string NAME_ROADWAY 		= "roadway";
+
+	private void LOD() {}
+	private void ~LOD() {}
+	
 	proto native int GetSelectionCount();
 	proto native bool GetSelections(notnull out array<Selection> selections);
 
@@ -218,7 +231,7 @@ class LOD
 			}
 		}
 		
-		return NULL;
+		return null;
 	}
 	
 	proto native int GetPropertyCount();
@@ -286,6 +299,8 @@ class PlayerPreviewWidget: Widget
 	proto native void		SetPlayer(DayZPlayer player);
 	//proto native void		SetPlayerType(string type);
 	proto native DayZPlayer	GetDummyPlayer();
+	
+	proto native void		Refresh();
 
 	proto native void		SetModelOrientation(vector vOrientation);
 	proto native vector		GetModelOrientation();
@@ -308,43 +323,54 @@ class MapWidget: Widget
 	proto native void SetMapPos(vector worldPos);
 	proto native float GetScale();
 	proto native void SetScale(float scale);
+	proto native float GetContourInterval();
+	proto native float GetCellSize(float pLegendWidth);
 	proto native vector MapToScreen(vector worldPos);
 	proto native vector ScreenToMap(vector screenPos);
 };
 
 //-----------------------------------------------------------------------------
-//! Player description
-class PlayerIdentity: Managed
+//! Player description (base engine class)
+class PlayerIdentityBase : Managed
 {
 	//! ping range estimation
-	proto native int GetPingMin();
+	proto int GetPingMin();
 	//! ping range estimation
-	proto native int GetPingMax();
+	proto int GetPingMax();
 	//! ping range estimation
-	proto native int GetPingAvg();
+	proto int GetPingAvg();
 
 	//! bandwidth estimation (in kbps)
-	proto native int GetBandwidthMin();
+	proto int GetBandwidthMin();
 	//! bandwidth estimation (in kbps)
-	proto native int GetBandwidthMax();
+	proto int GetBandwidthMax();
 	//! bandwidth estimation (in kbps)
-	proto native int GetBandwidthAvg();
+	proto int GetBandwidthAvg();
 	
 	//! nick (short) name of player
-	proto native owned string GetName();
+	proto string GetName();
 	//! full name of player
-	proto native owned string GetFullName();
+	proto string GetFullName();
 	//! unique id of player (hashed steamID, database Xbox id...) can be used in database or logs
-	proto native owned string GetId();
+	proto string GetId();
 	//! plaintext unique id of player (cannot be used in database or logs)
-	proto native owned string GetPlainId();
-	//!  id of player in one session (is reused after player disconnects)
-	proto native owned int GetPlayerId();
+	proto string GetPlainId();
+	//! id of player in one session (is reused after player disconnects)
+	proto int GetPlayerId();
+	
+	//! get player
+	proto Man GetPlayer();
 
-	private void ~PlayerIdentity()
-	{
-	}
+	//! This is a C++ managed class, so script has no business managing the lifetime
+	private void PlayerIdentityBase();
+	private void ~PlayerIdentityBase();
 };
+
+//! The class that will be instanced (moddable)
+class PlayerIdentity : PlayerIdentityBase
+{
+
+}
 
 //-----------------------------------------------------------------------------
 const int PROGRESS_START = 0;
@@ -363,10 +389,15 @@ typedef Param1<string> ScriptLogEventParams;
 typedef Param4<int, string, string, string> ChatMessageEventParams;
 typedef Param1<int> ChatChannelEventParams;
 typedef Param1<int> SQFConsoleEventParams;
+
+//! Name, uid
+typedef Param2<string, string> ClientConnectedEventParams;
 //! PlayerIdentity, useDB, pos, yaw, preloadTimeout (= additional time in seconds to how long server waits for loginData)
 typedef Param5<PlayerIdentity, bool, vector, float, int> ClientPrepareEventParams;
 //! PlayerIdentity, PlayerPos, Top, Bottom, Shoe, Skin
 typedef Param3<PlayerIdentity, vector, Serializer> ClientNewEventParams; 
+//! PlayerIdentity, Man
+typedef Param2<PlayerIdentity, Man> ClientNewReadyEventParams; 
 //! PlayerIdentity, Man
 typedef Param2<PlayerIdentity, Man> ClientRespawnEventParams; 
 //! PlayerIdentity, Man
@@ -375,11 +406,12 @@ typedef Param2<PlayerIdentity, Man> ClientReadyEventParams;
 typedef Param2<PlayerIdentity, Man> ClientReconnectEventParams; 
 //! PlayerIdentity, Man, LogoutTime, AuthFailed
 typedef Param4<PlayerIdentity, Man, int, bool> ClientDisconnectedEventParams; 
+
 //! LoginTime
 typedef Param1<int> LoginTimeEventParams; 
 //! RespawnTime
 typedef Param1<int> RespawnEventParams; 
-
+//! Position
 typedef Param1<vector> PreloadEventParams; 
 //! Player
 typedef Param1<Man> LogoutCancelEventParams; 
@@ -389,8 +421,8 @@ typedef Param2<string, string> LoginStatusEventParams;
 typedef Param1<int> LogoutEventParams; 
 //! Width, Height, Windowed
 typedef Param3<int, int, bool> WindowsResizeEventParams;
-//! Enabled
-typedef Param1<bool> VONStateEventParams;
+//! listening, toggled
+typedef Param2<bool, bool> VONStateEventParams;
 //! player name, player id
 typedef Param2<string, string> VONStartSpeakingEventParams;
 //! player name, player id
@@ -400,7 +432,11 @@ typedef Param1<string> DLCOwnerShipFailedParams;
 //! Camera
 typedef Param1<FreeDebugCamera> SetFreeCameraEventParams;
 //! Duration
-typedef Param1<int>MPConnectionLostEventParams;
+typedef Param1<int> MPConnectionLostEventParams;
+//! EClientKicked, AdditionalInfo
+typedef Param2<int, string> MPConnectionCloseEventParams;
+//! Player, "Killer" (Beware: Not necessarily actually the killer, Client doesn't have this info)
+typedef Param2<DayZPlayer, Object> PlayerDeathEventParams;
 
 
 //-----------------------------------------------------------------------------
@@ -425,6 +461,10 @@ enum EventType
 	MPSessionFailEventTypeID,
 	//! no params
 	MPSessionPlayerReadyEventTypeID,
+	//! params: \ref MPConnectionLostEventParams
+	MPConnectionLostEventTypeID,
+	//! params: \ref MPConnectionCloseEventParams
+	MPConnectionCloseEventTypeID,
 
 	//-----------------------------------------------------------------------------
 	//! params: \ref ProgressEventParams
@@ -435,14 +475,22 @@ enum EventType
 	NetworkManagerServerEventTypeID,
 	//! no params
 	DialogQueuedEventTypeID,
+	
+	//-----------------------------------------------------------------------------
 	//! params: \ref ChatMessageEventParams
 	ChatMessageEventTypeID,
 	//! params: \ref ChatChannelEventParams
 	ChatChannelEventTypeID,
+	
+	//-----------------------------------------------------------------------------	
+	//! params: \ref ClientConnectedEventParams
+	ClientConnectedEventTypeID,
 	//! params: \ref ClientPrepareEventParams
 	ClientPrepareEventTypeID,
 	//! params: \ref ClientNewEventParams
 	ClientNewEventTypeID,	
+	//! params: \ref ClientNewReadyEventParams
+	ClientNewReadyEventTypeID,	
 	//! params: \ref ClientRespawnEventParams
 	ClientRespawnEventTypeID,
 	//! params: \ref ClientReconnectEventParams
@@ -451,6 +499,10 @@ enum EventType
 	ClientReadyEventTypeID,
 	//! params: \ref ClientDisconnectedEventParams
 	ClientDisconnectedEventTypeID,
+	//! no params
+	ClientRemovedEventTypeID,
+	
+	//-----------------------------------------------------------------------------
 	//! params: \ref LogoutCancelEventParams
 	LogoutCancelEventTypeID,
 	//! params: \ref LoginTimeEventParams
@@ -463,22 +515,36 @@ enum EventType
 	LogoutEventTypeID,	
 	//! params: \ref LoginStatusEventParams
 	LoginStatusEventTypeID,	
+	
+	//-----------------------------------------------------------------------------
+	//! no params
+	SelectedUserChangedEventTypeID,
 	//! params: \ref ScriptLogEventParams
 	ScriptLogEventTypeID,
+	
+	//-----------------------------------------------------------------------------
 	//! params: \ref VONStateEventParams
 	VONStateEventTypeID,
 	//! params: \ref VONStartSpeakingEventParams
 	VONStartSpeakingEventTypeID,
 	//! params: \ref VONStopSpeakingEventParams
 	VONStopSpeakingEventTypeID,
-	//! params: \ref SetFreeCameraEventParams
-	DLCOwnerShipFailedEventTypeID,
+	//! no params
+	VONUserStartedTransmittingAudioEventTypeID,
+	//! no params
+	VONUserStoppedTransmittingAudioEventTypeID,
+	//! no params
+	
+	//-----------------------------------------------------------------------------
+	PartyChatStatusChangedEventTypeID,
 	//! params: \ref DLCOwnerShipFailedParams
+	DLCOwnerShipFailedEventTypeID,
+	//! params: \ref SetFreeCameraEventParams
 	SetFreeCameraEventTypeID,
-	//! params: \ref MPConnectionLostEventParams
-	MPConnectionLostEventTypeID,
 	//! no params
 	ConnectingAbortEventTypeID
+	//! params: \ref PlayerDeathEventParams
+	PlayerDeathEventTypeID
 	
 	//possible in engine events not accessable from script
 	//ReloadShadersEvent
@@ -546,7 +612,7 @@ const int DMT_EXCLAMATION = 4;
 
 proto native CGame GetGame();
 
-class Hud: Managed
+class Hud : Managed
 {
 	ref Timer m_Timer;
 	void Init( Widget hud_panel_widget ) {}
@@ -570,7 +636,6 @@ class Hud: Managed
 	void SetTemperature( string temp );
 	void SetStaminaBarVisibility( bool show );
 	void Update( float timeslice ){}
-	bool IsXboxDebugCursorEnabled();
 	void ShowVehicleInfo();
 	void HideVehicleInfo();
 	void ToggleHeatBufferPlusSign( bool show );
@@ -586,7 +651,8 @@ class Hud: Managed
 	void OnResizeScreen();
 
 	void SetPermanentCrossHair( bool show ) {}
-
+	
+	void SpawnHitDirEffect(DayZPlayer player, float hit_direction,float intensity_max);
 };
 
 //-----------------------------------------------------------------------------
@@ -596,6 +662,10 @@ class Mission
 	ScriptModule MissionScript;
 
 	ref array<vector> m_ActiveRefresherLocations;
+	
+	protected ref ScriptInvoker m_OnInputDeviceChanged = new ScriptInvoker();
+	protected ref ScriptInvoker m_OnInputPresetChanged = new ScriptInvoker();
+
 	private void ~Mission();
 	
 	void OnInit()	{}
@@ -611,6 +681,7 @@ class Mission
 	void AddDummyPlayerToScheduler(Man player){}
 	void Reset(){}
 	void ResetGUI(){}
+	void OnGameplayDataHandlerLoad(){}
 	
 	Hud GetHud()
 	{ 
@@ -674,9 +745,19 @@ class Mission
 	}
 	
 	bool IsControlDisabled() {}
+	int GetControlDisabledMode() {}
 	
-	void PlayerControlEnable( bool bForceSupress ) {}
-	void PlayerControlDisable(int mode) {}
+	void PlayerControlEnable( bool bForceSupress ); //!deprecated
+	void PlayerControlDisable(int mode); //!deprecated
+	
+	void RemoveActiveInputExcludes(array<string> excludes, bool bForceSupress = false);
+	void RemoveActiveInputRestriction(int restrictor);
+	void AddActiveInputExcludes(array<string> excludes);
+	void AddActiveInputRestriction(int restrictor);
+	void RefreshExcludes();
+	bool IsInputExcludeActive(string exclude);
+	bool IsInputRestrictionActive(int restriction);
+	void EnableAllInputs(bool bForceSupress = false);
 
 	void ShowInventory() {}
 	void HideInventory() {}
@@ -684,8 +765,10 @@ class Mission
 	void ShowChat() {}
 	void HideChat() {}
 	void UpdateVoiceLevelWidgets(int level) {}
+	
 	void HideVoiceLevelWidgets() {}
 	bool IsVoNActive() {}
+	void SetVoNActive(bool active) {}
 	
 	bool InsertCorpse(Man player)
 	{
@@ -695,6 +778,7 @@ class Mission
 	UIScriptedMenu GetNoteMenu() {};
 	void SetNoteMenu(UIScriptedMenu menu) {};
 	void SetPlayerRespawning(bool state);
+	void OnPlayerRespawned(Man player);
 	bool IsPlayerRespawning();
 	array<vector> GetActiveRefresherLocations();
 	
@@ -706,6 +790,45 @@ class Mission
 	}
 	//! server-side
 	void SyncRespawnModeInfo(PlayerIdentity identity) {};
+	
+	ImageWidget GetMicrophoneIcon()
+	{
+		return null;
+	}
+	
+	WidgetFadeTimer GetMicWidgetFadeTimer() {}				
+	
+	GameplayEffectWidgets_base GetEffectWidgets() {}
+	
+	map<int,ImageWidget> GetVoiceLevelWidgets() {}
+	
+	map<int,ref WidgetFadeTimer> GetVoiceLevelTimers() {}
+	
+	ScriptInvoker GetOnInputDeviceChanged()
+	{
+		if (!m_OnInputDeviceChanged)
+		{
+			m_OnInputDeviceChanged = new ScriptInvoker;
+		}
+
+		return m_OnInputDeviceChanged;
+	}
+	
+	ScriptInvoker GetOnInputPresetChanged()
+	{
+		if (!m_OnInputPresetChanged)
+		{
+			m_OnInputPresetChanged = new ScriptInvoker;
+		}
+
+		return m_OnInputPresetChanged;
+	}
+	
+#ifdef DEVELOPER
+	bool m_SuppressNextFrame = true;
+	void SetInputSuppression(bool state) {}
+	bool GetInputSuppression() {}
+#endif
 };
 
 // -------------------------------------------------------------------------
@@ -727,8 +850,6 @@ class MenuData: Managed
 	//! Actual DefaultCharacter saving
 	void OnSetDefaultCharacter(ParamsWriteContext ctx)
 	{
-		//Print("OnSetDefaultCharacter");
-		
 		if (!GetMenuDefaultCharacterDataInstance()/* || GetGame().IsServer()*/)
 		{
 			Error("MenuData | OnSetDefaultCharacter - failed to get data class!");
@@ -742,8 +863,6 @@ class MenuData: Managed
 	//! Actual DefaultCharacter loading
 	bool OnGetDefaultCharacter(ParamsReadContext ctx)
 	{
-		//Print("OnGetDefaultCharacter");
-		
 		if (!GetMenuDefaultCharacterDataInstance())
 		{
 			Error("MenuData | OnGetDefaultCharacter - failed to get data class!");
@@ -778,7 +897,7 @@ class MenuData: Managed
 	//proto bool			GetCharacterString(int characterID,string name, out string value);
 };
 
-//used to hold 'default character' data
+//holds 'default character' data
 class MenuDefaultCharacterData
 {
 	//const int MODE_SERVER = 0;
@@ -796,10 +915,8 @@ class MenuDefaultCharacterData
 	
 	void Init()
 	{
-		//Print("MenuDefaultCharacterData | Init");
-		if (GetGame().IsClient() || !GetGame().IsMultiplayer())
+		if (!GetGame().IsDedicatedServer())
 		{
-			//Print("MenuDefaultCharacterData | m_MenuData: " + GetGame().GetMenuData());
 			GetGame().GetMenuData().LoadCharactersLocal();
 		}
 		m_AttachmentsMap = new map<int,string>;
@@ -837,7 +954,7 @@ class MenuDefaultCharacterData
 	{
 		if (!player)
 		{
-			Print("WARNING - trying to equip non-existent object! | MenuDefaultCharacterData::EquipDefaultCharacter");
+			ErrorEx("WARNING - trying to equip non-existent object! | MenuDefaultCharacterData::EquipDefaultCharacter");
 			return;
 		}
 		
@@ -871,18 +988,15 @@ class MenuDefaultCharacterData
 	//!serializes data into a param array to be used by "StoreLoginData(notnull array<ref Param> params);" 
 	void SerializeCharacterData(ParamsWriteContext ctx)
 	{
-		//Print("SerializeCharacterData");
 		ctx.Write(m_CharacterType);
 		ctx.Write(m_AttachmentsMap);
 		ctx.Write(m_ForceRandomCharacter);
 		ctx.Write(m_CharacterName);
-		//Print(m_CharacterType);
 		//DumpAttMapContents();
 	}
 	
 	bool DeserializeCharacterData(ParamsReadContext ctx)
 	{
-		//Print("DeserializeCharacterData");
 		if (!ctx.Read(m_CharacterType))
 			return false;
 		if (!ctx.Read(m_AttachmentsMap))
@@ -892,7 +1006,6 @@ class MenuDefaultCharacterData
 		if (!ctx.Read(m_CharacterName))
 			return false;
 		
-		//Print(m_CharacterType);
 		//DumpAttMapContents();
 		return true;
 	}
@@ -927,7 +1040,7 @@ class MenuDefaultCharacterData
 		return m_ForceRandomCharacter;
 	}
 	
-	ref map<int,string> GetAttachmentMap()
+	map<int,string> GetAttachmentMap()
 	{
 		return m_AttachmentsMap;
 	}
@@ -1004,7 +1117,7 @@ class DefaultCharacterCreationMethods
 	}
 	
 	//! Lists all configured types (if any) for the appropriate attachment
-	static ref array<string> GetConfigAttachmentTypes(int slot_ID)
+	static array<string> GetConfigAttachmentTypes(int slot_ID)
 	{
 		TStringArray types = new TStringArray;
 		GetGame().ConfigGetTextArray(GetPathFromSlotID(slot_ID),types);
@@ -1012,17 +1125,81 @@ class DefaultCharacterCreationMethods
 	}
 	
 	//! Lists all customizable InventorySlots
-	static ref array<int> GetAttachmentSlotsArray()
+	static array<int> GetAttachmentSlotsArray()
 	{
 		return m_AttachmentSlots;
 	}
 	
 	//! for conversion of slot ID to config array's string
-	static ref array<string> GetConfigArrayNames()
+	static array<string> GetConfigArrayNames()
 	{
 		return m_ConfigArrayNames;
 	}
 }
+
+//! C++ OptionAccessType
+enum OptionAccessType
+{
+	AT_UNKNOWN,
+	AT_OBJECTS_DETAIL,
+	AT_TEXTURE_DETAIL,
+	AT_HDR_DETAIL,
+	AT_FSAA_DETAIL,
+	AT_VSYNC_VALUE,
+	AT_ANISO_DETAIL,
+	AT_OPTIONS_FXAA_VALUE,
+	AT_OPTIONS_SW_VALUE,
+	AT_POSTPROCESS_EFFECTS,
+	AT_QUALITY_PREFERENCE,
+	AT_ATOC_DETAIL,
+	AT_AMBIENT_OCCLUSION,
+	AT_BLOOM,
+	AT_ROTATION_BLUR,
+	AT_SHADOW_DETAIL,
+	AT_OPTIONS_TERRAIN,
+	AT_OPTIONS_RESOLUTION,
+	AT_OPTIONS_GAMMA_SLIDER,
+	AT_OPTIONS_BRIGHT_SLIDER,
+	AT_OPTIONS_VISIBILITY_SLIDER,
+	AT_OPTIONS_OBJECT_VISIBILITY_SLIDER,
+	AT_OPTIONS_SHADOW_VISIBILITY_SLIDER,
+	AT_OPTIONS_DRAWDISTANCE_SLIDER,
+	AT_ASPECT_RATIO,
+	AT_OPTIONS_FIELD_OF_VIEW,
+	AT_OPTIONS_MUSIC_SLIDER,
+	AT_OPTIONS_EFFECTS_SLIDER,
+	AT_OPTIONS_VON_SLIDER,
+	AT_OPTIONS_MASTER_VOLUME,
+	AT_OPTIONS_HWACC,
+	AT_OPTIONS_EAX,
+	AT_OPTIONS_LANGUAGE,
+	AT_OPTIONS_RADIO,
+	AT_CONFIG_MOUSE_FILTERING,
+	AT_CONFIG_HEAD_BOB,
+	AT_OPTIONS_DISPLAY_MODE,
+	AT_OPTIONS_TERRAIN_SHADER,
+	AT_OPTIONS_AIM_HELPER,
+	AT_OPTIONS_MOUSE_AND_KEYBOARD,
+	AT_OPTIONS_PAUSE,
+	AT_OPTIONS_FLIPMODE,
+	AT_OPTIONS_VON_THRESHOLD_SLIDER,
+
+	AT_OPTIONS_MOUSE_YAXIS_INVERTED,
+	AT_OPTIONS_MOUSE_XAXIS,
+	AT_OPTIONS_MOUSE_YAXIS,
+	AT_OPTIONS_MOUSE_XAXIS_AIM_MOD,
+	AT_OPTIONS_MOUSE_YAXIS_AIM_MOD,
+
+	AT_OPTIONS_CONTROLLER_LS_XAXIS,
+	AT_OPTIONS_CONTROLLER_LS_YAXIS,
+	AT_OPTIONS_CONTROLLER_LS_XAXIS_VEHICLE_MOD,
+	AT_OPTIONS_CONTROLLER_RS_YAXIS_INVERTED,
+	AT_OPTIONS_CONTROLLER_RS_XAXIS,
+	AT_OPTIONS_CONTROLLER_RS_YAXIS,
+	AT_OPTIONS_CONTROLLER_RS_XAXIS_AIM_MOD,
+	AT_OPTIONS_CONTROLLER_RS_YAXIS_AIM_MOD,
+	AT_OPTIONS_VON_INPUT_MODE
+};
 
 //! Used for script-based game options. For anything C++ based, you would most likely use "Option Access Type" below
 enum OptionIDsScript
@@ -1033,60 +1210,12 @@ enum OptionIDsScript
 	OPTION_ADMIN_MESSAGES,
 	OPTION_PLAYER_MESSAGES,
 	OPTION_QUICKBAR,
-	OPTION_SERVER_INFO
+	OPTION_SERVER_INFO,
+	OPTION_BLEEDINGINDICATION
 };
 
 // -------------------------------------------------------------------------
 /*
-// Option Access Type
-const int AT_UNKNOWN = 0;
-const int AT_OBJECTS_DETAIL = 1;
-const int AT_TEXTURE_DETAIL = 2;
-const int AT_HDR_DETAIL = 4;
-const int AT_FSAA_DETAIL = 5;
-const int AT_VSYNC_VALUE = 6;
-const int AT_ANISO_DETAIL = 7;
-const int AT_OPTIONS_FXAA_VALUE = 8;
-const int AT_OPTIONS_SW_VALUE = 10;
-const int AT_POSTPROCESS_EFFECTS = 11;
-const int AT_QUALITY_PREFERENCE = 12;
-const int AT_ATOC_DETAIL = 13;
-const int AT_AMBIENT_OCCLUSION = 14;
-const int AT_BLOOM = 15;
-const int AT_ROTATION_BLUR = 16;
-const int AT_SHADOW_DETAIL = 18;
-const int AT_OPTIONS_TERRAIN = 19;
-const int AT_OPTIONS_RESOLUTION = 20;
-const int AT_OPTIONS_GAMMA_SLIDER = 23;
-const int AT_OPTIONS_BRIGHT_SLIDER = 24;
-const int AT_OPTIONS_VISIBILITY_SLIDER = 25;
-const int AT_OPTIONS_OBJECT_VISIBILITY_SLIDER = 26;
-const int AT_OPTIONS_SHADOW_VISIBILITY_SLIDER = 28;
-const int AT_OPTIONS_DRAWDISTANCE_SLIDER = 29;
-const int AT_ASPECT_RATIO = 34;
-const int AT_CONFIG_YREVERSED = 36;
-const int AT_OPTIONS_FIELD_OF_VIEW = 38;
-const int AT_OPTIONS_MUSIC_SLIDER = 39;
-const int AT_OPTIONS_EFFECTS_SLIDER = 40;
-const int AT_OPTIONS_VON_SLIDER = 41;
-const int AT_OPTIONS_MASTER_VOLUME = 42;
-const int AT_OPTIONS_HWACC = 46;
-const int AT_OPTIONS_EAX = 47;
-const int AT_OPTIONS_LANGUAGE = 49;
-const int AT_OPTIONS_RADIO = 51;
-const int AT_CONFIG_XAXIS = 52;
-const int AT_CONFIG_YAXIS = 53;
-const int AT_CONFIG_MOUSE_FILTERING = 55;
-const int AT_CONFIG_HEAD_BOB = 56;
-const int AT_CONFIG_CONTROLLER_XAXIS = 58,
-const int AT_CONFIG_CONTROLLER_YAXIS = 59,
-const int AT_CONFIG_CONTROLLER_REVERSED_LOOK = 60,
-const int AT_OPTIONS_DISPLAY_MODE = 61,
-const int AT_OPTIONS_TERRAIN_SHADER = 62,
-const int AT_OPTIONS_AIM_HELPER = 63,
-const int AT_OPTIONS_MOUSE_AND_KEYBOARD = 64,
-const int AT_OPTIONS_PAUSE = 65,
-
 // Option Access Control Type
 const int OA_CT_NUMERIC = 0;
 const int OA_CT_SWITCH = 1;
@@ -1146,7 +1275,56 @@ class OptionsAccess: Managed
 	\return 1 if the value is changed immediately, 0 othewise
 	*/
 	proto native  int	SetChangeImmediately();
+	//proto native  void	Initialize();
+	
+		/** \name Script Events API
+		Setting and getting of ScriptEvents
+	*/
+	//@{
+	
+	/**
+	\brief Set the events
+		\param events \p Managed The events to set
+	*/
+	private proto void SetScriptEvents(Managed events);
+	
+	/**
+	\brief Get the events
+		\return \p Managed If there is any events set, this will return them
+	*/
+	private proto Managed GetScriptEvents();
+	
+	/**
+	\brief Get the events
+		\return \p ParticleManagerEvents If there is any events set, this will return them so that additional functionality can be bound to them
+	*/
+	OptionsAccessEvents GetEvents()
+	{
+		return OptionsAccessEvents.Cast(GetScriptEvents());
+	}
+	
+	//@}
+	
+	
+	
+	/** \name Events
+		Events called from C++
+	*/
+	//@{
+	
+	void OnRevert()
+	{
+		GetEvents().Event_OnRevert.Invoke(this);
+	}
+	
+	//@}
 };
+
+//! Invokers for ParticleManager events
+class OptionsAccessEvents
+{
+	ref ScriptInvoker Event_OnRevert = new ScriptInvoker();
+}
 
 // -------------------------------------------------------------------------
 class NumericOptionsAccess extends OptionsAccess
@@ -1155,23 +1333,26 @@ class NumericOptionsAccess extends OptionsAccess
 	proto native  void	WriteValue(float value);
 	proto native	float	GetMin();
 	proto native	float	GetMax();
+	proto native	float	GetDefault();
 };
 
 // -------------------------------------------------------------------------
 class ListOptionsAccess extends OptionsAccess
 {
-	proto native int		GetIndex();
-	proto native void		SetIndex(int index);
-	proto native int		GetItemsCount();
-	proto	void					GetItemText(int index, out string value);
+	proto native int	GetIndex();
+	proto native int	GetDefaultIndex();
+	proto native void	SetIndex(int index);
+	proto native int	GetItemsCount();
+	proto	void		GetItemText(int index, out string value);
 };
 
 // -------------------------------------------------------------------------
 class SwitchOptionsAccess extends OptionsAccess
 {
-	proto native void		Switch();
-	proto	void					GetItemText(out string value);
-	proto native int		GetIndex();
+	proto native void	Switch();
+	proto	void		GetItemText(out string value);
+	proto native int	GetIndex();
+	proto native int	GetDefaultIndex();
 };
 
 // -------------------------------------------------------------------------

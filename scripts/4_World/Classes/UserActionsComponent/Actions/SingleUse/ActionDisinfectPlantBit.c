@@ -15,17 +15,13 @@ class ActionDisinfectPlantBit: ActionSingleUseBase
 	{
 		m_CallbackClass = ActionDisinfectPlantBitCB;
 		m_SpecialtyWeight = UASoftSkillsWeight.PRECISE_LOW;
+		m_Text = "#apply";
 	}
 	
 	override void CreateConditionComponents()  
 	{
 		m_ConditionItem = new CCINonRuined;
 		m_ConditionTarget = new CCTNonRuined(UAMaxDistances.DEFAULT);
-	}
-
-	override string GetText()
-	{
-		return "#apply";
 	}
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

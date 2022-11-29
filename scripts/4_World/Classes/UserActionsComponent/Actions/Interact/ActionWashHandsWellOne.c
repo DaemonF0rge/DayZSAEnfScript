@@ -14,11 +14,7 @@ class ActionWashHandsWellOne extends ActionInteractLoopBase
 		m_CommandUID		= DayZPlayerConstants.CMD_ACTIONFB_WASHHANDSWELL;
 		m_FullBody			= true;
 		m_StanceMask		= DayZPlayerConstants.STANCEMASK_CROUCH;
-	}
-
-	override string GetText()
-	{
-		return "#wash_hands";
+		m_Text = "#wash_hands";
 	}
 	
 	override void CreateConditionComponents()  

@@ -8,4 +8,5 @@ enum EStaminaConsumers
 	VAULT,
 	CLIMB,
 	ROLL,
+	DROWN,
 }

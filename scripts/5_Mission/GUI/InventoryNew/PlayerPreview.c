@@ -22,9 +22,14 @@ class PlayerPreview: LayoutHolder
 		UpdateScale();
 	}
 	
+	void RefreshPlayerPreview()
+	{
+		m_CharacterPanelWidget.Refresh();
+	}
+	
 	void UpdateRotation( int mouse_x, int mouse_y, bool is_dragging )
 	{
-		if( m_CharacterPanelWidget )
+		if ( m_CharacterPanelWidget )
 		{
 			vector orientation = m_CharacterOrientation;
 			orientation[1] = orientation[1] - ( m_CharacterRotationX - mouse_x );
@@ -40,7 +45,7 @@ class PlayerPreview: LayoutHolder
 
 	void UpdateScale()
 	{
-		if( m_CharacterPanelWidget )
+		if ( m_CharacterPanelWidget )
 		{
 			float w, h;
 			m_CharacterPanelWidget.GetSize( w, h );
@@ -82,23 +87,23 @@ class PlayerPreview: LayoutHolder
 		
 		PlayerBase realPlayer = PlayerBase.Cast(GetGame().GetPlayer());
 		DayZPlayer dummyPlayer = m_CharacterPanelWidget.GetDummyPlayer();
-		if( realPlayer && dummyPlayer )
+		if ( realPlayer && dummyPlayer )
 		{
 			// injury animation update
 			HumanCommandAdditives hca = dummyPlayer.GetCommandModifier_Additives();
 			//dummyPlayer.UpdateDummyPlayerProxyVisibility(realPlayer.FindAttachmentBySlotName("Shoulder"), realPlayer.FindAttachmentBySlotName("Melee"));
-			if( hca && realPlayer.m_InjuryHandler )
+			if ( hca && realPlayer.m_InjuryHandler )
 				hca.SetInjured(realPlayer.m_InjuryHandler.GetInjuryAnimValue(), realPlayer.m_InjuryHandler.IsInjuryAnimEnabled());
 		}
 		
-		if( m_IsHolding )
+		if ( m_IsHolding )
 		{
 			int mouse_x;
 			int mouse_y;
 				
 			GetMousePos(mouse_x, mouse_y);
 			
-			if( GetMouseState(MouseState.LEFT) & 0x80000000 )
+			if ( GetMouseState(MouseState.LEFT) & 0x80000000 )
 			{
 				UpdateRotation( mouse_x, mouse_y, true );
 			}

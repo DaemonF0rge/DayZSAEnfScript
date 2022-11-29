@@ -5,6 +5,7 @@ class ActionMeasureBattery: ActionSingleUseBase
 	{
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONMOD_LICKBATTERY;
 		m_CommandUIDProne = DayZPlayerConstants.CMD_ACTIONFB_LICKBATTERY;
+		m_Text = "#lick_battery";
 	}
 	
 	override void CreateConditionComponents()  
@@ -21,11 +22,6 @@ class ActionMeasureBattery: ActionSingleUseBase
 	override bool HasTarget()
 	{
 		return false;
-	}
-
-	override string GetText()
-	{
-		return "#lick_battery";
 	}
 
 	override void OnExecuteServer( ActionData action_data )

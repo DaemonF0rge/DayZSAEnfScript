@@ -29,6 +29,7 @@ class ActionRestrainTarget: ActionContinuousBase
 		m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT | DayZPlayerConstants.STANCEMASK_CROUCH;
 		m_SpecialtyWeight = UASoftSkillsWeight.PRECISE_LOW;
+		m_Text = "#restrain";
 	}
 	
 	override void CreateConditionComponents()  
@@ -72,11 +73,6 @@ class ActionRestrainTarget: ActionContinuousBase
 			
 		}
 		return true;
-	}
-		
-	override string GetText()
-	{
-		return "#restrain";
 	}
 	
 	override void OnStartServer(ActionData action_data)

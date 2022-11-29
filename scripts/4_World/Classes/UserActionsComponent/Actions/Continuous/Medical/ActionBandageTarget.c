@@ -19,17 +19,13 @@ class ActionBandageTarget: ActionBandageBase
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONFB_BANDAGETARGET;
 		m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT | DayZPlayerConstants.STANCEMASK_CROUCH;
+		m_Text = "#treat_persons_wound";
 	}
 	
 	override void CreateConditionComponents()  
 	{	
 		m_ConditionItem = new CCINonRuined;
 		m_ConditionTarget = new CCTMan(UAMaxDistances.DEFAULT);
-	}
-		
-	override string GetText()
-	{
-		return "#treat_persons_wound";
 	}
 /*
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

@@ -1,15 +1,5 @@
 class BoonieHat_ColorBase extends Clothing
 {
-	override bool CanPutInCargo( EntityAI parent )
-	{
-		if( !super.CanPutInCargo(parent) ) {return false;}
-		if ( parent != this )
-		{
-			return true;
-		}
-		return false;
-	}
-	
 	override void SetActions()
 	{
 		super.SetActions();

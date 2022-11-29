@@ -20,17 +20,13 @@ class ActionFillFuel: ActionContinuousBase
 		m_FullBody = true;
 		m_SpecialtyWeight = UASoftSkillsWeight.PRECISE_LOW;
 		m_LockTargetOnUse = false;
+		m_Text = "#refuel";
 	}
 
 	override void CreateConditionComponents()  
 	{
-		m_ConditionItem = new CCINonRuined;
+		m_ConditionItem = new CCINonRuined;//CCINotRuinedAndEmpty?
 		m_ConditionTarget = new CCTNone;
-	}
-
-	override string GetText()
-	{
-		return "#refuel";
 	}
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
@@ -47,6 +43,11 @@ class ActionFillFuel: ActionContinuousBase
 		Car car = Car.Cast( target.GetObject() );
 		if ( !car )
 			return false;
+		
+		if (car.IsDamageDestroyed())
+		{
+			return false;
+		}
 		
 		if ( car.GetFluidFraction( CarFluid.FUEL ) >= 0.98 )
 			return false;

@@ -1,24 +1,19 @@
 
 class ActionEnterLadder: ActionInteractBase
 {
-	private const string GEOM_LOD_NAME = "geometry";
-	private	const string MEM_LOD_NAME = "memory";	
+	private const string GEOM_LOD_NAME 	= LOD.NAME_GEOMETRY;
+	private	const string MEM_LOD_NAME 	= LOD.NAME_MEMORY;	
 
 	void ActionEnterLadder()
 	{
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_CROUCH | DayZPlayerConstants.STANCEMASK_ERECT;
-		m_HUDCursorIcon = CursorIcons.LadderUp;
+		m_Text = "#enter_ladder";
 	}
 
 	override void CreateConditionComponents()  
 	{
 		m_ConditionItem = new CCINone;
 		m_ConditionTarget = new CCTCursor;
-	}
-
-	override string GetText()
-	{
-		return "#enter_ladder";
 	}
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

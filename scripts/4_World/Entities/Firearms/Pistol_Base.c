@@ -26,8 +26,8 @@ enum PistolStableStateID
 
 class Pistol_CLO_DIS_BU0_MA0 extends WeaponStableState
 {
-	override void OnEntry (WeaponEventBase e) { wpnPrint("[wpnstate] { CD00 closed dischgd nobull nomag"); super.OnEntry(e); }
-	override void OnExit (WeaponEventBase e) { super.OnExit(e); wpnPrint("[wpnstate] } CD00 closed dischgd nobull nomag"); }
+	override void OnEntry (WeaponEventBase e) { if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnstate] { CD00 closed dischgd nobull nomag"); } super.OnEntry(e); }
+	override void OnExit (WeaponEventBase e) { super.OnExit(e); if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnstate] } CD00 closed dischgd nobull nomag"); } }
 	override int GetCurrentStateID () { return PistolStableStateID.CLO_DIS_BU0_MA0; }
 	override bool HasBullet () { return false; }
 	override bool HasMagazine () { return false; }
@@ -37,8 +37,8 @@ class Pistol_CLO_DIS_BU0_MA0 extends WeaponStableState
 };
 class Pistol_CLO_CHG_BU0_MA0 extends WeaponStableState
 {
-	override void OnEntry (WeaponEventBase e) { wpnPrint("[wpnstate] { CC00 closed charged nobull nomag"); super.OnEntry(e); }
-	override void OnExit (WeaponEventBase e) { super.OnExit(e); wpnPrint("[wpnstate] } CC00 closed charged nobull nomag"); }
+	override void OnEntry (WeaponEventBase e) { if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnstate] { CC00 closed charged nobull nomag"); } super.OnEntry(e); }
+	override void OnExit (WeaponEventBase e) { super.OnExit(e); if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnstate] } CC00 closed charged nobull nomag"); } }
 	override int GetCurrentStateID () { return PistolStableStateID.CLO_CHG_BU0_MA0; }
 	override bool HasBullet () { return false; }
 	override bool HasMagazine () { return false; }
@@ -48,8 +48,8 @@ class Pistol_CLO_CHG_BU0_MA0 extends WeaponStableState
 };
 class Pistol_CLO_CHG_BU1_MA0 extends WeaponStableState
 {
-	override void OnEntry (WeaponEventBase e) { wpnPrint("[wpnstate] { CC10 closed charged bullet nomag"); super.OnEntry(e); }
-	override void OnExit (WeaponEventBase e) { super.OnExit(e); wpnPrint("[wpnstate] } CC10 closed charged bullet nomag"); }
+	override void OnEntry (WeaponEventBase e) { if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnstate] { CC10 closed charged bullet nomag"); } super.OnEntry(e); }
+	override void OnExit (WeaponEventBase e) { super.OnExit(e); if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnstate] } CC10 closed charged bullet nomag"); } }
 	override int GetCurrentStateID () { return PistolStableStateID.CLO_CHG_BU1_MA0; }
 	override bool HasBullet () { return true; }
 	override bool HasMagazine () { return false; }
@@ -59,8 +59,8 @@ class Pistol_CLO_CHG_BU1_MA0 extends WeaponStableState
 };
 class Pistol_CLO_JAM_BU1_MA0 extends WeaponStateJammed
 {
-	override void OnEntry (WeaponEventBase e) { wpnPrint("[wpnstate] { CJF0 closed jammed bullet nomag"); super.OnEntry(e); }
-	override void OnExit (WeaponEventBase e) { super.OnExit(e); wpnPrint("[wpnstate] } CJF0 closed jammed bullet nomag"); }
+	override void OnEntry (WeaponEventBase e) { if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnstate] { CJF0 closed jammed bullet nomag"); } super.OnEntry(e); }
+	override void OnExit (WeaponEventBase e) { super.OnExit(e); if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnstate] } CJF0 closed jammed bullet nomag"); } }
 	override int GetCurrentStateID () { return PistolStableStateID.CLO_JAM_BU1_MA0; }
 	override bool HasBullet () { return true; }
 	override bool HasMagazine () { return false; }
@@ -71,8 +71,8 @@ class Pistol_CLO_JAM_BU1_MA0 extends WeaponStateJammed
 };
 class Pistol_OPE_DIS_BU0_MA0 extends WeaponStableState
 {
-	override void OnEntry (WeaponEventBase e) { wpnPrint("[wpnstate] { OD00 opened dischgd nobullet nomag"); super.OnEntry(e); }
-	override void OnExit (WeaponEventBase e) { super.OnExit(e); wpnPrint("[wpnstate] } 0D00 opened dischgd nobullet nomag"); }
+	override void OnEntry (WeaponEventBase e) { if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnstate] { OD00 opened dischgd nobullet nomag"); } super.OnEntry(e); }
+	override void OnExit (WeaponEventBase e) { super.OnExit(e); if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnstate] } 0D00 opened dischgd nobullet nomag"); } }
 	override int GetCurrentStateID () { return PistolStableStateID.OPE_DIS_BU0_MA0; }
 	override bool HasBullet () { return false; }
 	override bool HasMagazine () { return false; }
@@ -83,8 +83,8 @@ class Pistol_OPE_DIS_BU0_MA0 extends WeaponStableState
 };
 class Pistol_CLO_CHG_BU0_MA1 extends WeaponStableState
 {
-	override void OnEntry (WeaponEventBase e) { wpnPrint("[wpnstate] { CC01 closed charged nobullet mag"); super.OnEntry(e); }
-	override void OnExit (WeaponEventBase e) { super.OnExit(e); wpnPrint("[wpnstate] } CC01 closed charged nobullet mag"); }
+	override void OnEntry (WeaponEventBase e) { if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnstate] { CC01 closed charged nobullet mag"); } super.OnEntry(e); }
+	override void OnExit (WeaponEventBase e) { super.OnExit(e); if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnstate] } CC01 closed charged nobullet mag"); } }
 	override int GetCurrentStateID () { return PistolStableStateID.CLO_CHG_BU0_MA1; }
 	override bool HasBullet () { return false; }
 	override bool HasMagazine () { return true; }
@@ -94,8 +94,8 @@ class Pistol_CLO_CHG_BU0_MA1 extends WeaponStableState
 };
 class Pistol_CLO_DIS_BU0_MA1 extends WeaponStableState
 {
-	override void OnEntry (WeaponEventBase e) { wpnPrint("[wpnstate] { CD01 closed dischgd nobullet mag"); super.OnEntry(e); }
-	override void OnExit (WeaponEventBase e) { super.OnExit(e); wpnPrint("[wpnstate] } CD01 closed dischgd nobullet mag"); }
+	override void OnEntry (WeaponEventBase e) { if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnstate] { CD01 closed dischgd nobullet mag"); } super.OnEntry(e); }
+	override void OnExit (WeaponEventBase e) { super.OnExit(e); if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnstate] } CD01 closed dischgd nobullet mag"); } }
 	override int GetCurrentStateID () { return PistolStableStateID.CLO_DIS_BU0_MA1; }
 	override bool HasBullet () { return false; }
 	override bool HasMagazine () { return true; }
@@ -105,8 +105,8 @@ class Pistol_CLO_DIS_BU0_MA1 extends WeaponStableState
 };
 class Pistol_CLO_JAM_BU1_MA1 extends WeaponStateJammed
 {
-	override void OnEntry (WeaponEventBase e) { wpnPrint("[wpnstate] { CJF1 closed jammed bullet mag"); super.OnEntry(e); }
-	override void OnExit (WeaponEventBase e) { super.OnExit(e); wpnPrint("[wpnstate] } CJF1 closed jammed bullet mag"); }
+	override void OnEntry (WeaponEventBase e) { if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnstate] { CJF1 closed jammed bullet mag"); } super.OnEntry(e); }
+	override void OnExit (WeaponEventBase e) { super.OnExit(e); if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnstate] } CJF1 closed jammed bullet mag"); } }
 	override int GetCurrentStateID () { return PistolStableStateID.CLO_JAM_BU1_MA1; }
 	override bool HasBullet () { return true; }
 	override bool HasMagazine () { return true; }
@@ -117,8 +117,8 @@ class Pistol_CLO_JAM_BU1_MA1 extends WeaponStateJammed
 };
 class Pistol_CLO_CHG_BU1_MA1 extends WeaponStableState
 {
-	override void OnEntry (WeaponEventBase e) { wpnPrint("[wpnstate] { CC11 closed charged bullet mag"); super.OnEntry(e); }
-	override void OnExit (WeaponEventBase e) { super.OnExit(e); wpnPrint("[wpnstate] } CC11 closed charged bullet mag"); }
+	override void OnEntry (WeaponEventBase e) { if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnstate] { CC11 closed charged bullet mag"); } super.OnEntry(e); }
+	override void OnExit (WeaponEventBase e) { super.OnExit(e); if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnstate] } CC11 closed charged bullet mag"); } }
 	override int GetCurrentStateID () { return PistolStableStateID.CLO_CHG_BU1_MA1; }
 	override bool HasBullet () { return true; }
 	override bool HasMagazine () { return true; }
@@ -128,8 +128,8 @@ class Pistol_CLO_CHG_BU1_MA1 extends WeaponStableState
 };
 class Pistol_OPE_DIS_BU0_MA1 extends WeaponStableState
 {
-	override void OnEntry (WeaponEventBase e) { wpnPrint("[wpnstate] { OD01 opened dischgd nobullet mag"); super.OnEntry(e); }
-	override void OnExit (WeaponEventBase e) { super.OnExit(e); wpnPrint("[wpnstate] } 0D01 opened dischgd nobullet mag"); }
+	override void OnEntry (WeaponEventBase e) { if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnstate] { OD01 opened dischgd nobullet mag"); } super.OnEntry(e); }
+	override void OnExit (WeaponEventBase e) { super.OnExit(e); if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnstate] } 0D01 opened dischgd nobullet mag"); } }
 	override int GetCurrentStateID () { return PistolStableStateID.OPE_DIS_BU0_MA1; }
 	override bool HasBullet () { return false; }
 	override bool HasMagazine () { return true; }

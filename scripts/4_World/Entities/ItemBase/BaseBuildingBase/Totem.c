@@ -82,15 +82,6 @@ class TerritoryFlag extends BaseBuildingBase
 		return GetPosition();
 	}
 	
-	// --- INVENTORY
-	override bool CanDisplayAttachmentSlot( string slot_name )
-	{
-		if (!super.CanDisplayAttachmentSlot(slot_name))
-			return false;
-		
-		return true;
-	}
-	
 	override bool CanDisplayAttachmentCategory( string category_name )
 	{
 		if ( category_name == "Base" && !HasBase() )
@@ -288,7 +279,7 @@ class TerritoryFlag extends BaseBuildingBase
 			return false;
 		
 		//manage action initiator (AT_ATTACH_TO_CONSTRUCTION)
-		if ( !GetGame().IsMultiplayer() || GetGame().IsClient() )
+		if ( !GetGame().IsDedicatedServer() )
 		{
 			PlayerBase player = PlayerBase.Cast( GetGame().GetPlayer() );
 			if ( player )
@@ -481,7 +472,6 @@ class TerritoryFlag extends BaseBuildingBase
 	{
 		super.SetActions();
 		
-		AddAction(ActionWorldFlagActionSwitch);
 		AddAction(ActionRaiseFlag);
 		AddAction(ActionLowerFlag);
 		AddAction(ActionFoldBaseBuildingObject);
@@ -558,4 +548,14 @@ class TerritoryFlag extends BaseBuildingBase
 		OnVariablesSynchronized();
 	}
 	*/
+	
+	//Debug menu Spawn Ground Special
+	override void OnDebugSpawn()
+	{
+		super.OnDebugSpawn();
+
+		GetInventory().CreateInInventory("Flag_DayZ");
+		AnimateFlag(0);
+		AddRefresherTime01(1);
+	}
 }

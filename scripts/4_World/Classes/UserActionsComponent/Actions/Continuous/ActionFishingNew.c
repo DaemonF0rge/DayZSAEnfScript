@@ -3,7 +3,7 @@ class FishingActionData : ActionData
 	const float FISHING_SUCCESS 		= 0.2;
 	const float FISHING_BAIT_LOSS 		= 0.02;
 	const float FISHING_HOOK_LOSS 		= 0.015;
-	const float FISHING_DAMAGE 			= 5.0;
+	const float FISHING_DAMAGE 			= 1.5;
 	const float FISHING_GARBAGE_CHANCE 	= 0.2;
 	
 	bool 		m_IsSurfaceSea;
@@ -179,6 +179,7 @@ class ActionFishingNew: ActionContinuousBase
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONFB_FISHING;
 		m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT | DayZPlayerConstants.STANCEMASK_CROUCH;
+		m_Text = "#start_fishing";
 	}
 	
 	override void CreateConditionComponents()  
@@ -195,11 +196,6 @@ class ActionFishingNew: ActionContinuousBase
 	override bool HasAlternativeInterrupt()
 	{
 		return true;
-	}
-	
-	override string GetText()
-	{
-		return "#start_fishing";
 	}
 	
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

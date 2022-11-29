@@ -7,17 +7,13 @@ class ActionLowerFlag: ActionContinuousBase
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONFB_LOWER_FLAG;
 		m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT;
+		m_Text = "#lower_flag";
 	}
 	
 	override void CreateConditionComponents()  
 	{	
 		m_ConditionTarget = new CCTCursor;
 		m_ConditionItem = new CCINone;
-	}
-	
-	override string GetText()
-	{
-		return "#lower_flag";
 	}
 	
 	override typename GetInputType()
@@ -44,7 +40,7 @@ class ActionLowerFlag: ActionContinuousBase
 		}
 		
 		float state = totem.GetAnimationPhase("flag_mast");
-		if ( totem.FindAttachmentBySlotName("Material_FPole_Flag") && state < 1 && !player.GetFlagTendencyRaise() )
+		if ( totem.FindAttachmentBySlotName("Material_FPole_Flag") && state < 1 )
 		{
 			return true;
 		}

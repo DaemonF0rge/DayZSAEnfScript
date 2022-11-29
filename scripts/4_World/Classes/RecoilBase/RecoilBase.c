@@ -54,7 +54,7 @@ class RecoilBase
 		m_ReloadTime = weapon.GetReloadTime(muzzleIndex);
 		m_MouseOffsetTarget = vector.YawToVector(m_Angle);
 		m_MouseOffsetTarget = m_MouseOffsetTarget * m_MouseOffsetDistance;
-		m_IsClient = GetGame().IsClient() || !GetGame().IsMultiplayer();
+		m_IsClient = !GetGame().IsDedicatedServer();
 		m_CamOffsetDistance *= m_RecoilModifier[2];
 	}
 	
@@ -71,7 +71,7 @@ class RecoilBase
 		{
 			delete this;
 		}
-		
+			
 		m_TimeNormalized = Math.InverseLerp(0, m_ReloadTime, m_Time);
 		m_TimeNormalized = Math.Clamp(m_TimeNormalized, 0,0.99);
 		
@@ -79,17 +79,22 @@ class RecoilBase
 		ApplyHandsOffset(pDt, axis_hands_x, axis_hands_y);
 		if(m_IsClient)
 			ApplyCamOffset(pModel);
+		#ifdef DEVELOPER
 		if(m_DebugMode)
 			PrintString("RecoilBase | BEFORE | axis_mouse_y: " + axis_mouse_y.ToString());
+		#endif
 		axis_mouse_x = axis_mouse_x * m_RecoilModifier[0];
 		axis_mouse_y = axis_mouse_y * m_RecoilModifier[1];
 		
 		axis_hands_x = axis_hands_x * m_RecoilModifier[0];
 		axis_hands_y = axis_hands_y * m_RecoilModifier[1];
+		
+		#ifdef DEVELOPER
 		if(m_DebugMode)
 		{
 			PrintString("RecoilBase | AFTER | axis_mouse_y: " + axis_mouse_y.ToString());
 		}
+		#endif
 		m_Time += pDt;
 		
 		if( m_Time >= m_ReloadTime )
@@ -138,6 +143,7 @@ class RecoilBase
 	
 	void ApplyMouseOffset(float pDt, out float pRecResultX, out float pRecResultY)
 	{
+		#ifdef DEVELOPER
 		if(m_DebugMode)
 		{
 			bool b1 = m_MouseOffsetTargetAccum[1] < m_MouseOffsetTarget[1];
@@ -145,6 +151,7 @@ class RecoilBase
 			PrintString( "RecoilBase | m_MouseOffsetTargetAccum : " + m_MouseOffsetTargetAccum.ToString() );
 			PrintString( "RecoilBase | m_MouseOffsetTarget : " + m_MouseOffsetTarget.ToString() );
 		}
+		#endif
 		
 		if( m_MouseOffsetTargetAccum[1] < m_MouseOffsetTarget[1] )
 		{
@@ -175,11 +182,12 @@ class RecoilBase
 				PrintString( "accum y: "+ m_MouseOffsetTargetAccum[1] );
 			}*/
 		}
-		
+		#ifdef DEVELOPER
 		if(m_DebugMode)
 		{
 			PrintString( "RecoilBase | pRecResultY: " + pRecResultY );
 		}
+		#endif
 	}
 	
 	vector GetRecoilModifier(Weapon_Base weapon)

@@ -236,12 +236,13 @@ class BiosSessionService
 	*/
 	void OnEnterGameplaySession(string session_address, int session_port, EBiosError error)
 	{
-		if( !OnlineServices.ErrorCaught( error ) )
+		if ( !OnlineServices.ErrorCaught( error ) )
 		{
 			SetGameplayActivityAsync( session_address, session_port );
-			if( OnlineServices.GetPendingInviteList() )
+			if ( OnlineServices.GetPendingInviteList() )
 				InviteToGameplaySessionAsync( session_address, session_port, OnlineServices.GetPendingInviteList() );
-			OnlineServices.GetCurrentServerInfo(session_address, session_port);
+			
+			//OnlineServices.GetCurrentServerInfo(session_address, session_port);
 		}
 	}
 	

@@ -3,7 +3,6 @@ class OptionSelectorBase extends ScriptedWidgetEventHandler
 	protected int							m_SelectorType = 0;
 	protected Widget						m_Parent;
 	protected Widget						m_Root;
-	//protected Widget						m_DisablePanel;
 	
 	protected bool							m_Enabled;
 	
@@ -11,6 +10,7 @@ class OptionSelectorBase extends ScriptedWidgetEventHandler
 	
 	ref ScriptInvoker						m_OptionFocused = new ScriptInvoker;
 	ref ScriptInvoker						m_OptionUnfocused = new ScriptInvoker;
+	ref ScriptInvoker						m_AttemptOptionChange = new ScriptInvoker;
 	ref ScriptInvoker						m_OptionChanged = new ScriptInvoker;
 	
 	void ~OptionSelectorBase()
@@ -143,8 +143,11 @@ class OptionSelectorBase extends ScriptedWidgetEventHandler
 		
 		m_Parent.ClearFlags( WidgetFlags.IGNOREPOINTER );
 		
-		ColorNormal( m_Parent.GetParent() );
-		//m_DisablePanel.Show( false );
+		#ifdef PLATFORM_CONSOLE
+			ColorNormalConsole(m_Parent);
+		#else
+			ColorNormal(m_Parent);
+		#endif
 	}
 	
 	void Disable()
@@ -153,8 +156,11 @@ class OptionSelectorBase extends ScriptedWidgetEventHandler
 		
 		m_Parent.SetFlags( WidgetFlags.IGNOREPOINTER );
 		
-		ColorDisabled( m_Parent );
-		//m_DisablePanel.Show( true );
+		#ifdef PLATFORM_CONSOLE
+			ColorDisabledConsole(m_Parent);
+		#else
+			ColorDisabled(m_Parent);
+		#endif
 	}
 	
 	void ColorHighlight( Widget w )
@@ -251,7 +257,7 @@ class OptionSelectorBase extends ScriptedWidgetEventHandler
 	
 	void ColorDisabledConsole( Widget w )
 	{
-		if( !w )
+		if (!w)
 			return;
 		
 		int color_pnl = ARGB(0, 0, 0, 0);

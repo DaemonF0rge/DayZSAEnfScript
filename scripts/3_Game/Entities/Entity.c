@@ -2,7 +2,10 @@ class Entity extends ObjectTyped
 {
 	proto native void DisableSimulation(bool disable);
 
-	//! returns simulation timestamp
+	//! Returns whether simulation is disabled
+	proto native bool GetIsSimulationDisabled();
+	
+	//! Returns simulation timestamp
 	proto native int GetSimulationTimeStamp();
 
 	//! Return animation phase of animation on object.
@@ -10,8 +13,20 @@ class Entity extends ObjectTyped
 	
 	//! Process animation on object. Animation is defined in config file. Wanted animation phase is set to phase.
 	proto native void SetAnimationPhase(string animation, float phase);
+	
+	//! Same as SetAnimationPhase, only ignores any animation and sets the phase immediately
+	void SetAnimationPhaseNow(string animation, float phase)
+	{
+		ResetAnimationPhase(animation, phase);
+		SetAnimationPhase(animation, phase);
+	}
 		
 	proto native void ResetAnimationPhase(string animation, float phase);
+	
+	/**
+	\brief callback called from C++ when AnimationPhase has started
+	*/
+	void OnAnimationPhaseStarted(string animSource, float phase);
 
 	//! Returns skeleton's bone index of named proxy selection.
 	proto native int GetBoneIndex( string proxySelectionName );

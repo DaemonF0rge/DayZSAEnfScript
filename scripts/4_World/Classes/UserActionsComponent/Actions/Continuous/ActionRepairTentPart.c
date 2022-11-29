@@ -30,17 +30,13 @@ class ActionRepairTentPart: ActionContinuousBase
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONFB_INTERACT;
 		m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT | DayZPlayerConstants.STANCEMASK_CROUCH;
+		m_Text = "#repair";
 	}
 
 	override void CreateConditionComponents()  
 	{
 		m_ConditionItem = new CCINonRuined; //To change?
 		m_ConditionTarget = new CCTCursorParent(UAMaxDistances.DEFAULT);
-	}
-
-	override string GetText()
-	{
-		return "#repair";
 	}
 	
 	override bool IsUsingProxies()

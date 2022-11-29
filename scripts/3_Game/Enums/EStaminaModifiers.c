@@ -9,4 +9,5 @@ enum EStaminaModifiers
 	VAULT,
 	CLIMB,
 	ROLL,
+	DROWN,
 }

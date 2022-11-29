@@ -17,7 +17,7 @@ class ActionWorldCraftCB : ActionContinuousBaseCB
 	/*override void OnFinish(bool pCanceled)	
 	{
 		super.OnFinish(pCanceled);
-		if( !GetGame().IsMultiplayer() || GetGame().IsClient() )
+		if( !GetGame().IsDedicatedServer() )
 		{
 			PlayerBase player;
 			if( Class.CastTo(player, GetGame().GetPlayer()) )
@@ -39,7 +39,6 @@ class ActionWorldCraft: ActionContinuousBase
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONFB_CRAFTING;
 		m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_CROUCH;
-		m_ActionPrompt = "Craft";
 	}
 	
 	override ActionData CreateActionData()
@@ -53,6 +52,13 @@ class ActionWorldCraft: ActionContinuousBase
 		m_ConditionItem = new CCINone;
 		m_ConditionTarget = new CCTObject(UAMaxDistances.DEFAULT);
 	}
+	
+	override void OnActionInfoUpdate( PlayerBase player, ActionTarget target, ItemBase item )
+	{
+		PluginRecipesManager module_recipes_manager;
+		Class.CastTo(module_recipes_manager,  GetPlugin(PluginRecipesManager) );
+		m_Text = module_recipes_manager.GetRecipeName( player.GetCraftingManager().GetRecipeID(m_VariantID) ); 
+	}
 		
 	override string GetText()
 	{
@@ -61,7 +67,7 @@ class ActionWorldCraft: ActionContinuousBase
 		{
 			PluginRecipesManager module_recipes_manager;
 			Class.CastTo(module_recipes_manager,  GetPlugin(PluginRecipesManager) );
-			return module_recipes_manager.GetRecipeName( player.GetCraftingManager().GetRecipeID() );
+			return module_recipes_manager.GetRecipeName( player.GetCraftingManager().GetRecipeID(m_VariantID) );
 		}
 
 		return "Default worldcraft text";
@@ -70,13 +76,9 @@ class ActionWorldCraft: ActionContinuousBase
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
 	{
 		//Client
-		if( !GetGame().IsMultiplayer() || GetGame().IsClient() )
+		if ( !GetGame().IsDedicatedServer() )
 		{					
-			if ( /*player.GetCraftingManager().IsWorldCraft() || player.GetCraftingManager().IsInventoryCraft()*/ player.GetCraftingManager().GetRecipesCount() > 0 )
-			{
-				return true;
-			}
-			return false;
+			return true;
 		}
 		else //Server
 		{
@@ -91,11 +93,11 @@ class ActionWorldCraft: ActionContinuousBase
 	{
 		if (super.SetupAction(player, target, item, action_data, extra_data ))
 		{
-			if (GetGame().IsClient() || !GetGame().IsMultiplayer())
+			if (!GetGame().IsDedicatedServer())
 			{
 				WorldCraftActionData action_data_wc;
 				Class.CastTo(action_data_wc, action_data);
-				action_data_wc.m_RecipeID = action_data.m_Player.GetCraftingRecipeID();
+				action_data_wc.m_RecipeID = player.GetCraftingManager().GetRecipeID(m_VariantID);
 			}
 			return true;
 		}
@@ -191,6 +193,5 @@ class ActionWorldCraft: ActionContinuousBase
 		}
 		action_data_wc.m_RecipeID = recive_data_wc.m_RecipeID;
 	}
-	
 };
 

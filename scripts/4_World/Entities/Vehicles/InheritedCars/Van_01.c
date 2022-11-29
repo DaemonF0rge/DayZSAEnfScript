@@ -1,9 +1,64 @@
 class Van_01 extends CarScript
 {
-	//-----------------------------------------------------------
+	protected ref UniversalTemperatureSource m_UTSource;
+	protected ref UniversalTemperatureSourceSettings m_UTSSettings;
+	protected ref UniversalTemperatureSourceLambdaEngine m_UTSLEngine;
+
 	void Van_01()
 	{
 		m_dmgContactCoef = 0.070; //TODO::Set proper value
+	}
+	
+	override void EEInit()
+	{		
+		super.EEInit();
+		
+		if (GetGame().IsServer() || !GetGame().IsMultiplayer())
+		{
+ 			m_UTSSettings 					= new UniversalTemperatureSourceSettings();
+			m_UTSSettings.m_ManualUpdate 	= true;
+			m_UTSSettings.m_TemperatureMin	= 0;
+			m_UTSSettings.m_TemperatureMax	= 30;
+			m_UTSSettings.m_RangeFull		= 0.5;
+			m_UTSSettings.m_RangeMax		= 2;
+			m_UTSSettings.m_TemperatureCap	= 25;
+			
+			m_UTSLEngine					= new UniversalTemperatureSourceLambdaEngine();
+			m_UTSource						= new UniversalTemperatureSource(this, m_UTSSettings, m_UTSLEngine);
+		}		
+	}
+	
+	override void OnEngineStart()
+	{
+		super.OnEngineStart();
+
+		if (GetGame().IsServer() || !GetGame().IsMultiplayer())
+		{
+			m_UTSource.SetDefferedActive(true, 20.0);
+		}
+	}
+	
+	override void OnEngineStop()
+	{
+		super.OnEngineStop();
+
+		if (GetGame().IsServer() || !GetGame().IsMultiplayer())
+		{
+			m_UTSource.SetDefferedActive(false, 10.0);
+		}
+	}
+	
+	override void EOnPostSimulate(IEntity other, float timeSlice)
+	{
+		super.EOnPostSimulate(other, timeSlice);
+		
+		if (GetGame().IsServer() || !GetGame().IsMultiplayer())
+		{
+			if (m_UTSource.IsActive())
+			{
+				m_UTSource.Update(m_UTSSettings, m_UTSLEngine);
+			}
+		}
 	}
 	
 	//-----------------------------------------------------------

@@ -1,20 +1,22 @@
-class GasMask extends ClothingBase
+class GasMask extends MaskBase
 {
 	override bool CanPutAsAttachment( EntityAI parent )
 	{
 		if (!super.CanPutAsAttachment(parent)) {return false;}
-		bool headgear_present = false;
 		
-		if ( parent.FindAttachmentBySlotName( "Headgear" ) )
+		Clothing headgear = Clothing.Cast(parent.FindAttachmentBySlotName("Headgear"));
+		if ( headgear && headgear.ConfigGetBool("noMask") )
 		{
-			headgear_present = parent.FindAttachmentBySlotName( "Headgear" ).ConfigGetBool( "noMask" );
+			return false;
 		}
 		
-		if ( ( GetNumberOfItems() == 0 || !parent || parent.IsMan() ) && !headgear_present )
+		Clothing eyewear = Clothing.Cast(parent.FindAttachmentBySlotName("Eyewear"));
+		if ( eyewear && SportGlasses_ColorBase.Cast(eyewear) )
 		{
-			return true;
+			return false;
 		}
-		return false;
+		
+		return true;
 	}
 	
 	override bool IsObstructingVoice()
@@ -25,5 +27,16 @@ class GasMask extends ClothingBase
 	override int GetVoiceEffect()
 	{
 		return VoiceEffectObstruction;
+	}
+	
+	override void EEHealthLevelChanged(int oldLevel, int newLevel, string zone)
+	{
+		if (GetGame().IsServer())
+		{
+			if( newLevel == GameConstants.STATE_RUINED )
+			{
+				SetQuantity(0);
+			}
+		}
 	}
 }

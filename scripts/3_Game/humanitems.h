@@ -18,10 +18,13 @@ class HumanItemBehaviorCfg
 	int		m_StanceMovements[6];			//! 6 stances -> all has movement mask, STANCEIDX_ ... is index
 	int		m_StanceRotation[6];			//! 
 	int 	m_IKSettings[24];				//! [stance][movement] mask for ik 
+	int 	m_IKSettingsMelee[2];				//! [inpact type] mask for ik (0 - light/1 - heavy)
 	int 	m_iPerItemCameraUserData;		//! per item camera user data - can be obtained in runtime by DayZPlayer.GetPerItemCameraUD()
 
 	//! movement caps
-	float 	m_fMoveHeadingFilterSpan;		//! delay of alignment when moving
+	float 	m_fMoveHeadingFilterSpan;		//! default delay of alignment when moving
+	float 	m_fMoveHeadingSprintFilterSpan;	//! delay of alignment when sprintinh
+	float	m_fMoveHeadingProneFilterSpan;	//! delay of alignment when moving in prone stance
 	float 	m_fMoveHeadingFilterSpeed;		//! max speed of alignment when moving
 
 	//! evade caps
@@ -35,6 +38,8 @@ class HumanItemBehaviorCfg
 	//! per weapon lean forward 
 	bool	m_bJumpAllowed;					//! default true
 	
+	private bool m_bPlaceholder;
+	
 
 	void 	SetIK(int pStance, int pMovement, bool pAim, bool pRArm, bool pLArm)
 	{
@@ -44,7 +49,7 @@ class HumanItemBehaviorCfg
 		if (pLArm)	val |=  IKSETTING_LHAND;
 
 		// Print("Setting ik " + pStance.ToString() + "," +   pMovement.ToString() );
-		pStance = pStance*4;
+		pStance = pStance * 4;
 		pStance = pStance + pMovement;
 
 		// Print("Setting ik " + pStance.ToString() + " to value " +   val.ToString() );
@@ -66,6 +71,16 @@ class HumanItemBehaviorCfg
 		}
 	}
 
+	void 	SetIKMelee(int pHitType, bool pAim, bool pRArm, bool pLArm)
+	{
+		int val = 0;
+		if (pAim)	val |=  IKSETTING_AIMING;
+		if (pRArm)	val |=  IKSETTING_RHAND;
+		if (pLArm)	val |=  IKSETTING_LHAND;
+
+		m_IKSettingsMelee[pHitType] = val;
+	}
+
 	void 	SetIKAll(bool pAim, bool pRArm, bool pLArm)
 	{
 		int val = 0;
@@ -73,9 +88,15 @@ class HumanItemBehaviorCfg
 		if (pRArm)	val |=  IKSETTING_RHAND;
 		if (pLArm)	val |=  IKSETTING_LHAND;
 
-		for (int i = 0; i < 24; i++)
+		int i;
+		for (i = 0; i < 24; i++)
 		{
 			m_IKSettings[i] = val;
+		}
+
+		for (i = 0; i < 2; i++)
+		{
+			m_IKSettingsMelee[i] = val;
 		}
 	}
 

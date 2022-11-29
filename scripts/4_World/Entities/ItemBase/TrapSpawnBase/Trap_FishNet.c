@@ -2,40 +2,29 @@ class Trap_FishNet extends TrapSpawnBase
 {
 	void Trap_FishNet()
 	{
-		m_InitWaitTime = Math.RandomFloat(45,90);
-		m_BaitNeeded = false;
+		m_DefectRate = 15; 			//Added damage after trap activation
+		
+		m_InitWaitTime = Math.RandomFloat(900,1500);
+		m_UpdateWaitTime = 30;
 		m_IsFoldable = true;
+		
+		m_MinimalDistanceFromPlayersToCatch 	= 15;
+		
+		m_BaitCatchProb 						= 85;
+		m_NoBaitCatchProb						= 15;
 
-		m_AnimationPhaseSet = "inventory";
-		m_AnimationPhaseTriggered = "placing";
+		m_AnimationPhaseSet 					= "inventory";
+		m_AnimationPhaseTriggered 				= "placing";
+		m_AnimationPhaseUsed 					= "triggered";
 		
 		m_WaterSurfaceForSetup = true;
 
 		m_CatchesPond = new multiMap<string, float>;
 		m_CatchesPond.Insert("Carp",1);
-		m_CatchesPond.Insert("Carp",1);
-		m_CatchesPond.Insert("Carp",2);
 		
 		m_CatchesSea = new multiMap<string, float>;
-		m_CatchesSea.Insert("Sardines",1);
-		m_CatchesSea.Insert("Sardines",1);
-		m_CatchesSea.Insert("Sardines",2);
-
-		m_CatchesSea.Insert("Sardines",1);
-		m_CatchesSea.Insert("Sardines",1);
-		m_CatchesSea.Insert("Sardines",2);
-
 		m_CatchesSea.Insert("Mackerel",1);
-		m_CatchesSea.Insert("Mackerel",1);
-		m_CatchesSea.Insert("Mackerel",2);
-		
-		m_CatchesGroundAnimal = new multiMap<string, float>;
 	}
-	
-	/*override bool IsOneHandedBehaviour()
-	{
-		return true;
-	}*/
 	
 	override void OnVariablesSynchronized()
 	{
@@ -47,50 +36,124 @@ class Trap_FishNet extends TrapSpawnBase
 		}
 	}
 	
-	// ITEM CANNOT BE TAKEN WHEN CONTAINS CARGO
-	/*override*/ bool CanPutInInventory ( EntityAI  player ) 
+	//========================================================
+	//======================= CATCHING =======================
+	//========================================================
+	
+	override void SpawnCatch()
 	{
+		super.SpawnCatch();
 		
-		return IsTakeable();
+		if ( m_CanCatch )
+		{
+			multiMap<string, float>	catches;
+			vector pos = GetPosition();
+			
+			ItemBase catch;
+			// Select catch type depending on water type ( FRESH VS SALT )
+			if ( GetGame().SurfaceIsSea( pos[0], pos[2] ) ) 
+			{
+				catches = m_CatchesSea;
+			}
+			else if ( GetGame().SurfaceIsPond( pos[0], pos[2] ) ) 
+			{
+				catches = m_CatchesPond;
+			}
+
+			if ( catches && catches.Count() > 0 )
+			{
+				// select random object from catches
+				int count = catches.Count() - 1;
+				int randomCatchIndex = Math.RandomInt( 0, count );
+			
+				if ( Math.RandomFloat(0, 100) < m_FinalCatchProb )
+				{
+					catch = ItemBase.Cast( GetGame().CreateObjectEx( catches.GetKeyByIndex(randomCatchIndex), m_PreyPos, ECE_NONE ) );
+					
+					// Set the quantity of caught prey
+					if ( catch )
+						CatchSetQuant( catch );
+				}
+				
+				// We change the trap state and visuals
+				SetUsed();
+				
+				// We remove the bait from this trap
+				if ( m_Bait )
+					m_Bait.Delete();
+			}
+			
+			// Deal damage to trap
+			AddDefect();
+		}
 	}
 	
-	override bool CanPutIntoHands ( EntityAI player ) 
+	//========================================================
+	//============= PLACING AND INVENTORY EVENTS =============
+	//========================================================
+	
+	override bool IsPlaceableAtPosition( vector position )
 	{
-		if( !super.CanPutIntoHands( parent ) )
-		{
-			return false;
-		}
-		return IsTakeable();
+		return IsSurfaceWater( position );
 	}
 
-	override bool CanRemoveFromHands ( EntityAI player ) 
+	override bool CanReceiveAttachment( EntityAI attachment, int slotId )
 	{
-		return IsTakeable();
-	}
-
-	override bool CanReceiveItemIntoCargo( EntityAI item )
-	{
-		if ( GetHierarchyRootPlayer() == NULL )
-		{
-			return true;
-		}
-		else
-		{
+		if ( !attachment.IsInherited( Worm ) )
 			return false;
-		}
+		
+		return super.CanReceiveAttachment( attachment, slotId );
 	}
-
-	override bool CanReleaseCargo( EntityAI child )
+	
+	#ifdef PLATFORM_WINDOWS
+	// How one sees the tripwire when in vicinity
+	override int GetViewIndex()
 	{
-		if ( GetHierarchyRootPlayer() == NULL )
-		{
-			return true;
+		if ( MemoryPointExists( "invView2" ) )
+		{		
+			InventoryLocation il = new InventoryLocation;
+			GetInventory().GetCurrentInventoryLocation( il );
+			InventoryLocationType type = il.GetType();
+			switch ( type )
+			{
+				case InventoryLocationType.CARGO:
+				{
+					return 0;
+				}
+				case InventoryLocationType.ATTACHMENT:
+				{
+					return 1;
+				}
+				case InventoryLocationType.HANDS:
+				{
+					return 0;
+				}
+				case InventoryLocationType.GROUND:
+				{
+					// Different view index depending on deployment state 
+					if ( IsActive() )
+						return 1;
+					
+					// When folded
+					return 0;
+				}
+				case InventoryLocationType.PROXYCARGO:
+				{
+					return 0;
+				}
+				default:
+				{
+					if ( IsActive() )
+						return 1;
+					
+					// When folded
+					return 0;
+				}
+			}
 		}
-		else
-		{
-			return false;
-		}
+		return 0;
 	}
+	#endif
 	
 	//================================================================
 	// ADVANCED PLACEMENT
@@ -116,14 +179,6 @@ class Trap_FishNet extends TrapSpawnBase
 	override string GetLoopDeploySoundset()
 	{
 		return "fishnet_deploy_SoundSet";
-	}
-	
-	override void SetActions()
-	{
-		super.SetActions();
-		
-		AddAction(ActionTogglePlaceObject);
-		AddAction(ActionDeployObject);
 	}
 }
 

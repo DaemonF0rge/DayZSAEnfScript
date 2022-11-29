@@ -24,11 +24,18 @@ enum InventoryMode
 	SERVER,			///< 'Server' mode operation is required if and only if the operation runs only on server (creates and/or destroys objects)
 };
 
+enum InventoryCheckContext
+{
+	DEFAULT,
+	SYNC_CHECK,
+}
+
 /**@class		GameInventory
  * @brief		script counterpart to engine's class Inventory
  **/
 class GameInventory
-{	
+{
+	protected static int m_inventory_check_context = InventoryCheckContext.DEFAULT;	
 //-------------------------------------------------------
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///@{ Engine native functions
@@ -102,6 +109,8 @@ class GameInventory
 	proto native bool CanAddEntityInCargo (notnull EntityAI e, bool flip);
 	proto native bool CanAddEntityInCargoEx (notnull EntityAI e, int idx, int row, int col, bool flip);
 	proto native bool CanAddEntityInCargoExLoc (InventoryLocation loc);
+	proto native bool TestAddEntityInCargoEx (notnull EntityAI e, int idx, int row, int col, bool flip, bool do_resevation_check, bool do_item_check, bool do_lock_check, bool do_occupancy_test, bool do_script_check, bool do_script_load_check);
+	proto native bool TestAddEntityInCargoExLoc (notnull InventoryLocation loc, bool do_resevation_check, bool do_item_check, bool do_lock_check, bool do_occupancy_test, bool do_script_check, bool do_script_load_check);
 	//proto native bool AddEntityInCargo (notnull EntityAI owner, EntityAI cargo);
 	//proto native bool AddEntityInCargoEx (notnull EntityAI owner, notnull EntityAI e, int idx, int row, int col);
 	proto native bool CanRemoveEntityInCargo (notnull EntityAI e);
@@ -277,18 +286,11 @@ class GameInventory
 	 * @brief	queries if the entity contained in inv_loc.m_item can be added to ground/attachment/cargo/hands/...
 	 * @return true if can be added, false otherwise
 	 **/
-	static proto native bool LocationCanAddEntity (notnull InventoryLocation inv_loc);
+	static proto native bool LocationCanAddEntity(notnull InventoryLocation inv_loc);
 	
 	//Added script check to  LocationCanAddEntity
 	static bool LocationCanAddEntityEx(notnull InventoryLocation inv_loc)
 	{
-		EntityAI parent = inv_loc.GetParent();
-		//Addition handling items which are automaticali disassemled to avoid moving attachment to inventory of destroing item
-		if(parent && parent.DisassembleOnLastDetach() )
-		{
-			if( parent.GetInventory().AttachmentCount() == 1 && parent.GetInventory().HasAttachment(inv_loc.GetItem()) )
-				return false;
-		}
 		return LocationCanAddEntity (inv_loc);
 	}
 	
@@ -297,26 +299,40 @@ class GameInventory
 	 * @brief	test if the entity contained in inv_loc.m_item can be added to ground/attachment/cargo/hands/...
 	 * @return true if can be added, false otherwise
 	 **/
-	static proto native bool LocationTestAddEntity (notnull InventoryLocation inv_loc, bool do_resevation_check, bool do_item_check, bool do_lock_check, bool do_occupancy_test, bool do_script_check);
+	static proto native bool LocationTestAddEntity(notnull InventoryLocation inv_loc, bool do_resevation_check, bool do_item_check, bool do_lock_check, bool do_occupancy_test, bool do_script_check, bool do_script_load_check);
 	/**
 	 * @fn		LocationCanRemoveEntity
 	 * @brief	queries if the entity contained in inv_loc.m_item can be removed from ground/attachment/cargo/hands/...
 	 * @return true if can be added, false otherwise
 	 **/
-	static proto native bool LocationCanRemoveEntity (notnull InventoryLocation inv_loc);
+	static proto native bool LocationCanRemoveEntity(notnull InventoryLocation inv_loc);
 	/**
 	 * @fn		LocationCanMoveEntity
 	 * @brief	queries if the entity contained in inv_loc.m_item can be moved to another location
 	 * This is a shorthand for CanRemove + CanAdd query
 	 * @return true if can be moved, false otherwise
 	 **/
-	static proto native bool LocationCanMoveEntity (notnull InventoryLocation src, notnull InventoryLocation dst);
+	static proto native bool LocationCanMoveEntity(notnull InventoryLocation src, notnull InventoryLocation dst);
+	
+	static int GetInventoryCheckContext()
+	{
+		return m_inventory_check_context;
+	}
+	
+	static bool LocationCanMoveEntitySyncCheck(notnull InventoryLocation src, notnull InventoryLocation dst)
+	{
+		m_inventory_check_context = InventoryCheckContext.SYNC_CHECK;
+		bool result = LocationCanMoveEntity(src, dst);
+		m_inventory_check_context = InventoryCheckContext.DEFAULT;
+		return result;
+		
+	}
 	/**
 	 * @fn		LocationCanAddEntity
 	 * @brief	query the entity at the specific inventory location
 	 * @return entity at the location, null otherwise
 	 **/
-	static proto native EntityAI LocationGetEntity (notnull InventoryLocation inv_loc);
+	static proto native EntityAI LocationGetEntity(notnull InventoryLocation inv_loc);
 
 	
 	//! Returns true if this Inventory owner is in cargo of something
@@ -340,6 +356,27 @@ class GameInventory
 		if ( lcn.GetType() == InventoryLocationType.ATTACHMENT)
 		{
 			return true;
+		}
+		
+		return false;
+	}
+	
+	//! Returns true if item of his hiearchy parents are in cargo
+	bool IsCargoInHiearchy()
+	{
+		InventoryLocation lcn = new InventoryLocation;
+		GetCurrentInventoryLocation(lcn);
+		EntityAI parent = lcn.GetParent();
+		
+		while (parent) //while with limit
+		{
+			if (lcn.GetType() == InventoryLocationType.CARGO || lcn.GetType() == InventoryLocationType.PROXYCARGO)
+			{
+				return true;
+			}
+			
+			parent.GetInventory().GetCurrentInventoryLocation(lcn);
+			parent = lcn.GetParent();
 		}
 		
 		return false;
@@ -513,33 +550,25 @@ class GameInventory
 	static bool CanSwapEntitiesEx(notnull EntityAI item1, notnull EntityAI item2)
 	{
 		int slot;
-		InventoryLocation il = new InventoryLocation;
+		InventoryLocation il1 = new InventoryLocation;
+		InventoryLocation il2 = new InventoryLocation;
 		
-		item2.GetInventory().GetCurrentInventoryLocation(il);
-		slot = il.GetSlot();
+		item2.GetInventory().GetCurrentInventoryLocation(il2);
+		slot = il2.GetSlot();
 
 		if( item1.GetQuantity() > item1.GetTargetQuantityMax(slot) )
 			return false;
 		
-		//Addition handling items which are automaticali disassemled to avoid moving attachment to inventory of destroing item	
-		EntityAI parent = EntityAI.Cast(il.GetParent());
-		if(slot != -1 && parent && parent.DisassembleOnLastDetach())
-		{
-			if ( parent.GetInventory().AttachmentCount() == 1 )
-				return false;
-		}
 		
-		item1.GetInventory().GetCurrentInventoryLocation(il);
-		slot = il.GetSlot();
+		item1.GetInventory().GetCurrentInventoryLocation(il1);
+		slot = il1.GetSlot();
 		
 		if( item2.GetQuantity() > item2.GetTargetQuantityMax(slot) )
 			return false;
-		//Addition handling items which are automaticali disassemled to avoid moving attachment to inventory of destroing item
-		parent = EntityAI.Cast(il.GetParent());
-		if(slot != -1 && parent && parent.DisassembleOnLastDetach())
+		
+		if(!item1.CanSwapEntities(item2, il2, il1) || !item2.CanSwapEntities(item1, il1, il2))
 		{
-			if ( parent.GetInventory().AttachmentCount() == 1 )
-				return false;
+			return false;
 		}
 		
 		return CanSwapEntities(item1,item2);
@@ -557,11 +586,11 @@ class GameInventory
 	static proto native bool CanForceSwapEntities (notnull EntityAI item1, InventoryLocation item1_dst, notnull EntityAI item2, out InventoryLocation item2_dst);
 	static bool CanForceSwapEntitiesEx(notnull EntityAI item1, InventoryLocation item1_dst, notnull EntityAI item2, out InventoryLocation item2_dst)
 	{
-		int slot;
-		InventoryLocation il = new InventoryLocation;
-		
 		if(!CanForceSwapEntities(item1, item1_dst, item2, item2_dst) )
 			return false;
+		
+		int slot;
+		InventoryLocation il = new InventoryLocation;
 		
 		if( item1_dst == null)
 		{
@@ -584,6 +613,11 @@ class GameInventory
 		else
 		{
 			slot = item2_dst.GetSlot();
+		}
+		
+		if(!item1.CanSwapEntities(item2, item2_dst, item1_dst) || !item2.CanSwapEntities(item1, item1_dst, item2_dst))
+		{
+			return false;
 		}
 		
 		if( item2.GetQuantity() > item2.GetTargetQuantityMax(slot) )
@@ -611,9 +645,9 @@ class GameInventory
 			if( player )
 			{
 				if(item)
-					Debug.InventoryMoveLog("" + InventoryLocation.DumpToStringNullSafe(dst), "n/a" , "n/a", "AddInventoryReservation", player.ToString() );
+					Debug.InventoryMoveLog("Reservation result: " + ret_val + " - STS = " + player.GetSimulationTimeStamp() + " / " + item.ToString() + " / " + InventoryLocation.DumpToStringNullSafe(dst), "n/a" , "n/a", "AddInventoryReservation", player.ToString() );
 				else
-					Debug.InventoryMoveLog("" + InventoryLocation.DumpToStringNullSafe(dst), "n/a" , "n/a", "AddInventoryReservation", player.ToString() );
+					Debug.InventoryMoveLog("Reservation result: " + ret_val + " - STS = " + player.GetSimulationTimeStamp() + " / null / " + InventoryLocation.DumpToStringNullSafe(dst), "n/a" , "n/a", "AddInventoryReservation", player.ToString() );
 			}
 		}
 		#endif
@@ -633,9 +667,9 @@ class GameInventory
 			if( player )
 			{
 				if(item)
-					Debug.InventoryMoveLog("Reservation result: " + ret_val + " - STS=" + player.GetSimulationTimeStamp() + " / " + item.ToString() + " / " + InventoryLocation.DumpToStringNullSafe(dst), "n/a" , "n/a", "ExtendInventoryReservation", player.ToString() );
+					Debug.InventoryMoveLog("Reservation result: " + ret_val + " - STS = " + player.GetSimulationTimeStamp() + " / " + item.ToString() + " / " + InventoryLocation.DumpToStringNullSafe(dst), "n/a" , "n/a", "ExtendInventoryReservation", player.ToString() );
 				else
-					Debug.InventoryMoveLog("Reservation result: " + ret_val + " - STS=" + player.GetSimulationTimeStamp() + " / null / " + InventoryLocation.DumpToStringNullSafe(dst), "n/a" , "n/a", "ExtendInventoryReservation", player.ToString() );
+					Debug.InventoryMoveLog("Reservation result: " + ret_val + " - STS = " + player.GetSimulationTimeStamp() + " / null / " + InventoryLocation.DumpToStringNullSafe(dst), "n/a" , "n/a", "ExtendInventoryReservation", player.ToString() );
 			}
 		}
 		#endif
@@ -655,9 +689,9 @@ class GameInventory
 			if( player )
 			{
 				if(item)
-					Debug.InventoryMoveLog("Reservation cleared result: " + ret_val + " - STS=" + player.GetSimulationTimeStamp() + " / " + item.ToString() + " / " + InventoryLocation.DumpToStringNullSafe(dst), "n/a" , "n/a", "ClearInventoryReservation", player.ToString() );
+					Debug.InventoryMoveLog("Reservation cleared result: " + ret_val + " - STS = " + player.GetSimulationTimeStamp() + " / " + item.ToString() + " / " + InventoryLocation.DumpToStringNullSafe(dst), "n/a" , "n/a", "ClearInventoryReservation", player.ToString() );
 				else
-					Debug.InventoryMoveLog("Reservation cleared result: " + ret_val + " - STS=" + player.GetSimulationTimeStamp() + " / null / " + InventoryLocation.DumpToStringNullSafe(dst), "n/a" , "n/a", "ClearInventoryReservation", player.ToString() );
+					Debug.InventoryMoveLog("Reservation cleared result: " + ret_val + " - STS = " + player.GetSimulationTimeStamp() + " / null / " + InventoryLocation.DumpToStringNullSafe(dst), "n/a" , "n/a", "ClearInventoryReservation", player.ToString() );
 			}
 		}
 		#endif
@@ -1034,7 +1068,7 @@ class GameInventory
 	}
 
 	/// helper function for swap
-	static bool MakeDstForSwap (notnull ref InventoryLocation src1, notnull ref InventoryLocation src2, out ref InventoryLocation dst1, out ref InventoryLocation dst2)
+	static bool MakeDstForSwap (notnull InventoryLocation src1, notnull InventoryLocation src2, out InventoryLocation dst1, out InventoryLocation dst2)
 	{
 		if (dst1 == null)
 			dst1 = new InventoryLocation;
@@ -1051,7 +1085,7 @@ class GameInventory
 	}
 
 	/// helper function for swap
-	static bool MakeSrcAndDstForSwap (notnull EntityAI item1, notnull EntityAI item2, out ref InventoryLocation src1, out ref InventoryLocation src2, out ref InventoryLocation dst1, out ref InventoryLocation dst2)
+	static bool MakeSrcAndDstForSwap (notnull EntityAI item1, notnull EntityAI item2, out InventoryLocation src1, out InventoryLocation src2, out InventoryLocation dst1, out InventoryLocation dst2)
 	{
 		if (src1 == null)
 			src1 = new InventoryLocation;
@@ -1063,7 +1097,7 @@ class GameInventory
 	}
 
 	/// helper function for ForceSwap
-	static bool MakeSrcAndDstForForceSwap (notnull EntityAI item1, notnull EntityAI item2, out ref InventoryLocation src1, out ref InventoryLocation src2, out ref InventoryLocation dst1, notnull InventoryLocation dst2)
+	static bool MakeSrcAndDstForForceSwap (notnull EntityAI item1, notnull EntityAI item2, out InventoryLocation src1, out InventoryLocation src2, out InventoryLocation dst1, notnull InventoryLocation dst2)
 	{
 		if (src1 == null)
 			src1 = new InventoryLocation;

@@ -3,7 +3,7 @@
  * @{
  */
 
-//!Loads object from data, or gets it from cache. Object must be released when not used
+//! Loads object from data, or gets it from cache. Object must be released when not used
 proto native vobject GetObject(string name);
 
 /*!
@@ -43,7 +43,8 @@ proto native bool	GetBoneLocalMatrix(notnull IEntity ent, int bone, vector mat[4
 
 proto native void	SetAnimFrame(notnull IEntity ent, int slot, float frame);
 
-// BoneMask == NULL means that all bits are set
+//! BoneMask == NULL means that all bits are set
+//! WARNING: Non-managed, needs manual delete call, should not be ref'd
 class BoneMask
 {
 	int Mask[8]
@@ -194,11 +195,19 @@ enum EmitorParam
 };
 
 // return total count of active particles in all emitors
+// internally does a sum
+// HasActiveParticles is better when just needing to check if there are any active
 proto native int GetParticleCount(notnull IEntity ent);
+
+// return if there are any active particles
+proto bool HasActiveParticle(notnull IEntity ent);
 
 // gets name of defined emitors in a particle effect
 // return number of emitors and their names in an array (max defines max. emitors to return)
 proto int GetParticleEmitors(notnull IEntity ent, out string emitors[], int max);
+
+// return number of emitors
+proto int GetParticleEmitorCount(notnull IEntity ent);
 
 // sets a parametr of the particle emitor
 // if the emitor == - 1, it sets the parameter for all emitors

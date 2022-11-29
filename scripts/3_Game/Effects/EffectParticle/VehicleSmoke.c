@@ -3,7 +3,6 @@ class EffVehicleSmoke : EffectParticle
 	void EffVehicleSmoke()
 	{
 		SetParticleStateLight();
-		SetEnableEventFrame(true);
 	}
 	
 	

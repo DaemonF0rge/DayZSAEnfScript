@@ -17,6 +17,8 @@ class ActionEatFruit: ActionEatBig
 		
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
 	{	
+		if (!super.ActionCondition(player, target, item))
+			return false;
 		Edible_Base food_item;
 
 		if ( Class.CastTo(food_item, item) )

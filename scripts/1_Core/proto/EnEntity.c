@@ -168,100 +168,100 @@ class IEntity: Managed
  Event method stubs. Reimplement these in inherited entities to receive event calls			
 */
 //@{
-	event private void EOnTouch(IEntity other, int extra) //!EntityEvent.TOUCH
+	event protected void EOnTouch(IEntity other, int extra) //!EntityEvent.TOUCH
 	{
 	}
-	event private void EOnInit(IEntity other, int extra) //!EntityEvent.INIT
+	event protected void EOnInit(IEntity other, int extra) //!EntityEvent.INIT
 	{
 	}
-	event private void EOnExtra(IEntity other, int extra)	//!EntityEvent.EXTRA
+	event protected void EOnExtra(IEntity other, int extra)	//!EntityEvent.EXTRA
 	{
 	}
-	event private void EOnNotVisible(IEntity other, int extra) //!EntityEvent.NOTVISIBLE
+	event protected void EOnNotVisible(IEntity other, int extra) //!EntityEvent.NOTVISIBLE
 	{
 	}
-	event private void EOnFrame(IEntity other, float timeSlice) //!EntityEvent.FRAME
+	event protected void EOnFrame(IEntity other, float timeSlice) //!EntityEvent.FRAME
 	{
 	}
-	event private int  EOnVisible(IEntity other, int extra) //!EntityEvent.VISIBLE
+	event protected int  EOnVisible(IEntity other, int extra) //!EntityEvent.VISIBLE
 	{
 	}
-	event private void EOnPostFrame(IEntity other, int extra) //!EntityEvent.POSTFRAME
+	event protected void EOnPostFrame(IEntity other, int extra) //!EntityEvent.POSTFRAME
 	{
 	}
-	event private void EOnWorldProcess(IEntity other, int extra) //!EntityEvent.WORLDPROCESS
+	event protected void EOnWorldProcess(IEntity other, int extra) //!EntityEvent.WORLDPROCESS
 	{
 	}
-	event private void EOnAnimEvent(IEntity other, AnimEvent extra) //!EntityEvent.ANIMEVENT
+	event protected void EOnAnimEvent(IEntity other, AnimEvent extra) //!EntityEvent.ANIMEVENT
 	{
 	}
-	event private void EOnSoundEvent(IEntity other, SoundEvent extra) //!EntityEvent.SOUNDEVENT
+	event protected void EOnSoundEvent(IEntity other, SoundEvent extra) //!EntityEvent.SOUNDEVENT
 	{
 	}
-	event private void EOnSimulate(IEntity other, float dt) //!EntityEvent.SIMULATE
+	event protected void EOnSimulate(IEntity other, float dt) //!EntityEvent.SIMULATE
 	{
 	}
-	event private void EOnPostSimulate(IEntity other, float timeSlice)	//!EntityEvent.POSTSIMULATE
+	event protected void EOnPostSimulate(IEntity other, float timeSlice)	//!EntityEvent.POSTSIMULATE
 	{
 	}
-	event private void EOnJointBreak(IEntity other, int extra) //!EntityEvent.JOINTBREAK
+	event protected void EOnJointBreak(IEntity other, int extra) //!EntityEvent.JOINTBREAK
 	{
 	}
-	event private void EOnPhysicsMove(IEntity other, int extra) //!EntityEvent.PHYSICSMOVE
+	event protected void EOnPhysicsMove(IEntity other, int extra) //!EntityEvent.PHYSICSMOVE
 	{
 	}
-	event private void EOnContact(IEntity other, Contact extra) //!EntityEvent.CONTACT
+	event protected void EOnContact(IEntity other, Contact extra) //!EntityEvent.CONTACT
 	{
 	}
-	private void EOnUser0(IEntity other, int extra) //!EntityEvent.EV_USER+0
+	protected void EOnUser0(IEntity other, int extra) //!EntityEvent.EV_USER+0
 	{
 	}
-	private void EOnUser1(IEntity other, int extra) //!EntityEvent.EV_USER+1
+	protected void EOnUser1(IEntity other, int extra) //!EntityEvent.EV_USER+1
 	{
 	}
-	event private void EOnEnter(IEntity other, int extra) //!EntityEvent.ENTER
+	event protected void EOnEnter(IEntity other, int extra) //!EntityEvent.ENTER
 	{
 	}
-	event private void EOnLeave(IEntity other, int extra) //!EntityEvent.LEAVE
+	event protected void EOnLeave(IEntity other, int extra) //!EntityEvent.LEAVE
 	{
 	}
-	private void EOnUser4(IEntity other, int extra) //!EntityEvent.EV_USER+4
+	protected void EOnUser4(IEntity other, int extra) //!EntityEvent.EV_USER+4
 	{
 	}
-	private void EOnDummy020(IEntity other, int extra)	//!Placeholder
+	protected void EOnDummy020(IEntity other, int extra)	//!Placeholder
 	{
 	}
-	private void EOnDummy021(IEntity other, int extra)	//!Placeholder
+	protected void EOnDummy021(IEntity other, int extra)	//!Placeholder
 	{
 	}
-	private void EOnDummy022(IEntity other, int extra)	//!Placeholder
+	protected void EOnDummy022(IEntity other, int extra)	//!Placeholder
 	{
 	}
-	private void EOnDummy023(IEntity other, int extra)	//!Placeholder
+	protected void EOnDummy023(IEntity other, int extra)	//!Placeholder
 	{
 	}
-	private void EOnDummy024(IEntity other, int extra)	//!Placeholder
+	protected void EOnDummy024(IEntity other, int extra)	//!Placeholder
 	{
 	}
-	private void EOnDummy025(IEntity other, int extra)	//!Placeholder
+	protected void EOnDummy025(IEntity other, int extra)	//!Placeholder
 	{
 	}
-	private void EOnDummy026(IEntity other, int extra)	//!Placeholder
+	protected void EOnDummy026(IEntity other, int extra)	//!Placeholder
 	{
 	}
-	private void EOnDummy027(IEntity other, int extra)	//!Placeholder
+	protected void EOnDummy027(IEntity other, int extra)	//!Placeholder
 	{
 	}
-	private void EOnDummy028(IEntity other, int extra)	//!Placeholder
+	protected void EOnDummy028(IEntity other, int extra)	//!Placeholder
 	{
 	}
-	private void EOnDummy029(IEntity other, int extra)	//!Placeholder
+	protected void EOnDummy029(IEntity other, int extra)	//!Placeholder
 	{
 	}
-	private void EOnDummy030(IEntity other, int extra)	//!Placeholder
+	protected void EOnDummy030(IEntity other, int extra)	//!Placeholder
 	{
 	}
-	private void EOnDummy031(IEntity other, int extra)	//!Placeholder
+	protected void EOnDummy031(IEntity other, int extra)	//!Placeholder
 	{
 	}
 //@}
@@ -286,6 +286,21 @@ class IEntity: Managed
 		@endcode
 	*/
 	proto external void GetTransform(out vector mat[]);
+
+	/**
+	\brief Returns local transformation of Entity. It returns only so much vectors as array is big
+		\param mat \p vector[1...4] matrix to be get
+		@code
+			Man player = g_Game.GetPlayer();
+	
+			vector mat[4];
+			player.GetTransform(mat);
+			Print( mat );
+	
+			>> <0.989879,-0,0.141916>,<0,1,0>,<-0.141916,0,0.989879>,<2545.08,15.6754,2867.49>
+		@endcode
+	*/
+	proto external void GetLocalTransform(out vector mat[]);
 
 	/**
 	\brief Returns one row of Entity transformation matrix
@@ -336,6 +351,18 @@ class IEntity: Managed
 		@endcode
 	*/
 	proto native external vector GetOrigin();
+	
+	/**
+	\brief Returns local position of Entity
+		\return \p vector entity local position
+		@code
+			Man player = g_Game.GetPlayer();
+			Print( player.GetOrigin() );
+	
+			>> <2577.02,15.6837,2924.27>
+		@endcode
+	*/
+	proto external vector GetLocalPosition();
 	
 	/**
 	\brief Returns orientation of Entity in world space (Yaw, Pitch, Roll)
@@ -498,16 +525,33 @@ class IEntity: Managed
 	*/
 	//@{
 
-	//!Add Entity to hierarchy. Pivot is pivot index, or -1 for center of parent.
-	proto native external int AddChild(notnull IEntity child, int pivot, bool positionOnly = false);
-	//!Remove Entity from hierarchy
-	proto native external void RemoveChild(notnull IEntity child);
+	/**
+	\brief Adds child entity to this entity.
+		\note Make sure the parent is not ToDelete
+		\param child \p IEntity Pointer to entity which become our child
+		\param pivot \p int Pivot is pivot index, or -1 for center of parent.
+		\param positionOnly \p bool When set to true, the orientation will still be in WS.
+		\return \p bool True when entity has been attached. False otherwise.
+	*/
+	proto native external bool AddChild(notnull IEntity child, int pivot, bool positionOnly = false);
+	
+	/**
+	\brief Removes child entity from hierarchy.
+		\note Make sure the child is not ToDelete
+		\param child \p IEntity Pointer to child entity we want to remove.
+		\param keepTransform \p bool When set to true, Entity is kept on her world position. Otherwise it's local transform is used as world-space one.
+		\return \p bool True if it was removed, false when this entity is not our child.
+	*/
+	proto native external bool RemoveChild(notnull IEntity child, bool keepTransform = false);
+	
+	//! Returns if the hierarchy component was created with positionOnly
+	proto native bool IsHierarchyPositionOnly();
 
-	//!Returns pointer to parent Entity in hierarchy
+	//! Returns pointer to parent Entity in hierarchy
 	proto native IEntity GetParent();
-	//!Returns pointer to first child Entity in hierarchy
+	//! Returns pointer to first child Entity in hierarchy
 	proto native IEntity GetChildren();
-	//!Returns pointer to next child Entity on the same hierarchy
+	//! Returns pointer to next child Entity on the same hierarchy
 	proto native IEntity GetSibling();
 	//@}
 
@@ -564,6 +608,19 @@ class IEntity: Managed
 		@endcode
 	*/
 	proto native external EntityFlags GetFlags();
+	
+	/**
+	\brief Test if one or more of specified flags are set
+		\return \p bool True if is set, false otherwise.
+		@code
+			Man player = g_Game.GetPlayer();
+			player.SetFlags(EntityFlags.VISIBLE);
+			Print( player.IsFlagSet(EntityFlags.VISIBLE) );
+	
+			>> true
+		@endcode
+	*/
+	proto native external bool IsFlagSet(EntityFlags flags);
 
 	/**
 	\brief Sets Entity flags. It's OR operation, not rewrite. Returns previous flags

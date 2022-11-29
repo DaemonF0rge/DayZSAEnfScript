@@ -1,79 +1,78 @@
-class ActionTurnOnWhileInHands: ActionSingleUseBase
+class ActionTurnOnWhileInHands : ActionSingleUseBase
 {
 	void ActionTurnOnWhileInHands()
 	{
+		m_Text = "#switch_on";
 	}
 	
 	override void CreateConditionComponents()  
 	{	
-		m_ConditionItem = new CCINonRuined;
-		m_ConditionTarget = new CCTNone;
+		m_ConditionItem 	= new CCINonRuined();
+		m_ConditionTarget 	= new CCTNone();
 	}
 
 	override bool HasTarget()
 	{
 		return false;
 	}
-
-	override string GetText()
+	
+	override bool HasProneException()
 	{
-		return "#switch_on";
+		return true;
 	}
 
-	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
+	override bool ActionCondition(PlayerBase player, ActionTarget target, ItemBase item)
 	{
-		if ( item.IsInherited(Roadflare) )
+		if (item.IsInherited(Roadflare))
 		{
-			m_CommandUID = DayZPlayerConstants.CMD_ACTIONMOD_LIGHTFLARE;
+			m_CommandUID		= DayZPlayerConstants.CMD_ACTIONMOD_LIGHTFLARE;
+			m_CommandUIDProne 	= DayZPlayerConstants.CMD_ACTIONFB_LITCHEMLIGHT;
 		}
 		else if (item.IsInherited(Chemlight_ColorBase))
 		{
-			m_CommandUID = DayZPlayerConstants.CMD_ACTIONMOD_LITCHEMLIGHT;
+			m_CommandUID 		= DayZPlayerConstants.CMD_ACTIONMOD_LITCHEMLIGHT;
+			m_CommandUIDProne	= DayZPlayerConstants.CMD_ACTIONFB_LITCHEMLIGHT;
+		}
+		else if (item.IsInherited(GPSReceiver))
+		{
+			m_CommandUID 		= DayZPlayerConstants.CMD_ACTIONMOD_PRESS_TRIGGER;
+			m_CommandUIDProne 	= DayZPlayerConstants.CMD_ACTIONFB_PRESS_TRIGGER;
 		}
 		else
 		{
-			m_CommandUID = DayZPlayerConstants.CMD_ACTIONMOD_ITEM_ON;
+			m_CommandUID 		= DayZPlayerConstants.CMD_ACTIONMOD_ITEM_ON;
+			m_CommandUIDProne	= DayZPlayerConstants.CMD_ACTIONFB_ITEM_ON;
 		}
 		
-		
-		if ( item.HasEnergyManager()  &&  item.GetCompEM().CanSwitchOn()  &&  item.GetCompEM().CanWork() )
-		{
-			return true;
-		}
-		
-		return false;
+		return item.HasEnergyManager() && item.GetCompEM().CanSwitchOn() && item.GetCompEM().CanWork();
 	}
 
-	override void OnExecuteServer( ActionData action_data )  //Takhle to nedelat, vyrob si action componentu a tehle check patri do jeji Execute metody. Message o selhani pak napis jako messageStartFail
+	override void OnExecuteServer(ActionData action_data)
 	{
 		if ( action_data.m_MainItem.HasEnergyManager() )
 		{
-			if ( action_data.m_MainItem.GetCompEM().CanWork() )
+			if (action_data.m_MainItem.GetCompEM().CanWork())
 			{
 				action_data.m_MainItem.GetCompEM().SwitchOn();
-			}
-			else
-			{
-				InformPlayers(action_data.m_Player,action_data.m_Target,UA_FAILED);
 			}
 		}
 	}
 	
-	override void OnStartClient( ActionData action_data )
+	override void OnStartClient(ActionData action_data)
 	{
-		if ( action_data.m_MainItem  &&  action_data.m_MainItem.IsInherited(Roadflare) )
+		if (action_data.m_MainItem && action_data.m_MainItem.IsInherited(Roadflare))
 		{
 			Roadflare flare = Roadflare.Cast(action_data.m_MainItem);
-			flare.SetModelState( RoadflareModelStates.UNCAPPED_UNIGNITED );
+			flare.SetModelState(RoadflareModelStates.UNCAPPED_UNIGNITED);
 		}
 	}
 	
 	override void OnStartServer( ActionData action_data )
 	{
-		if ( action_data.m_MainItem  &&  action_data.m_MainItem.IsInherited(Roadflare) )
+		if (action_data.m_MainItem && action_data.m_MainItem.IsInherited(Roadflare))
 		{
 			Roadflare flare = Roadflare.Cast(action_data.m_MainItem);
-			flare.SetModelState( RoadflareModelStates.UNCAPPED_UNIGNITED );
+			flare.SetModelState(RoadflareModelStates.UNCAPPED_UNIGNITED);
 		}
 	}
-};
+}

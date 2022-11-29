@@ -10,7 +10,7 @@ class ModsMenuDetailedEntry extends ScriptedWidgetEventHandler
 	
 	//Left Side Panel
 	protected ImageWidget		m_IconBig;
-	protected TextWidget		m_Author;
+	protected MultilineTextWidget		m_Author;
 	protected TextWidget		m_Version;
 	protected RichTextWidget	m_ActionWebsite;
 	protected RichTextWidget	m_ActionPurchase;
@@ -33,7 +33,9 @@ class ModsMenuDetailedEntry extends ScriptedWidgetEventHandler
 		m_Name = TextWidget.Cast(m_Root.FindAnyWidget("Name"));
 		
 		m_IconBig = ImageWidget.Cast(m_Root.FindAnyWidget("IconBig"));
-		m_Author = TextWidget.Cast(m_Root.FindAnyWidget("Author"));
+		m_Author = MultilineTextWidget.Cast(m_Root.FindAnyWidget("Author"));
+		m_Author.SetLineBreakingOverride(LinebreakOverrideMode.LINEBREAK_WESTERN);
+		
 		m_Version = TextWidget.Cast(m_Root.FindAnyWidget("Version"));
 		m_ActionWebsite = RichTextWidget.Cast(m_Root.FindAnyWidget("Link"));
 		m_ActionPurchase = RichTextWidget.Cast(m_Root.FindAnyWidget("Purchase"));
@@ -145,11 +147,12 @@ class ModsMenuDetailedEntry extends ScriptedWidgetEventHandler
 		}
 		#endif
 		
-		if( m_Data.GetIsDLC() )
+		if ( m_Data.GetIsDLC() )
 		{
+			bool isOwned = m_Data.GetIsOwned();
 			m_Root.FindAnyWidget("ModOwnership").Show( true );
-			m_Root.FindAnyWidget("Owned").Show( m_Data.GetIsOwned() );
-			m_Root.FindAnyWidget("Unowned").Show( !m_Data.GetIsOwned() );
+			m_Root.FindAnyWidget("Owned").Show( isOwned );
+			m_Root.FindAnyWidget("Unowned").Show( !isOwned );
 			m_ActionPurchase.Show( true );
 			m_Version.Show( false );
 		}

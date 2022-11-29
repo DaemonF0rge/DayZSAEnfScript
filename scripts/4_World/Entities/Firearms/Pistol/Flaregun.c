@@ -14,8 +14,8 @@ enum FLAREStableStateID
 
 class FLAREEmpty extends WeaponStableState
 {
-	override void OnEntry (WeaponEventBase e) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { Empty E"); super.OnEntry(e); }
-	override void OnExit (WeaponEventBase e) { super.OnExit(e); wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } Empty E"); }
+	override void OnEntry (WeaponEventBase e) { if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { Empty E"); } super.OnEntry(e); }
+	override void OnExit (WeaponEventBase e) { super.OnExit(e); if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } Empty E"); } }
 	override int GetCurrentStateID () { return FLAREStableStateID.Empty; }
 	override bool HasBullet () { return false; }
 	override bool HasMagazine () { return false; }
@@ -26,8 +26,8 @@ class FLAREEmpty extends WeaponStableState
 };
 class FLAREFireout extends WeaponStableState
 {
-	override void OnEntry (WeaponEventBase e) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { Fireout F"); super.OnEntry(e); }
-	override void OnExit (WeaponEventBase e) { super.OnExit(e); wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } Fireout F"); }
+	override void OnEntry (WeaponEventBase e) { if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { Fireout F"); } super.OnEntry(e); }
+	override void OnExit (WeaponEventBase e) { super.OnExit(e); if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } Fireout F"); } }
 	override int GetCurrentStateID () { return FLAREStableStateID.Fireout; }
 	override bool HasBullet () { return true; }
 	override bool HasMagazine () { return false; }
@@ -38,8 +38,8 @@ class FLAREFireout extends WeaponStableState
 };
 class FLARELoaded extends WeaponStableState
 {
-	override void OnEntry (WeaponEventBase e) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { Loaded C"); super.OnEntry(e); }
-	override void OnExit (WeaponEventBase e) { super.OnExit(e); wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } Loaded C"); }
+	override void OnEntry (WeaponEventBase e) { if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { Loaded C"); } super.OnEntry(e); }
+	override void OnExit (WeaponEventBase e) { super.OnExit(e); if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } Loaded C"); } }
 	override int GetCurrentStateID () { return FLAREStableStateID.Loaded; }
 	override bool HasBullet () { return true; }
 	override bool HasMagazine () { return false; }

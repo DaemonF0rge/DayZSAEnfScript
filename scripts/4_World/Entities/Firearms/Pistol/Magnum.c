@@ -15,65 +15,34 @@ enum MagnumAnimState
 
 enum MagnumStableStateID
 {
-	DEFAULT				=  0,
+	UNKNOWN				=  0,
+	DEFAULT				=  1,
 }
 
 class Magnum_Static_State extends WeaponStableState
 {
 	bool init = false;
-	override void OnEntry (WeaponEventBase e) 
-	{ 
-		
-		wpnPrint("[wpnstate] { Magnum stable state"); 
+	override void OnEntry(WeaponEventBase e) 
+	{		
+		if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnstate] { Magnum stable state"); } 
 		super.OnEntry(e);
-		if(init)
+		if (init)
 		{
-			Magnum_Cylinder cylinder = Magnum_Cylinder.Cast(m_weapon.GetAttachmentByType(Magnum_Cylinder));
-			Magnum_Ejector ejector = Magnum_Ejector.Cast(m_weapon.GetAttachmentByType(Magnum_Ejector));
-			
-			if(cylinder && ejector)
+			Magnum_Base magnum;
+			if (CastTo(magnum, m_weapon))
 			{
-				float rot;
-				int mi = m_weapon.GetCurrentMuzzle();
-				switch(mi)
-				{
-	
-					case 0:
-						rot = MAGNUM_ROTATION_POSITION_0;
-						break;
-					case 1:
-						rot = MAGNUM_ROTATION_POSITION_5;
-						break;
-					case 2:
-						rot = MAGNUM_ROTATION_POSITION_4;
-						break;
-					case 3:
-						rot = MAGNUM_ROTATION_POSITION_3;
-						break;
-					case 4:
-						rot = MAGNUM_ROTATION_POSITION_2;
-						break;	
-					case 5:
-						rot = MAGNUM_ROTATION_POSITION_1;
-						break;	
-				}
-				float anim_phase = cylinder.GetAnimationPhase("Rotate_Cylinder");
-				if(anim_phase + 0.1 < rot || anim_phase - 0.1 > rot)
-				{
-					cylinder.ResetAnimationPhase("Rotate_Cylinder", rot );
-					cylinder.SetAnimationPhase("Rotate_Cylinder", rot );
-					ejector.ResetAnimationPhase("Rotate_Ejector", rot );
-					ejector.SetAnimationPhase("Rotate_Ejector", rot );
-				}
+				magnum.SyncCylinderRotation();
+				//magnum.SyncSelectionStateFromState();
 			}
 		}
 		init = true;
 	}
-	override void OnExit (WeaponEventBase e) { super.OnExit(e); wpnPrint("[wpnstate] }  Magnum stable state"); }
+	override void OnExit (WeaponEventBase e) { super.OnExit(e); if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnstate] }  Magnum stable state"); } }
 	override int GetCurrentStateID () { return MagnumStableStateID.DEFAULT; }
-	override bool HasBullet () { return false; }
-	override bool HasMagazine () { return false; }
-	override bool IsJammed () { return false; }
+	override bool HasBullet() { return m_weapon.IsChamberFull(m_weapon.GetCurrentMuzzle()); }
+	override bool HasMagazine() { return false; }
+	override bool IsJammed() { return m_weapon.IsJammed(); }
+	override bool IsSingleState() { return true; }
 };
 
 
@@ -114,13 +83,6 @@ class Magnum_Base extends Weapon_Base
 		m_abilities.Insert(new AbilityRecord(WeaponActions.UNJAMMING, WeaponActionTypes.UNJAMMING_END));
 		m_abilities.Insert(new AbilityRecord(WeaponActions.FIRE, WeaponActionTypes.FIRE_NORMAL));
 		m_abilities.Insert(new AbilityRecord(WeaponActions.FIRE, WeaponActionTypes.FIRE_COCKED));*/
-	}
-	
-	override void EEInit()
-	{
-		super.EEInit();
-		
-		GetGame().GetCallQueue( CALL_CATEGORY_GAMEPLAY ).Call( AssembleGun );
 	}
 	
 	override void InitStateMachine ()
@@ -200,96 +162,99 @@ class Magnum_Base extends Weapon_Base
 		m_fsm.Start();
 	}
 	
-	override bool CanChamberBullet (int muzzleIndex, Magazine mag)
+	override bool CanChamberBullet(int muzzleIndex, Magazine mag)
 	{
-		for(int i = 0; i < GetMuzzleCount(); i++)
+		for (int i = 0; i < GetMuzzleCount(); i++)
 		{
-			if( CanChamberFromMag(i, mag) )
+			if ( CanChamberFromMag(i, mag) )
 			{
-				if(IsChamberEmpty(i))
+				if (IsChamberEmpty(i))
 					return true;
 				
-				if(IsChamberFiredOut(i))
+				if (IsChamberFiredOut(i))
 					return true;
 			} 
 		}
 		return false;
 	}
 	
-	void AssembleGun()
+	override void AssembleGun()
 	{
-		if ( !FindAttachmentBySlotName(ATT_SLOT_EJECTOR) && !FindAttachmentBySlotName(ATT_SLOT_CYLINDER) )
+		super.AssembleGun();
+		
+		if ( !FindAttachmentBySlotName(ATT_SLOT_EJECTOR) )
 		{
 			GetInventory().CreateAttachment("Magnum_Ejector");
+		}
+		
+		if ( !FindAttachmentBySlotName(ATT_SLOT_CYLINDER) )
+		{
 			GetInventory().CreateAttachment("Magnum_Cylinder");
 		}
-		else
-		{
-			Magnum_Cylinder cylinder = Magnum_Cylinder.Cast(GetAttachmentByType(Magnum_Cylinder));
-			Magnum_Ejector ejector = Magnum_Ejector.Cast(GetAttachmentByType(Magnum_Ejector));
 
-			if(cylinder && ejector)
-			{			
-				for (int i = 0; i < GetMuzzleCount(); i++ )
-				{
-					if (IsChamberFull(i))
-					{
-						string bullet = "bullet";
-						if (i > 0)
-							bullet = string.Format("bullet_" + (i + 1));
-						cylinder.ShowSelection(bullet);
-						
-						if (!IsChamberFiredOut(i))
-						{
-							string bullet_nose = "bullet_nose";
-							if (i > 0)
-								bullet_nose = string.Format("bullet_nose_" + (i + 1));
-							cylinder.ShowSelection(bullet_nose);
-						}
-					}
-				}
-				
-				float rot;
-				int mi = GetCurrentMuzzle();
-				switch(mi)
-				{
+		ForceSyncSelectionState();
+		SyncCylinderRotation();
+	}
 	
-					case 0:
-						rot = MAGNUM_ROTATION_POSITION_0;
-						break;
-					case 1:
-						rot = MAGNUM_ROTATION_POSITION_5;
-						break;
-					case 2:
-						rot = MAGNUM_ROTATION_POSITION_4;
-						break;
-					case 3:
-						rot = MAGNUM_ROTATION_POSITION_3;
-						break;
-					case 4:
-						rot = MAGNUM_ROTATION_POSITION_2;
-						break;	
-					case 5:
-						rot = MAGNUM_ROTATION_POSITION_1;
-						break;	
-				}
-				float anim_phase = cylinder.GetAnimationPhase("Rotate_Cylinder");
-				if(anim_phase + 0.1 < rot || anim_phase - 0.1 > rot)
+	static float GetCylinderRotation(int muzzleIndex)
+	{
+		switch (muzzleIndex)
+		{
+			case 0:
+				return MAGNUM_ROTATION_POSITION_0;
+			case 1:
+				return MAGNUM_ROTATION_POSITION_5;
+			case 2:
+				return MAGNUM_ROTATION_POSITION_4;
+			case 3:
+				return MAGNUM_ROTATION_POSITION_3;
+			case 4:
+				return MAGNUM_ROTATION_POSITION_2;
+			case 5:
+				return MAGNUM_ROTATION_POSITION_1;
+		}
+		
+		ErrorEx(string.Format("Invalid muzzle index: %1", muzzleIndex));
+		
+		return MAGNUM_ROTATION_POSITION_0;
+	}
+	
+	void SetCylinderRotationAnimationPhase(float rot, bool reset = false)
+	{
+		Magnum_Cylinder cylinder = Magnum_Cylinder.Cast(GetAttachmentByType(Magnum_Cylinder));
+		Magnum_Ejector ejector = Magnum_Ejector.Cast(GetAttachmentByType(Magnum_Ejector));
+		if (cylinder && ejector)
+		{
+			float anim_phase = cylinder.GetAnimationPhase("Rotate_Cylinder");
+			if ( Math.AbsFloat(anim_phase - rot) > 0.1 )
+			{
+				if (reset)
 				{
 					cylinder.ResetAnimationPhase("Rotate_Cylinder", rot );
-					cylinder.SetAnimationPhase("Rotate_Cylinder", rot );
-					ejector.ResetAnimationPhase("Rotate_Ejector", rot );
-					ejector.SetAnimationPhase("Rotate_Ejector", rot );
+					ejector.ResetAnimationPhase("Rotate_Ejector", rot );				
+				}				
+				else if (rot == MAGNUM_ROTATION_POSITION_0)
+				{
+					cylinder.ResetAnimationPhase("Rotate_Cylinder", MAGNUM_ROTATION_POSITION_M1 );
+					ejector.ResetAnimationPhase("Rotate_Ejector", MAGNUM_ROTATION_POSITION_M1 );
 				}
+				
+				cylinder.SetAnimationPhase("Rotate_Cylinder", rot );
+				ejector.SetAnimationPhase("Rotate_Ejector", rot );
 			}
 		}
+	}
+	
+	void SyncCylinderRotation(bool reset = true)
+	{
+		SetCylinderRotationAnimationPhase(GetCylinderRotation(GetCurrentMuzzle()), reset);
 	}
 	
 	override void EEHealthLevelChanged(int oldLevel, int newLevel, string zone)
 	{
 		super.EEHealthLevelChanged(oldLevel,newLevel,zone);
 		
-		if(GetGame().IsMultiplayer() && !GetGame().IsServer())
+		if (GetGame().IsClient())
 			return;
 		
 		SetAttachmentsHealth();
@@ -330,17 +295,62 @@ class Magnum_Base extends Weapon_Base
 	
 	override bool CanEjectBullet() 
 	{
-		for(int i = 0; i < GetMuzzleCount(); i++)
+		for (int i = 0; i < GetMuzzleCount(); i++)
 		{
-			if(IsChamberFull(i))
+			if (IsChamberFull(i))
 				return true;
 		}
 		return false;
 	}
 	
+	override void ShowBullet(int muzzleIndex)
+	{
+		super.ShowBullet(muzzleIndex);
+		
+		Magnum_Cylinder cylinder = Magnum_Cylinder.Cast(GetAttachmentByType(Magnum_Cylinder));
+		if (cylinder)
+		{		
+			string bullet = "bullet";
+			if (muzzleIndex > 0)
+				bullet = string.Format("bullet_" + (muzzleIndex + 1));
+			
+			cylinder.ShowSelection(bullet);
+			
+			if (!IsChamberFiredOut(muzzleIndex))
+			{
+				string bullet_nose = "bullet_nose";
+				if (muzzleIndex > 0)
+					bullet_nose = string.Format("bullet_nose_" + (muzzleIndex + 1));
+				cylinder.ShowSelection(bullet_nose);
+			}
+		}
+	}
+	
+	override void HideBullet(int muzzleIndex)
+	{
+		super.HideBullet(muzzleIndex);
+		
+		Magnum_Cylinder cylinder = Magnum_Cylinder.Cast(GetAttachmentByType(Magnum_Cylinder));
+		if (cylinder)
+		{		
+			string bullet = "bullet";
+			if (muzzleIndex > 0)
+				bullet = string.Format("bullet_" + (muzzleIndex + 1));
+			
+			cylinder.HideSelection(bullet);
+			
+			string bullet_nose = "bullet_nose";
+			if (muzzleIndex > 0)
+				bullet_nose = string.Format("bullet_nose_" + (muzzleIndex + 1));
+			cylinder.HideSelection(bullet_nose);
+		}
+	}
+	
 	//Debug menu Spawn Ground Special
 	override void OnDebugSpawn()
 	{
+		super.OnDebugSpawn();
+		
 		EntityAI entity;
 		if ( Class.CastTo(entity, this) )
 		{
@@ -350,5 +360,6 @@ class Magnum_Base extends Weapon_Base
 };
 
 class Magnum extends Magnum_Base {};
+class SawedoffMagnum extends Magnum_Base {};
 class Magnum_Cylinder extends DummyItem {};
 class Magnum_Ejector extends DummyItem {};

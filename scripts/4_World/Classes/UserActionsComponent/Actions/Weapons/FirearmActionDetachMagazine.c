@@ -308,7 +308,7 @@ class FirearmActionDetachMagazine : ActionSequentialBase
 				mag = Magazine.Cast(action_data.m_Target.GetObject());
 			
 				action_data.m_Player.GetHumanInventory().ClearUserReservedLocation(wpn);
-				if ( ( GetGame().IsClient() || !GetGame().IsMultiplayer() ) && !mag.GetHierarchyParent() )
+				if ( ( !GetGame().IsDedicatedServer() ) && !mag.GetHierarchyParent() )
 				{
 					InventoryMode invMode = InventoryMode.PREDICTIVE;
 					

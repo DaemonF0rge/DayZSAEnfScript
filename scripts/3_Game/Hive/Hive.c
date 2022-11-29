@@ -4,6 +4,9 @@
 // -------------------------------------------------------------------------
 class Hive
 {
+	private void Hive() {}
+	private void ~Hive() {}
+	
 	proto native void InitOnline( string ceSetup, string host = "" );
 	proto native void InitOffline();
 	proto native void InitSandbox();
@@ -18,7 +21,6 @@ class Hive
 	proto native void CharacterExit( Man player );
 
 	proto native void CallUpdater( string content );
-
 };
 
 proto native Hive CreateHive();

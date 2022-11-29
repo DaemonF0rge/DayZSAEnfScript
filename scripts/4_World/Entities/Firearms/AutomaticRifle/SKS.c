@@ -16,8 +16,8 @@ enum SKSStableStateID
 
 class SKS_CLO_BU0 extends WeaponStableState
 {
-	override void OnEntry (WeaponEventBase e) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { close nobull"); super.OnEntry(e); }
-	override void OnExit (WeaponEventBase e) { super.OnExit(e); wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } close nobull"); }
+	override void OnEntry (WeaponEventBase e) { if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { close nobull"); } super.OnEntry(e); }
+	override void OnExit (WeaponEventBase e) { super.OnExit(e); if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } close nobull"); } }
 	override int GetCurrentStateID () { return SKSStableStateID.SKS_CLO_BU0; }
 	override bool HasBullet () { return false; }
 	override bool HasMagazine () { return false; }
@@ -28,8 +28,8 @@ class SKS_CLO_BU0 extends WeaponStableState
 };
 class SKS_CLO_BU1 extends WeaponStableState
 {
-	override void OnEntry (WeaponEventBase e) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { close bullet"); super.OnEntry(e); }
-	override void OnExit (WeaponEventBase e) { super.OnExit(e); wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } close bullet"); }
+	override void OnEntry (WeaponEventBase e) { if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { close bullet"); } super.OnEntry(e); }
+	override void OnExit (WeaponEventBase e) { super.OnExit(e); if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } close bullet"); } }
 	override int GetCurrentStateID () { return SKSStableStateID.SKS_CLO_BU1; }
 	override bool HasBullet () { return true; }
 	override bool HasMagazine () { return false; }
@@ -39,8 +39,8 @@ class SKS_CLO_BU1 extends WeaponStableState
 };
 class SKS_OPN_BU0 extends WeaponStableState
 {
-	override void OnEntry (WeaponEventBase e) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { open nobull"); super.OnEntry(e); }
-	override void OnExit (WeaponEventBase e) { super.OnExit(e); wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } open nobull"); }
+	override void OnEntry (WeaponEventBase e) { if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { open nobull"); } super.OnEntry(e); }
+	override void OnExit (WeaponEventBase e) { super.OnExit(e); if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } open nobull"); } }
 	override int GetCurrentStateID () { return SKSStableStateID.SKS_OPN_BU0; }
 	override bool HasBullet () { return false; }
 	override bool HasMagazine () { return false; }
@@ -51,8 +51,8 @@ class SKS_OPN_BU0 extends WeaponStableState
 };
 class SKS_JAM_BU1 extends WeaponStateJammed
 {
-	override void OnEntry (WeaponEventBase e) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { jammed bullet"); super.OnEntry(e); }
-	override void OnExit (WeaponEventBase e) { super.OnExit(e); wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } jammed bullet"); }
+	override void OnEntry (WeaponEventBase e) { if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { jammed bullet"); } super.OnEntry(e); }
+	override void OnExit (WeaponEventBase e) { super.OnExit(e); if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } jammed bullet"); } }
 	override int GetCurrentStateID () { return SKSStableStateID.SKS_JAM_BU1; }
 	override bool HasBullet () { return true; }
 	override bool HasMagazine () { return false; }
@@ -264,15 +264,13 @@ class SKS_Base extends Rifle_Base
 		AddAction(FirearmActionLoadMultiBulletQuick); // Easy reload
 	}
 	
-		//Debug menu Spawn Ground Special
+	//Debug menu Spawn Ground Special
 	override void OnDebugSpawn()
 	{
-		EntityAI entity;
-		if ( Class.CastTo(entity, this) )
-		{
-			entity.GetInventory().CreateInInventory( "PUScopeOptic" );
-			entity.GetInventory().CreateInInventory( "SKS_Bayonet" );
-			entity.SpawnEntityOnGroundPos("Ammo_762x39", entity.GetPosition());
-		}
+		super.OnDebugSpawn();
+		
+		GameInventory inventory = GetInventory();
+		inventory.CreateInInventory( "PUScopeOptic" );
+		inventory.CreateInInventory( "SKS_Bayonet" );
 	}
 };

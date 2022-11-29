@@ -4,11 +4,7 @@ class ActionTakeFireplaceFromBarrel: ActionInteractBase
 	{
 		m_CommandUID        = DayZPlayerConstants.CMD_ACTIONMOD_PICKUP_HANDS;
 		m_StanceMask        = DayZPlayerConstants.STANCEMASK_CROUCH | DayZPlayerConstants.STANCEMASK_ERECT;
-	}
-
-	override string GetText()
-	{
-		return "#take_fireplace";
+		m_Text = "#take_fireplace";
 	}
 	
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

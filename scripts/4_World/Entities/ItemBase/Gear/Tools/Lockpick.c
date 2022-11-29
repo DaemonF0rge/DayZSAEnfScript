@@ -13,5 +13,6 @@ class Lockpick: ToolBase
 		AddAction(ActionLockDoors);
 		AddAction(ActionUnlockDoors);
 		AddAction(ActionDisarmMine);
+		AddAction(ActionDisarmExplosive);
 	}
 };

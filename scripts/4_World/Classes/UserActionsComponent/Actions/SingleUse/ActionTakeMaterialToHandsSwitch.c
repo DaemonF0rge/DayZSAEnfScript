@@ -2,6 +2,7 @@ class ActionTakeMaterialToHandsSwitch: ActionSingleUseBase
 {
 	void ActionTakeMaterialToHandsSwitch()
 	{
+		m_Text = "#switch_to_next_material";
 	}
 	
 	override void CreateConditionComponents()  
@@ -23,11 +24,6 @@ class ActionTakeMaterialToHandsSwitch: ActionSingleUseBase
 	override bool UseAcknowledgment()
 	{
 		return true;
-	}
-		
-	override string GetText()
-	{
-		return "#switch_to_next_material";
 	}
 
 	override typename GetInputType()

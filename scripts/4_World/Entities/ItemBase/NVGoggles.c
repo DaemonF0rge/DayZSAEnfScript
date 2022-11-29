@@ -34,25 +34,23 @@ class NVGoggles extends PoweredOptic_Base
 		GetCompEM().SwitchOff();
 	}
 	
-	override void OnWasAttached ( EntityAI parent, int slot_id )
+	override void OnWasAttached( EntityAI parent, int slot_id )
 	{
 		super.OnWasAttached(parent, slot_id);
 		RotateGoggles(true);
 		
 		m_Strap = Clothing.Cast(parent);
-		if (m_Strap)
-			SetPlayer(PlayerBase.Cast(m_Strap.GetHierarchyRootPlayer()));
+		/*if (m_Strap)
+			SetPlayer(PlayerBase.Cast(m_Strap.GetHierarchyParent()));*/
 	}
 	
-	override void OnWasDetached ( EntityAI parent, int slot_id )
+	override void OnWasDetached( EntityAI parent, int slot_id )
 	{
 		super.OnWasDetached(parent, slot_id);
 		RotateGoggles(true);
 		
-		m_Strap = null;
-		
 		PlayerBase player;
-		if ( PlayerBase.CastTo(player, parent.GetHierarchyRootPlayer()) )
+		if ( m_Strap == parent && PlayerBase.CastTo(player, parent.GetHierarchyRootPlayer()) )
 		{
 			if ( parent && Clothing.Cast(parent) )
 			{
@@ -60,7 +58,8 @@ class NVGoggles extends PoweredOptic_Base
 			}
 		}
 		
-		SetPlayer(null);
+		m_Strap = null;
+		//SetPlayer(null);
 	}
 	
 	override void OnWorkStart()
@@ -68,14 +67,23 @@ class NVGoggles extends PoweredOptic_Base
 		PlayerBase player;
 		EntityAI headgear;
 		EntityAI glasses;
-		if ( PlayerBase.CastTo(player, GetHierarchyRootPlayer()) && m_Strap )
+		if ( m_Strap && PlayerBase.CastTo(player, m_Strap.GetHierarchyParent()) )
 		{
 			headgear = player.FindAttachmentBySlotName("Headgear");
 			glasses = player.FindAttachmentBySlotName("Eyewear");
-			if ((headgear == m_Strap || glasses == m_Strap) && m_IsLowered)
+			
+			//adjust on load - ComponentEnergyManager stores the 'working' state independently
+			if ( !m_IsLowered )
 			{
-				player.SetNVGWorking(true);
-				//m_Strap.UpdateNVGStatus(player,true);
+				RotateGoggles(false);
+			}
+			
+			if ( !GetGame().IsServer() || !GetGame().IsMultiplayer() ) // Client side
+			{
+				if ( (headgear == m_Strap || glasses == m_Strap) && player.IsControlledPlayer() )
+				{
+					player.AddActiveNV(NVTypes.NV_GOGGLES);
+				}
 			}
 		}
 	}
@@ -83,22 +91,46 @@ class NVGoggles extends PoweredOptic_Base
 	override void OnWorkStop()
 	{
 		PlayerBase player;
-		if ( PlayerBase.CastTo(player, GetHierarchyRootPlayer()) )
-			player.SetNVGWorking(false);
+		EntityAI headgear;
+		EntityAI glasses;
+		if ( m_Strap && PlayerBase.CastTo(player, m_Strap.GetHierarchyParent()) )
+		{
+			headgear = player.FindAttachmentBySlotName("Headgear");
+			glasses = player.FindAttachmentBySlotName("Eyewear");
+			
+			if ( !GetGame().IsServer() || !GetGame().IsMultiplayer() ) // Client side
+			{
+				if ( (headgear == m_Strap || glasses == m_Strap) && player.IsControlledPlayer() )
+				{
+					player.RemoveActiveNV(NVTypes.NV_GOGGLES);
+				}
+			}
+		}
 	}
 	
 	override void OnWork( float consumed_energy )
 	{
-		if ( !GetGame().IsServer()  ||  !GetGame().IsMultiplayer() ) // Client side
+		//adjust on load - ComponentEnergyManager stores the 'working' state independently
+		if ( !m_IsLowered )
 		{
-			if (GetPlayer() && GetPlayer() == PlayerBase.Cast(GetHierarchyRootPlayer()) && m_IsLowered && !GetPlayer().IsNVGWorking())
-			{
-				GetPlayer().SetNVGWorking(true);
-			}
+			RotateGoggles(false);
 		}
-		else
+		
+		PlayerBase player;
+		EntityAI headgear;
+		EntityAI glasses;
+		if ( m_Strap && PlayerBase.CastTo(player, m_Strap.GetHierarchyParent()) )
 		{
-			//GetCompEM().SwitchOff();
+			headgear = player.FindAttachmentBySlotName("Headgear");
+			glasses = player.FindAttachmentBySlotName("Eyewear");
+			
+			if ( !GetGame().IsServer() || !GetGame().IsMultiplayer() ) // Client side
+			{
+				if ( (headgear == m_Strap || glasses == m_Strap) && player.IsControlledPlayer() )
+				{
+					player.AddActiveNV(NVTypes.NV_GOGGLES);
+				}
+			}
 		}
 	}
 	
@@ -116,9 +148,12 @@ class NVGoggles extends PoweredOptic_Base
 			SetAnimationPhase("rotate",!state);
 		m_IsLowered = !state;
 		
-		if (GetHierarchyRootPlayer())
+		PlayerBase player;
+		int slot_id;
+		string slot_name;
+		if ( m_Strap && m_Strap.GetInventory().GetCurrentAttachmentSlotInfo(slot_id,slot_name) && PlayerBase.CastTo(player, m_Strap.GetHierarchyParent())/*&& slot_id == InventorySlots.EYEWEAR*/ )
 		{
-			PlayerBase.Cast(GetHierarchyRootPlayer()).SetNVGLowered(m_IsLowered);
+			player.SetNVGLowered(m_IsLowered);
 		}
 		
 		if ( GetCompEM() )
@@ -137,6 +172,30 @@ class NVGoggles extends PoweredOptic_Base
 		if (GetCompEM().IsSwitchedOn())
 		{
 			m_WorkCheckTimer.Stop();
+		}
+	}
+	
+	override int GetCurrentNVType()
+	{
+		if (IsWorking())
+		{
+			//m_CurrentOpticMode
+			switch (m_CurrentOpticMode)
+			{
+				/*case GameConstants.OPTICS_STATE_DAY:
+					return NVTypes.NV_GOGGLES_WHATEVER;
+				
+				case GameConstants.OPTICS_STATE_NIGHTVISION:
+					return NVTypes.NV_GOGGLES;*/
+				default:
+					return NVTypes.NV_GOGGLES;
+			}
+			Error("Undefined optic mode of " + this);
+			return NVTypes.NONE;
+		}
+		else
+		{
+			return NVTypes.NV_GOGGLES_OFF;
 		}
 	}
 	

@@ -2,6 +2,7 @@ class ActionPin extends ActionSingleUseBase
 {
 	void ActionPin()
 	{
+		m_Text = "#pin";
 	}
 	
 	override void CreateConditionComponents()  
@@ -13,11 +14,6 @@ class ActionPin extends ActionSingleUseBase
 	override bool HasTarget()
 	{
 		return false;
-	}
-
-	override string GetText()
-	{
-		return "#pin";
 	}
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
@@ -45,16 +41,7 @@ class ActionPin extends ActionSingleUseBase
 		return false;
 	}
 
-	override void OnExecuteServer( ActionData action_data )
-	{
-	}
-	
-	override void OnStartClient( ActionData action_data )
-	{
-		//! sound handling ?
-	}
-	
-	override void OnStartServer( ActionData action_data )
+	override void OnExecute( ActionData action_data )
 	{
 		Grenade_Base grenade = Grenade_Base.Cast(action_data.m_MainItem);
 		if( grenade )

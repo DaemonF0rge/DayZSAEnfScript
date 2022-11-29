@@ -4,12 +4,7 @@ class ActionOpenBarrel: ActionInteractBase
 	{
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONMOD_INTERACTONCE;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT | DayZPlayerConstants.STANCEMASK_CROUCH;
-		m_HUDCursorIcon = CursorIcons.OpenHood;
-	}
-
-	override string GetText()
-	{
-		return "#open";
+		m_Text = "#open";
 	}
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

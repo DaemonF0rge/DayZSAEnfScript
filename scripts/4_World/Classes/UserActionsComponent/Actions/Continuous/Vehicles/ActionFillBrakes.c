@@ -18,17 +18,13 @@ class ActionFillBrakes: ActionContinuousBase
 		m_FullBody = true;
 		m_SpecialtyWeight = UASoftSkillsWeight.PRECISE_LOW;
 		m_LockTargetOnUse = false;
+		m_Text = "#refill_car";
 	}
 
 	override void CreateConditionComponents()  
 	{
 		m_ConditionItem = new CCINonRuined;
 		m_ConditionTarget = new CCTNone;
-	}
-
-	override string GetText()
-	{
-		return "#refill_car";
 	}
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

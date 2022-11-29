@@ -40,6 +40,5 @@ class ActionInteractLoopBase : ActionInteractBase
 	{
 		m_CallbackClass = ActionInteractLoopBaseCB;
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONFB_INTERACT;
-		m_HUDCursorIcon = CursorIcons.Cursor;
 	}
 };

@@ -217,9 +217,9 @@ class DebugPrint
 
 	static private void		LogMessage(string msg, int msg_type, bool trace=false)
 	{	
-		msg = "["+s_MsgPrefix[msg_type]+"]: "+msg;
+		string mesg = "["+s_MsgPrefix[msg_type]+"]: "+msg;
 		
-		Print(msg);
+		Print(mesg);
 		
 		if ( trace )
 		{

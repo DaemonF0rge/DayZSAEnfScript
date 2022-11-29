@@ -1,11 +1,13 @@
 class DropdownPrefab extends ScriptedWidgetEventHandler
 {
 	protected Widget				m_Root;
+	protected Widget				m_Parent;
 	protected ScrollWidget			m_Scroller;
 	protected Widget				m_ContentContainer;
 	protected ref array<Widget>		m_Content = new array<Widget>;
 	
 	protected Widget				m_Button;
+	protected Widget				m_Holder;
 	protected TextWidget			m_Text;
 	protected ImageWidget			m_ImageExpand;
 	protected ImageWidget			m_ImageCollapse;
@@ -15,11 +17,13 @@ class DropdownPrefab extends ScriptedWidgetEventHandler
 
 	void DropdownPrefab( Widget root, string text = "" )
 	{
+		m_Parent = root;
 		m_Root				= GetGame().GetWorkspace().CreateWidgets( "gui/layouts/new_ui/dropdown_prefab/dropdown_prefab.layout", root );
 		
 		m_Scroller			= ScrollWidget.Cast( m_Root.FindAnyWidget( "dropdown_container" ) );
 		m_ContentContainer	= m_Root.FindAnyWidget( "dropdown_content" );
 		m_Text				= TextWidget.Cast( m_Root.FindAnyWidget( "dropdown_text" ) );
+		m_Holder			= m_Root.FindAnyWidget( "holder" );
 		SetText( text );
 		
 		m_Button			= m_Root.FindAnyWidget( "dropdown_selector_button" );
@@ -60,14 +64,17 @@ class DropdownPrefab extends ScriptedWidgetEventHandler
 	int AddElement( string text, Widget content = null )
 	{
 		ButtonWidget element = ButtonWidget.Cast( GetGame().GetWorkspace().CreateWidgets( "gui/layouts/new_ui/dropdown_prefab/dropdown_element.layout", m_ContentContainer ) );
-		element.SetText( text );
+		RichTextWidget textWidget = RichTextWidget.Cast(element.FindAnyWidget("dropdown_element_text"));
+		textWidget.SetText( text );
 		
 		if( content )
 		{
 			element.AddChild( content, false );
 		}
 		m_ContentContainer.Update();
+		textWidget.Update();
 		m_Root.Update();
+		element.Update();
 		
 		m_Content.Insert( element );
 		return m_Content.Count() - 1;
@@ -80,6 +87,7 @@ class DropdownPrefab extends ScriptedWidgetEventHandler
 			delete m_Content.Get( index );
 			m_ContentContainer.Update();
 			m_Root.Update();
+			m_Parent.Update();
 		}
 	}
 	
@@ -87,9 +95,13 @@ class DropdownPrefab extends ScriptedWidgetEventHandler
 	{
 		if( m_IsExpanded )
 		{
-			m_Scroller.Show( false );
-			m_ImageExpand.Show( false );
-			m_ImageCollapse.Show( true );
+			m_IsExpanded = !m_IsExpanded;
+			m_Scroller.Show( m_IsExpanded );
+			m_ImageExpand.Show( !m_IsExpanded );
+			m_ImageCollapse.Show( m_IsExpanded );
+			
+			m_Root.Update();
+			m_Parent.Update();
 		}
 	}
 	
@@ -101,7 +113,7 @@ class DropdownPrefab extends ScriptedWidgetEventHandler
 	override bool OnClick( Widget w, int x, int y, int button )
 	{
 		int index = m_Content.Find( w );
-		if( index > -1 )
+		if ( index > -1 )
 		{
 			m_OnSelectItem.Invoke( index );
 			m_IsExpanded = false;
@@ -113,9 +125,9 @@ class DropdownPrefab extends ScriptedWidgetEventHandler
 		return false;
 	}
 	
-	override bool OnMouseButtonUp( Widget w, int x, int y, int button )
+	override bool OnMouseButtonDown( Widget w, int x, int y, int button )
 	{
-		if( w == m_Root && button == MouseState.LEFT )
+		if ( (w == m_Button || w == m_Text || w == m_Holder) && button == MouseState.LEFT )
 		{
 			m_IsExpanded = !m_IsExpanded;
 			m_Scroller.Show( m_IsExpanded );
@@ -123,6 +135,9 @@ class DropdownPrefab extends ScriptedWidgetEventHandler
 			m_ImageCollapse.Show( m_IsExpanded );
 			
 			m_Root.Update();
+			m_Parent.Update();
+			m_ContentContainer.Update();
+			
 			return true;
 		}
 		return false;

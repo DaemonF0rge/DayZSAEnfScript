@@ -55,12 +55,14 @@ class ContinuousActionProgress extends ScriptedWidgetEventHandler
 
 	protected void Update()
 	{
-		//! don't show continuous action progressif it's disabled in profile
-		if(!g_Game.GetProfileOption(EDayZProfilesOptions.HUD))
+		//! don't show continuous action progressif it's disabled in profile OR soft-disabled by the '~' keyhold
+		Mission mission = GetGame().GetMission();
+		IngameHud hud;
+		if (mission && Class.CastTo(hud,mission.GetHud()) && (hud.IsHideHudPlayer() || !hud.GetHudState()))
 		{
 			m_Root.Show(false);
 			return;
-		};
+		}
 
 		if(m_Player && !m_Player.IsAlive()) // handle respawn
 		{

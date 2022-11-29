@@ -5,5 +5,6 @@ class Wrench: Inventory_Base
 		super.SetActions();
 		
 		AddAction(ActionLockAttachment);
+		AddAction(ActionMineRock1H);
 	}
 };

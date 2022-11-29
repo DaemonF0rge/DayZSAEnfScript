@@ -18,7 +18,7 @@ class SyncPlayerList
 
 				if (p_identity)
 				{
-					ref SyncPlayer sync_player = new SyncPlayer;
+					SyncPlayer sync_player = new SyncPlayer;
 					sync_player.m_UID = p_identity.GetPlainId();
 					sync_player.m_PlayerName = p_identity.GetName();
 					m_PlayerList.Insert(sync_player);
@@ -33,32 +33,32 @@ class SyncPlayerList
 
 	static SyncPlayerList Compare(SyncPlayerList a, SyncPlayerList b)
 	{
-		ref SyncPlayerList new_list = new SyncPlayerList;
+		SyncPlayerList new_list = new SyncPlayerList;
 		new_list.m_PlayerList = new array<ref SyncPlayer>;
 
 		if (!a && b && b.m_PlayerList)
 		{
-			foreach(ref SyncPlayer player3 : b.m_PlayerList)
+			foreach (SyncPlayer player3 : b.m_PlayerList)
 			{
 				new_list.m_PlayerList.Insert(player3);
 			}
 		}
 		else if (a && a.m_PlayerList && !b)
 		{
-			foreach(ref SyncPlayer player4 : a.m_PlayerList)
+			foreach (SyncPlayer player4 : a.m_PlayerList)
 			{
 				new_list.m_PlayerList.Insert(player4);
 			}
 		}
 		else if (a && a.m_PlayerList && b && b.m_PlayerList)
 		{
-			ref array<ref SyncPlayer> array_a = a.m_PlayerList;
-			ref array<ref SyncPlayer> array_b = b.m_PlayerList;
+			array<ref SyncPlayer> array_a = a.m_PlayerList;
+			array<ref SyncPlayer> array_b = b.m_PlayerList;
 
-			foreach(ref SyncPlayer player : array_b)
+			foreach (SyncPlayer player : array_b)
 			{
 				bool found = false;
-				foreach(ref SyncPlayer player2 : array_a)
+				foreach (SyncPlayer player2 : array_a)
 				{
 					if (player.m_UID == player2.m_UID)
 					{

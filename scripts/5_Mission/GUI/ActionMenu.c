@@ -120,6 +120,26 @@ class ActionMenu
 		
 		m_hide_timer.Run(HIDE_MENU_TIME, this, "HideWithFadeout");
 	}
+	
+	void NextActionCategory()
+	{
+		PlayerBase player = PlayerBase.Cast( GetGame().GetPlayer() );
+		player.GetActionManager().SelectNextActionCategory();
+		
+		UpdateWidgets();
+		
+		m_hide_timer.Run(HIDE_MENU_TIME, this, "HideWithFadeout");
+	}
+
+	void PrevActionCategory()
+	{
+		PlayerBase player = PlayerBase.Cast( GetGame().GetPlayer() );
+		player.GetActionManager().SelectPrevActionCategory();
+		
+		UpdateWidgets();
+		
+		m_hide_timer.Run(HIDE_MENU_TIME, this, "HideWithFadeout");
+	}
 
 	void Show()
 	{

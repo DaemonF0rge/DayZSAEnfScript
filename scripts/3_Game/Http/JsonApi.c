@@ -25,7 +25,9 @@ enum EJsonApiError
 // JsonApi Handle is container encapsulating real JSON data being sent or recieved via. RESTful/ other service
 class JsonApiHandle
 {
-
+	private void JsonApiHandle() {}
+	private void ~JsonApiHandle() {}
+	
 	/**
 	\brief Length of JSON
 	*/
@@ -50,14 +52,8 @@ class JsonApiHandle
 //
 class JsonApi
 {
-
-	void JsonApi()
-	{
-	}
-
-	void ~JsonApi()
-	{
-	}
+	private void JsonApi() {}
+	private void ~JsonApi() {}
 
 	/**
 	\brief Override number of concurrent buffers used (depending project requirements, DEFAULT = 16, MIN = 4)

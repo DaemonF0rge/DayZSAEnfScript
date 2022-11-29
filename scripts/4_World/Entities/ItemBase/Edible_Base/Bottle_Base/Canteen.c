@@ -53,12 +53,12 @@ class Canteen extends Bottle_Base
 	override bool CanPutInCargo( EntityAI parent )
 	{
 		if ( !super.CanPutInCargo(parent) ) {return false;}	
-		if ( !(parent.IsKindOf("Canteen"))/* && !(parent.IsKindOf("Container_Base"))*/)
+		if ( parent && (parent.IsKindOf("Canteen"))/* && !(parent.IsKindOf("Container_Base"))*/)
 		{
-			return true;
+			return false;
 		}
 		
-		return false;
+		return true;
 	}
 	
 	override bool IsOpen()

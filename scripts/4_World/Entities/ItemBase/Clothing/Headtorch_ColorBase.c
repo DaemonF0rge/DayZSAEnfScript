@@ -27,6 +27,20 @@ class Headtorch_ColorBase extends Clothing
 		m_Timer.Run( 1 , this, "CheckParent", NULL, false);
 	}
 	
+	override bool CanPutAsAttachment( EntityAI parent )
+	{
+		if (!super.CanPutAsAttachment(parent)) {return false;}
+		
+		Clothing helmet = Clothing.Cast(parent.FindAttachmentBySlotName("Headgear"));
+		
+		if ( helmet && helmet.ConfigGetBool("noNVStrap") )
+		{
+			return false;
+		}
+		
+		return true;
+	}
+	
 	void CheckParent()
 	{
 		EntityAI owner = GetHierarchyParent();
@@ -104,7 +118,7 @@ class Headtorch_ColorBase extends Clothing
 			if (owner.IsPlayer())
 			{
 				PlayerBase owner_PB = PlayerBase.Cast(owner);
-				ItemBase att_item = owner_PB.GetItemOnHead();
+				ItemBase att_item = owner_PB.GetItemOnSlot("Eyewear");
 				
 				if (att_item == this)
 				{
@@ -165,6 +179,8 @@ class Headtorch_ColorBase extends Clothing
 	
 	override void OnWasAttached( EntityAI parent, int slot_id )
 	{
+		super.OnWasAttached(parent, slot_id);
+		
 		PlayerBase player = PlayerBase.Cast(parent);
 
 		if ( player )
@@ -179,6 +195,8 @@ class Headtorch_ColorBase extends Clothing
 	
 	override void OnWasDetached( EntityAI parent, int slot_id )
 	{
+		super.OnWasDetached(parent, slot_id);
+		
 		PlayerBase player = PlayerBase.Cast(parent);
 		if ( player )
 		{
@@ -217,5 +235,10 @@ class Headtorch_ColorBase extends Clothing
 	override bool IsLightSource()
 	{
 		return true;
+	}
+	
+	override ItemBase GetLightSourceItem()
+	{
+		return this;
 	}
 };

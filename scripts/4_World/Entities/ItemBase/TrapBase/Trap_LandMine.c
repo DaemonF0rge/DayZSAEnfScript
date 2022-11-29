@@ -9,18 +9,16 @@ class LandMineTrap extends TrapBase
 	protected ref EffectSound m_DisarmingLoopSound;
 	protected ref Timer m_DeleteTimer;
 	
-	private const int BROKEN_LEG_PROB = 90;
+	private const int BROKEN_LEG_PROB 	= 90;
 	private const int BLEED_SOURCE_PROB = 50;
-	private const int MAX_BLEED_SOURCE = 1;
-	
-	private ref array<int> m_ClothingDmg;
+	private const int MAX_BLEED_SOURCE 	= 1;
 	
 	void LandMineTrap()
 	{
-		m_DefectRate = 15;
-		m_DamagePlayers = 0; 			//How much damage player gets when caught
-		m_InitWaitTime = 10; 			//After this time after deployment, the trap is activated
-		m_InfoActivationTime = string.Format("#STR_LandMineTrap0%1#STR_LandMineTrap1", m_InitWaitTime.ToString());
+		m_DefectRate 			= 15;
+		m_DamagePlayers 		= 0; 			//How much damage player gets when caught
+		m_InitWaitTime 			= 10; 			//After this time after deployment, the trap is activated
+		m_InfoActivationTime 	= string.Format("#STR_LandMineTrap0%1#STR_LandMineTrap1", m_InitWaitTime.ToString());
 		
 		m_AddDeactivationDefect = true;
 		
@@ -38,33 +36,39 @@ class LandMineTrap extends TrapBase
 	
 	void ~LandMineTrap()
 	{
-		if ( m_TimerLoopSound )
-			SEffectManager.DestroySound(m_TimerLoopSound);
+		SEffectManager.DestroyEffect(m_TimerLoopSound);
+		SEffectManager.DestroyEffect(m_DisarmingLoopSound);
 	}
 		
-	override void StartActivate( PlayerBase player )
+	override void StartActivate(PlayerBase player)
 	{
-		super.StartActivate( player );
+		super.StartActivate(player);
 		
-		if ( GetGame().IsClient() || !GetGame().IsMultiplayer() )
+		if (!GetGame().IsDedicatedServer())
 		{
 			EffectSound sound = SEffectManager.PlaySound("landmine_safetyPin_SoundSet", GetPosition(), 0, 0, false);
-			sound.SetSoundAutodestroy( true );
+			sound.SetAutodestroy( true );
 			m_TimerLoopSound = SEffectManager.PlaySound("landmine_timer2_SoundSet", GetPosition(), 0, 0, true);
 		}
 	}
 	
+	override void OnActivatedByItem(notnull ItemBase item)
+	{
+		SetHealth("", "", 0.0);
+		DeleteThis();
+	}
+	
 	override void OnActivate()
 	{
-		if ( GetGame().IsClient() || !GetGame().IsMultiplayer())
+		if (!GetGame().IsDedicatedServer())
 		{
-			if ( m_TimerLoopSound )
+			if (m_TimerLoopSound)
 			{
-				m_TimerLoopSound.SetSoundAutodestroy( true );
+				m_TimerLoopSound.SetAutodestroy(true);
 				m_TimerLoopSound.SoundStop();
 			}
 			
-			if ( GetGame().GetPlayer() )
+			if (GetGame().GetPlayer())
 			{
 				PlaySoundActivate();
 			}
@@ -76,107 +80,157 @@ class LandMineTrap extends TrapBase
 		return true;
 	}
 	
-	override void OnSteppedOn( EntityAI victim )
+	override void OnUpdate(EntityAI victim)
 	{
-		if ( GetGame().IsServer() )
+		if (victim && victim.IsInherited(CarScript))
 		{
-			if ( !GetDisarmed() )
+			EntityAI wheel = GetClosestCarWheel(victim);
+			if (wheel)
 			{
-				if ( victim )
-				{
-					//Check if we have a player
-					PlayerBase victim_PB = PlayerBase.Cast( victim );
-					if ( victim_PB && victim_PB.IsAlive() )
-					{
-						int randNum; //value used for probability evaluation
-						randNum = Math.RandomInt(0, 100);
-						if ( randNum <= BROKEN_LEG_PROB )
-						{
-							float damage = victim_PB.GetMaxHealth( "RightLeg", "" ); //deal 100% damage to break legs
-							victim_PB.DamageAllLegs( damage ); 
-						}
-						
-						randNum = Math.RandomInt(0, 100);
-						if ( randNum < BLEED_SOURCE_PROB )
-						{
-							for ( int i = 0; i < MAX_BLEED_SOURCE; i++ )
-							{
-								//We add two bleeding sources max to lower half
-								randNum = Math.RandomIntInclusive(0, PlayerBase.m_BleedingSourcesLow.Count() - 1);
-						
-								victim_PB.m_BleedingManagerServer.AttemptAddBleedingSourceBySelection(PlayerBase.m_BleedingSourcesLow[randNum]);
-							}
-						}
-						
-						DamageClothing( victim_PB );
-					}
-					else
-					{
-						ItemBase victim_IB = ItemBase.Cast( victim );
-						if ( victim_IB )
-						{
-							MiscGameplayFunctions.DealAbsoluteDmg( victim_IB, DAMAGE_TRIGGER_MINE );
-						}
-					}
-				}
-				
-				Explode( DT_EXPLOSION );
+				OnServerSteppedOn(wheel, "");
 			}
-			m_DeleteTimer = new Timer( CALL_CATEGORY_SYSTEM );
-			m_DeleteTimer.Run( 2, this, "DeleteThis" );
 		}
 	}
 	
+	override void OnSteppedOn(EntityAI victim)
+	{
+		int i;
+
+		if (GetGame().IsServer() && victim)
+		{
+			if (!victim.GetAllowDamage())
+			{
+				return;
+			}
+
+			if (victim.IsInherited(CarScript))
+			{
+				//! CarScript specific reaction on LandMineTrap
+				Param1<EntityAI> params = new Param1<EntityAI>(victim);
+				m_UpdateTimer.Run(UPDATE_TIMER_INTERVAL, this, "OnUpdate", params, true);
+
+				return;
+			}
+			else
+			{
+				//Check if we have a player
+				PlayerBase victim_PB = PlayerBase.Cast(victim);
+				if (victim_PB && victim_PB.IsAlive())
+				{
+					int randNum; //value used for probability evaluation
+					randNum = Math.RandomInt(0, 100);
+					if (randNum <= BROKEN_LEG_PROB)
+					{
+						float damage = victim_PB.GetMaxHealth("RightLeg", ""); //deal 100% damage to break legs
+						victim_PB.DamageAllLegs( damage ); 
+					}
+					
+					randNum = Math.RandomInt(0, 100);
+					if (randNum < BLEED_SOURCE_PROB)
+					{
+						for (i = 0; i < MAX_BLEED_SOURCE; i++)
+						{
+							//We add two bleeding sources max to lower half
+							randNum = Math.RandomIntInclusive(0, PlayerBase.m_BleedingSourcesLow.Count() - 1);
+					
+							victim_PB.m_BleedingManagerServer.AttemptAddBleedingSourceBySelection(PlayerBase.m_BleedingSourcesLow[randNum]);
+						}
+					}
+					
+					DamageClothing(victim_PB);
+				}
+				else
+				{
+					ItemBase victim_IB = ItemBase.Cast(victim);
+					if (victim_IB)
+					{
+						MiscGameplayFunctions.DealAbsoluteDmg(victim_IB, DAMAGE_TRIGGER_MINE);
+					}
+				}
+				
+				Explode(DamageType.EXPLOSION);
+			}
+
+			DeleteThis();
+		}
+		
+		super.OnSteppedOn(victim);
+	}
+	
+	override void OnSteppedOut(EntityAI victim)
+	{
+		if (victim.IsInherited(CarScript))
+		{
+			if (m_UpdateTimer && m_UpdateTimer.IsRunning())
+			{
+				m_UpdateTimer.Stop();
+			}
+		}
+	}	
+	
+	protected void OnServerSteppedOn(Object obj, string damageZone)
+	{
+		if (obj.IsInherited(CarWheel))
+		{
+			obj.ProcessDirectDamage(DT_CLOSE_COMBAT, this, "", "LandMineExplosion_CarWheel", "0 0 0", 1);
+			Explode(DamageType.EXPLOSION);
+			if (m_UpdateTimer.IsRunning())
+			{
+				m_UpdateTimer.Stop();
+			}
+			
+		}
+
+		SetInactive(false);
+		Synch(EntityAI.Cast(obj));
+	}
+
 	void DeleteThis()
 	{
-		GetGame().ObjectDelete( this );
+		m_DeleteTimer = new Timer(CALL_CATEGORY_SYSTEM);
+		m_DeleteTimer.Run(1, this, "DeleteSafe");
 	}
 	
-	override void OnItemLocationChanged( EntityAI old_owner, EntityAI new_owner ) 
+	override void OnItemLocationChanged(EntityAI old_owner, EntityAI new_owner) 
 	{
-		super.OnItemLocationChanged( old_owner, new_owner );
-		
-		/*if ( g_Game.IsServer() )
-		{
-			
-		}*/
+		super.OnItemLocationChanged(old_owner, new_owner);
 	}
 	
-	override void EEKilled( Object killer )
+	override void EEKilled(Object killer)
 	{
-		super.EEKilled( killer );
+		super.EEKilled(killer);
 		
-		OnSteppedOn( NULL );
+		Explode(DamageType.EXPLOSION);
 	}
 	
 	void PlaySoundActivate()
 	{
-		if ( GetGame().IsClient() || !GetGame().IsMultiplayer() )
+		if (!GetGame().IsDedicatedServer())
 		{
 			EffectSound sound = SEffectManager.PlaySound("landmineActivate_SoundSet", GetPosition(), 0, 0, false);
-			sound.SetSoundAutodestroy( true );
+			sound.SetAutodestroy(true);
 		}
 	}
 	
-	override void Explode( int damageType, string ammoType = "" )
+	override void Explode(int damageType, string ammoType = "")
 	{
 		if (ammoType == "")
+		{
 			ammoType = ConfigGetString("ammoType");
+		}
 		
 		if (ammoType == "")
+		{
 			ammoType = "Dummy_Heavy";
+		}
 		
 		if ( GetGame().IsServer() )
 		{
 			SynchExplosion();
 			vector offset = Vector(0, 0.1, 0); //Vertical offset applied to landmine explosion (in meters)
 			DamageSystem.ExplosionDamage(this, NULL, ammoType, GetPosition() + offset, damageType); //Offset explosion on Y axis
+			DeleteThis();
 		}
-	}
-	
-	override bool CanBeClapped()
-	{
-		return true;
 	}
 	
 	override bool CanBeDisarmed()
@@ -184,82 +238,39 @@ class LandMineTrap extends TrapBase
 		return true;
 	}
 	
-	void DamageClothing( PlayerBase player )
-	{
-		//Get all currently equipped clothing
-		// ---------------------------------------------
-
-		ClothingBase trousers = 	ClothingBase.Cast(player.GetItemOnSlot("LEGS"));
-		ClothingBase bag = 			ClothingBase.Cast(player.GetItemOnSlot("BACK"));
-		ClothingBase vest = 		ClothingBase.Cast(player.GetItemOnSlot("VEST"));
-		ClothingBase headGear =  	ClothingBase.Cast(player.GetItemOnSlot("HeadGear"));
-		ClothingBase mask =  		ClothingBase.Cast(player.GetItemOnSlot("Mask"));
-		ClothingBase shirt = 		ClothingBase.Cast(player.GetItemOnSlot("BODY"));
-		ClothingBase shoes =  		ClothingBase.Cast(player.GetItemOnSlot("FEET"));
-		ClothingBase gloves = 		ClothingBase.Cast(player.GetItemOnSlot("GLOVES"));
-
-		//Array used to find all relevant information about currently equipped clothes
-		array<ClothingBase> equippedClothes = new array<ClothingBase>;
-
-		equippedClothes.Insert(trousers);
-		equippedClothes.Insert(bag);
-		equippedClothes.Insert(vest);
-		equippedClothes.Insert(headGear);
-		equippedClothes.Insert(mask);
-		equippedClothes.Insert(shirt);
-		equippedClothes.Insert(shoes);
-		equippedClothes.Insert(gloves);
-
-		// -----------------------------------------------
-		
-		int nbClothes = 0;
-
-		//Damage all currently equipped clothes
-		for ( int i = 0; i < equippedClothes.Count(); i++ )
-		{
-			//If no item is equipped on slot, slot is ignored
-			if (equippedClothes[i] == null)
-				continue;
-
-			equippedClothes[i].DecreaseHealth(m_ClothingDmg[i], false);
-			nbClothes++;
-		}
-	}
-	
-	override void OnRPC( PlayerIdentity sender, int rpc_type, ParamsReadContext ctx )
+	override void OnRPC(PlayerIdentity sender, int rpc_type, ParamsReadContext ctx)
 	{
 		super.OnRPC(sender, rpc_type, ctx);
 		
-		ref Param1<bool> p = new Param1<bool>(false);
+		Param1<bool> p = new Param1<bool>(false);
 				
-		if (ctx.Read(p))
+		if (!ctx.Read(p))
 		{
-			bool play = p.param1;
+			return;
 		}
+
+		bool play = p.param1;
 		
 		switch (rpc_type)
 		{
-			case SoundTypeMine.DISARMING:
-			
-				if ( play )
-				{
-					PlayDisarmingLoopSound();
-				}
-				
-				if ( !play )
-				{
-					StopDisarmingLoopSound();
-				}
-			
+		case SoundTypeMine.DISARMING:
+			if (play)
+			{
+				PlayDisarmingLoopSound();
+			}
+			else
+			{
+				StopDisarmingLoopSound();
+			}
 			break;
 		}
 	}
 	
 	void PlayDisarmingLoopSound()
 	{
-		if ( !m_DisarmingLoopSound || !m_DisarmingLoopSound.IsSoundPlaying() )
+		if (!m_DisarmingLoopSound || !m_DisarmingLoopSound.IsSoundPlaying())
 		{
-			m_DisarmingLoopSound = SEffectManager.PlaySound( "landmine_deploy_SoundSet", GetPosition() );
+			m_DisarmingLoopSound = SEffectManager.PlaySound("landmine_deploy_SoundSet", GetPosition());
 		}
 	}
 	
@@ -272,14 +283,14 @@ class LandMineTrap extends TrapBase
 	// ADVANCED PLACEMENT
 	//================================================================
 		
-	override void OnPlacementComplete( Man player, vector position = "0 0 0", vector orientation = "0 0 0" )
+	override void OnPlacementComplete(Man player, vector position = "0 0 0", vector orientation = "0 0 0")
 	{
-		super.OnPlacementComplete( player, position, orientation );
+		super.OnPlacementComplete(player, position, orientation);
 		
-		if ( GetGame().IsServer() )
+		if (GetGame().IsServer())
 		{
-			PlayerBase player_PB = PlayerBase.Cast( player );
-			StartActivate( player_PB );
+			PlayerBase player_PB = PlayerBase.Cast(player);
+			StartActivate(player_PB);
 		}
 	}
 	
@@ -297,8 +308,42 @@ class LandMineTrap extends TrapBase
 	{
 		super.SetActions();
 		
+		AddAction(ActionAttach);
+		AddAction(ActionDetach);
 		AddAction(ActionTogglePlaceObject);
 		AddAction(ActionActivateTrap);
 		AddAction(ActionDeployObject);
 	}
+	
+#ifdef DEVELOPER	
+	//================================================================
+	// DEBUG
+	//================================================================
+			
+	//Debug menu Spawn Ground Special
+	override void OnDebugSpawn()
+	{
+		StartActivate(null);
+	}
+	
+	override void GetDebugButtonNames(out string button1, out string button2, out string button3, out string button4)
+	{
+		button1 = "Activate";
+		button2 = "Deactivate";
+	}
+	
+	override void OnDebugButtonPressServer(int button_index)
+	{
+		switch (button_index)
+		{
+			case 1:
+				StartActivate(null);
+			break;
+			case 2:
+				SetInactive();
+			break;
+		}
+		
+	}
+#endif
 }

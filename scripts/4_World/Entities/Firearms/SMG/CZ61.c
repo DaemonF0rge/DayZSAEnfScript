@@ -34,11 +34,10 @@ class CZ61_Base : RifleBoltLock_Base
 	//Debug menu Spawn Ground Special
 	override void OnDebugSpawn()
 	{
-		EntityAI entity;
-		if ( Class.CastTo(entity, this) )
-		{
-			entity.GetInventory().CreateInInventory( "PistolSuppressor" );
-			entity.SpawnEntityOnGroundPos("Mag_CZ61_20Rnd", entity.GetPosition());
-		}
+		GameInventory inventory = GetInventory();
+
+		inventory.CreateInInventory( "PistolSuppressor" );
+		
+		SpawnAttachedMagazine("Mag_CZ61_20Rnd");
 	}
 };

@@ -444,7 +444,7 @@ class AnimatedActionBase : ActionBase
 						Do(action_data, UA_CANCEL);
 					}
 				default:
-					Debug.ActionLog("Ation component returned wrong walue", this.ToString() , "n/a", "Do", action_data.m_Player.ToString() );
+					Debug.ActionLog("Action component returned wrong value", this.ToString() , "n/a", "Do", action_data.m_Player.ToString() );
 					action_data.m_Callback.Interrupt();
 					break;
 			}

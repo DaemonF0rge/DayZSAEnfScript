@@ -25,6 +25,21 @@ class AgentBase extends MessageReceiverBase
 		return m_Type;
 	}
 	
+	float GetDieOffSpeedEx(PlayerBase player)
+	{
+		return GetDieOffSpeed();
+	}
+	
+	EStatLevels GetPotencyEx(PlayerBase player)
+	{
+		return GetPotency();
+	}
+	
+	float GetInvasibilityEx(PlayerBase player)
+	{
+		return GetInvasibility();
+	}
+	
 	EStatLevels GetPotency()
 	{
 		return m_Potency;

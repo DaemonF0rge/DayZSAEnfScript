@@ -1,6 +1,15 @@
 // load 1 bullet
 class WeaponChambering_Start extends WeaponStartAction
 { 
+	override void OnEntry (WeaponEventBase e)
+	{
+		super.OnEntry(e);
+		if (e)
+		{
+			m_weapon.SelectionBulletHide();
+			m_weapon.ForceSyncSelectionState();
+		}
+	}
 	
 	override bool IsWaitingForActionFinish()
 	{
@@ -86,7 +95,7 @@ class WeaponChambering_Cartridge extends WeaponChambering_Base
 				
 				if (m_srcMagazine.ServerAcquireCartridge(m_damage, m_type))
 				{
-					wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering_Cartridge, ok - cartridge acquired: dmg=" + m_damage + " type=" + m_type);
+					if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering_Cartridge, ok - cartridge acquired: dmg=" + m_damage + " type=" + m_type); }
 					m_weapon.SelectionBulletShow();
 					m_weapon.EffectBulletShow( m_weapon.GetCurrentMuzzle(), m_damage, m_type);
 				}
@@ -111,10 +120,12 @@ class WeaponChambering_Cartridge extends WeaponChambering_Base
 		else
 			magazineTypeName = m_weapon.GetChamberAmmoTypeName(mi);
 		
-		if ( !GetGame().IsMultiplayer() || GetGame().IsServer() )
+		if ( GetGame().IsServer() )
 		{
 			if (DayZPlayerUtils.HandleDropCartridge(e.m_player, m_damage, m_type, magazineTypeName))
-				wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering_Cartridge, ok - aborting, chambering cartridge dropped to ground");
+			{
+				if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering_Cartridge, ok - aborting, chambering cartridge dropped to ground"); }
+			}
 			else
 				Error("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering_Cartridge, error - cannot abort removal from wpn (of old mag)");
 		}
@@ -134,10 +145,10 @@ class WeaponChambering_Cartridge extends WeaponChambering_Base
 		//	m_weapon.EjectCasing(mi);
 		if (m_weapon.PushCartridgeToChamber(mi, m_damage, m_type))
 		{
-			wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering_Cartridge, ok - loaded chamber");
+			if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering_Cartridge, ok - loaded chamber"); }
 		}
 		else
-			wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering_Cartridge, error - cannot load chamber chamber!");
+			if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering_Cartridge, error - cannot load chamber chamber!"); }
 
 		m_magazineType = string.Empty;
 		m_type = string.Empty;
@@ -158,10 +169,10 @@ class WeaponChambering_Cartridge_ChambToMag extends WeaponChambering_Cartridge
 			m_weapon.PopCartridgeFromChamber(mi, ammoDamage, ammoTypeName);
 			if (m_weapon.PushCartridgeToInternalMagazine(mi, ammoDamage, ammoTypeName))
 			{
-				wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering_Cartridge, ok - loaded chamber");
+				if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering_Cartridge, ok - loaded chamber"); }
 			}
 			else
-				wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering_Cartridge, error - cannot load chamber chamber!");
+				if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering_Cartridge, error - cannot load chamber chamber!"); }
 		}
 		super.OnExit(e);
 	}
@@ -186,44 +197,39 @@ class WeaponChambering_MultiMuzzleMagnum extends WeaponChambering_Cartridge
 		}*/
 	}
 	
-	override void OnExit (WeaponEventBase e)
+	override void OnExit(WeaponEventBase e)
 	{
 		m_weapon.SelectionBulletHide();
 		int muzzle = m_weapon.GetCurrentMuzzle();
-		if(muzzle == 0)
-			muzzle = 5;
-		else
-			muzzle--;
 		
-		if(!m_weapon.IsChamberFull(muzzle))
+		if (!m_weapon.IsChamberFull(muzzle))
 		{
 			if (m_weapon.PushCartridgeToChamber(muzzle, m_damage, m_type))
 			{
 				Magnum_Cylinder cylinder = Magnum_Cylinder.Cast(m_weapon.GetAttachmentByType(Magnum_Cylinder));
 
-				if(cylinder)
+				if (cylinder)
 				{
 					string bullet = "bullet";
 					string bullet_nose = "bullet_nose";
 					
 					if (muzzle > 0)
 					{
-						bullet = string.Format("bullet_" + (muzzle + 1));
-						bullet_nose = string.Format("bullet_nose_" + (muzzle + 1));
+						bullet = string.Format("bullet_" + ( muzzle + 1 ));
+						bullet_nose = string.Format("bullet_nose_" + ( muzzle + 1 ));
 					}
 					cylinder.ShowSelection(bullet);
 					cylinder.ShowSelection(bullet_nose);
 				}
-				m_weapon.SetCurrentMuzzle(muzzle);
-				wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering_Cartridge, ok - loaded chamber");
+				if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering_MultiMuzzleMagnum, ok - loaded chamber"); }
 			}
 			else
-				wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering_Cartridge, error - cannot load chamber chamber!");
+				if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering_MultiMuzzleMagnum, error - cannot load chamber chamber!"); }
 			m_type = string.Empty;
 			return;
 		}
 		else
-			wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering_Cartridge, error - cannot load chamber chamber!");
+			if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering_MultiMuzzleMagnum, error - cannot load chamber chamber!"); }
 		
 		//super.OnExit(e);
 	}
@@ -259,10 +265,10 @@ class WeaponChambering_MultiMuzzle extends WeaponChambering_Cartridge
 			{
 				if (m_weapon.PushCartridgeToChamber(i, m_damage, m_type))
 				{
-					wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering_Cartridge, ok - loaded chamber");
+					if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering_Cartridge, ok - loaded chamber"); }
 				}
 				else
-					wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering_Cartridge, error - cannot load chamber chamber!");
+					if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering_Cartridge, error - cannot load chamber chamber!"); }
 				m_type = string.Empty;
 				return;
 			}
@@ -291,7 +297,7 @@ class WeaponChambering_Cartridge_InnerMag extends WeaponChambering_Base
 				
 				if (m_srcMagazine.ServerAcquireCartridge(m_damage, m_type))
 				{
-					wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering_Cartridge_InnerMag, ok - cartridge acquired: dmg=" + m_damage + " type=" + m_type);		
+					if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering_Cartridge_InnerMag, ok - cartridge acquired: dmg=" + m_damage + " type=" + m_type); }		
 				}
 				else
 					Error("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering_Cartridge_InnerMag, error - cannot take cartridge from magazine");
@@ -319,7 +325,9 @@ class WeaponChambering_Cartridge_InnerMag extends WeaponChambering_Base
 		if ( !GetGame().IsMultiplayer() || GetGame().IsServer() )
 		{
 			if (DayZPlayerUtils.HandleDropCartridge(e.m_player, m_damage, m_type, magazineTypeName))
-				wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering_Cartridge_InnerMag, ok - aborting, chambering cartridge dropped to ground");
+			{
+				if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering_Cartridge_InnerMag, ok - aborting, chambering cartridge dropped to ground"); }
+			}
 			else
 				Error("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering_Cartridge_InnerMag, error - cannot abort removal from wpn (of old mag)");
 		}
@@ -341,10 +349,10 @@ class WeaponChambering_Cartridge_InnerMag extends WeaponChambering_Base
 		{
 			if (m_weapon.PushCartridgeToInternalMagazine(mi, m_damage, m_type))
 			{
-				wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering_Cartridge_InnerMag, ok - loaded chamber");
+				if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering_Cartridge_InnerMag, ok - loaded chamber"); }
 			}
 			else
-				wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering_Cartridge_InnerMag, error - cannot load chamber chamber!");
+				if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering_Cartridge_InnerMag, error - cannot load chamber chamber!"); }
 		}
 		m_magazineType = string.Empty;
 		super.OnExit(e);
@@ -416,7 +424,7 @@ class WeaponChambering extends WeaponStateBase
 				lhand.SetAttachment(e.m_player, m_srcMagazine, InventorySlots.LEFTHAND);
 				if (GameInventory.LocationSyncMoveEntity(newSrc, lhand))
 				{
-					wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering, ok - ammo pile removed from inv (inv->LHand)");
+					if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering, ok - ammo pile removed from inv (inv->LHand)"); }
 				}
 				else
 					Error("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering, error - cannot remove ammo pile from inv");
@@ -425,12 +433,12 @@ class WeaponChambering extends WeaponStateBase
 			} 
 			else
 			{
-				wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering m_srcMagazine = NULL");
+				if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering m_srcMagazine = NULL"); }
 			}
 		}
 		else
 		{
-			wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering (e=NULL), m_srcMagazine=" + m_srcMagazine.ToString());
+			if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering (e=NULL), m_srcMagazine=" + m_srcMagazine.ToString()); }
 		}
 
 		super.OnEntry(e); // @NOTE: super at the end (prevent override from submachine start)
@@ -455,7 +463,7 @@ class WeaponChambering extends WeaponStateBase
 						{
 							if( GameInventory.LocationSyncMoveEntity(leftHandIl,m_srcMagazinePrevLocation) )
 							{
-								wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering, ok - ammo pile removed from left hand to previous location (LHand->inv) - abort");
+								if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering, ok - ammo pile removed from left hand to previous location (LHand->inv) - abort"); }
 								done = true;
 							}
 						}
@@ -470,7 +478,9 @@ class WeaponChambering extends WeaponStateBase
 					if(!il || !il.IsValid())
 					{
 						if (DayZPlayerUtils.HandleDropMagazine(e.m_player, m_srcMagazine))
-							wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering, ok - no inventory space for ammo pile - dropped to ground - abort");
+						{
+							if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering, ok - no inventory space for ammo pile - dropped to ground - abort"); }
+						}
 						else
 							Error("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering, error - cannot drop ammo pile from left hand after not found inventory space for ammo pile - abort");
 					
@@ -479,7 +489,7 @@ class WeaponChambering extends WeaponStateBase
 					{
 						if (GameInventory.LocationSyncMoveEntity(leftHandIl, il))
 						{
-							wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering, ok - ammo pile removed from left hand (LHand->inv) - abort");
+							if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering, ok - ammo pile removed from left hand (LHand->inv) - abort"); }
 						}
 						else
 							Error("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering, error - cannot remove ammo pile from wpn - abort");
@@ -513,7 +523,7 @@ class WeaponChambering extends WeaponStateBase
 						{
 							if( GameInventory.LocationSyncMoveEntity(leftHandIl,m_srcMagazinePrevLocation) )
 							{
-								wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering, ok - ammo pile removed from left hand to previous location (LHand->inv) - exit");
+								if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering, ok - ammo pile removed from left hand to previous location (LHand->inv) - exit"); }
 								done = true;
 							}
 						}
@@ -528,7 +538,9 @@ class WeaponChambering extends WeaponStateBase
 					if(!il || !il.IsValid())
 					{
 						if (DayZPlayerUtils.HandleDropMagazine(e.m_player, m_srcMagazine))
-							wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering, ok - no inventory space for ammo pile - dropped to ground - exit");
+						{
+							if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering, ok - no inventory space for ammo pile - dropped to ground - exit"); }
+						}
 						else
 							Error("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering, error - cannot drop ammo pile from left hand after not found inventory space for ammo pile - exit");
 					
@@ -537,7 +549,7 @@ class WeaponChambering extends WeaponStateBase
 					{
 						if (GameInventory.LocationSyncMoveEntity(leftHandIl, il))
 						{
-							wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering, ok - ammo pile removed from left hand (LHand->inv) - exit");
+							if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering, ok - ammo pile removed from left hand (LHand->inv) - exit"); }
 						}
 						else
 							Error("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponChambering, error - cannot remove ammo pile from wpn - exit");
@@ -683,7 +695,7 @@ class ChamberMultiBullet extends WeaponStateBase
 				lhand.SetAttachment(e.m_player, m_srcMagazine, InventorySlots.LEFTHAND);
 				if (GameInventory.LocationSyncMoveEntity(newSrc, lhand))
 				{
-					wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " ChamberMultiBullet, ok - ammo pile removed from inv (inv->LHand)");
+					if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " ChamberMultiBullet, ok - ammo pile removed from inv (inv->LHand)"); }
 				}
 				else
 					Error("[wpnfsm] " + Object.GetDebugName(m_weapon) + " ChamberMultiBullet, error - cannot remove ammo pile from inv");
@@ -692,12 +704,12 @@ class ChamberMultiBullet extends WeaponStateBase
 			} 
 			else
 			{
-				wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " ChamberMultiBullet m_srcMagazine = NULL");
+				if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " ChamberMultiBullet m_srcMagazine = NULL"); }
 			}
 		}
 		else
 		{
-			wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " ChamberMultiBullet (e=NULL), m_srcMagazine=" + m_srcMagazine.ToString());
+			if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " ChamberMultiBullet (e=NULL), m_srcMagazine=" + m_srcMagazine.ToString()); }
 		}
 
 		super.OnEntry(e); // @NOTE: super at the end (prevent override from submachine start)
@@ -721,7 +733,7 @@ class ChamberMultiBullet extends WeaponStateBase
 						{
 							if( GameInventory.LocationSyncMoveEntity(leftHandIl,m_srcMagazinePrevLocation) )
 							{
-								wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " ChamberMultiBullet, ok - ammo pile removed from left hand to previous location (LHand->inv) - exit");
+								if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " ChamberMultiBullet, ok - ammo pile removed from left hand to previous location (LHand->inv) - exit"); }
 								done = true;
 							}
 						}
@@ -736,7 +748,9 @@ class ChamberMultiBullet extends WeaponStateBase
 					if(!il || !il.IsValid())
 					{
 						if (DayZPlayerUtils.HandleDropMagazine(e.m_player, m_srcMagazine))
-							wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " ChamberMultiBullet, ok - no inventory space for ammo pile - dropped to ground - exit");
+						{
+							if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " ChamberMultiBullet, ok - no inventory space for ammo pile - dropped to ground - exit"); }
+						}
 						else
 							Error("[wpnfsm] " + Object.GetDebugName(m_weapon) + " ChamberMultiBullet, error - cannot drop ammo pile from left hand after not found inventory space for ammo pile - exit");
 					
@@ -745,7 +759,7 @@ class ChamberMultiBullet extends WeaponStateBase
 					{
 						if (GameInventory.LocationSyncMoveEntity(leftHandIl, il))
 						{
-							wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " ChamberMultiBullet, ok - ammo pile removed from left hand (LHand->inv) - exit");
+							if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " ChamberMultiBullet, ok - ammo pile removed from left hand (LHand->inv) - exit"); }
 						}
 						else
 							Error("[wpnfsm] " + Object.GetDebugName(m_weapon) + " ChamberMultiBullet, error - cannot remove ammo pile from wpn - exit");
@@ -778,7 +792,7 @@ class ChamberMultiBullet extends WeaponStateBase
 						{
 							if( GameInventory.LocationSyncMoveEntity(leftHandIl,m_srcMagazinePrevLocation) )
 							{
-								wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " ChamberMultiBullet, ok - ammo pile removed from left hand to previous location (LHand->inv) - abort");
+								if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " ChamberMultiBullet, ok - ammo pile removed from left hand to previous location (LHand->inv) - abort"); }
 								done = true;
 							}
 						}
@@ -793,7 +807,9 @@ class ChamberMultiBullet extends WeaponStateBase
 					if(!il || !il.IsValid())
 					{
 						if (DayZPlayerUtils.HandleDropMagazine(e.m_player, m_srcMagazine))
-							wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " ChamberMultiBullet, ok - no inventory space for ammo pile - dropped to ground - abort");
+						{
+							if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " ChamberMultiBullet, ok - no inventory space for ammo pile - dropped to ground - abort"); }
+						}
 						else
 							Error("[wpnfsm] " + Object.GetDebugName(m_weapon) + " ChamberMultiBullet, error - cannot drop ammo pile from left hand after not found inventory space for ammo pile - abort");
 					
@@ -802,7 +818,7 @@ class ChamberMultiBullet extends WeaponStateBase
 					{
 						if (GameInventory.LocationSyncMoveEntity(leftHandIl, il))
 						{
-							wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " ChamberMultiBullet, ok - ammo pile removed from left hand (LHand->inv) - abort");
+							if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " ChamberMultiBullet, ok - ammo pile removed from left hand (LHand->inv) - abort"); }
 						}
 						else
 							Error("[wpnfsm] " + Object.GetDebugName(m_weapon) + " ChamberMultiBullet, error - cannot remove ammo pile from wpn - abort");
@@ -859,48 +875,35 @@ class ChamberMultiBullet extends WeaponStateBase
 //------------------ROTATE------------------------------
 //------------------------------------------------------
 class WeaponCylinderRotate extends WeaponStateBase
-{
-	override void OnEntry (WeaponEventBase e)
+{	
+	bool FindNextFreeMuzzle(int currentMuzzle, out int nextMuzzle)
 	{
+		nextMuzzle = currentMuzzle;
+		int nMuzzles = m_weapon.GetMuzzleCount();
 		
-		
-		
-		Magnum_Cylinder cylinder = Magnum_Cylinder.Cast(m_weapon.GetAttachmentByType(Magnum_Cylinder));
-		Magnum_Ejector ejector = Magnum_Ejector.Cast(m_weapon.GetAttachmentByType(Magnum_Ejector));
-		
-		//Magnum_Base magnum = Magnum_Base.Cast(m_weapon);
-		
-		//Magazine mag = m_weapon.GetMagazine(0);
-		if(cylinder && ejector)
+		for (int i = 0; i < nMuzzles; ++i)
 		{
-			float a;
-			int mi = m_weapon.GetCurrentMuzzle();
-			switch(mi)
-			{
-				case 5:
-					a = MAGNUM_ROTATION_POSITION_2;
-					break;
-				case 0:
-					a = MAGNUM_ROTATION_POSITION_1;
-					break;
-				case 1:
-					a = MAGNUM_ROTATION_POSITION_0;
-					cylinder.ResetAnimationPhase("Rotate_Cylinder", MAGNUM_ROTATION_POSITION_M1 );
-					ejector.ResetAnimationPhase("Rotate_Ejector", MAGNUM_ROTATION_POSITION_M1 );
-					break;
-				case 2:
-					a = MAGNUM_ROTATION_POSITION_5;
-					break;
-				case 3:
-					a = MAGNUM_ROTATION_POSITION_4;
-					break;
-				case 4:
-					a = MAGNUM_ROTATION_POSITION_3;
-					break;		
-			}	
-			cylinder.SetAnimationPhase("Rotate_Cylinder", a );
-			ejector.SetAnimationPhase("Rotate_Ejector", a );
-			
+			--nextMuzzle;
+			nextMuzzle = Math.WrapInt(nextMuzzle, 0, nMuzzles);
+			if (m_weapon.IsChamberEmpty(nextMuzzle))
+				return true;
+		}
+		
+		return false;
+	}
+	
+	override void OnEntry(WeaponEventBase e)
+	{
+		int nextMuzzle;
+		if (FindNextFreeMuzzle(m_weapon.GetCurrentMuzzle(), nextMuzzle))
+		{
+			Magnum_Base magnum = Magnum_Base.Cast(m_weapon);
+			magnum.SetCylinderRotationAnimationPhase(magnum.GetCylinderRotation(nextMuzzle));
+			m_weapon.SetCurrentMuzzle(nextMuzzle);
+		}
+		else
+		{
+			Print("WTF");
 		}
 
 		super.OnEntry(e); // @NOTE: super at the end (prevent override from submachine start)
@@ -928,7 +931,7 @@ class WeaponMagnumChambering extends WeaponStateBase
 	ref WeaponStartAction m_endLoop;
 	ref BulletHide_W4T m_hideB;
 
-	void WeaponMagnumChambering (Weapon_Base w = NULL, WeaponStateBase parent = NULL, WeaponActions action = WeaponActions.NONE, int startActionType = -1, int endActionType = -1)
+	void WeaponMagnumChambering(Weapon_Base w = NULL, WeaponStateBase parent = NULL, WeaponActions action = WeaponActions.NONE, int startActionType = -1, int endActionType = -1)
 	{
 		m_action = action;
 		m_startActionType = startActionType;
@@ -956,22 +959,20 @@ class WeaponMagnumChambering extends WeaponStateBase
 		m_fsm = new WeaponFSM(this); // @NOTE: set owner of the submachine fsm
 		m_fsm.AddTransition(new WeaponTransition(m_start,	__be_, m_eject));
 		m_fsm.AddTransition(new WeaponTransition(m_start,	__cr_, m_rotate));
-		m_fsm.AddTransition(new WeaponTransition(m_eject,	__cr_, m_rotate));
-			
+		
+		m_fsm.AddTransition(new WeaponTransition(m_eject,	__cr_, m_rotate));			
 		m_fsm.AddTransition(new WeaponTransition(m_rotate,	__be_, m_eject));
 		
 		m_fsm.AddTransition(new WeaponTransition(m_eject, __bs_, m_chamber));
+		m_fsm.AddTransition(new WeaponTransition(m_rotate, __bs_, m_chamber));		
 		
-
-		m_fsm.AddTransition(new WeaponTransition(m_rotate, __bs_, m_chamber));	
-		
-		m_fsm.AddTransition(new WeaponTransition(m_chamber, __bM_, m_w4sb2, NULL, new GuardAnd(new GuardAnd(new WeaponGuardHasAmmoInLoopedState(m_chamber), new WeaponGuardChamberMultiHasRoomBulltetIgnoreLast(m_weapon)),new WeaponGuardWeaponManagerWantContinue())));
+		m_fsm.AddTransition(new WeaponTransition(m_chamber, __bM_, m_w4sb2, null, new GuardAnd(new GuardAnd(new WeaponGuardHasAmmoInLoopedState(m_chamber), new WeaponGuardChamberMultiHasRoomBulltetIgnoreLast(m_weapon)),new WeaponGuardWeaponManagerWantContinue())));
 		m_fsm.AddTransition(new WeaponTransition(m_chamber, __bM_, m_endLoop));
 		//m_fsm.AddTransition(new WeaponTransition(m_rotate, __bh_, m_chamber));
 		//m_fsm.AddTransition(new WeaponTransition(m_w4sb2, 	__bh_, m_hideB));
 		m_fsm.AddTransition(new WeaponTransition(m_w4sb2, 	__cr_, m_rotate));
 		
-		m_fsm.AddTransition(new WeaponTransition(m_endLoop, _fin_, NULL));
+		m_fsm.AddTransition(new WeaponTransition(m_endLoop, _fin_, null));
 		
 		// Safety exits
 		m_fsm.AddTransition(new WeaponTransition(m_w4sb2, 	_fin_, null));
@@ -983,7 +984,7 @@ class WeaponMagnumChambering extends WeaponStateBase
 		m_fsm.SetInitialState(m_start);
 	}
 
-	override void OnEntry (WeaponEventBase e)
+	override void OnEntry(WeaponEventBase e)
 	{
 		if (e != NULL)
 		{
@@ -1001,26 +1002,27 @@ class WeaponMagnumChambering extends WeaponStateBase
 				lhand.SetAttachment(e.m_player, m_srcMagazine, InventorySlots.LEFTHAND);
 				if (GameInventory.LocationSyncMoveEntity(newSrc, lhand))
 				{
-					wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChambering, ok - ammo pile removed from inv (inv->LHand)");
+					if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponMagnumChambering, ok - ammo pile removed from inv (inv->LHand)"); }
 				}
 				else
-					Error("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChambering, error - cannot remove ammo pile from inv");
+					Error("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponMagnumChambering, error - cannot remove ammo pile from inv");
 				
 				m_chamber.m_srcMagazine = m_srcMagazine;
 			} 
 			else
 			{
-				Print("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChambering m_srcMagazine = NULL");
+				Print("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponMagnumChambering m_srcMagazine = NULL");
 			}
 		}
 		else
 		{
-			Print("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChambering (e=NULL), m_srcMagazine=" + m_srcMagazine.ToString());
+			Print("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponMagnumChambering (e=NULL), m_srcMagazine=" + m_srcMagazine.ToString());
 		}
 
 		super.OnEntry(e); // @NOTE: super at the end (prevent override from submachine start)
 	}
-	override void OnExit (WeaponEventBase e)
+	
+	override void OnExit(WeaponEventBase e)
 	{
 		bool done = false;
 		if (m_srcMagazine)
@@ -1029,44 +1031,46 @@ class WeaponMagnumChambering extends WeaponStateBase
 			
 			InventoryLocation leftHandIl = new InventoryLocation;
 			m_srcMagazine.GetInventory().GetCurrentInventoryLocation(leftHandIl);
-			if(leftHandIl.IsValid())
+			if (leftHandIl.IsValid())
 			{
-				if(m_srcMagazinePrevLocation && m_srcMagazinePrevLocation.IsValid())
+				if (m_srcMagazinePrevLocation && m_srcMagazinePrevLocation.IsValid())
 				{
-					if(vector.DistanceSq(m_srcMagazinePrevLocation.GetPos(), leftHandIl.GetPos()) < WeaponManager.MAX_DROP_MAGAZINE_DISTANCE_SQ )
+					if (vector.DistanceSq(m_srcMagazinePrevLocation.GetPos(), leftHandIl.GetPos()) < WeaponManager.MAX_DROP_MAGAZINE_DISTANCE_SQ )
 					{
-						if( GameInventory.LocationCanMoveEntity(leftHandIl,m_srcMagazinePrevLocation) )
+						if ( GameInventory.LocationCanMoveEntity(leftHandIl,m_srcMagazinePrevLocation) )
 						{
-							if( GameInventory.LocationSyncMoveEntity(leftHandIl,m_srcMagazinePrevLocation) )
+							if ( GameInventory.LocationSyncMoveEntity(leftHandIl,m_srcMagazinePrevLocation) )
 							{
-								wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChambering, ok - ammo pile removed from left hand to previous location (LHand->inv) - exit");
+								if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponMagnumChambering, ok - ammo pile removed from left hand to previous location (LHand->inv) - exit"); }
 								done = true;
 							}
 						}
 					}
 				}
 				
-				if( !done)
+				if ( !done)
 				{
 					InventoryLocation il = new InventoryLocation;
 					e.m_player.GetInventory().FindFreeLocationFor( m_srcMagazine, FindInventoryLocationType.CARGO, il );
 			
-					if(!il || !il.IsValid())
+					if (!il || !il.IsValid())
 					{
 						if (DayZPlayerUtils.HandleDropMagazine(e.m_player, m_srcMagazine))
-							wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChambering, ok - no inventory space for ammo pile - dropped to ground - exit");
+						{
+							if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponMagnumChambering, ok - no inventory space for ammo pile - dropped to ground - exit"); }
+						}
 						else
-							Error("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChambering, error - cannot drop ammo pile from left hand after not found inventory space for ammo pile - exit");
+							Error("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponMagnumChambering, error - cannot drop ammo pile from left hand after not found inventory space for ammo pile - exit");
 					
 					}
 					else
 					{
 						if (GameInventory.LocationSyncMoveEntity(leftHandIl, il))
 						{
-							wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChambering, ok - ammo pile removed from left hand (LHand->inv) - exit");
+							if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponMagnumChambering, ok - ammo pile removed from left hand (LHand->inv) - exit"); }
 						}
 						else
-							Error("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChambering, error - cannot remove ammo pile from wpn - exit");
+							Error("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponMagnumChambering, error - cannot remove ammo pile from wpn - exit");
 					}
 				}
 			}
@@ -1077,7 +1081,8 @@ class WeaponMagnumChambering extends WeaponStateBase
 		m_chamber.m_srcMagazine = NULL;
 		m_srcMagazinePrevLocation = NULL;
 	}
-	override void OnAbort (WeaponEventBase e)
+	
+	override void OnAbort(WeaponEventBase e)
 	{
 		bool done = false;
 		if (m_srcMagazine)
@@ -1086,32 +1091,34 @@ class WeaponMagnumChambering extends WeaponStateBase
 			
 			InventoryLocation leftHandIl = new InventoryLocation;
 			m_srcMagazine.GetInventory().GetCurrentInventoryLocation(leftHandIl);
-			if(leftHandIl.IsValid())
+			if (leftHandIl.IsValid())
 			{
-				if(m_srcMagazinePrevLocation && m_srcMagazinePrevLocation.IsValid())
+				if (m_srcMagazinePrevLocation && m_srcMagazinePrevLocation.IsValid())
 				{
-					if(vector.DistanceSq(m_srcMagazinePrevLocation.GetPos(), leftHandIl.GetPos()) < WeaponManager.MAX_DROP_MAGAZINE_DISTANCE_SQ )
+					if (vector.DistanceSq(m_srcMagazinePrevLocation.GetPos(), leftHandIl.GetPos()) < WeaponManager.MAX_DROP_MAGAZINE_DISTANCE_SQ )
 					{
-						if( GameInventory.LocationCanMoveEntity(leftHandIl,m_srcMagazinePrevLocation) )
+						if ( GameInventory.LocationCanMoveEntity(leftHandIl,m_srcMagazinePrevLocation) )
 						{
-							if( GameInventory.LocationSyncMoveEntity(leftHandIl,m_srcMagazinePrevLocation) )
+							if ( GameInventory.LocationSyncMoveEntity(leftHandIl,m_srcMagazinePrevLocation) )
 							{
-								wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChambering, ok - ammo pile removed from left hand to previous location (LHand->inv) - abort");
+								if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponMagnumChambering, ok - ammo pile removed from left hand to previous location (LHand->inv) - abort"); }
 								done = true;
 							}
 						}
 					}
 				}
 				
-				if( !done)
+				if ( !done)
 				{
 					InventoryLocation il = new InventoryLocation;
 					e.m_player.GetInventory().FindFreeLocationFor( m_srcMagazine, FindInventoryLocationType.CARGO, il );
 			
-					if(!il || !il.IsValid())
+					if (!il || !il.IsValid())
 					{
 						if (DayZPlayerUtils.HandleDropMagazine(e.m_player, m_srcMagazine))
-							wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChambering, ok - no inventory space for ammo pile - dropped to ground - abort");
+						{
+							if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponMagnumChambering, ok - no inventory space for ammo pile - dropped to ground - abort"); }
+						}
 						else
 							Error("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChambering, error - cannot drop ammo pile from left hand after not found inventory space for ammo pile - abort");
 					
@@ -1120,7 +1127,7 @@ class WeaponMagnumChambering extends WeaponStateBase
 					{
 						if (GameInventory.LocationSyncMoveEntity(leftHandIl, il))
 						{
-							wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChambering, ok - ammo pile removed from left hand (LHand->inv) - abort");
+							if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponMagnumChambering, ok - ammo pile removed from left hand (LHand->inv) - abort"); }
 						}
 						else
 							Error("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChambering, error - cannot remove ammo pile from wpn - abort");
@@ -1135,40 +1142,40 @@ class WeaponMagnumChambering extends WeaponStateBase
 		m_srcMagazinePrevLocation = NULL;
 	}
 	
-	override bool SaveCurrentFSMState (ParamsWriteContext ctx)
+	override bool SaveCurrentFSMState(ParamsWriteContext ctx)
 	{
 		if (!super.SaveCurrentFSMState(ctx))
 			return false;
 
 		if (!ctx.Write(m_srcMagazine))
 		{
-			Error("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChambering.SaveCurrentFSMState: cannot save m_srcMagazine for weapon=" + m_weapon);
+			Error("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponMagnumChambering.SaveCurrentFSMState: cannot save m_srcMagazine for weapon=" + m_weapon);
 			return false;
 		}
 		
 		if (!OptionalLocationWriteToContext(m_srcMagazinePrevLocation, ctx))
 		{
-			Error("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChambering.SaveCurrentFSMState: cannot write m_srcMagazinePrevLocation for weapon=" + m_weapon);
+			Error("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponMagnumChambering.SaveCurrentFSMState: cannot write m_srcMagazinePrevLocation for weapon=" + m_weapon);
 			return false;
 		}
 		
 		return true;
 	}
 
-	override bool LoadCurrentFSMState (ParamsReadContext ctx, int version)
+	override bool LoadCurrentFSMState(ParamsReadContext ctx, int version)
 	{
 		if (!super.LoadCurrentFSMState(ctx, version))
 			return false;
 
 		if (!ctx.Read(m_srcMagazine))
 		{
-			Error("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChambering.LoadCurrentFSMState: cannot read m_srcMagazine for weapon=" + m_weapon);
+			Error("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponMagnumChambering.LoadCurrentFSMState: cannot read m_srcMagazine for weapon=" + m_weapon);
 			return false;
 		}
 		
 		if (!OptionalLocationReadFromContext(m_srcMagazinePrevLocation, ctx))
 		{
-			Error("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChambering.LoadCurrentFSMState: cannot read m_srcMagazinePrevLocation for weapon=" + m_weapon);
+			Error("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponMagnumChambering.LoadCurrentFSMState: cannot read m_srcMagazinePrevLocation for weapon=" + m_weapon);
 			return false;
 		}
 		return true;

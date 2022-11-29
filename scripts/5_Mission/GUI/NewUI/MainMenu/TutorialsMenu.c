@@ -1,5 +1,10 @@
 class TutorialsMenu extends UIScriptedMenu
 {
+	protected const string PATH_MOUSEKEY = "Scripts/data/PageDataTutorials.json";
+	protected const string PATH_X1_OLD = "Xbox/PageDataTutorials.json";
+	protected const string PATH_X1_NEW = "Xbox/PageDataTutorialsAlternate.json";
+	protected const string PATH_PS_OLD = "PS4/PageDataTutorials.json";
+	protected const string PATH_PS_NEW = "PS4/PageDataTutorialsAlternate.json";
 	
 	protected string 					m_BackButtonTextID;
 	
@@ -19,63 +24,84 @@ class TutorialsMenu extends UIScriptedMenu
 	override Widget Init()
 	{
 		#ifdef PLATFORM_CONSOLE
-		layoutRoot		= GetGame().GetWorkspace().CreateWidgets( "gui/layouts/new_ui/tutorials/xbox/tutorials.layout" );
+		layoutRoot	= GetGame().GetWorkspace().CreateWidgets("gui/layouts/new_ui/tutorials/xbox/tutorials.layout");
 		#else
-		layoutRoot	= GetGame().GetWorkspace().CreateWidgets( "gui/layouts/new_ui/tutorials/pc/tutorials.layout" );
+		layoutRoot	= GetGame().GetWorkspace().CreateWidgets("gui/layouts/new_ui/tutorials/pc/tutorials.layout");
 		#endif
 		
-		m_InfoTextLeft	= layoutRoot.FindAnyWidget( "InfoTextLeft" );
-		m_InfoTextRight	= layoutRoot.FindAnyWidget( "InfoTextRight" );
+		m_InfoTextLeft	= layoutRoot.FindAnyWidget("InfoTextLeft");
+		m_InfoTextRight	= layoutRoot.FindAnyWidget("InfoTextRight");
 		
-		m_Back			= ButtonWidget.Cast( layoutRoot.FindAnyWidget( "back" ) );
+		m_Back			= ButtonWidget.Cast(layoutRoot.FindAnyWidget("back"));
 		
-		layoutRoot.FindAnyWidget("Tabber").GetScript( m_TabScript );
-		m_TabScript.m_OnTabSwitch.Insert( DrawConnectingLines );
+		layoutRoot.FindAnyWidget("Tabber").GetScript(m_TabScript);
+		m_TabScript.m_OnTabSwitch.Insert(DrawConnectingLines);
 		
 		#ifdef PLATFORM_CONSOLE
-		if( GetGame().GetInput().IsEnabledMouseAndKeyboard() )
+		if (GetGame().GetInput().IsEnabledMouseAndKeyboard())
 		{
-			m_KeybindsTab	= new TutorialKeybinds( layoutRoot.FindAnyWidget( "Tab_6" ), this );
-			m_TabScript.EnableTabControl( 6, true );
+			m_KeybindsTab = new TutorialKeybinds(layoutRoot.FindAnyWidget("Tab_6"), this);
+			m_TabScript.EnableTabControl(6, true);
 		}
 		#endif
 		
-		m_tab_images[0] = ImageWidget.Cast( layoutRoot.FindAnyWidget("MovementTabBackdropImageWidget") );
-		m_tab_images[1] = ImageWidget.Cast( layoutRoot.FindAnyWidget("WeaponsAndActionsBackdropImageWidget") );
-		m_tab_images[2] = ImageWidget.Cast( layoutRoot.FindAnyWidget("InventoryTabBackdropImageWidget") );
-		m_tab_images[3] = ImageWidget.Cast( layoutRoot.FindAnyWidget("MenusTabBackdropImageWidget") );
+		m_tab_images[0] = ImageWidget.Cast(layoutRoot.FindAnyWidget("MovementTabBackdropImageWidget"));
+		m_tab_images[1] = ImageWidget.Cast(layoutRoot.FindAnyWidget("WeaponsAndActionsBackdropImageWidget"));
+		m_tab_images[2] = ImageWidget.Cast(layoutRoot.FindAnyWidget("InventoryTabBackdropImageWidget"));
+		m_tab_images[3] = ImageWidget.Cast(layoutRoot.FindAnyWidget("MenusTabBackdropImageWidget"));
 		
-		#ifdef PLATFORM_PS4
-			string back = "circle";
-			if( GetGame().GetInput().GetEnterButton() == GamepadButton.A )
-			{
-				back = "circle";
-			}
-			else
-			{
-				back = "cross";
-			}
-			ImageWidget toolbar_b = layoutRoot.FindAnyWidget( "BackIcon" );
-			ImageWidget toolbar_b2 = layoutRoot.FindAnyWidget( "BackIcon0" );
-			toolbar_b.LoadImageFile( 0, "set:playstation_buttons image:" + back );
-			toolbar_b2.LoadImageFile( 0, "set:playstation_buttons image:" + back );
+		#ifdef PLATFORM_CONSOLE
+		UpdateControlsElements();
 		#endif
 		
-		PPEffects.SetBlurMenu( 0.6 );
-		DrawConnectingLines( 0 );
+		PPERequesterBank.GetRequester(PPERequester_TutorialMenu).Start(new Param1<float>(0.6));
+		DrawConnectingLines(0);
+		
+		GetGame().GetMission().GetOnInputPresetChanged().Insert(OnInputPresetChanged);
+		GetGame().GetMission().GetOnInputDeviceChanged().Insert(OnInputDeviceChanged);
+		
+		OnInputDeviceChanged(GetGame().GetInput().GetCurrentInputDevice());
+		
 		return layoutRoot;
-	}
-	
-	void TutorialsMenu()
-	{
 	}
 	
 	void ~TutorialsMenu()
 	{
 		m_TabScript.m_OnTabSwitch.Remove( DrawConnectingLines );
-		PPEffects.SetBlurMenu( 0 );
+		PPERequesterBank.GetRequester(PPERequester_TutorialMenu).Stop();
 	}
+	
+	protected void OnInputPresetChanged()
+	{
+		#ifdef PLATFORM_CONSOLE
+		UpdateControlsElements();
+		#endif
+	}
+	
+	protected void OnInputDeviceChanged(EInputDeviceType pInputDeviceType)
+	{
+		switch (pInputDeviceType)
+		{
+		case EInputDeviceType.CONTROLLER:
+			#ifdef PLATFORM_CONSOLE
+			UpdateControlsElements();
+			layoutRoot.FindAnyWidget("toolbar_bg").Show(true);
+			layoutRoot.FindAnyWidget("play_panel_root").Show(false);
+			#endif
+		break;
 
+		default:
+			#ifdef PLATFORM_CONSOLE
+			if (GetGame().GetInput().IsEnabledMouseAndKeyboardEvenOnServer())
+			{
+				layoutRoot.FindAnyWidget("toolbar_bg").Show(false);
+				layoutRoot.FindAnyWidget("play_panel_root").Show(true);
+			}
+			#endif
+		break;
+		}
+	}
+	
 	void Back()
 	{
 		GetGame().GetUIManager().Back();
@@ -282,23 +308,36 @@ class TutorialsMenu extends UIScriptedMenu
 	protected array<ref JsonControlMappingInfo> GetControlMappingInfo()
 	{
 		array<ref JsonControlMappingInfo> control_mapping_info = new array<ref JsonControlMappingInfo>;
-		string file_path;
+		string file_path = PATH_MOUSEKEY; //remains set for PC vatiant
+		string profile_name = "";
+		GetGame().GetInput().GetProfileName(GetGame().GetInput().GetCurrentProfile(),profile_name);
 		
-		#ifdef PLATFORM_WINDOWS
-			file_path =	"Scripts/data/PageDataTutorials.json";
-		#endif
-		#ifdef PLATFORM_XBOX
-			if( GetGame().GetInput().IsEnabledMouseAndKeyboardEvenOnServer() )
-				file_path =	"Scripts/data/PageDataTutorials.json";
+#ifdef PLATFORM_CONSOLE
+		if ( !GetGame().GetInput().IsEnabledMouseAndKeyboardEvenOnServer() )
+		{
+			if (profile_name == "#STR_UAPRESET_0")
+			{
+				#ifdef PLATFORM_XBOX
+					file_path =	PATH_X1_OLD;
+				#else 
+					file_path =	PATH_PS_OLD;
+				#endif
+			}
+			else if (profile_name == "#STR_UAPRESET_1")
+			{
+				#ifdef PLATFORM_XBOX
+					file_path =	PATH_X1_NEW;
+				#else 
+					file_path =	PATH_PS_NEW;
+				#endif
+			}
 			else
-				file_path =	"Xbox/PageDataTutorials.json";
-		#endif
-		#ifdef PLATFORM_PS4
-			if( GetGame().GetInput().IsEnabledMouseAndKeyboardEvenOnServer() )
-				file_path =	"Scripts/data/PageDataTutorials.json";
-			else
-				file_path =	"Ps4/PageDataTutorials.json";
-		#endif
+			{
+				ErrorEx("Invalid file path!");
+				file_path =	"";
+			}
+		}
+#endif
 		FileHandle file_handle = OpenFile(file_path, FileMode.READ);
 		JsonSerializer js = new JsonSerializer();
 		
@@ -319,21 +358,15 @@ class TutorialsMenu extends UIScriptedMenu
 			}
 			else
 			{
-				Print("JSON ERROR => [ControlMappingInfo.json]: "+ js_error);
-				DumpStack();
+				ErrorEx("JSON ERROR => [TutorialsMenu]: " + js_error);
 			}
+		}
+		else
+		{
+			ErrorEx("FILEHANDLE ERROR => [TutorialsMenu]: " + js_error);
 		}
 		
 		return control_mapping_info;
-	}
-	
-	override void OnShow()
-	{
-		super.OnShow();
-		#ifdef PLATFORM_CONSOLE
-			layoutRoot.FindAnyWidget( "play_panel_root" ).Show( GetGame().GetInput().IsEnabledMouseAndKeyboardEvenOnServer() );
-			layoutRoot.FindAnyWidget( "toolbar_bg" ).Show( !GetGame().GetInput().IsEnabledMouseAndKeyboardEvenOnServer() );
-		#endif
 	}
 	
 	override void Update( float timeslice )
@@ -532,5 +565,13 @@ class TutorialsMenu extends UIScriptedMenu
 		{
 			text2.SetColor( color );
 		}
+	}
+	
+	protected void UpdateControlsElements()
+	{
+		RichTextWidget toolbar_b	= RichTextWidget.Cast(layoutRoot.FindAnyWidget("BackIcon"));
+		RichTextWidget toolbar_b2	= RichTextWidget.Cast(layoutRoot.FindAnyWidget("BackIcon0"));
+		toolbar_b.SetText(InputUtils.GetRichtextButtonIconFromInputAction("UAUIBack", "", EUAINPUT_DEVICE_CONTROLLER, InputUtils.ICON_SCALE_TOOLBAR));
+		toolbar_b2.SetText(InputUtils.GetRichtextButtonIconFromInputAction("UAUIBack", "", EUAINPUT_DEVICE_CONTROLLER, InputUtils.ICON_SCALE_TOOLBAR));
 	}
 }

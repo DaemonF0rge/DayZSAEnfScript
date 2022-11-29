@@ -2,11 +2,7 @@ class ActionTurnOnSpotlight: ActionInteractBase
 {	
 	void ActionTurnOnSpotlight()
 	{
-	}
-
-	override string GetText()
-	{
-		return "#switch_on";
+		m_Text = "#switch_on";
 	}
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

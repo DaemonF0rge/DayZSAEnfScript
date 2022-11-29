@@ -1,25 +1,68 @@
-class PluginItemDiagnostic extends PluginBase
+class PluginItemDiagnosticEventHandler extends ScriptedWidgetEventHandler
 {
+	PluginItemDiagnostic m_Owner;
+	override bool OnMouseEnter(Widget w, int x, int y)
+	{
+		if( ButtonWidget.Cast(w))
+		{
+			GetGame().GetMission().AddActiveInputExcludes({"menu"});
+		}
+		return true;
+	}
+	
+	override bool OnMouseLeave(Widget w, Widget enterW, int x, int y)
+	{
+		if( ButtonWidget.Cast(w))
+		{
+			GetGame().GetMission().RemoveActiveInputExcludes({"menu"},true);
+		}
+		return true;
+	}
+	
+	override bool OnClick( Widget w, int x, int y, int button )
+	{
+		return m_Owner.OnClick( w, x, y, button );
+	}
+
+}
+
+
+
+class PluginItemDiagnostic extends PluginDeveloper
+{
+	Object m_Entity;
+	
+	
 	ref Timer 						myTimer1;
-	ref map<PlayerBase,ItemBase> 	m_ObserversMap = new map<PlayerBase,ItemBase>;
+	ref map<PlayerBase,Object> 	m_ObserversMap = new map<PlayerBase,Object>;
 	ref array<string> 				m_Agents = new array<string>;
 	ref map<string,float> 			m_Floats = new map<string,float>;
 	ref map<string,float> 			m_VarsNumbersFinalServer = new map<string,float>;
 	ref map<string,float> 			m_VarsFinalClient = new map<string,float>;
 	ref array<ref Param>		m_Properties = new array<ref Param>;
-	bool 								m_IsActive	= false;
-	string								m_NoteClient;
+	bool 									m_IsActive	= false;
+	string									m_NoteClient;
+	ref PluginItemDiagnosticEventHandler 	m_EventHandler;
 	
 	Widget 				m_DebugRootWidget;
+	Widget 				m_FrameWidget;
+	
 	TextListboxWidget 	m_DebugAgentListWidget;
-	TextListboxWidget 	m_DebugFloatsListWidget;
-	TextListboxWidget 	m_DebugStringsListWidget;
+	TextWidget 			m_DebugOutputServer;
+	TextWidget 			m_DebugOutputClient;
 	TextListboxWidget 	m_DebugFloatsProperListWidget;
 	TextListboxWidget 	m_DebugClientVarsWidget;
 	TextWidget 			m_ClassNameWidget;
+	TextWidget 			m_DistanceWidget;
 	ItemPreviewWidget 	m_ItemPreviewWidget;
+	
+	ButtonWidget		m_DebugButtonWidget1;
+	ButtonWidget		m_DebugButtonWidget2;
+	ButtonWidget		m_DebugButtonWidget3;
+	ButtonWidget		m_DebugButtonWidget4;
 
-
+	Shape 				m_ItemLine;
+	
 	void PluginItemDiagnostic()
 	{
 		#ifndef NO_GUI
@@ -32,9 +75,46 @@ class PluginItemDiagnostic extends PluginBase
 	void ~PluginItemDiagnostic()
 	{
 		ClearProperties();
+		if (m_ItemLine)
+		{
+			m_ItemLine.Destroy();
+			m_ItemLine = null;
+		}
 	}
 
-	void RegisterDebugItem(ItemBase item, PlayerBase player)
+	
+	bool OnClick( Widget w, int x, int y, int button )
+	{
+		int index;
+		
+		if (w == m_DebugButtonWidget1)
+		{
+			index = 1;
+		}
+		else if (w == m_DebugButtonWidget2)
+		{
+			index = 2;
+		}		
+		else if (w == m_DebugButtonWidget3)
+		{
+			index = 3;
+		}
+		else if (w == m_DebugButtonWidget4)
+		{
+			index = 4;
+		}
+		
+		#ifdef DEVELOPER
+		EntityAI entity = EntityAI.Cast(_item);
+		if(entity)
+			entity.OnDebugButtonPressClient(index);
+		#endif
+		
+		GetGame().RPCSingleParam(null, ERPCs.DEV_RPC_ITEM_DIAG_BUTTON, new Param1<int>(index),true, GetGame().GetPlayer().GetIdentity());
+		return true;
+	}
+	
+	void RegisterDebugItem(Object item, PlayerBase player)
 	{
 		if(!myTimer1)
 		{
@@ -50,6 +130,14 @@ class PluginItemDiagnostic extends PluginBase
 		{
 			m_ObserversMap.Insert(player,item);
 		}
+		#ifdef DEVELOPER
+		SetDebugDeveloper_item(item);
+		#endif
+	}
+	
+	Object GetWatchedItem(PlayerBase player)
+	{
+		return m_ObserversMap.Get(player);
 	}
 	
 	
@@ -58,25 +146,37 @@ class PluginItemDiagnostic extends PluginBase
 		return m_IsActive;
 	}
 
+	void OnScriptMenuOpened(bool opened/*1 - opened , 0 - closed*/)
+	{
+		if(m_DebugRootWidget && IsActive()) 
+			m_DebugRootWidget.Show(!opened);
+	}
+	
+	
 	void ShowWidgets(bool show)
 	{
-		if(m_DebugRootWidget) m_DebugRootWidget.Show(show);
+		m_IsActive = show;
+			
+		if(m_DebugRootWidget) 
+			m_DebugRootWidget.Show(show);
 	}
 
 	void ToggleDebugWindowEvent()
 	{
-		if(m_IsActive)
+		if (m_IsActive)
 		{		
 			PlayerBase player = PlayerBase.Cast(GetGame().GetPlayer());
-			//GetGame().RPCSingleParam(player, RPC_ITEM_DIAG_CLOSE,NULL);
+			GetGame().RPCSingleParam(player, ERPCs.RPC_ITEM_DIAG_CLOSE,null, true);
 			ShowWidgets(false);
 			ClearWidgets();
-			m_IsActive = false;
+			GetGame().GetInput().ChangeGameFocus(-1);
+			GetGame().GetUIManager().ShowUICursor(false);
+			//m_IsActive = false;
 		}
 		else
 		{
 			ShowWidgets(true);
-			m_IsActive = true;
+			//m_IsActive = true;
 		}
 
 	}
@@ -84,8 +184,8 @@ class PluginItemDiagnostic extends PluginBase
 	void ClearWidgets()
 	{
 		m_DebugAgentListWidget.ClearItems();
-		m_DebugFloatsListWidget.ClearItems();
-		m_DebugStringsListWidget.ClearItems();
+		m_DebugOutputServer.SetText("");
+		m_DebugOutputClient.SetText("");
 		m_DebugFloatsProperListWidget.ClearItems();
 		m_ItemPreviewWidget.SetItem(NULL);
 		m_ClassNameWidget.SetText("");		
@@ -95,13 +195,13 @@ class PluginItemDiagnostic extends PluginBase
 	{
 		for(int i = 0; i < m_ObserversMap.Count();i++)
 		{
-			ItemBase item = m_ObserversMap.GetElement(i);
+			Object item = m_ObserversMap.GetElement(i);
 			PlayerBase player = m_ObserversMap.GetKey(i);
 
 			if (item && player) 
 			{
-				GeneratePropertiesObject(item);
-				SendRPC(item, player.GetIdentity());
+				GeneratePropertiesObject(EntityAI.Cast(item));
+				SendRPC(item, player);
 			}
 			else
 			{
@@ -118,19 +218,24 @@ class PluginItemDiagnostic extends PluginBase
 	}
 
 
-	void GeneratePropertiesObject(ItemBase item)
+	void GeneratePropertiesObject(EntityAI item)
 	{
 		ClearProperties();
 		GetLocalProperties(item, m_Properties);
-		/*
-		int count = m_Properties.Count();
-		Debug.Log("items saved = "+count.ToString(),"fuckup");
-		*/
+
 	}
 	
-	void SendRPC(ItemBase item, PlayerIdentity identity)
+	void SendRPC(Object item, PlayerBase player)
 	{
-		GetGame().RPC(item,ERPCs.RPC_ITEM_DIAG,m_Properties,true,identity);
+		Param1<Object> p1 = new Param1<Object>(item);
+		m_Properties.InsertAt(p1,0);
+		GetGame().RPC(player,ERPCs.RPC_ITEM_DIAG,m_Properties,true,player.GetIdentity());
+		
+		if (!GetGame().IsMultiplayer())
+		{
+			m_Entity = item;
+		}
+
 	}
 	
 	void StopWatchRequest(PlayerBase player)//called from player after an RPC call
@@ -141,27 +246,57 @@ class PluginItemDiagnostic extends PluginBase
 		}
 	}
 
-	void OnRPC(ItemBase item, ParamsReadContext ctx)
+	void OnRPC(Object entity, ParamsReadContext ctx)
 	{
+		
+		if (!GetGame().IsMultiplayer())
+		{
+			entity = m_Entity;
+		}
+		else
+		{
+			m_Entity = entity;
+		}
+		
+		ItemBase item = ItemBase.Cast(entity);
+		
+		
+		
+		#ifdef DEVELOPER
+		SetDebugDeveloper_item(entity);
+		#endif
+		if( !IsActive() )
+		{
+			ShowWidgets(true);
+		}
 
-		ctx.Read(CachedObjectsParams.PARAM1_INT);
-		int agents_count 	= CachedObjectsParams.PARAM1_INT.param1;
+		ctx.Read(CachedObjectsParams.PARAM1_STRING);
+		string debug_output_server = CachedObjectsParams.PARAM1_STRING.param1;
+		array<ref Param> vars_client;
+		array<ref Param> vars_server;
+		if (item)
+		{
+			ctx.Read(CachedObjectsParams.PARAM1_INT);//hardcoded to index 1
+			int agents_count 	= CachedObjectsParams.PARAM1_INT.param1;
 
-		ctx.Read(CachedObjectsParams.PARAM1_INT);
-		int individual_items_count 	= CachedObjectsParams.PARAM1_INT.param1;
-		
-		FillAgentArray(ctx, agents_count);
-		
-		array<ref Param> vars_server = new array<ref Param>;
-		FillServerFinalVars(individual_items_count, ctx, vars_server);
-		
-		
-		array<ref Param> vars_client = new array<ref Param>;
-		GetLocalProperties(item, vars_client, true);
-		
-		//FillClientVarsMap(item);
-		//FillClientString(item);
-		DisplayAll(item, vars_server, vars_client );
+			ctx.Read(CachedObjectsParams.PARAM1_INT);//hardcoded to index 2
+			int individual_items_count 	= CachedObjectsParams.PARAM1_INT.param1;
+			
+			FillAgentArray(ctx, agents_count);
+			
+			vars_server = new array<ref Param>;
+			FillServerFinalVars(individual_items_count, ctx, vars_server);
+
+			vars_client = new array<ref Param>;
+			GetLocalProperties(item, vars_client, true);
+		}
+		if (EntityAI.Cast(entity))
+		{
+			DisplayAll(EntityAI.Cast(entity), vars_server, vars_client, debug_output_server );
+		}
+		m_DebugRootWidget.Show(!GetDayZGame().IsInventoryOpen() && !GetGame().GetUIManager().FindMenu(MENU_SCRIPTCONSOLE));
+
+			
 	}
 	
 	void FillServerFinalVars(int count, ParamsReadContext ctx, array<ref Param> params )
@@ -179,27 +314,79 @@ class PluginItemDiagnostic extends PluginBase
 			params.Insert(p2);
 		}
 		//PrintString("----------------------------------------------------");
-			
 	}
 	
 	void InitializeWidgets()
 	{
-		if(!m_DebugRootWidget) m_DebugRootWidget = GetGame().GetWorkspace().CreateWidgets("gui/layouts/debug/debug_item.layout");
+		m_EventHandler = new PluginItemDiagnosticEventHandler;
+		m_EventHandler.m_Owner = this;
+		
+		if(!m_DebugRootWidget) 
+			m_DebugRootWidget = GetGame().GetWorkspace().CreateWidgets("gui/layouts/debug/debug_item.layout");
+
+		m_DebugRootWidget.SetHandler(m_EventHandler);
+
+		m_FrameWidget = m_DebugRootWidget.FindAnyWidget("FrameWidget0");
 		m_DebugAgentListWidget = TextListboxWidget.Cast(m_DebugRootWidget.FindAnyWidget("w_Agents"));
-		m_DebugFloatsListWidget = TextListboxWidget.Cast(m_DebugRootWidget.FindAnyWidget("w_Floats"));
-		m_DebugStringsListWidget = TextListboxWidget.Cast(m_DebugRootWidget.FindAnyWidget("w_Strings"));
+		m_DebugOutputServer = TextWidget.Cast(m_DebugRootWidget.FindAnyWidget("DebugOutputServer"));
+		m_DebugOutputClient = TextWidget.Cast(m_DebugRootWidget.FindAnyWidget("DebugOutputClient"));
 		m_DebugFloatsProperListWidget = TextListboxWidget.Cast(m_DebugRootWidget.FindAnyWidget("w_FloatsProper"));
 		m_ItemPreviewWidget = ItemPreviewWidget.Cast(m_DebugRootWidget.FindAnyWidget("w_ItemPreview"));
 		m_ClassNameWidget = TextWidget.Cast(m_DebugRootWidget.FindAnyWidget("w_ClassName"));
+		m_DistanceWidget = TextWidget.Cast(m_DebugRootWidget.FindAnyWidget("w_Distance"));
+		
+		m_DebugButtonWidget1 = ButtonWidget.Cast(m_DebugRootWidget.FindAnyWidget("DebugButton1"));
+		m_DebugButtonWidget2 = ButtonWidget.Cast(m_DebugRootWidget.FindAnyWidget("DebugButton2"));
+		m_DebugButtonWidget3 = ButtonWidget.Cast(m_DebugRootWidget.FindAnyWidget("DebugButton3"));
+		m_DebugButtonWidget4 = ButtonWidget.Cast(m_DebugRootWidget.FindAnyWidget("DebugButton4"));
 	}
 
-	void DisplayAll(ItemBase item, array<ref Param> vars_server, array<ref Param> vars_client)
+	override void OnUpdate(float delta_time)
+	{
+		super.OnUpdate(delta_time);
+		if (!m_Entity || !m_IsActive)
+		{
+			
+			if (m_ItemLine)
+			{
+				m_ItemLine.Destroy();
+				m_ItemLine = null;
+			}
+			return;
+		}
+		vector pts[2];
+		pts[0] = GetGame().GetPlayer().GetPosition();
+		pts[1] = m_Entity.GetPosition();
+		if (m_ItemLine)
+		{
+			m_ItemLine.Destroy();
+			m_ItemLine = null;
+			
+		}
+		m_ItemLine = Shape.CreateLines(COLOR_BLUE, ShapeFlags.TRANSP|ShapeFlags.NOOUTLINE|ShapeFlags.NOZBUFFER, pts, 2);
+		m_DistanceWidget.SetText(vector.Distance(pts[0], pts[1]).ToString()+"m.");
+	}
+	
+	void DisplayAll(EntityAI item, array<ref Param> vars_server, array<ref Param> vars_client, string debug_text_server)
 	{
 		m_ClassNameWidget.SetText( item.GetType() );
 		m_ItemPreviewWidget.SetItem(item);
 		UpdateAgentWidget();
 		//UpdateFloatWidget();
-		UpdateNumericalVarsWidget(vars_server, vars_client);
+		if (vars_server && vars_client)
+			UpdateNumericalVarsWidget(vars_server, vars_client);
+		m_DebugOutputServer.SetText(debug_text_server);
+		m_DebugOutputClient.SetText(item.GetDebugText());
+		
+		string button1, button2, button3, button4;
+		item.GetDebugButtonNames(button1, button2, button3, button4);
+		m_DebugButtonWidget1.SetText(button1);
+		m_DebugButtonWidget2.SetText(button2);
+		m_DebugButtonWidget3.SetText(button3);
+		m_DebugButtonWidget4.SetText(button4);
+		
+		
+	
 	}	
 
 	void FillAgentArray(ParamsReadContext ctx, int agents_count)
@@ -249,20 +436,30 @@ class PluginItemDiagnostic extends PluginBase
 		Debug.LogArrayString(m_Agents,"ItemDebug");
 		Debug.Log("----------------------","ItemDebug");
 	}
-}
+	
 	//-------------------------
 	// QUERY FOR DEBUG PROPERTIES
 	//-------------------------
-	void GetLocalProperties(ItemBase item, array<ref Param> properties, bool client = false)
+	void GetLocalProperties(EntityAI entity, array<ref Param> properties, bool client = false)
 	{
+		if(!entity)
+			return;
+		ItemBase item = ItemBase.Cast(entity);
+
 		if(!client)
 		{
+			// -------- DEBUG OUTPUT ------
+			Param1<string> debug_output = new Param1<string>(entity.GetDebugText());
+			properties.Insert(debug_output);
+			if(!item)
+				return;
 			// -------- AGENTS ------------
 			int num_of_agents = FillWithAgents(item, properties);
 			Param1<int> agents_count = new Param1<int>(num_of_agents);
-			properties.InsertAt(agents_count,0);
+			properties.InsertAt(agents_count,1);// hard coded index 1 !!
 		}
-	
+		if(!item)
+			return;
 		// ------ INDIVIDUAL VARS------
 		int number_of_items = 0;
 		Param2<string, float> quantity = new Param2<string, float>("quantity", item.GetQuantity() );
@@ -315,12 +512,16 @@ class PluginItemDiagnostic extends PluginBase
 		if(!client)
 		{
 			Param1<int> item_count = new Param1<int>(number_of_items);
-			properties.InsertAt(item_count,1);
+			properties.InsertAt(item_count,2);
 		}
 	}
 
 	int FillWithAgents(ItemBase item, array<ref Param> properties)
 	{
+		if (!item)
+		{
+			return 0;
+		}
 		int agents = item.GetAgents();
 		if(agents == 0) return 0;
 		int num_of_agents = 0;
@@ -339,4 +540,6 @@ class PluginItemDiagnostic extends PluginBase
 
 		return num_of_agents;
 	}
+}
+	
 

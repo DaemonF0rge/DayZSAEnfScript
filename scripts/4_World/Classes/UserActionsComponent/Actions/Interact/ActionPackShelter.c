@@ -7,17 +7,13 @@ class ActionDeconstructShelter : ActionContinuousBase
 		m_CommandUID 		= DayZPlayerConstants.CMD_ACTIONFB_DEPLOY_2HD;
 		m_FullBody			= true;
 		m_StanceMask		= DayZPlayerConstants.STANCEMASK_CROUCH | DayZPlayerConstants.STANCEMASK_ERECT;
+		m_Text = "#pack_tent";
 	}
 	
 	override void CreateConditionComponents()  
 	{
 		m_ConditionTarget = new CCTCursor(UAMaxDistances.DEFAULT);
 		m_ConditionItem = new CCINone;
-	}
-	
-	override string GetText()
-	{
-		return "#pack_tent";
 	}
 	
 	override typename GetInputType()
@@ -48,7 +44,7 @@ class ActionDeconstructShelter : ActionContinuousBase
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
 	{	
 		//Action not allowed if player has broken legs
-		if (player.m_BrokenLegState == eBrokenLegs.BROKEN_LEGS)
+		if (player.GetBrokenLegs() == eBrokenLegs.BROKEN_LEGS)
 			return false;
 		
 		Object targetObject = target.GetObject();

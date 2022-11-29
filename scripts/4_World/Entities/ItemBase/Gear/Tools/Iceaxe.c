@@ -4,7 +4,6 @@ class Iceaxe: Inventory_Base
 	{
 		super.SetActions();
 		
-		AddAction(ActionBuildPartSwitch);
 		AddAction(ActionBuryAshes);
 		AddAction(ActionDigGardenPlot);
 		AddAction(ActionDismantleGardenPlot);

@@ -54,6 +54,7 @@ class PeelPotato extends RecipeBase
 		InsertIngredient(1,"Screwdriver");
 		InsertIngredient(1,"Hatchet");
 		InsertIngredient(1,"HandSaw");
+		InsertIngredient(1,"BoneKnife");
 		
 		m_IngredientAddHealth[1] = -0.5;// 0 = do nothing
 		m_IngredientSetHealth[1] = -1; // -1 = do nothing

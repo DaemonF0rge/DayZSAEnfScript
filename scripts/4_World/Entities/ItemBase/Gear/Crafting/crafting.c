@@ -19,6 +19,7 @@ class LongWoodenStick: Inventory_Base
 		AddAction(ActionClapBearTrapWithThisItem);
 		AddAction(ActionBreakLongWoodenStick);
 		AddAction(ActionAttachToConstruction);
+		
 	}
 };
 
@@ -42,6 +43,7 @@ class Rope: Inventory_Base
 		super.SetActions();
 		
 		AddAction(ActionRestrainTarget);
+		AddAction(ActionCraftRopeBelt);
 		AddAction(ActionRestrainSelf);
 	}
 	
@@ -60,6 +62,7 @@ class Rope: Inventory_Base
 		return (!GetInventory().IsAttachment());
 	}
 };
+
 class Spear : Inventory_Base
 {
 	override void SetActions()
@@ -67,7 +70,18 @@ class Spear : Inventory_Base
 		super.SetActions();
 		
 		AddAction(ActionClapBearTrapWithThisItem);
+		
 	}
+};
+
+class SpearStone : Spear
+{
+
+};
+
+class SpearBone : Spear
+{
+
 };
 
 class Fabric : Inventory_Base

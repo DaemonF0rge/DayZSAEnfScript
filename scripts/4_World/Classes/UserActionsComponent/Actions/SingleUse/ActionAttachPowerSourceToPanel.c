@@ -3,17 +3,13 @@ class ActionAttachPowerSourceToPanel: ActionSingleUseBase
 {
 	void ActionAttachPowerSourceToPanel()
 	{
+		m_Text = "#attach";
 	}
 
 	override void CreateConditionComponents() 
 	{
 		m_ConditionItem = new CCINonRuined;
 		m_ConditionTarget = new CCTNonRuined(UAMaxDistances.DEFAULT);
-	}
-		
-	override string GetText()
-	{
-		return "#attach";
 	}
 	
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

@@ -60,4 +60,31 @@ class TerritoryFlagKit extends KitBase
 			CreateRope(rope);
 		}
 	}
+	
+	//================================================================
+	// DEBUG
+	//================================================================	
+	//Debug menu Spawn Ground Special
+	override void OnDebugSpawn()
+	{
+		SpawnEntityOnGroundPos("SledgeHammer", GetPosition());
+		SpawnEntityOnGroundPos("Hammer", GetPosition());
+		SpawnEntityOnGroundPos("Shovel", GetPosition());
+		
+		Nail nails = Nail.Cast(SpawnEntityOnGroundPos("Nail", GetPosition()));
+		nails.SetQuantity(60);
+		SpawnEntityOnGroundPos("Rope", GetPosition());
+		SpawnEntityOnGroundPos("MetalWire", GetPosition());
+		SpawnEntityOnGroundPos("Flag_DayZ", GetPosition());
+
+		for (int i0 = 0; i0 < 32; i0++)
+		{
+			SpawnEntityOnGroundPos("Stone", GetPosition());
+		}
+		
+		for (int i1 = 0; i1 < 10; i1++)
+		{
+			SpawnEntityOnGroundPos("WoodenLog", GetPosition());
+		}
+	}
 }

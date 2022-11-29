@@ -40,6 +40,7 @@ class DeCraftLeatherCourierBag extends RecipeBase
 		InsertIngredient(1,"HandSaw");
 		InsertIngredient(1,"KitchenKnife");
 		InsertIngredient(1,"SteakKnife");
+		InsertIngredient(1,"BoneKnife");
 		InsertIngredient(1,"HayHook");
 		InsertIngredient(1,"StoneKnife");
 		InsertIngredient(1,"Cleaver");

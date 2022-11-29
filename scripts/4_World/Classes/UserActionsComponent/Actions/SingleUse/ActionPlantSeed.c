@@ -6,6 +6,7 @@ class ActionPlantSeed: ActionSingleUseBase
 		
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONMOD_DROPITEM_HANDS;
 		m_FullBody = false;
+		m_Text = "#plant_seed";
 	}
 	
 	override void CreateConditionComponents()  
@@ -17,11 +18,6 @@ class ActionPlantSeed: ActionSingleUseBase
 	override bool HasTarget()
 	{
 		return true;
-	}
-
-	override string GetText()
-	{
-		return "#plant_seed";
 	}
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

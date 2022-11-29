@@ -175,7 +175,7 @@ class SymptomBase
 				#endif
 			}
 		}
-		if( !GetGame().IsMultiplayer() || GetGame().IsClient() )
+		if( !GetGame().IsDedicatedServer() )
 		{
 			OnGetActivatedClient(m_Player);
 		}
@@ -193,7 +193,7 @@ class SymptomBase
 				SyncToClientDeactivated( GetType(), GetUID() );
 			}
 		}
-		if( !GetGame().IsMultiplayer() || GetGame().IsClient() )
+		if( !GetGame().IsDedicatedServer() )
 		{
 			OnGetDeactivatedClient(m_Player);
 		}
@@ -268,7 +268,7 @@ class SymptomBase
 
 	void CheckSoundFinished()
 	{
-		if(GetGame().IsServer() || !GetGame().IsMultiplayer())
+		if(GetGame().IsServer())
 		{
 			if(m_PlayedSound && m_ActivatedTime >= m_Duration)
 				RequestDestroy();

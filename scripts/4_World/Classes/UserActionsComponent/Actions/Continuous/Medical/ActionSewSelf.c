@@ -15,6 +15,7 @@ class ActionSewSelf: ActionBandageBase
 		m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT | DayZPlayerConstants.STANCEMASK_CROUCH;
 		m_SpecialtyWeight = UASoftSkillsWeight.PRECISE_MEDIUM;
+		m_Text = "#sew_cuts";
 	}
 	
 	override void CreateConditionComponents()  
@@ -26,11 +27,6 @@ class ActionSewSelf: ActionBandageBase
 	override bool HasTarget()
 	{
 		return false;
-	}
-			
-	override string GetText()
-	{
-		return "#sew_cuts";
 	}
 	/*
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

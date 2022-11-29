@@ -8,16 +8,14 @@ class FNX45_Base : Pistol_Base
 	//Debug menu Spawn Ground Special
 	override void OnDebugSpawn()
 	{
-		EntityAI entity;
-		if ( Class.CastTo(entity, this) )
-		{
-			entity.GetInventory().CreateInInventory( "PistolSuppressor" );
-			entity.GetInventory().CreateInInventory( "FNP45_MRDSOptic" );
-			entity.GetInventory().CreateInInventory( "TLRLight" );
-			entity.GetInventory().CreateInInventory( "Battery9V" );
-			entity.GetInventory().CreateInInventory( "Battery9V" );
-			entity.SpawnEntityOnGroundPos("Mag_FNX45_15Rnd", entity.GetPosition());
-		}
+		GameInventory inventory = GetInventory();
+		inventory.CreateInInventory( "PistolSuppressor" );
+		inventory.CreateInInventory( "FNP45_MRDSOptic" );
+		inventory.CreateInInventory( "TLRLight" );
+		inventory.CreateInInventory( "Battery9V" );
+		inventory.CreateInInventory( "Battery9V" );
+		
+		SpawnAttachedMagazine("Mag_FNX45_15Rnd");
 	}
 	
 };

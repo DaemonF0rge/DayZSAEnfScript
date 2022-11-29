@@ -15,6 +15,7 @@ class ActionDefibrilateTarget: ActionDefibrilateBase
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONFB_CRAFTING;
 		m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_CROUCH;
+		m_Text = "#defibrilate_target";
 	}
 	
 	override void CreateConditionComponents()  
@@ -22,11 +23,6 @@ class ActionDefibrilateTarget: ActionDefibrilateBase
 		
 		m_ConditionItem = new CCINonRuined;
 		m_ConditionTarget = new CCTMan(UAMaxDistances.DEFAULT);
-	}
-	
-	override string GetText()
-	{
-		return "#defibrilate_target";
 	}
 
 	override void OnFinishProgressClient( ActionData action_data )

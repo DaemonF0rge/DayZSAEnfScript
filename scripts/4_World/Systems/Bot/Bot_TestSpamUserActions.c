@@ -41,7 +41,7 @@ class BotTestSpamUserActions_GetEntityFromSlot : BotTimedWait
 			Error("NI!");
 		}*/
 
-		if (GetGame().IsClient() || !GetGame().IsMultiplayer())
+		if (!GetGame().IsDedicatedServer())
 		{
 			m_Entity = m_Owner.GetInventory().FindAttachment(InventorySlots.GetSlotIdFromString("Legs"));
 			m_Owner.PredictiveDropEntity(m_Entity);
@@ -61,7 +61,7 @@ class BotTestSpamUserActions_GetEntityFromSlot : BotTimedWait
 	{
 		super.OnUpdate(dt);
 
-		if (GetGame().IsClient() || !GetGame().IsMultiplayer())
+		if (!GetGame().IsDedicatedServer())
 		{
 			if (m_Run && m_Entity)
 			{
@@ -69,7 +69,7 @@ class BotTestSpamUserActions_GetEntityFromSlot : BotTimedWait
 				switch (m_RunStage)
 				{
 					case 0:
-						botDebugPrint("[bot] + " + m_Owner + " STS=" + m_Owner.GetSimulationTimeStamp() + " Stage=" + m_RunStage + " item=" + m_Entity);
+						botDebugPrint("[bot] + " + m_Owner + " STS = " + m_Owner.GetSimulationTimeStamp() + " Stage=" + m_RunStage + " item=" + m_Entity);
 						ScriptInputUserData ctx = new ScriptInputUserData;
 						HandEventTake e = new HandEventTake(m_Owner, m_Src);
 						InventoryInputUserData.SerializeHandEvent(ctx, e);
@@ -77,7 +77,7 @@ class BotTestSpamUserActions_GetEntityFromSlot : BotTimedWait
 						break;
 
 					case 1:
-						botDebugPrint("[bot] + " + m_Owner + " STS=" + m_Owner.GetSimulationTimeStamp() + " Stage=" + m_RunStage + " item=" + m_Entity);
+						botDebugPrint("[bot] + " + m_Owner + " STS = " + m_Owner.GetSimulationTimeStamp() + " Stage=" + m_RunStage + " item=" + m_Entity);
 						ScriptInputUserData ctx1 = new ScriptInputUserData;
 						HandEventTake e1 = new HandEventTake(m_Owner, m_Src);
 						InventoryInputUserData.SerializeHandEvent(ctx1, e1);
@@ -85,7 +85,7 @@ class BotTestSpamUserActions_GetEntityFromSlot : BotTimedWait
 						break;
 
 					case 5:
-						botDebugPrint("[bot] + " + m_Owner + " STS=" + m_Owner.GetSimulationTimeStamp() + " Stage=" + m_RunStage + " item=" + m_Entity);
+						botDebugPrint("[bot] + " + m_Owner + " STS = " + m_Owner.GetSimulationTimeStamp() + " Stage=" + m_RunStage + " item=" + m_Entity);
 						ScriptInputUserData ctx2 = new ScriptInputUserData;
 						InventoryLocation dst = new InventoryLocation;
 						dst.SetAttachment(m_Owner, m_Entity, InventorySlots.GetSlotIdFromString("Legs"));
@@ -94,7 +94,7 @@ class BotTestSpamUserActions_GetEntityFromSlot : BotTimedWait
 						break;
 
 					case 10:
-						botDebugPrint("[bot] + " + m_Owner + " STS=" + m_Owner.GetSimulationTimeStamp() + " Stage=" + m_RunStage + " item=" + m_Entity);
+						botDebugPrint("[bot] + " + m_Owner + " STS = " + m_Owner.GetSimulationTimeStamp() + " Stage=" + m_RunStage + " item=" + m_Entity);
 						ScriptInputUserData ctx3 = new ScriptInputUserData;
 						InventoryLocation dst2 = new InventoryLocation;
 						dst2.SetAttachment(m_Owner, m_Entity, InventorySlots.GetSlotIdFromString("Legs"));

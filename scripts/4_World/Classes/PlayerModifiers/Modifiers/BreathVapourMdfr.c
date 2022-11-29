@@ -1,5 +1,6 @@
 const int BREATH_VAPOUR_LEVEL_MAX = 3;
-class BreathVapourMdfr: ModifierBase
+
+class BreathVapourMdfr extends ModifierBase
 {
 	override void Init()
 	{
@@ -7,6 +8,8 @@ class BreathVapourMdfr: ModifierBase
 		m_ID 					= eModifiers.MDF_BREATH_VAPOUR;
 		m_TickIntervalInactive 	= DEFAULT_TICK_TIME_INACTIVE;
 		m_TickIntervalActive 	= 6;
+		DisableDeactivateCheck();
+
 	}
 
 	override bool ActivateCondition(PlayerBase player)

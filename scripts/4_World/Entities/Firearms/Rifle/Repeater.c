@@ -17,8 +17,8 @@ enum RPTStableStateID
 
 class RPTEmptyDischarged extends WeaponStableState
 {
-	override void OnEntry (WeaponEventBase e) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { EmptyDischarged C0"); super.OnEntry(e); }
-	override void OnExit (WeaponEventBase e) { super.OnExit(e); wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } EmptyDischarged C0"); }
+	override void OnEntry (WeaponEventBase e) { if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { EmptyDischarged C0"); } super.OnEntry(e); }
+	override void OnExit (WeaponEventBase e) { super.OnExit(e); if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } EmptyDischarged C0"); } }
 	override int GetCurrentStateID () { return RPTStableStateID.EmptyDischarged; }
 	override bool HasBullet () { return false; }
 	override bool HasMagazine () { return false; }
@@ -28,8 +28,8 @@ class RPTEmptyDischarged extends WeaponStableState
 };
 class RPTLoadedCharged extends WeaponStableState
 {
-	override void OnEntry (WeaponEventBase e) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { LoadedCharged C1"); super.OnEntry(e); }
-	override void OnExit (WeaponEventBase e) { super.OnExit(e); wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } LoadedCharged C1"); }
+	override void OnEntry (WeaponEventBase e) { if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { LoadedCharged C1"); } super.OnEntry(e); }
+	override void OnExit (WeaponEventBase e) { super.OnExit(e); if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } LoadedCharged C1"); } }
 	override int GetCurrentStateID () { return RPTStableStateID.LoadedCharged; }
 	override bool HasBullet () { return true; }
 	override bool HasMagazine () { return false; }
@@ -39,8 +39,8 @@ class RPTLoadedCharged extends WeaponStableState
 };
 class RPTLoadedDischarged extends WeaponStableState
 {
-	override void OnEntry (WeaponEventBase e) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { LoadedDischarged D1"); super.OnEntry(e); }
-	override void OnExit (WeaponEventBase e) { super.OnExit(e); wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } LoadedDischarged D1"); }
+	override void OnEntry (WeaponEventBase e) { if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { LoadedDischarged D1"); } super.OnEntry(e); }
+	override void OnExit (WeaponEventBase e) { super.OnExit(e); if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } LoadedDischarged D1"); } }
 	override int GetCurrentStateID () { return RPTStableStateID.LoadedDischarged; }
 	override bool HasBullet () { return true; }
 	override bool HasMagazine () { return false; }
@@ -50,8 +50,8 @@ class RPTLoadedDischarged extends WeaponStableState
 };
 class RPTLoadedJammed extends WeaponStateJammed
 {
-	override void OnEntry (WeaponEventBase e) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { LoadedJammed JF"); super.OnEntry(e); }
-	override void OnExit (WeaponEventBase e) { super.OnExit(e); wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } LoadedJammed JF"); }
+	override void OnEntry (WeaponEventBase e) { if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { LoadedJammed JF"); } super.OnEntry(e); }
+	override void OnExit (WeaponEventBase e) { super.OnExit(e); if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } LoadedJammed JF"); } }
 	override int GetCurrentStateID () { return RPTStableStateID.LoadedJammed; }
 	override bool HasBullet () { return true; }
 	override bool HasMagazine () { return false; }
@@ -243,6 +243,8 @@ class Repeater : Repeater_Base
 	//Debug menu Spawn Ground Special
 	override void OnDebugSpawn()
 	{
+		super.OnDebugSpawn();
+		
 		EntityAI entity;
 		if ( Class.CastTo(entity, this) )
 		{

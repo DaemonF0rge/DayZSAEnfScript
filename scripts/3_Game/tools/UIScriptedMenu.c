@@ -566,6 +566,7 @@ class UIScriptedMenu extends UIMenuPanel
 	}
 	
 	void OnRPC(ParamsReadContext ctx){}
+	void OnRPCEx(int rpc_type, ParamsReadContext ctx){}
 	
 	void InitNoteWrite(EntityAI paper, EntityAI pen, string text = "") {}
 	void InitNoteRead(string text = "") {}

@@ -53,7 +53,7 @@ class ScriptCamera: GenericEntity
 		m_GamepadFreeFly = FreeFly;
 	}
 
-	override private void EOnFrame(IEntity other, float timeSlice) //EntityEvent.FRAME
+	override protected void EOnFrame(IEntity other, float timeSlice) //EntityEvent.FRAME
 	{
 		GetGame().GetInputManager().ActivateContext("ScriptCameraContext");
 		

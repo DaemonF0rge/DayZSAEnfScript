@@ -17,10 +17,14 @@ class PowerGenerator extends ItemBase
 	ref Timer 					m_SoundLoopStartTimer;
 	ref protected Effect 		m_Smoke;
 	
-	ItemBase	m_SparkPlug; // Attached spark plug item
+	ItemBase	m_SparkPlug; 	//! DEPRECATED Attached spark plug item
+	
+	protected ref UniversalTemperatureSource m_UTSource;
+	protected ref UniversalTemperatureSourceSettings m_UTSSettings;
+	protected ref UniversalTemperatureSourceLambdaEngine m_UTSLEngine;
 	
 	// Constructor
-	void PowerGenerator()
+	void PowerGenerator()	
 	{
 		SetEventMask(EntityEvent.INIT); // Enable EOnInit event
 		
@@ -29,27 +33,55 @@ class PowerGenerator extends ItemBase
 		RegisterNetSyncVariableBool("m_IsSoundSynchRemote");
 		RegisterNetSyncVariableBool("m_IsPlaceSound");
 	}
-
-	override void EOnInit( IEntity other, int extra)
+	
+	void ~PowerGenerator()
 	{
-		if ( GetGame().IsServer() )
+		SEffectManager.DestroyEffect(m_Smoke);
+	}
+	
+	override void EEInit()
+	{		
+		super.EEInit();
+		
+		if (GetGame().IsServer() || !GetGame().IsMultiplayer())
+		{
+ 			m_UTSSettings 					= new UniversalTemperatureSourceSettings();
+			m_UTSSettings.m_ManualUpdate	= true;
+			m_UTSSettings.m_TemperatureMin	= 0;
+			m_UTSSettings.m_TemperatureMax	= 80;
+			m_UTSSettings.m_RangeFull		= 1;
+			m_UTSSettings.m_RangeMax		= 2.5;
+			m_UTSSettings.m_TemperatureCap	= 8;
+			
+			m_UTSLEngine					= new UniversalTemperatureSourceLambdaEngine();
+			m_UTSource						= new UniversalTemperatureSource(this, m_UTSSettings, m_UTSLEngine);
+		}		
+	}
+	
+	override void EOnInit(IEntity other, int extra)
+	{
+		if (GetGame().IsServer())
 		{
 			m_FuelPercentage = GetCompEM().GetEnergy0To100();
 			SetSynchDirty();
 		}
-		
-		
+
 		UpdateFuelMeter();
+	}
+	
+	override float GetLiquidThroughputCoef()
+	{
+		return LIQUID_THROUGHPUT_GENERATOR;
 	}
 	
 	// Play the loop sound
 	void StartLoopSound()
 	{
-		if ( GetGame().IsClient()  ||  !GetGame().IsMultiplayer() )
+		if (GetGame().IsClient() || !GetGame().IsMultiplayer())
 		{
-			if ( GetCompEM().IsWorking() )
+			if (GetCompEM().IsWorking())
 			{
-				PlaySoundSetLoop( m_EngineLoop, LOOP_SOUND, 0, 0 );
+				PlaySoundSetLoop(m_EngineLoop, LOOP_SOUND, 0, 0);
 				
 				// Particle
 				vector local_pos = "0.3 0.21 0.4";
@@ -63,14 +95,18 @@ class PowerGenerator extends ItemBase
 	// Taking item into inventory
 	override bool CanPutInCargo( EntityAI parent )
 	{
-		if( !super.CanPutInCargo(parent) ) {return false;}
+		if (!super.CanPutInCargo(parent))
+		{
+			return false;
+		}
+
 		return CanManipulate();
 	}
 
 	// Taking item into inventory
-	override bool CanPutIntoHands ( EntityAI player ) 
+	override bool CanPutIntoHands(EntityAI player)
 	{
-		if( !super.CanPutIntoHands( parent ) )
+		if(!super.CanPutIntoHands(parent))
 		{
 			return false;
 		}
@@ -80,12 +116,7 @@ class PowerGenerator extends ItemBase
 	// Returns true/false if this item can be moved into inventory/hands
 	bool CanManipulate()
 	{
-		if ( GetCompEM().GetPluggedDevicesCount() == 0  &&  !GetCompEM().IsWorking() )
-		{
-			return true;
-		}
-		
-		return false;
+		return GetCompEM().GetPluggedDevicesCount() == 0 && !GetCompEM().IsWorking();
 	}
 	
 	/*===================================
@@ -97,7 +128,6 @@ class PowerGenerator extends ItemBase
 	{
 		m_FuelTankCapacity = GetGame().ConfigGetFloat ("CfgVehicles " + GetType() + " fuelTankCapacity");
 		m_FuelToEnergyRatio = GetCompEM().GetEnergyMax() / m_FuelTankCapacity; // Conversion ratio of 1 ml of fuel to X Energy
-		m_SparkPlug = NULL;
 		
 		UpdateFuelMeter();
 	}
@@ -105,24 +135,39 @@ class PowerGenerator extends ItemBase
 	// Generator is working
 	override void OnWorkStart()
 	{
-		if ( GetGame().IsClient()  ||  !GetGame().IsMultiplayer() )
+		if (GetGame().IsClient() || !GetGame().IsMultiplayer())
 		{
-			PlaySoundSet( m_EngineStart, START_SOUND, 0, 0 );
+			if (IsInitialized())
+			{
+				PlaySoundSet(m_EngineStart, START_SOUND, 0, 0);
+			}
 			
 			if (!m_SoundLoopStartTimer)
-				m_SoundLoopStartTimer = new Timer( CALL_CATEGORY_SYSTEM );
+			{
+				m_SoundLoopStartTimer = new Timer(CALL_CATEGORY_SYSTEM);
+			}
 			
-			if ( !m_SoundLoopStartTimer.IsRunning() ) // Makes sure the timer is NOT running already
+			if (!m_SoundLoopStartTimer.IsRunning()) // Makes sure the timer is NOT running already
 			{
 				m_SoundLoopStartTimer.Run(1.5, this, "StartLoopSound", NULL, false);
 			}
 		}
+		
+		if (GetGame().IsServer() || !GetGame().IsMultiplayer())
+		{
+			m_UTSource.SetDefferedActive(true, 20.0);
+		}
 	}
 
 	// Do work
-	override void OnWork( float consumed_energy )
+	override void OnWork(float consumed_energy)
 	{
-		if ( GetGame().IsServer() )
+		if (GetGame().IsServer() || !GetGame().IsMultiplayer())
+		{
+			m_UTSource.Update(m_UTSSettings, m_UTSLEngine);
+		}
+
+		if (GetGame().IsServer())
 		{
 			m_FuelPercentage = GetCompEM().GetEnergy0To100();
 			SetSynchDirty();
@@ -134,64 +179,64 @@ class PowerGenerator extends ItemBase
 	// Turn off when this runs out of fuel
 	override void OnWorkStop()
 	{
-		if ( GetGame().IsClient()  ||  !GetGame().IsMultiplayer() )
+		if (GetGame().IsClient() || !GetGame().IsMultiplayer())
 		{
 			// Sound
-			PlaySoundSet( m_EngineStop, STOP_SOUND, 0, 0 );
+			PlaySoundSet(m_EngineStop, STOP_SOUND, 0, 0);
 			StopSoundSet(m_EngineLoop);
 			
 			// particle
-			if (m_Smoke)
-				delete m_Smoke;
+			SEffectManager.DestroyEffect(m_Smoke);
 			
 			// Fuel meter
 			UpdateFuelMeter();
 		}
+		
+		if (GetGame().IsServer() || !GetGame().IsMultiplayer())
+		{
+			m_UTSource.SetDefferedActive(false, 20.0);
+		}
 	}
 	
 	// Called when this generator is picked up
-	override void OnItemLocationChanged( EntityAI old_owner, EntityAI new_owner ) 
+	override void OnItemLocationChanged(EntityAI old_owner, EntityAI new_owner) 
 	{
 		super.OnItemLocationChanged(old_owner, new_owner);
 		UpdateFuelMeter();
 	}
 	
-	override void EEItemAttached( EntityAI item, string slot_name )
+	override void EEItemAttached(EntityAI item, string slot_name)
 	{
-		super.EEItemAttached( item, slot_name );
+		super.EEItemAttached(item, slot_name);
 		
-		ItemBase item_IB = ItemBase.Cast( item );
+		ItemBase item_IB = ItemBase.Cast(item);
 		
-		if ( item_IB.IsKindOf("Sparkplug") )
+		if (item_IB.IsKindOf("Sparkplug") && IsInitialized())
 		{
 			ShowSelection("sparkplug_installed");
-			m_SparkPlug = item_IB;
 			
-			if ( !GetGame().IsServer()  ||  !GetGame().IsMultiplayer() )
-			{
-				EffectSound sound = SEffectManager.PlaySound(SPARKPLUG_ATTACH_SOUND, GetPosition() );
-				sound.SetSoundAutodestroy( true );
-			}
+			#ifndef SERVER
+			EffectSound sound = SEffectManager.PlaySound(SPARKPLUG_ATTACH_SOUND, GetPosition());
+			sound.SetAutodestroy( true );
+			#endif
 		}
 	}
 	
-	override void EEItemDetached( EntityAI item, string slot_name )
+	override void EEItemDetached(EntityAI item, string slot_name)
 	{
-		super.EEItemDetached( item, slot_name );
+		super.EEItemDetached(item, slot_name);
 		
-		ItemBase item_IB = ItemBase.Cast( item );
+		ItemBase item_IB = ItemBase.Cast(item);
 		
-		if ( item_IB.IsKindOf("Sparkplug") )
+		if (item_IB.IsKindOf("Sparkplug"))
 		{
 			HideSelection("sparkplug_installed");
-			m_SparkPlug = NULL;
 			GetCompEM().SwitchOff();
 			
-			if ( !GetGame().IsServer()  ||  !GetGame().IsMultiplayer() )
-			{
-				EffectSound sound = SEffectManager.PlaySound(SPARKPLUG_DETACH_SOUND, GetPosition() );
-				sound.SetSoundAutodestroy( true );
-			}
+			#ifndef SERVER
+			EffectSound sound = SEffectManager.PlaySound(SPARKPLUG_DETACH_SOUND, GetPosition());
+			sound.SetAutodestroy(true);
+			#endif
 		}
 	}
 	
@@ -201,11 +246,11 @@ class PowerGenerator extends ItemBase
 	
 	void UpdateFuelMeter()
 	{
-		if ( GetGame().IsClient()  ||  !GetGame().IsMultiplayer() )
+		if (GetGame().IsClient() || !GetGame().IsMultiplayer())
 		{
 			SetAnimationPhase("dial_fuel", m_FuelPercentage * 0.01);
 		}
-		}
+	}
 	
 	// Adds energy to the generator
 	void SetFuel(float fuel_amount)
@@ -220,7 +265,7 @@ class PowerGenerator extends ItemBase
 		}
 		else
 		{
-			string error = "ERROR! Item " + this.GetType() + " has fuel tank with 0 capacity! Add parameter 'fuelTankCapacity' to its config and set it to more than 0!";
+			string error = string.Format("ERROR! Item %1 has fuel tank with 0 capacity! Add parameter 'fuelTankCapacity' to its config and set it to more than 0!", this.GetType());
 			DPrint(error);
 		}
 	}
@@ -229,14 +274,14 @@ class PowerGenerator extends ItemBase
 	// Returns how much fuel was accepted
 	float AddFuel(float available_fuel)
 	{
-		if ( available_fuel == 0 )
+		if (available_fuel == 0)
 		{
 			return 0;
 		}
 		
 		float needed_fuel = GetMaxFuel() - GetFuel();
 		
-		if ( needed_fuel > available_fuel )
+		if (needed_fuel > available_fuel)
 		{
 			SetFuel(GetFuel() + available_fuel);
 			return available_fuel; // Return used fuel amount
@@ -249,7 +294,7 @@ class PowerGenerator extends ItemBase
 	}
 
 	// Check the bottle if it can be used to fill the tank
-	bool CanAddFuel( ItemBase container )
+	bool CanAddFuel(ItemBase container)
 	{
 		if (container)
 		{
@@ -257,7 +302,7 @@ class PowerGenerator extends ItemBase
 			int liquid_type	= container.GetLiquidType();
 			
 			// Do all checks
-			if ( container.GetQuantity() > 0  &&  GetCompEM().GetEnergy() < GetCompEM().GetEnergyMax()  &&  (liquid_type & LIQUID_GASOLINE) )
+			if ( container.GetQuantity() > 0 && GetCompEM().GetEnergy() < GetCompEM().GetEnergyMax() && (liquid_type & LIQUID_GASOLINE))
 			{
 				return true;
 			}
@@ -281,15 +326,10 @@ class PowerGenerator extends ItemBase
 	// Checks sparkplug
 	bool HasSparkplug()
 	{
-		if ( m_SparkPlug )
-		{
-			if ( !m_SparkPlug.IsRuined() )
-			{
-				return true;
-			}
-		}
-		
-		return false;
+		int slot = InventorySlots.GetSlotIdFromString("SparkPlug");
+		EntityAI ent = GetInventory().FindAttachment(slot);
+
+		return ent && !ent.IsRuined();
 	}
 	
 	override void OnVariablesSynchronized()
@@ -298,7 +338,7 @@ class PowerGenerator extends ItemBase
 				
 		UpdateFuelMeter();
 		
-		if ( IsPlaceSound() )
+		if (IsPlaceSound())
 		{
 			PlayPlaceSound();
 		}
@@ -308,11 +348,11 @@ class PowerGenerator extends ItemBase
 	// ADVANCED PLACEMENT
 	//================================================================
 	
-	override void OnPlacementComplete( Man player, vector position = "0 0 0", vector orientation = "0 0 0" )
+	override void OnPlacementComplete(Man player, vector position = "0 0 0", vector orientation = "0 0 0")
 	{
-		super.OnPlacementComplete( player, position, orientation );
+		super.OnPlacementComplete(player, position, orientation);
 			
-		SetIsPlaceSound( true );
+		SetIsPlaceSound(true);
 	}
 	
 	override string GetPlaceSoundset()
@@ -331,14 +371,13 @@ class PowerGenerator extends ItemBase
 		AddAction(ActionPlaceObject);
 	}
 	
-				
 	//Debug menu Spawn Ground Special
 	override void OnDebugSpawn()
 	{
 		EntityAI entity;
-		if ( Class.CastTo(entity, this) )
+		if (Class.CastTo(entity, this))
 		{
-			entity.GetInventory().CreateInInventory( "SparkPlug" );
+			entity.GetInventory().CreateInInventory("SparkPlug");
 		}
 		
 		SetFuel(GetMaxFuel());

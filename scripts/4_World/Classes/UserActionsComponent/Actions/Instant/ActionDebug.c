@@ -35,7 +35,7 @@ class ActionDebug : ActionInstantBase
 		action_data_d.m_Action = this;
 		action_data_d.m_Player = player;
 		
-		if (!GetGame().IsMultiplayer() || GetGame().IsClient() )
+		if (!GetGame().IsDedicatedServer() )
 		{
 			ref Param2<ItemBase,int> ndata = Param2<ItemBase,int>.Cast( extra_data );
 			action_data_d.m_MainItem = ndata.param1;

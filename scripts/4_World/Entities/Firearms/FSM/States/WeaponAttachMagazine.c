@@ -31,7 +31,7 @@ class RemoveNewMagazineFromInventory extends WeaponStateBase
 					lhand.SetAttachment(e.m_player, m_newMagazine, InventorySlots.LEFTHAND);
 					if (GameInventory.LocationSyncMoveEntity(m_newSrc, lhand))
 					{
-						wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " RemoveNewMagazineFromInventory, ok - new magazine removed from inv (inv->LHand)");
+						if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " RemoveNewMagazineFromInventory, ok - new magazine removed from inv (inv->LHand)"); }
 					}
 					else
 						Error("[wpnfsm] " + Object.GetDebugName(m_weapon) + " RemoveNewMagazineFromInventory, error - cannot new remove mag from inv");
@@ -174,7 +174,7 @@ class WeaponAttachMagazine extends WeaponStateBase
 			lhand.SetAttachment(e.m_player, mag, InventorySlots.LEFTHAND);
 			if (GameInventory.LocationSyncMoveEntity(newSrc, lhand))
 			{
-				wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponAttachMagazine, ok - new magazine removed from inv (inv->LHand)");
+				if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponAttachMagazine, ok - new magazine removed from inv (inv->LHand)"); }
 			}
 			else
 				Error("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponAttachMagazine, error - cannot new remove mag from inv");
@@ -201,7 +201,9 @@ class WeaponAttachMagazine extends WeaponStateBase
 			if(!il || !il.IsValid())
 			{
 				if (DayZPlayerUtils.HandleDropMagazine(e.m_player, mag))
-					wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponAttachMagazine, ok - no inventory space for old magazine - dropped to ground");
+				{
+					if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponAttachMagazine, ok - no inventory space for old magazine - dropped to ground"); }
+				}
 				else
 					Error("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponAttachMagazine, error - cannot drop magazine from left hand after not found inventory space for old magazine");
 				
@@ -213,7 +215,7 @@ class WeaponAttachMagazine extends WeaponStateBase
 				
 				if (GameInventory.LocationSyncMoveEntity(oldSrc, il))
 				{
-					wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponAttachMagazine, ok - old magazine removed from wpn (LHand->inv)");
+					if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponAttachMagazine, ok - old magazine removed from wpn (LHand->inv)"); }
 				}
 				else
 					Error("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponAttachMagazine, error - cannot remove old mag from wpn");

@@ -13,6 +13,7 @@ class ActionUseRangefinder : ActionContinuousBase
 		m_CallbackClass = ActionUseRangefinderCB;
 		m_CommandUID = DayZPlayerConstants.CMD_GESTUREFB_LOOKOPTICS;
 		m_SpecialtyWeight = UASoftSkillsWeight.PRECISE_LOW;	
+		m_Text = "#use_range_finder";
 	}
 	
 	override void CreateConditionComponents()  
@@ -24,11 +25,6 @@ class ActionUseRangefinder : ActionContinuousBase
 	override bool IsFullBody(PlayerBase player)
 	{
 		return true;
-	}
-		
-	override string GetText()
-	{
-		return "#use_range_finder";
 	}
 
 	override bool HasTarget()

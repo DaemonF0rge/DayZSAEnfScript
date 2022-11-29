@@ -5,19 +5,21 @@ class Attachments
 	protected Container							m_Parent;
 	protected EntityAI							m_Entity;
 	protected ref AttachmentsWrapper			m_AttachmentsContainer;
-	protected ref array<ref SlotsContainer>		m_Ics;
 	protected ref array<string>					m_AttachmentSlotNames;
+	protected ref array<string>					m_AttachmentSlotDisplayable;
 	protected ref map<int, SlotsIcon>			m_AttachmentSlots;
+	protected ref array<int>					m_AttachmentIDOrdered;
 	
-	protected int m_FocusedRow, m_FocusedColumn, m_RowIndex;
+	protected int m_RowIndex;
 
 	void Attachments( Container parent, EntityAI entity )
 	{
-		m_Parent				= parent;
-		m_Entity				= entity;
-		m_Ics					= new array<ref SlotsContainer>;
-		m_AttachmentSlots		= new map<int, SlotsIcon>;
-		m_AttachmentSlotNames	= GetItemSlots( entity );
+		m_Parent					= parent;
+		m_Entity					= entity;
+		m_AttachmentSlots			= new map<int, SlotsIcon>;
+		m_AttachmentIDOrdered		= new array<int>;
+		m_AttachmentSlotNames		= GetItemSlots( entity );
+		m_AttachmentSlotDisplayable	= new array<string>;
 		m_Entity.GetOnItemAttached().Insert( AttachmentAdded );
 		m_Entity.GetOnItemDetached().Insert( AttachmentRemoved );
 		m_Entity.GetOnAttachmentSetLock().Insert( OnAttachmentReservationSet );
@@ -45,7 +47,7 @@ class Attachments
 	
 	bool IsEmpty()
 	{
-		return m_AttachmentSlotNames.Count() == 0;
+		return m_AttachmentsContainer.IsEmpty();
 	}
 	
 	bool IsItemActive()
@@ -70,106 +72,54 @@ class Attachments
 
 	void UnfocusAll()
 	{
-		for ( int i = 0; i < m_Ics.Count(); i++ )
-		{
-			m_Ics.Get( i ).UnfocusAll();
-		}
+		m_AttachmentsContainer.UnfocusAll();
 	}
 
-	void SetDefaultFocus()
+	void SetDefaultFocus( bool while_micromanagment_mode = false )
 	{
-		m_FocusedRow = 0;
-		m_FocusedColumn = 0;
-		if( m_Ics.Count() > 0 )
-			m_Ics.Get( 0 ).SetFocus( 0 );
-		
-		SlotsIcon icon = GetFocusedIcon();
-		EntityAI focused_item = icon.GetItem();
-		float x, y;
-		icon.GetCursorWidget().GetScreenPos( x, y );
-		
-		if( focused_item )
-		{
-			ItemManager.GetInstance().PrepareTooltip( focused_item, x, y );
-		}
-		else
-		{
-			ItemManager.GetInstance().PrepareSlotsTooltip( icon.GetSlotDisplayName(), icon.GetSlotDesc(), x, y );
-		}
-		Inventory.GetInstance().UpdateConsoleToolbar();
+		m_AttachmentsContainer.SetDefaultFocus(while_micromanagment_mode);
 	}
 	
 	void SetLastActive()
 	{
-		m_FocusedRow = m_Ics.Count() - 1;
-		m_FocusedColumn = 0;
-		if( m_Ics.Count() > 0 )
-		{
-			UnfocusAll();
-			m_Ics.Get( m_FocusedRow ).SetFocus( 0 );
-		}
-		
-		SlotsIcon icon = GetFocusedIcon();
-		EntityAI focused_item = icon.GetItem();
-		float x, y;
-		icon.GetCursorWidget().GetScreenPos( x, y );
-		
-		if( focused_item )
-		{
-			ItemManager.GetInstance().PrepareTooltip( focused_item, x, y );
-		}
-		else
-		{
-			ItemManager.GetInstance().PrepareSlotsTooltip( icon.GetSlotDisplayName(), icon.GetSlotDesc() , x, y );
-		}
-		Inventory.GetInstance().UpdateConsoleToolbar();
+		m_AttachmentsContainer.SetLastActive();
 	}
 	
 	void SetActive( bool active )
 	{
-		if( active )
-		{
-			SetDefaultFocus();
-		}
-		m_AttachmentsContainer.SetActive( active );
-		m_Parent.GetMainWidget().FindAnyWidget("AttachmentsWrapper").Update();
+		m_AttachmentsContainer.SetActive(active);
 	}
 	
-	SlotsIcon GetFocusedIcon()
+	void SelFirstActive()
 	{
-		if( m_FocusedRow < m_Ics.Count() )
-		{
-			SlotsContainer cont = SlotsContainer.Cast( m_Ics.Get( m_FocusedRow ) );
-			return cont.GetSlotIcon( m_FocusedColumn );
-		}
-		return null;
+		m_AttachmentsContainer.SetFirstActive();
+	}
+	
+	SlotsIcon GetFocusedSlotsIcon()
+	{
+		return m_AttachmentsContainer.GetFocusedSlotsIcon();
 	}
 	
 	EntityAI GetFocusedItem()
 	{
-		SlotsIcon icon = GetFocusedIcon();
-		if( icon )
-		{
-			return icon.GetEntity();
-		}
-		return null;
+		return m_AttachmentsContainer.GetFocusedItem();
 	}
 	
 	int GetFocusedSlot()
 	{
-		if( m_FocusedRow < m_Ics.Count() )
-		{
-			return m_Ics.Get( m_FocusedRow ).GetSlotIcon( m_FocusedColumn ).GetSlotID();
-		}
+		SlotsIcon icon = m_AttachmentsContainer.GetFocusedSlotsIcon();
+		if (icon)
+			return icon.GetSlotID();
 		return -1;
 	}
 	
 	bool SelectItem()
 	{
-		if( m_FocusedRow < m_Ics.Count() && !GetFocusedIcon().IsOutOfReach() )
+		ItemBase item = ItemBase.Cast( GetFocusedItem() );
+		SlotsIcon icon = GetFocusedSlotsIcon();
+		
+		if (icon && !icon.IsOutOfReach())
 		{
-			ItemBase item = ItemBase.Cast( GetFocusedItem() );
-			SlotsIcon icon = GetFocusedIcon();
 			ItemManager.GetInstance().SetSelectedItem( item, null, icon.GetCursorWidget(), icon );
 			return true;
 		}
@@ -180,7 +130,7 @@ class Attachments
 	{
 		SlotsIcon selected_slot = ItemManager.GetInstance().GetSelectedIcon();
 		EntityAI selected_item = ItemManager.GetInstance().GetSelectedItem();
-		SlotsIcon focused_slot = GetFocusedIcon();
+		SlotsIcon focused_slot = GetFocusedSlotsIcon();
 		EntityAI focused_item = GetFocusedItem();
 		Man player = GetGame().GetPlayer();
 		
@@ -249,7 +199,18 @@ class Attachments
 		ItemBase ent = ItemBase.Cast( GetFocusedItem() );
 		ItemBase item_in_hands = ItemBase.Cast(	GetGame().GetPlayer().GetHumanInventory().GetEntityInHands() );
 		
-		return GetRecipeCount( false, ent, item_in_hands ) > 0;
+		return ( ItemManager.GetCombinationFlags( item_in_hands, ent ) != 0 );
+	}
+	
+	bool CanCombineAmmo()
+	{
+		PlayerBase m_player = PlayerBase.Cast( GetGame().GetPlayer() );
+		ItemBase ent = ItemBase.Cast(  GetFocusedItem() );
+		ItemBase item_in_hands = ItemBase.Cast(	GetGame().GetPlayer().GetHumanInventory().GetEntityInHands() );
+		ActionManagerClient amc;
+		Class.CastTo(amc, m_player.GetActionManager());
+
+		return ( amc.CanPerformActionFromInventory( item_in_hands, ent ) );
 	}
 	
 	bool CanEquip()
@@ -267,40 +228,37 @@ class Attachments
 	{
 		ItemBase ent = ItemBase.Cast( GetFocusedItem() );
 		ItemBase item_in_hands = ItemBase.Cast(	GetGame().GetPlayer().GetHumanInventory().GetEntityInHands() );
+		Icon hands_icon = ItemManager.GetInstance().GetHandsPreview().GetIcon();
 		
-		if( !ent || !item_in_hands )
+		if ( item_in_hands && ent && hands_icon )
 		{
-			return false;
+			return hands_icon.CombineItems( item_in_hands, ent );
 		}
-		if ( item_in_hands.CanBeCombined( ent ) )
-		{
-			item_in_hands.CombineItemsClient( ent );
-			return false;
-		}
-		PlayerBase player = PlayerBase.Cast( GetGame().GetPlayer() );
-		PluginRecipesManager plugin_recipes_manager = PluginRecipesManager.Cast( GetPlugin( PluginRecipesManager ) );
-		ref array<int> recipes = new array<int>;
-		if ( plugin_recipes_manager.GetValidRecipes( ent, item_in_hands, recipes, player ) > 0 )
-			player.GetCraftingManager().SetInventoryCraft( recipes[0], ent, item_in_hands );
 		
-		return true;
+		return false;
 	}
 	
-	bool EquipItem()
+	bool SplitItem()
 	{
 		ItemBase entity = ItemBase.Cast( GetFocusedItem() );
-		if( entity && !entity.IsInherited( Magazine ) && !GetFocusedIcon().IsOutOfReach() )
+		if( entity && !entity.IsInherited( Magazine ) && !GetFocusedSlotsIcon().IsOutOfReach() )
 		{
 			if( entity.HasQuantity() )
 			{
 				entity.OnRightClick();
 				return true;
 			}
-			else
-			{
-				GetGame().GetPlayer().PredictiveTakeEntityToInventory( FindInventoryLocationType.ATTACHMENT, entity );
-				return true;
-			}
+		}
+		return false;
+	}
+	
+	bool EquipItem()
+	{
+		ItemBase entity = ItemBase.Cast( GetFocusedItem() );
+		if( entity && !entity.IsInherited( Magazine ) && !GetFocusedSlotsIcon().IsOutOfReach() )
+		{
+			GetGame().GetPlayer().PredictiveTakeEntityToInventory( FindInventoryLocationType.ATTACHMENT, entity );
+			return true;
 		}
 		return false;
 	}
@@ -308,7 +266,7 @@ class Attachments
 	bool TransferItem()
 	{
 		EntityAI entity = GetFocusedItem();
-		if( entity && !GetFocusedIcon().IsOutOfReach() )
+		if( entity && !GetFocusedSlotsIcon().IsOutOfReach() )
 		{
 			GetGame().GetPlayer().PredictiveTakeEntityToInventory( FindInventoryLocationType.CARGO, entity );
 			return true;
@@ -331,7 +289,7 @@ class Attachments
 	{
 		ItemBase item = ItemBase.Cast(GetFocusedItem());
 		PlayerBase player = PlayerBase.Cast( GetGame().GetPlayer() );
-		if( item && !GetFocusedIcon().IsOutOfReach() )
+		if( item && !GetFocusedSlotsIcon().IsOutOfReach() )
 		{
 			if( item.GetTargetQuantityMax() < item.GetQuantity() )
 				item.SplitIntoStackMaxClient( null, -1 );
@@ -346,118 +304,6 @@ class Attachments
 	{
 		return m_Parent.GetMainWidget().FindAnyWidget("AttachmentsWrapper").GetAlpha() > 0;
 	}
-
-	void MoveGridCursor( int direction )
-	{
-		ItemManager.GetInstance().HideTooltip();
-		UnfocusAll();
-		if( direction == Direction.UP )
-		{
-			m_FocusedRow--;
-			if( m_FocusedRow < 0 )
-			{
-				m_FocusedRow  = m_Ics.Count() - 1;
-				Container cnt = Container.Cast( m_Parent );
-				if( cnt )
-				{
-					cnt.SetPreviousActive();
-				}
-				else
-				{
-					cnt = Container.Cast( m_Parent );
-					cnt.SetPreviousActive();
-				}
-				return;
-			}
-
-			int max_row = m_Ics.Get( m_FocusedRow ).GetColumnCount() - 1;
-			if( max_row < m_FocusedColumn )
-			{
-				m_FocusedColumn = max_row;
-			}
-		}
-
-		if( direction == Direction.DOWN )
-		{
-			m_FocusedRow++;
-			if( m_FocusedRow >= m_Ics.Count() )
-			{
-				m_FocusedRow = 0;
-				cnt = Container.Cast( m_Parent );
-				if( cnt )
-				{
-					cnt.SetNextActive();
-				}
-				else
-				{
-					cnt = Container.Cast( m_Parent );
-					cnt.SetNextActive();
-				}
-				return;
-			}
-
-			max_row = m_Ics.Get( m_FocusedRow ).GetColumnCount() - 1;
-			if( max_row < m_FocusedColumn )
-			{
-				m_FocusedColumn = max_row;
-			}
-		}
-
-		if( direction == Direction.RIGHT )
-		{
-			if( m_Ics.Count() > 0 )
-			{
-				m_FocusedColumn++;
-				if( m_FocusedColumn == m_Ics.Get( m_FocusedRow ).GetColumnCount() )
-				{
-					m_FocusedColumn = 0;
-				}
-			}
-			else
-				return;
-		}
-
-		if( direction == Direction.LEFT )
-		{
-			if( m_Ics.Count() > 0 )
-			{
-				m_FocusedColumn--;
-				if( m_FocusedColumn < 0 )
-				{
-					m_FocusedColumn = m_Ics.Get( m_FocusedRow ).GetColumnCount() - 1;
-				}
-			}
-			else
-				return;
-		}
-
-		m_Ics.Get( m_FocusedRow ).SetFocus( m_FocusedColumn );
-		
-		SlotsIcon icon = GetFocusedIcon();
-		EntityAI focused_item = icon.GetItem();
-		float x, y;
-		icon.GetCursorWidget().GetScreenPos( x, y );
-		if( focused_item )
-		{
-			ItemManager.GetInstance().PrepareTooltip( focused_item, x, y );
-		}
-		else
-		{
-			ItemManager.GetInstance().PrepareSlotsTooltip( icon.GetSlotDisplayName(), icon.GetSlotDesc(), x, y );
-		}
-		Inventory.GetInstance().UpdateConsoleToolbar();
-	}
-
-	void Remove()
-	{
-		for( int i = 0; i < m_Ics.Count(); i++ )
-		{
-			m_AttachmentsContainer.Remove( m_Ics.Get( i ) );
-		}
-		
-		m_Ics.Clear();
-		m_Parent.Refresh();
-	}
 	
 	int GetAttachmentHeight()
 	{
@@ -466,93 +312,129 @@ class Attachments
 	
 	void UpdateInterval()
 	{
-		for( int i = 0; i < m_AttachmentSlotNames.Count(); i++ )
+		SlotsIcon icon;
+		int slot_id;
+		m_AttachmentSlotDisplayable.Clear();
+		int i = 0;
+		for (i = m_AttachmentSlotNames.Count() - 1; i >=0; --i)
 		{
-			int slot_id = InventorySlots.GetSlotIdFromString( m_AttachmentSlotNames[i] );
-			SlotsIcon icon = m_AttachmentSlots.Get( slot_id );
-			EntityAI item = icon.GetEntity();
-			if( m_Entity.CanDisplayAttachmentSlot( m_AttachmentSlotNames[i] ) )
+			slot_id = InventorySlots.GetSlotIdFromString( m_AttachmentSlotNames[i] );
+			if (m_Entity.CanDisplayAttachmentSlot(slot_id))
 			{
-				icon.GetMainWidget().Show( true );
-				icon.UpdateInterval();
-				if( item )
-				{
-					bool draggable = true;
-					if(icon.IsReserved())
-					{
-						draggable = false;
-					}
-					
-					if( m_Entity.GetInventory().GetSlotLock( slot_id ) && ItemManager.GetInstance().GetDraggedItem() != item )
-					{
-						icon.GetMountedWidget().Show( true );
-						draggable = false;
-					}
-					else
-					{
-						icon.GetMountedWidget().Show( false );
-					}
-					
-					PlayerBase p = PlayerBase.Cast( GetGame().GetPlayer() );
-					bool in_hands_condition		= m_Entity.GetHierarchyRoot() && item.GetInventory().CanRemoveEntity();
-					bool in_vicinity_condition	= !m_Entity.GetHierarchyRoot() && AttachmentsOutOfReach.IsAttachmentReachable( m_Entity, m_AttachmentSlotNames[i] );
-					if( in_hands_condition || in_vicinity_condition )
-					{
-						icon.GetOutOfReachWidget().Show( false );
-					}
-					else
-					{
-						icon.GetOutOfReachWidget().Show( true );
-						draggable = false;
-					}
-					
-					if( draggable )
-					{
-						icon.GetPanelWidget().SetFlags( WidgetFlags.DRAGGABLE );
-					}
-					else
-					{
-						icon.GetPanelWidget().ClearFlags( WidgetFlags.DRAGGABLE );
-					}
-				}
+				m_AttachmentSlotDisplayable.Insert(m_AttachmentSlotNames[i]);
 			}
 			else
 			{
-				icon.GetMainWidget().Show( false );
+				icon = m_AttachmentSlots.Get( slot_id );
+				if (icon)
+				{
+					icon.GetMainWidget().Show( false );
+					if( GetFocusedSlotsIcon() == icon )
+					{
+						SetDefaultFocus();
+					}
+					// radial icon (collabsable icon handling)
+					icon.UpdateInterval();
+				}
+			}
+			
+		}
+		
+		if ( m_AttachmentSlotDisplayable.Count() == 0 )
+		{
+			if (m_Parent)
+			{
+				m_Parent.UpdateRadialIcon();
+				//m_Parent.Close();
 			}
 		}
+		
+		for (i = 0; i < m_AttachmentSlotDisplayable.Count(); ++i)
+		{
+			slot_id = InventorySlots.GetSlotIdFromString( m_AttachmentSlotDisplayable[i] );
+			icon = m_AttachmentSlots.Get( slot_id );
+			EntityAI item = icon.GetEntity();
+			icon.GetMainWidget().Show( true );
+			icon.UpdateInterval();
+			if ( item )
+			{
+				bool draggable = true;
+				if(icon.IsReserved())
+				{
+					draggable = false;
+				}
+				
+				if( m_Entity.GetInventory().GetSlotLock( slot_id ) && ItemManager.GetInstance().GetDraggedItem() != item )
+				{
+					icon.GetMountedWidget().Show( true );
+					draggable = false;
+				}
+				else
+				{
+					icon.GetMountedWidget().Show( false );
+				}
+				
+				PlayerBase p = PlayerBase.Cast( GetGame().GetPlayer() );
+				bool in_hands_condition		= m_Entity.GetHierarchyRoot() && item.GetInventory().CanRemoveEntity();
+				bool in_vicinity_condition	= !m_Entity.GetHierarchyRoot() && AttachmentsOutOfReach.IsAttachmentReachable( m_Entity, m_AttachmentSlotDisplayable[i] );
+				if( in_hands_condition || in_vicinity_condition )
+				{
+					icon.GetOutOfReachWidget().Show( false );
+				}
+				else
+				{
+					icon.GetOutOfReachWidget().Show( true );
+					draggable = false;
+				}
+				
+				if( draggable )
+				{
+					icon.GetPanelWidget().SetFlags( WidgetFlags.DRAGGABLE );
+				}
+				else
+				{
+					icon.GetPanelWidget().ClearFlags( WidgetFlags.DRAGGABLE );
+				}
+			}
+		}
+		m_AttachmentsContainer.GetRootWidget().Update();
 	}
 	
 	array<int> GetSlotsSorted()
 	{
-		return m_AttachmentSlots.GetKeyArray();
+		return m_AttachmentIDOrdered;
 	}
 	
 	void AttachmentAdded(EntityAI item, string slot, EntityAI parent)
 	{
-		int slot_id = InventorySlots.GetSlotIdFromString( slot );
-		SlotsIcon icon = m_AttachmentSlots.Get( slot_id );
-		
-		icon.SetSlotID( slot_id );
-		icon.SetSlotDisplayName(InventorySlots.GetSlotDisplayName(slot_id));
-		if( item )
+		int slot_id = InventorySlots.GetSlotIdFromString(slot);
+		SlotsIcon icon = m_AttachmentSlots.Get(slot_id);
+		if (icon)
 		{
-			icon.Init( item );
+			icon.SetSlotID(slot_id);
+			icon.SetSlotDisplayName(InventorySlots.GetSlotDisplayName(slot_id));
+			if (item)
+			{
+				icon.Init(item);
+			}
 		}
 	}
 	
 	void AttachmentRemoved(EntityAI item, string slot, EntityAI parent)
 	{
-		int slot_id = InventorySlots.GetSlotIdFromString( slot );
-		SlotsIcon icon = m_AttachmentSlots.Get( slot_id );
-		icon.Clear();
+		int slot_id = InventorySlots.GetSlotIdFromString(slot);
+		SlotsIcon icon = m_AttachmentSlots.Get(slot_id);
+		if (icon)
+		{
+			icon.Clear();
+		}
 	}
 	
 	void OnAttachmentReservationSet( EntityAI item, int slot_id )
 	{
 		SlotsIcon icon = m_AttachmentSlots.Get( slot_id );
 		
-		if( item )
+		if (item)
 		{
 			icon.Init( item, true );
 		}
@@ -567,16 +449,21 @@ class Attachments
 
 	void InitAttachmentGrid( int att_row_index )
 	{
+		SlotsIcon icon;
+		int i;
 		m_RowIndex = att_row_index;
 
 		int number_of_rows = Math.Ceil( m_AttachmentSlotNames.Count() / ITEMS_IN_ROW );
+		string name = m_Entity.GetDisplayName();
+		name.ToUpper();
 		
 		m_AttachmentsContainer = new AttachmentsWrapper( m_Parent );
 		m_AttachmentsContainer.SetParent( this );
+		m_AttachmentsContainer.SetFalseAttachmentsHeaderText(name);
 		m_AttachmentsContainer.GetRootWidget().SetSort( att_row_index );
 		m_Parent.Insert( m_AttachmentsContainer, att_row_index );
 		
-		for ( int i = 0; i < number_of_rows; i++ )
+		for ( i = 0; i < number_of_rows; i++ )
 		{
 			SlotsContainer ic = new SlotsContainer( m_AttachmentsContainer, m_Entity );
 			m_AttachmentsContainer.Insert( ic );
@@ -590,15 +477,14 @@ class Attachments
 				ic.SetColumnCount( ITEMS_IN_ROW );
 			}
 
-			m_Ics.Insert( ic );
 			for( int j = 0; j < ITEMS_IN_ROW; j++ )
 			{
-				SlotsIcon icon = ic.GetSlotIcon( j );
+				icon = ic.GetSlotIcon( j );
 				WidgetEventHandler.GetInstance().RegisterOnDropReceived( icon.GetMainWidget(), m_Parent, "OnDropReceivedFromHeader2" );
 				WidgetEventHandler.GetInstance().RegisterOnDropReceived( icon.GetGhostSlot(), m_Parent, "OnDropReceivedFromHeader2" );
 				WidgetEventHandler.GetInstance().RegisterOnDropReceived( icon.GetPanelWidget(), m_Parent, "OnDropReceivedFromHeader2" );
 
-				WidgetEventHandler.GetInstance().RegisterOnDraggingOver( icon.GetMainWidget(),  m_Parent, "DraggingOverHeader" );
+				WidgetEventHandler.GetInstance().RegisterOnDraggingOver( icon.GetMainWidget(), m_Parent, "DraggingOverHeader" );
 				WidgetEventHandler.GetInstance().RegisterOnDraggingOver( icon.GetGhostSlot(), m_Parent, "DraggingOverHeader" );
 				WidgetEventHandler.GetInstance().RegisterOnDraggingOver( icon.GetPanelWidget(), m_Parent, "DraggingOverHeader" );
 				
@@ -610,8 +496,8 @@ class Attachments
 
 		for ( i = 0; i < m_AttachmentSlotNames.Count(); i++ )
 		{
-			SlotsIcon icon2 = SlotsContainer.Cast( m_AttachmentsContainer.Get( ( i / ITEMS_IN_ROW ) ) ).GetSlotIcon( i % ITEMS_IN_ROW );
-			WidgetEventHandler.GetInstance().RegisterOnDoubleClick( icon2.GetPanelWidget(), m_Parent, "DoubleClick" );
+			icon = SlotsContainer.Cast( m_AttachmentsContainer.Get( ( i / ITEMS_IN_ROW ) ) ).GetSlotIcon( i % ITEMS_IN_ROW );
+			WidgetEventHandler.GetInstance().RegisterOnDoubleClick( icon.GetPanelWidget(), m_Parent, "DoubleClick" );
 			
 			string path = "CfgSlots" + " Slot_" + m_AttachmentSlotNames[i];
 
@@ -624,18 +510,28 @@ class Attachments
 			
 			string icon_name = ""; //icon_name must be in format "set:<setname> image:<imagename>"
 			if( GetGame().ConfigGetText( path + " ghostIcon", icon_name ) && icon_name != "" )
-				icon2.GetGhostSlot().LoadImageFile( 0, StaticGUIUtils.VerifyIconImageString(StaticGUIUtils.IMAGESETGROUP_INVENTORY,icon_name) );
+				icon.GetGhostSlot().LoadImageFile( 0, StaticGUIUtils.VerifyIconImageString(StaticGUIUtils.IMAGESETGROUP_INVENTORY,icon_name) );
 			int slot_id = InventorySlots.GetSlotIdFromString( m_AttachmentSlotNames[i] );
-			m_AttachmentSlots.Insert( slot_id, icon2 );
+			m_AttachmentSlots.Insert( slot_id, icon );
+			m_AttachmentIDOrdered.Insert(slot_id);
 			
-			icon2.SetSlotID(slot_id);
-			icon2.SetSlotDisplayName(InventorySlots.GetSlotDisplayName(slot_id));
+			icon.SetSlotID(slot_id);
+			icon.SetSlotDisplayName(InventorySlots.GetSlotDisplayName(slot_id));
 			
 			EntityAI item = m_Entity.GetInventory().FindAttachment( slot_id );
 			if( item )
 				AttachmentAdded( item, m_AttachmentSlotNames[i], m_Entity );
 			else
-				icon2.Clear();
+				icon.Clear();
+			
+			if (m_Entity.CanDisplayAttachmentSlot(slot_id))
+			{
+				icon.GetMainWidget().Show( true );
+			}
+			else
+			{
+				icon.GetMainWidget().Show( false );
+			}
 		}
 		
 		if( m_AttachmentSlotNames.Count() > 0 )
@@ -644,7 +540,7 @@ class Attachments
 			SlotsContainer row_last = SlotsContainer.Cast( m_AttachmentsContainer.Get( row_index ) );
 			if( row_last )
 			{
-				for( int k = m_AttachmentSlotNames.Count() % ITEMS_IN_ROW; k < ITEMS_IN_ROW; k++ )
+				for( int k = ((m_AttachmentSlotNames.Count() - 1) % ITEMS_IN_ROW) + 1; k < ITEMS_IN_ROW; k++ )
 				{
 					row_last.GetSlotIcon( k ).GetMainWidget().Show( false );
 				}
@@ -652,6 +548,8 @@ class Attachments
 				row_last.GetRootWidget().GetParent().Update();
 			}
 		}
+		
+		m_AttachmentsContainer.RecomputeOpenedContainers();
 	}
 
 	array<string> GetItemSlots( EntityAI e )
@@ -662,7 +560,7 @@ class Attachments
 		searching_in.Insert( CFG_MAGAZINESPATH );
 
 		array<string> attachments_slots	= new array<string>;
-
+		int i = 0;
 		for ( int s = 0; s < searching_in.Count(); ++s )
 		{
 			string cfg_name = searching_in.Get( s );
@@ -670,11 +568,12 @@ class Attachments
 
 			if ( GetGame().ConfigIsExisting( path ) )
 			{
-				g_Game.ConfigGetTextArray( path + " attachments", attachments_slots );
+				GetGame().ConfigGetTextArray( path + " attachments", attachments_slots );
 				if ( e.IsWeapon() && (!e.ConfigIsExisting("DisplayMagazine") || e.ConfigGetBool("DisplayMagazine")) )
 				{
 					attachments_slots.Insert( "magazine" );
 				}
+
 				return attachments_slots;
 			}
 		}
@@ -682,6 +581,22 @@ class Attachments
 		{
 			attachments_slots.Insert( "magazine" );
 		}
+
 		return attachments_slots;
+	}
+	
+	void ShowFalseAttachmentsHeader(bool show)
+	{
+		m_AttachmentsContainer.ShowFalseAttachmentsHeader(show);
+	}
+	
+	void SetFalseAttachmentsHeaderText(string text)
+	{
+		m_AttachmentsContainer.SetFalseAttachmentsHeaderText(text);
+	}
+	
+	TextWidget GetFalseHeaderTextWidget()
+	{
+		return m_AttachmentsContainer.GetFalseHeaderTextWidget();
 	}
 }

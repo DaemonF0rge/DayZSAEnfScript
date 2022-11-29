@@ -53,13 +53,13 @@ class ScriptCallQueue
 {
 	//! executes calls on queue if their time is already elapsed, if 'repeat = false' call is removed from queue
 	proto native void Tick(float timeslice);
-	//! adds call into the queue with given parameters and arguments (arguments are holded in memory until the call is executed/removed or ScriptCallQueue is destroyed)
+	//! adds call into the queue with given parameters and arguments (arguments are held in memory until the call is executed/removed or ScriptCallQueue is destroyed)
 	proto void Call(func fn, void param1 = NULL, void param2 = NULL, void param3 = NULL, void param4 = NULL, void param5 = NULL, void param6 = NULL, void param7 = NULL, void param8 = NULL, void param9 = NULL);
-	//! adds call into the queue with given parameters and arguments (arguments are holded in memory until the call is executed/removed or ScriptCallQueue is destroyed)
+	//! adds call into the queue with given parameters and arguments (arguments are held in memory until the call is executed/removed or ScriptCallQueue is destroyed)
 	proto void CallByName(Class obj, string fnName , Param params = NULL);
-	//! adds call into the queue with given parameters and arguments (arguments are holded in memory until the call is executed/removed or ScriptCallQueue is destroyed)
+	//! adds call into the queue with given parameters and arguments (arguments are held in memory until the call is executed/removed or ScriptCallQueue is destroyed)
 	proto void CallLater(func fn, int delay = 0, bool repeat = false, void param1 = NULL, void param2 = NULL, void param3 = NULL, void param4 = NULL, void param5 = NULL, void param6 = NULL, void param7 = NULL, void param8 = NULL, void param9 = NULL);	
-	//! adds call into the queue with given parameters and arguments (arguments are holded in memory until the call is executed/removed or ScriptCallQueue is destroyed)
+	//! adds call into the queue with given parameters and arguments (arguments are held in memory until the call is executed/removed or ScriptCallQueue is destroyed)
 	proto void CallLaterByName(Class obj, string fnName, int delay = 0, bool repeat = false, Param params = NULL);	
 	//! remove specific call from queue	
 	proto void Remove(func fn);

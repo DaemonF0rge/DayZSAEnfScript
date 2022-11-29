@@ -16,16 +16,12 @@ class ActionPlaceObject: ActionDeployObject
 	void ActionPlaceObject()
 	{
 		m_CallbackClass	= ActionPlaceObjectCB;
+		m_Text = "#place_object";
 	}
 
 	override bool HasProgress()
 	{
 		return false;
-	}
-	
-	override string GetText()
-	{
-		return "#place_object";
 	}
 	
 	override void MoveEntityToFinalPositionSinglePlayer(ActionData action_data, InventoryLocation source, InventoryLocation destination)

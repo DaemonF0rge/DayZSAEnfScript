@@ -8,25 +8,25 @@ class ComponentEntityDebug extends Component
 	// -------------------------------------------------------------------------
 	override Shape DebugBBoxDraw()
 	{
-		if ( !GetGame().IsDebug() )
-			return NULL;
+		#ifndef DEVELOPER
+		return null;
+		#endif
 		
-		if ( m_DebugShapeBBox != NULL )
+		if ( m_DebugShapeBBox )
 			m_DebugShapeBBox.Destroy();
-		
-		
+				
 		vector min_max[2];
 		
-		if(!m_ThisEntityAI.GetCollisionBox(min_max))
-			return NULL;
+		if (!m_ThisEntityAI.GetCollisionBox(min_max))
+			return null;
 		
 		m_DebugShapeBBox = Debug.DrawBox(min_max[0], min_max[1]);
 		
-		GetGame().GetCallQueue(CALL_CATEGORY_GUI).CallLater(this.OnDrawing, 0, true);
+		GetGame().GetCallQueue(CALL_CATEGORY_GUI).CallLater(OnDrawing, 0, true);
 		
 		m_ThisEntityAI.SetEventMask(EntityEvent.FRAME);
 
-		return NULL;
+		return null;
 	}
 
 	// -------------------------------------------------------------------------
@@ -41,32 +41,30 @@ class ComponentEntityDebug extends Component
 	// -------------------------------------------------------------------------
 	override void DebugBBoxDelete()
 	{
-		if ( !GetGame().IsDebug() )
-		{
-			return;
-		}
+		#ifndef DEVELOPER
+		return;
+		#endif
 		
-		if ( m_DebugShapeBBox != NULL )
+		if ( m_DebugShapeBBox )
 		{
 			m_DebugShapeBBox.Destroy();
-			m_DebugShapeBBox = NULL;
+			m_DebugShapeBBox = null;
 		}
 		
-		if ( m_DebugShapeDirection == NULL && m_DebugShapeBBox == NULL )
+		if ( !m_DebugShapeDirection && !m_DebugShapeBBox )
 		{
-			GetGame().GetCallQueue(CALL_CATEGORY_GUI).Remove(this.OnDrawing);
+			GetGame().GetCallQueue(CALL_CATEGORY_GUI).Remove(OnDrawing);
 		}
 	}
 
 	// -------------------------------------------------------------------------
 	override Shape DebugDirectionDraw(float distance = 1)
 	{	
-		if ( !GetGame().IsDebug() )
-		{
-			return NULL;
-		}
+		#ifndef DEVELOPER
+		return null;
+		#endif
 		
-		if ( m_DebugShapeDirection != NULL )
+		if ( m_DebugShapeDirection )
 		{
 			m_DebugShapeDirection.Destroy();
 		}
@@ -76,50 +74,48 @@ class ComponentEntityDebug extends Component
 		m_DebugShapeDirectionDist = distance;
 		m_DebugShapeDirection = Debug.DrawArrow(p1, p2);
 		
-		GetGame().GetCallQueue(CALL_CATEGORY_GUI).CallLater(this.OnDrawing, 0, true);
+		GetGame().GetCallQueue(CALL_CATEGORY_GUI).CallLater(OnDrawing, 0, true);
 		
 		m_ThisEntityAI.SetEventMask(EntityEvent.FRAME);
-		return NULL;
+		return null;
 	}
 
 	// -------------------------------------------------------------------------
 	override void DebugDirectionDelete()
 	{
-		if ( !GetGame().IsDebug() )
-		{
-			return;
-		}
+		#ifndef DEVELOPER
+		return;
+		#endif
 		
-		if ( m_DebugShapeDirection != NULL )
+		if ( m_DebugShapeDirection )
 		{
 			m_DebugShapeDirection.Destroy();
-			m_DebugShapeDirection = NULL;
+			m_DebugShapeDirection = null;
 		}
 		
-		if ( m_DebugShapeDirection == NULL && m_DebugShapeBBox == NULL )
+		if ( !m_DebugShapeDirection && !m_DebugShapeBBox )
 		{
-			GetGame().GetCallQueue(CALL_CATEGORY_GUI).Remove(this.OnDrawing);
+			GetGame().GetCallQueue(CALL_CATEGORY_GUI).Remove(OnDrawing);
 		}
 	}
 
 	void OnDrawing()
 	{
-		if ( !GetGame().IsDebug() )
-		{
-			return;
-		}
+		#ifndef DEVELOPER
+		return;
+		#endif
 		
-		if ( m_DebugShapeBBox != NULL || m_DebugShapeDirection != NULL )
+		if ( m_DebugShapeBBox || m_DebugShapeDirection )
 		{		
 			vector mat[4];
 			m_ThisEntityAI.GetTransform(mat);
 		
-			if ( m_DebugShapeBBox != NULL )
+			if ( m_DebugShapeBBox )
 			{
 				m_DebugShapeBBox.SetMatrix(mat);
 			}
 			
-			if ( m_DebugShapeDirection != NULL )
+			if ( m_DebugShapeDirection )
 			{
 				m_DebugShapeDirection.SetMatrix(mat);			
 			}

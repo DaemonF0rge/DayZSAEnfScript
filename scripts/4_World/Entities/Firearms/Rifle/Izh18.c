@@ -16,6 +16,8 @@ class Izh18_Base extends RifleSingleShot_Base
 	//Debug menu Spawn Ground Special
 	override void OnDebugSpawn()
 	{
+		super.OnDebugSpawn();
+		
 		EntityAI entity;
 		if ( Class.CastTo(entity, this) )
 		{

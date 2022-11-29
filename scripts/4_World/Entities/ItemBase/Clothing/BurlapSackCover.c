@@ -9,23 +9,37 @@ class BurlapSackCover extends ClothingBase
 			OnRemovedFromHead(m_Player);
 		}
 	}
+	
+	override void EEItemLocationChanged(notnull InventoryLocation oldLoc, notnull InventoryLocation newLoc)
+	{
+		super.EEItemLocationChanged(oldLoc,newLoc);
+		
+		if (GetGame().IsDedicatedServer() && newLoc.GetType() == InventoryLocationType.GROUND)
+		{
+			if (m_Player)
+			{
+				MiscGameplayFunctions.TurnItemIntoItem(this, "BurlapSack", m_Player);
+			}
+		}
+	}
 
 	override void OnWasAttached(EntityAI parent, int slot_id)
 	{
+		super.OnWasAttached(parent, slot_id);
+		
 		Class.CastTo(m_Player, parent.GetHierarchyRootPlayer());
 		//bool selected = player.IsPlayerSelected();//this is 0 upon player's connection to server
 
-		if ( (GetGame().IsClient() || !GetGame().IsMultiplayer()) && m_Player && m_Player.IsControlledPlayer() && slot_id == InventorySlots.HEADGEAR )
+		if ( (!GetGame().IsDedicatedServer()) && m_Player && m_Player.IsControlledPlayer() && slot_id == InventorySlots.HEADGEAR )
 		{
 			//GetGame().GetWorld().SetAperture(100000);
-			PPEffects.Init();
-			PPEffects.EnableBurlapSackBlindness();
+			PPERequesterBank.GetRequester(PPERequester_BurlapSackEffects).Start();
 			m_Player.SetInventorySoftLock(true);
 			m_Player.SetMasterAttenuation("BurlapSackAttenuation");
 			
 			if ( GetGame().GetUIManager().IsMenuOpen(MENU_INVENTORY) )
 			{
-				GetGame().GetUIManager().FindMenu(MENU_INVENTORY).Close();
+				GetGame().GetMission().HideInventory();
 			}
 		}
 		SetInvisibleRecursive(true,m_Player,{InventorySlots.MASK,InventorySlots.EYEWEAR});
@@ -33,6 +47,8 @@ class BurlapSackCover extends ClothingBase
 
 	override void OnWasDetached(EntityAI parent, int slot_id)
 	{
+		super.OnWasDetached(parent, slot_id);
+		
 		if ( GetGame().IsServer() )
 		{
 			PlayerBase player;
@@ -62,9 +78,7 @@ class BurlapSackCover extends ClothingBase
 	{
 		if ( player.IsControlledPlayer() )
 		{
-			PPEffects.Init();
-			PPEffects.DisableBurlapSackBlindness();
-			//GetGame().GetWorld().SetAperture(0);
+			PPERequesterBank.GetRequester(PPERequester_BurlapSackEffects).Stop();
 			player.SetInventorySoftLock(false);
 			player.SetMasterAttenuation("");
 		}

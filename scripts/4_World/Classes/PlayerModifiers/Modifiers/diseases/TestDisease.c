@@ -8,9 +8,12 @@ class TestDiseaseMdfr: ModifierBase
 		m_TrackActivatedTime			= false;
 		m_ID 							= 9999;
 		m_TickIntervalInactive 	= DEFAULT_TICK_TIME_INACTIVE;
-		m_TickIntervalActive 	= DEFAULT_TICK_TIME_ACTIVE;
+		m_TickIntervalActive 	= 5;
 		m_SomeValue		= new Param1<float>(0);
 		MakeParamObjectPersistent(m_SomeValue);
+		
+		DisableDeactivateCheck();
+		DisableActivateCheck();
 	}
 	
 	override bool ActivateCondition(PlayerBase player)
@@ -20,7 +23,7 @@ class TestDiseaseMdfr: ModifierBase
 
 	override void OnActivate(PlayerBase player)
 	{
-		player.GetBleedingManagerServer().AttemptAddBleedingSource(Math.RandomInt(0, 100));
+		//player.GetBleedingManagerServer().AttemptAddBleedingSource(Math.RandomInt(0, 100));
 	}
 	
 	override void OnReconnect(PlayerBase player)
@@ -40,6 +43,6 @@ class TestDiseaseMdfr: ModifierBase
 
 	override void OnTick(PlayerBase player, float deltaT)
 	{
-	
+		player.GetSymptomManager().QueueUpPrimarySymptom(SymptomIDs.SYMPTOM_LAUGHTER);
 	}
 };

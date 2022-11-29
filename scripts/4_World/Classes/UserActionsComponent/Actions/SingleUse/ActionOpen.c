@@ -5,6 +5,7 @@ class ActionOpen: ActionSingleUseBase
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONMOD_OPENITEM_ONCE;
 		m_CommandUIDProne = DayZPlayerConstants.CMD_ACTIONFB_OPENITEM_ONCE;
 		//m_Animation = "open";
+		m_Text = "#open";
 	}
 	
 	override void CreateConditionComponents()  
@@ -16,11 +17,6 @@ class ActionOpen: ActionSingleUseBase
 	override bool HasTarget()
 	{
 		return false;
-	}
-
-	override string GetText()
-	{
-		return "#open";
 	}
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

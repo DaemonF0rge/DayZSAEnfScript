@@ -6,6 +6,7 @@ class ActionUngagTarget: ActionContinuousBase
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONMOD_COVERHEAD_TARGET;
 		//m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT | DayZPlayerConstants.STANCEMASK_CROUCH;
+		m_Text = "#ungag_person";
 	}
 
 	override void CreateConditionComponents()  
@@ -13,11 +14,6 @@ class ActionUngagTarget: ActionContinuousBase
 	
 		m_ConditionItem = new CCINone;
 		m_ConditionTarget = new CCTMan(UAMaxDistances.DEFAULT);
-	}
-	
-	override string GetText()
-	{
-		return "#ungag_person";
 	}
 	
 	override typename GetInputType()

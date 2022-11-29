@@ -37,13 +37,13 @@ class WeaponStateBase
 		{
 			if (IsIdle())
 			{
-				wpnDebugSpam("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponStateBase::SaveCurrentFSMState - idle state, skipping other substates");
+				if (LogManager.IsWeaponLogEnable()) { wpnDebugSpam("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponStateBase::SaveCurrentFSMState - idle state, skipping other substates"); }
 				return m_fsm.SaveCurrentFSMState(ctx);
 			}
 			else
 			{
 				// if parent state is !idle (unstable) then save whole machine
-				wpnDebugSpam("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponStateBase::SaveCurrentFSMState - NOT idle state, saving full submachine state");
+				if (LogManager.IsWeaponLogEnable()) { wpnDebugSpam("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponStateBase::SaveCurrentFSMState - NOT idle state, saving full submachine state"); }
 				return m_fsm.SaveCurrentUnstableFSMState(ctx);
 			}
 			return false;
@@ -57,7 +57,7 @@ class WeaponStateBase
 		{
 			if (IsIdle())
 			{
-				wpnDebugSpam("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponStateBase::LoadCurrentFSMState - idle state, skipping other substates");
+				if (LogManager.IsWeaponLogEnable()) { wpnDebugSpam("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponStateBase::LoadCurrentFSMState - idle state, skipping other substates"); }
 				if (m_fsm.LoadCurrentFSMState(ctx, version))
 					return true;
 				else
@@ -66,7 +66,7 @@ class WeaponStateBase
 			else
 			{
 				// if parent state is !idle (unstable) then load whole machine
-				wpnDebugSpam("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponStateBase::LoadCurrentFSMState - NOT idle state, loading full submachine state");
+				if (LogManager.IsWeaponLogEnable()) { wpnDebugSpam("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponStateBase::LoadCurrentFSMState - NOT idle state, loading full submachine state"); }
 				if (m_fsm.LoadCurrentUnstableFSMState(ctx, version))
 					return true;
 				else
@@ -104,11 +104,11 @@ class WeaponStateBase
 	{
 		if (HasFSM() && !m_fsm.IsRunning())
 		{
-			wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { " + this.Type().ToString() + "  Has Sub-FSM! Starting submachine...");
+			if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { " + this.Type().ToString() + "  Has Sub-FSM! Starting submachine..."); }
 			m_fsm.Start(e);
 		}
 		else
-			wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { " + this.Type().ToString());
+			if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { " + this.Type().ToString()); }
 	}
 
 	/**@fn		OnUpdate
@@ -130,10 +130,10 @@ class WeaponStateBase
 	{
 		if (HasFSM() && m_fsm.IsRunning())
 		{
-			wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " OnAbort " + this.Type().ToString() + "  Has Sub-FSM! Aborting submachine...");
+			if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " OnAbort " + this.Type().ToString() + "  Has Sub-FSM! Aborting submachine..."); }
 			m_fsm.Abort(e);
 		}
-		wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } ABORTED " + this.Type().ToString());
+		if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } ABORTED " + this.Type().ToString()); }
 	}
 
 	/**@fn		OnExit
@@ -142,7 +142,7 @@ class WeaponStateBase
 	 **/
 	void OnExit (WeaponEventBase e)
 	{
-		wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } " + this.Type().ToString());
+		if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } " + this.Type().ToString()); }
 	}
 
 	/**@fn		IsWaitingForActionFinish

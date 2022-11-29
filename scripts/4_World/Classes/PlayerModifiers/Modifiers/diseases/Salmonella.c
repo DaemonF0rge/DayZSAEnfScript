@@ -8,7 +8,15 @@ class SalmonellaMdfr: ModifierBase
 	static const int WATER_DRAIN_FROM_VOMIT = 450;
 	static const int ENERGY_DRAIN_FROM_VOMIT = 310;
 	static const float STOMACH_MIN_VOLUME = 200;	// min volume of stomach for vomit symptom
-
+	
+	static const float EVENT_INTERVAL_MIN = 12;
+	static const float EVENT_INTERVAL_MAX = 18;
+	
+	
+	
+	float m_Time;
+	float m_NextEvent;
+	
 	override void Init()
 	{
 		m_TrackActivatedTime	= false;
@@ -80,5 +88,16 @@ class SalmonellaMdfr: ModifierBase
 				}
 			}
 		}
+		
+		m_Time += deltaT;
+	
+		if ( m_Time >= m_NextEvent )
+		{
+			m_Time = 0;
+			m_NextEvent = Math.RandomFloatInclusive( EVENT_INTERVAL_MIN, EVENT_INTERVAL_MAX );
+			player.GetSymptomManager().QueueUpPrimarySymptom(SymptomIDs.SYMPTOM_PAIN_LIGHT);
+		}
+		
+		
 	}
 };

@@ -3,7 +3,7 @@ class OpenItem
 	//! WIll open the 'item_target' by spawning a new entity and transferring item variables to the new one
 	static void OpenAndSwitch(ItemBase item_tool, ItemBase item_target, PlayerBase player, float specialty_weight = 0)
 	{
-		ref array<int> spill_range = new array<int>;
+		array<int> spill_range = new array<int>;
 		
 		if( item_tool.ConfigIsExisting("OpenItemSpillRange") )
 		{

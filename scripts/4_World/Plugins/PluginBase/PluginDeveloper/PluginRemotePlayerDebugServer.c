@@ -13,6 +13,7 @@ class PluginRemotePlayerDebugServer extends PluginBase
 	
 	override void OnUpdate(float delta_time)
 	{
+		#ifdef SERVER
 		if( m_ClientList.Count()!=0 )
 		{
 			m_AccuTime+=delta_time;
@@ -23,6 +24,7 @@ class PluginRemotePlayerDebugServer extends PluginBase
 				SendDebug();
 			}
 		}
+		#endif
 	}
 	
 	void SetWatching(bool enable)
@@ -120,13 +122,14 @@ class PluginRemotePlayerDebugServer extends PluginBase
 			m_ClientList.Insert(player);
 			SetWatching(true);
 		}
-		else
+		else if (index != -1 && m_ClientList.Count() != 0)
 		{
 			m_ClientList.Remove(index);
-			if( m_ClientList.Count() == 0 )
-			{
-				SetWatching(false);
-			}
+		}
+		
+		if( m_ClientList.Count() == 0 )
+		{
+			SetWatching(false);
 		}
 	}
 	

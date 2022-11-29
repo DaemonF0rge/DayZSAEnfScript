@@ -128,15 +128,8 @@ class BackendCallback : Managed
 // Backend API access
 class BackendApi
 {
-
-	void BackendApi()
-	{
-	}
-
-	void ~BackendApi()
-	{
-	}
-
+	private void BackendApi() {}
+	private void ~BackendApi() {}
 	
 	/**
 	\brief Initiate backend - request processing
@@ -167,23 +160,23 @@ class BackendApi
 	{
 		string result;
 	
-		if( code == EBackendError.EBERR_OK )
+		if ( code == EBackendError.EBERR_OK )
 			result = "OK";
-		else if( code == EBackendError.EBERR_UNKNOWN )
+		else if ( code == EBackendError.EBERR_UNKNOWN )
 			result = "Offline";
-		else if( code == EBackendError.EBERR_DISABLED )
+		else if ( code == EBackendError.EBERR_DISABLED )
 			result = "Communication Disabled";
-		else if( code == EBackendError.EBERR_INVALID_STATE )
+		else if ( code == EBackendError.EBERR_INVALID_STATE )
 			result = "Cannot be called from current state";
-		else if( code == EBackendError.EBERR_BUSY )
+		else if ( code == EBackendError.EBERR_BUSY )
 			result = "Busy processing requests";
-		else if( code == EBackendError.EBERR_ALREADY_OFFLINE )
+		else if ( code == EBackendError.EBERR_ALREADY_OFFLINE )
 			result = "Already disconnected";
-		else if( code == EBackendError.EBERR_ALREADY_ONLINE )
+		else if ( code == EBackendError.EBERR_ALREADY_ONLINE )
 			result = "Already connected";
-		else if( code == EBackendError.EBERR_LOGIN_FAILED )
+		else if ( code == EBackendError.EBERR_LOGIN_FAILED )
 			result = "Failed to logon";
-		else if( code == EBackendError.EBERR_AUTH_FAILED )
+		else if ( code == EBackendError.EBERR_AUTH_FAILED )
 			result = "Failed to Authenticate";
 		else
 			result = "*";

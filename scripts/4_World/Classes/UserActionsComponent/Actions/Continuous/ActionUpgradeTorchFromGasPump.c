@@ -15,6 +15,7 @@ class ActionUpgradeTorchFromGasPump: ActionContinuousBase
 		m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_CROUCH;
 		m_SpecialtyWeight = UASoftSkillsWeight.PRECISE_LOW;
+		m_Text = "#str_upgrade_torch_fuel";
 	}
 	
 	override void CreateConditionComponents()  
@@ -23,27 +24,15 @@ class ActionUpgradeTorchFromGasPump: ActionContinuousBase
 		m_ConditionTarget = new CCTDummy;
 		m_ConditionItem = new CCINonRuined;
 	}
-		
-	override string GetText()
-	{
-		return "#str_upgrade_torch_fuel";
-	}
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
 	{
 		Land_FuelStation_Feed fuelstation = Land_FuelStation_Feed.Cast(target.GetObject());
 		Torch torch = Torch.Cast(item);
 		
-		Rag rag_on_torch = Rag.Cast(  torch.GetRag()  );
-		
-		if (rag_on_torch  &&  fuelstation  &&  fuelstation.HasFuelToGive() ) // Check if torch already has rag and if vessel has liquid in it
+		if ( fuelstation  &&  fuelstation.HasFuelToGive() )
 		{
-			float quantity = rag_on_torch.GetQuantity();
-			
-			if (quantity > 1  &&  !torch.IsIgnited())
-			{
-				return torch.CanReceiveUpgrade();
-			}
+			return torch.CanReceiveUpgrade();
 		}
 		
 		return false;
@@ -55,8 +44,8 @@ class ActionUpgradeTorchFromGasPump: ActionContinuousBase
 		
 		if (torch)
 		{
-			torch.ConsumeRag();
-			torch.ConsumeFuelFromGasStation();
+			//torch.ConsumeRag();
+			torch.Upgrade(null);
 		}
 	}
 };

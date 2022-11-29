@@ -44,7 +44,7 @@ class HeatComfortAnimHandler
 	
 	void Process(float delta_time)
 	{
-		if( GetGame().IsServer() || !GetGame().IsMultiplayer() )
+		if( GetGame().IsServer() )
 		{
 			
 			float hc = m_Player.GetStatHeatComfort().Get();

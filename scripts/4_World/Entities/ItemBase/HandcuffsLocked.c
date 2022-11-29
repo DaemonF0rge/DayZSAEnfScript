@@ -41,7 +41,8 @@ class RestrainingToolLocked extends ItemBase
 							player.OnItemInHandsChanged();
 						}
 						
-						player.OnRestrainStart();
+						if (player.IsControlledPlayer())
+							player.OnRestrainStart();
 					}
 				}
 			}

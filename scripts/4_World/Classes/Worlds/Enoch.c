@@ -27,6 +27,18 @@ class EnochData extends WorldData
 
 	protected int m_choosenWeather = 1;
 	protected int m_lastWeather = 0;
+	
+	protected static const ref array<vector> LIVONIA_ARTY_STRIKE_POS = 
+	{ 
+		"7440.00 417.00 -500.00",
+		"-500.00 276.00 5473.00",
+		"-500.00 265.00 9852.00",
+		"4953.00 240.00 13300.00",
+		"9620.00 188.00 13300.00",
+		"13300.00 204.00 10322.00",
+		"13300.00 288.00 6204.00",
+		"13300.00 296.00 -500.00"
+	};
 
 	override void Init()
 	{
@@ -37,8 +49,27 @@ class EnochData extends WorldData
 		m_Sunset_Jan = 15.63;
 		m_Sunrise_Jul = 3.65;
 		m_Sunset_Jul = 20.35;
-		m_MaxTemps = {-2.5,-2.1,2.3,9,15.5,19.4,20.9,20.4,16,10.5,4.2,0.1};
+
+		int tempIdx;
 		m_MinTemps = {-7,-7.4,-4.1,1.5,7,11.3,13.4,13.1,9.3,5.3,0.8,-3.6};
+		if (CfgGameplayHandler.GetEnvironmentMinTemps() && CfgGameplayHandler.GetEnvironmentMinTemps().Count() == 12)
+		{
+			for (tempIdx = 0; tempIdx < CfgGameplayHandler.GetEnvironmentMinTemps().Count(); tempIdx++)
+			{
+				m_MinTemps[tempIdx] = CfgGameplayHandler.GetEnvironmentMinTemps().Get(tempIdx);
+			}
+		}
+
+		m_MaxTemps = {-2.5,-2.1,2.3,9,15.5,19.4,20.9,20.4,16,10.5,4.2,0.1};
+		if (CfgGameplayHandler.GetEnvironmentMaxTemps() && CfgGameplayHandler.GetEnvironmentMaxTemps().Count() == 12)
+		{
+			for (tempIdx = 0; tempIdx < CfgGameplayHandler.GetEnvironmentMaxTemps().Count(); tempIdx++)
+			{
+				m_MaxTemps[tempIdx] = CfgGameplayHandler.GetEnvironmentMaxTemps().Get(tempIdx);
+			}
+		}
+
+		m_FiringPos = LIVONIA_ARTY_STRIKE_POS;
 	}
 	
 	override bool WeatherOnBeforeChange( EWeatherPhenomenon type, float actual, float change, float time )
@@ -142,8 +173,8 @@ class EnochData extends WorldData
 
 				m_Weather.GetOvercast().Set( phmnValue, phmnTime, phmnLength );
 
-				Print( "Enoch::Weather::Overcast:: " + "( " + g_Game.GetDayTime() + " ) " + " overcast: " + actual );
-				Print( "Enoch::Weather::Overcast::Rain:: " + "( " + g_Game.GetDayTime() + " ) " + m_Weather.GetRain().GetActual() );
+				Debug.Log(string.Format("Enoch::Weather::Overcast:: (%1) overcast: %2", g_Game.GetDayTime(), actual));
+				Debug.Log(string.Format("Enoch::Weather::Overcast::Rain:: (%1) %2", g_Game.GetDayTime(), m_Weather.GetRain().GetActual()));
 
 				return true;
 
@@ -159,7 +190,7 @@ class EnochData extends WorldData
 				if ( actualOvercast <= RAIN_THRESHOLD )
 				{
 					m_Weather.GetRain().Set( 0.0, RAIN_TIME_MIN, RAIN_TIME_MAX );
-					Print( "Enoch::Weather::Rain::ForceEnd:: " + "( " + g_Game.GetDayTime() + " ) " + actual + " -> " + "0" );
+					Debug.Log(string.Format("Enoch::Weather::Rain::ForceEnd:: (%1) %2 -> 0", g_Game.GetDayTime(), actual));
 					return true;
 				}
 			
@@ -170,7 +201,7 @@ class EnochData extends WorldData
 					phmnLength = 0;
 
 					m_Weather.GetRain().Set( phmnValue, phmnTime, phmnLength );	
-					Print( "Enoch::Weather::Rain::ForceStorm:: " + "( " + g_Game.GetDayTime() + " ) " + actual + " -> " + phmnValue);
+					Debug.Log(string.Format("Enoch::Weather::Rain::ForceStorm:: (%1) %2 -> %3", g_Game.GetDayTime(), actual, phmnValue));
 					return true;
 				}
 			
@@ -247,7 +278,7 @@ class EnochData extends WorldData
 		
 				m_Weather.GetRain().Set( phmnValue, phmnTime, phmnLength );
 
-				Print( "Enoch::Weather::Rain:: " + "( " + g_Game.GetDayTime() + " ) " + actual );
+				Debug.Log(string.Format("Enoch::Weather::Rain:: (%1) %2", g_Game.GetDayTime(), actual));
 				return true;
 			
 			//-----------------------------------------------------------------------------------------------------------------------------
@@ -260,6 +291,9 @@ class EnochData extends WorldData
 				} else {
 					m_Weather.GetFog().Set( 0.0, 1800, 0 );
 				}
+			
+				Debug.Log(string.Format("Enoch::Weather::Fog:: (%1) %2", g_Game.GetDayTime(), actual));
+
 				return true;
 		}
 		return false;

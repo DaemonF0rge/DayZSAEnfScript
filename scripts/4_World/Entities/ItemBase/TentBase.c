@@ -44,7 +44,7 @@ class TentBase extends ItemBase
 		m_ToggleAnimations = new map<ref ToggleAnimations, bool>;
 		m_ShowAnimationsWhenPitched = new array<string>;
 		m_ShowAnimationsWhenPacked = new array<string>;
-		m_DeployLoopSound = new EffectSound;
+
 		m_HalfExtents = vector.Zero;
 		RegisterNetSyncVariableInt("m_State");
 		RegisterNetSyncVariableBool("m_IsSoundSynchRemote");
@@ -65,10 +65,7 @@ class TentBase extends ItemBase
 			DestroyClutterCutter();
 		}
 		
-		if ( m_DeployLoopSound )
-		{
-			SEffectManager.DestroySound( m_DeployLoopSound );
-		}
+		SEffectManager.DestroyEffect( m_DeployLoopSound );
 	}
 	
 	override string GetInvulnerabilityTypeString()
@@ -228,6 +225,11 @@ class TentBase extends ItemBase
 			{
 				HandleOpeningsPhysics();
 				m_OpeningMaskLocal = m_OpeningMask;
+			}
+			
+			if ( m_State == PACKED )
+			{
+				Pack(false); //intentional
 			}
 		}
 	}
@@ -426,16 +428,15 @@ class TentBase extends ItemBase
 		
 	override int GetViewIndex()
 	{
-		if( MemoryPointExists( "invView2" ) )
-		{
-			#ifdef PLATFORM_WINDOWS
+		if ( MemoryPointExists( "invView2" ) )
+		{		
 			InventoryLocation il = new InventoryLocation;
 			GetInventory().GetCurrentInventoryLocation( il );
 			InventoryLocationType type = il.GetType();
 			
 			if ( GetState() == PACKED )
 			{
-				switch( type )
+				switch ( type )
 				{
 					case InventoryLocationType.CARGO:
 					{
@@ -465,7 +466,7 @@ class TentBase extends ItemBase
 			}
 			else
 			{
-				switch( type )
+				switch ( type )
 				{
 					case InventoryLocationType.CARGO:
 					{
@@ -492,11 +493,7 @@ class TentBase extends ItemBase
 						return 0;
 					}
 				}
-			}
-			#ifdef PLATFORM_CONSOLE
-			return 1;
-			#endif
-			#endif
+			}	
 		}
 		return 0;
 	}
@@ -576,7 +573,7 @@ class TentBase extends ItemBase
 		
 		SetSynchDirty();
 		
-		if ( ( !GetGame().IsMultiplayer() || GetGame().IsClient() ) && !init )
+		if ( ( !GetGame().IsDedicatedServer() ) && !init )
 		{
 			GetOnViewIndexChanged().Invoke();
 		}
@@ -602,7 +599,7 @@ class TentBase extends ItemBase
 
 		SetSynchDirty();
 		
-		if ( ( !GetGame().IsMultiplayer() || GetGame().IsClient() ) && !init )
+		if ( ( !GetGame().IsDedicatedServer() ) && !init )
 		{
 			GetOnViewIndexChanged().Invoke();
 		}
@@ -724,6 +721,11 @@ class TentBase extends ItemBase
 	//used by user action
 	void ToggleAnimation( string selection )
 	{
+		if ( m_State == PACKED )
+		{
+			return;
+		}
+		
 		bool is_closed;
 		ResetToggle();
 		
@@ -809,25 +811,25 @@ class TentBase extends ItemBase
 	void SoundTentOpenPlay()
 	{
 		EffectSound sound =	SEffectManager.PlaySound( GetSoundOpen(), GetPosition() );
-		sound.SetSoundAutodestroy( true );
+		sound.SetAutodestroy( true );
 	}
 	
 	void SoundTentClosePlay()
 	{
 		EffectSound sound =	SEffectManager.PlaySound( GetSoundClose(), GetPosition() );
-		sound.SetSoundAutodestroy( true );
+		sound.SetAutodestroy( true );
 	}
 	
 	void SoundTentOpenWindowPlay()
 	{
 		EffectSound sound =	SEffectManager.PlaySound( GetSoundOpenWindow(), GetPosition() );
-		sound.SetSoundAutodestroy( true );
+		sound.SetAutodestroy( true );
 	}
 	
 	void SoundTentCloseWindowPlay()
 	{
 		EffectSound sound =	SEffectManager.PlaySound( GetSoundCloseWindow(), GetPosition() );
-		sound.SetSoundAutodestroy( true );
+		sound.SetAutodestroy( true );
 	}
 	
 	void RegenerateNavmesh()
@@ -874,9 +876,9 @@ class TentBase extends ItemBase
 	
 	void PlayDeployLoopSound()
 	{		
-		if ( GetGame().IsMultiplayer() && GetGame().IsClient() || !GetGame().IsMultiplayer() )
+		if ( !GetGame().IsDedicatedServer() )
 		{		
-			if ( !m_DeployLoopSound.IsSoundPlaying() )
+			if ( !m_DeployLoopSound || !m_DeployLoopSound.IsSoundPlaying() )
 			{
 				m_DeployLoopSound = SEffectManager.PlaySound( GetLoopDeploySoundset(), GetPosition() );
 			}
@@ -885,7 +887,7 @@ class TentBase extends ItemBase
 	
 	void StopDeployLoopSound()
 	{
-		if ( GetGame().IsMultiplayer() && GetGame().IsClient() || !GetGame().IsMultiplayer() )
+		if ( !GetGame().IsDedicatedServer() )
 		{	
 			m_DeployLoopSound.SetSoundFadeOut(0.5);
 			m_DeployLoopSound.SoundStop();
@@ -986,10 +988,12 @@ class TentBase extends ItemBase
 	
 	override bool CanLoadItemIntoCargo( EntityAI item )
 	{
+		if (!super.CanLoadItemIntoCargo( item ))
+			return false;
 		if ( GetHealthLevel() == GameConstants.STATE_RUINED )
 			return false;
 		
-		return super.CanLoadItemIntoCargo( item );
+		return true;
 	}
 	
 	override bool CanReceiveAttachment( EntityAI attachment, int slotId )
@@ -1023,25 +1027,4 @@ class TentBase extends ItemBase
 		m_IsBeingPacked = isBeingPacked;
 		SetSynchDirty();
 	}
-	
-	/*void ClientPrintProxyPhysicsDebug(bool state, string proxySelectionName)
-	{
-		if (GetGame().IsClient() || !GetGame().IsMultiplayer())
-		{
-			Print("ClientPrintProxyPhysicsDebug | " + this + " | state: " + state + " | proxySelectionName: " + proxySelectionName);
-			DumpStack();
-		}
-	}
-	
-	void AddProxyPhysicsDbg(string proxySelectionName)
-	{
-		AddProxyPhysics(proxySelectionName);
-		ClientPrintProxyPhysicsDebug(true,proxySelectionName);
-	}
-	
-	void RemoveProxyPhysicsDbg(string proxySelectionName)
-	{
-		RemoveProxyPhysics(proxySelectionName);
-		ClientPrintProxyPhysicsDebug(false,proxySelectionName);
-	}*/
 };

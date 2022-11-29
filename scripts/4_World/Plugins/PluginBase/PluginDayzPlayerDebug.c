@@ -600,6 +600,7 @@ class PluginDayzPlayerDebug extends PluginBase
 			m_ActionsSelector.AddItem("L RESTRAINED STRUGGLE", new PluginDayzPlayerDebugUserData(DayZPlayerConstants.CMD_ACTIONMOD_RESTRAINEDSTRUGGLE, false), 0);
 			m_ActionsSelector.AddItem("L COVER HEAD SELF", new PluginDayzPlayerDebugUserData(DayZPlayerConstants.CMD_ACTIONMOD_COVERHEAD_SELF, false), 0);
 			m_ActionsSelector.AddItem("L COVER HEAD TARGET", new PluginDayzPlayerDebugUserData(DayZPlayerConstants.CMD_ACTIONMOD_COVERHEAD_TARGET, false), 0);
+			m_ActionsSelector.AddItem("L SET ALARM CLOCK", new PluginDayzPlayerDebugUserData(DayZPlayerConstants.CMD_ACTIONMOD_SET_ALARM, false), 0);
 			
 			m_ActionsSelector.AddItem("L ENGINE START", new PluginDayzPlayerDebugUserData(DayZPlayerConstants.CMD_ACTIONMOD_STARTENGINE, false), 0);
 			m_ActionsSelector.AddItem("L TOOT HORN", new PluginDayzPlayerDebugUserData(DayZPlayerConstants.CMD_ACTIONMOD_TOOTHORN, false), 0);
@@ -640,7 +641,8 @@ class PluginDayzPlayerDebug extends PluginBase
 			m_ActionsSelector.AddItem("O EMPTY SEEDS PACK", new PluginDayzPlayerDebugUserData(DayZPlayerConstants.CMD_ACTIONMOD_EMPTYSEEDSPACK, false), 0);
 			m_ActionsSelector.AddItem("O INTERACT", new PluginDayzPlayerDebugUserData(DayZPlayerConstants.CMD_ACTIONMOD_INTERACTONCE, false), 0);
 			m_ActionsSelector.AddItem("O ATTACH ITEM", new PluginDayzPlayerDebugUserData(DayZPlayerConstants.CMD_ACTIONMOD_ATTACHITEM, false), 0);
-			
+			m_ActionsSelector.AddItem("O STOP ALARM CLOCK", new PluginDayzPlayerDebugUserData(DayZPlayerConstants.CMD_ACTIONMOD_STOP_ALARM, false), 0);
+			m_ActionsSelector.AddItem("O PRESS TRIGGER", new PluginDayzPlayerDebugUserData(DayZPlayerConstants.CMD_ACTIONMOD_PRESS_TRIGGER, false), 0);
 			
 			m_ActionsSelector.AddItem("O DROP ITEM HANDS", new PluginDayzPlayerDebugUserData(DayZPlayerConstants.CMD_ACTIONMOD_DROPITEM_HANDS, false), 0);
 			m_ActionsSelector.AddItem("O DROP ITEM INVENTORY", new PluginDayzPlayerDebugUserData(DayZPlayerConstants.CMD_ACTIONMOD_DROPITEM_INVENTORY, false), 0);
@@ -663,6 +665,7 @@ class PluginDayzPlayerDebug extends PluginBase
 			m_ActionsSelector.AddItem("FB L DRINK WELL", new PluginDayzPlayerDebugUserData(DayZPlayerConstants.CMD_ACTIONFB_DRINKWELL, true, DayZPlayerConstants.STANCEMASK_CROUCH), 0);
 			m_ActionsSelector.AddItem("FB L FILL BOTTLE WELL", new PluginDayzPlayerDebugUserData(DayZPlayerConstants.CMD_ACTIONFB_FILLBOTTLEWELL, true, DayZPlayerConstants.STANCEMASK_CROUCH), 0);
 			m_ActionsSelector.AddItem("FB L FIRE ESTINGUISHER", new PluginDayzPlayerDebugUserData(DayZPlayerConstants.CMD_ACTIONFB_FIREESTINGUISHER, true, DayZPlayerConstants.STANCEMASK_ERECT), 0);
+			m_ActionsSelector.AddItem("FB L FLAME REPAIR", new PluginDayzPlayerDebugUserData(DayZPlayerConstants.CMD_ACTIONFB_FLAME_REPAIR, true, DayZPlayerConstants.STANCEMASK_CROUCH | DayZPlayerConstants.STANCEMASK_ERECT), 0);
 			m_ActionsSelector.AddItem("FB L WRING CLOTH", new PluginDayzPlayerDebugUserData(DayZPlayerConstants.CMD_ACTIONFB_WRING, true, DayZPlayerConstants.STANCEMASK_CROUCH), 0);
 			m_ActionsSelector.AddItem("FB L FISHING", new PluginDayzPlayerDebugUserData(DayZPlayerConstants.CMD_ACTIONFB_FISHING, true, DayZPlayerConstants.STANCEMASK_CROUCH), 0);
 			m_ActionsSelector.AddItem("FB L CPR", new PluginDayzPlayerDebugUserData(DayZPlayerConstants.CMD_ACTIONFB_CPR, true, DayZPlayerConstants.STANCEMASK_CROUCH), 0);
@@ -715,7 +718,7 @@ class PluginDayzPlayerDebug extends PluginBase
 			m_ActionsSelector.AddItem("FB L DISASSEMBLE", new PluginDayzPlayerDebugUserData(DayZPlayerConstants.CMD_ACTIONFB_DISASSEMBLE, true, DayZPlayerConstants.STANCEMASK_CROUCH | DayZPlayerConstants.STANCEMASK_ERECT), 0);
 			m_ActionsSelector.AddItem("FB L RAISE FLAG", new PluginDayzPlayerDebugUserData(DayZPlayerConstants.CMD_ACTIONFB_RAISE_FLAG, true, DayZPlayerConstants.STANCEMASK_ERECT), 0);
 			m_ActionsSelector.AddItem("FB L LOWER FLAG", new PluginDayzPlayerDebugUserData(DayZPlayerConstants.CMD_ACTIONFB_LOWER_FLAG, true, DayZPlayerConstants.STANCEMASK_ERECT), 0);
-
+			m_ActionsSelector.AddItem("FB L SET ALARM CLOCK", new PluginDayzPlayerDebugUserData(DayZPlayerConstants.CMD_ACTIONFB_SET_ALARM, true, DayZPlayerConstants.STANCEMASK_PRONE), 0);
 		}
 		
 		
@@ -742,6 +745,8 @@ class PluginDayzPlayerDebug extends PluginBase
 			m_ActionsSelector.AddItem("FB O ATTACH BARREL", new PluginDayzPlayerDebugUserData(DayZPlayerConstants.CMD_ACTIONFB_ATTACHBARREL, true, DayZPlayerConstants.STANCEMASK_PRONE), 0);
 			m_ActionsSelector.AddItem("FB O RESTRAIN", new PluginDayzPlayerDebugUserData(DayZPlayerConstants.CMD_ACTIONFB_RESTRAIN, true, DayZPlayerConstants.STANCEMASK_PRONE | DayZPlayerConstants.STANCEMASK_CROUCH | DayZPlayerConstants.STANCEMASK_ERECT), 0);
 			m_ActionsSelector.AddItem("FB O PICK UP HEAVY", new PluginDayzPlayerDebugUserData(DayZPlayerConstants.CMD_ACTIONFB_PICKUP_HEAVY, true, DayZPlayerConstants.STANCEMASK_ERECT), 0);
+			m_ActionsSelector.AddItem("FB O STOP ALARM CLOCK", new PluginDayzPlayerDebugUserData(DayZPlayerConstants.CMD_ACTIONFB_STOP_ALARM, true, DayZPlayerConstants.STANCEMASK_PRONE), 0);
+			m_ActionsSelector.AddItem("FB O PRESS TRIGGER", new PluginDayzPlayerDebugUserData(DayZPlayerConstants.CMD_ACTIONFB_PRESS_TRIGGER, true, DayZPlayerConstants.STANCEMASK_PRONE), 0);
 		}
         
         

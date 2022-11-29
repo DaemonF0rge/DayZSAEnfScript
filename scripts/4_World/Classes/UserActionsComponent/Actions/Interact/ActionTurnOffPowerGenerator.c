@@ -3,11 +3,7 @@ class ActionTurnOffPowerGenerator: ActionInteractBase
 	void ActionTurnOffPowerGenerator()
 	{
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONMOD_INTERACTONCE;
-	}
-
-	override string GetText()
-	{
-		return "#switch_off";
+		m_Text = "#switch_off";
 	}
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

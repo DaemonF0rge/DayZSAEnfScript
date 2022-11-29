@@ -3,11 +3,7 @@ class ActionFoldObject: ActionInteractBase
 	void ActionFoldObject()
 	{
 		m_SpecialtyWeight = UASoftSkillsWeight.ROUGH_MEDIUM;
-	}
-
-	override string GetText()
-	{
-		return "#fold";
+		m_Text = "#fold";
 	}
 
 	override typename GetInputType()

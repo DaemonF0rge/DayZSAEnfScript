@@ -7,12 +7,14 @@ class ActionTuneFrequencyOnGround : ActionInteractBase
 		m_CommandUID        = DayZPlayerConstants.CMD_ACTIONMOD_OPENDOORFW;
 		m_StanceMask        = DayZPlayerConstants.STANCEMASK_CROUCH | DayZPlayerConstants.STANCEMASK_ERECT;
 		m_RadioFreq 		= string.Empty;
+		m_Text = "#tune_frequency";
 	}
 
-	override string GetText()
+	override void OnActionInfoUpdate( PlayerBase player, ActionTarget target, ItemBase item )
 	{
-		string text = "#tune_frequency | " + m_RadioFreq + " MHz";
-		return text;
+		Object target_object = target.GetObject();
+		Land_Radio_PanelBig transmitter = Land_Radio_PanelBig.Cast( target.GetObject() );
+		m_Text = "#tune_frequency | " + transmitter.GetTunedFrequency().ToString() + " MHz";
 	}
 
 	override typename GetInputType()
@@ -34,7 +36,7 @@ class ActionTuneFrequencyOnGround : ActionInteractBase
 		if ( transmitter.GetCompEM().IsWorking() && selection == "control_panel" )
 		{
 			//transmitter.DisplayRadioInfo( transmitter.GetTunedFrequency().ToString(), player );
-			m_RadioFreq = transmitter.GetTunedFrequency().ToString();
+			//m_RadioFreq = transmitter.GetTunedFrequency().ToString();
 			
 			return true;
 		}

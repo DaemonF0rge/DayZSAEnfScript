@@ -16,11 +16,7 @@ class ActionDrinkPondContinuous: ActionContinuousBase
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONFB_DRINKPOND;
 		m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_CROUCH;
-	}
-
-	override string GetText()
-	{
-		return "#drink";
+		m_Text = "#drink";
 	}
 	
 	override bool IsDrink()
@@ -47,7 +43,7 @@ class ActionDrinkPondContinuous: ActionContinuousBase
 		
 		if ( item && item.IsHeavyBehaviour() )
 			return false;
-		return true;
+		return player.CanEatAndDrink();
 	}
 
 	override void OnStart(ActionData action_data)

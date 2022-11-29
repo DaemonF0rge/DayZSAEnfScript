@@ -8,12 +8,12 @@ class WaterproofBag_ColorBase extends Container_Base
 	override bool CanPutInCargo( EntityAI parent )
 	{
 		if( !super.CanPutInCargo(parent) ) {return false;}	
-		if ( !(parent.IsKindOf("WaterproofBag_ColorBase")) )
+		if ( parent && (parent.IsKindOf("WaterproofBag_ColorBase")) )
 		{
-			return true;
+			return false;
 		}
 		
-		return false;
+		return true;
 	}
 }
 

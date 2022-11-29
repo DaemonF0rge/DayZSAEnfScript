@@ -1,4 +1,3 @@
-
 class DebugMonitorValues
 {
 	const int TYPE_HEALTH 		= 1;
@@ -43,12 +42,12 @@ class DebugMonitorValues
 	
 	void OnScheduledTick(float deltatime)
 	{
-		if( GetGame().IsClient() ) return;
-		if( !GetGame().IsDebugMonitor() ) return; // turned off in server config
+		if ( GetGame().IsClient() ) return;
+		if ( !GetGame().IsDebugMonitor() ) return; // turned off in server config
 		
 		m_TimeSinceLastTick += deltatime;
 		
-		if( m_TimeSinceLastTick > VALUE_CHECK_INTERVAL )
+		if ( m_TimeSinceLastTick > VALUE_CHECK_INTERVAL )
 		{
 			m_TimeSinceLastTick = 0;
 			CheckValues();
@@ -89,7 +88,7 @@ class DebugMonitorValues
 		float difference_normalized = health_normalized - m_LastHealthUpdate;
 		float diff_abs = Math.AbsFloat(difference_normalized);
 		
-		if( diff_abs > ( SENSITIVTY_PERCENTAGE /100 ) )
+		if ( diff_abs > ( SENSITIVTY_PERCENTAGE /100 ) )
 		{
 			Param1<float> param = new Param1<float>( health_current );
 
@@ -105,7 +104,7 @@ class DebugMonitorValues
 		float difference_normalized = blood_normalized - m_LastBloodUpdate;
 		float diff_abs = Math.AbsFloat(difference_normalized);
 		
-		if( diff_abs > ( SENSITIVTY_PERCENTAGE /100 ) )
+		if ( diff_abs > ( SENSITIVTY_PERCENTAGE /100 ) )
 		{
 			Param1<float> param = new Param1<float>( blood_current );
 			
@@ -131,7 +130,7 @@ class DebugMonitorValues
 		case DebugMonitorValues.TYPE_HEALTH:
 		case DebugMonitorValues.TYPE_BLOOD:
 			{	
-				ref Param1<float> value_float = Param1<float>.Cast( param );
+				Param1<float> value_float = Param1<float>.Cast( param );
 
 				CachedObjectsParams.PARAM2_INT_FLOAT.param1 = value_type;
 				CachedObjectsParams.PARAM2_INT_FLOAT.param2 = value_float.param1;
@@ -141,7 +140,7 @@ class DebugMonitorValues
 			break;
 		case DebugMonitorValues.TYPE_LAST_DAMAGE:
 			{
-				ref Param1<string> value_string = Param1<string>.Cast( param );
+				Param1<string> value_string = Param1<string>.Cast( param );
 
 				CachedObjectsParams.PARAM2_INT_STRING.param1 = value_type;
 				CachedObjectsParams.PARAM2_INT_STRING.param2 = value_string.param1;
@@ -160,21 +159,21 @@ class DebugMonitorValues
 		{
 		case DebugMonitorValues.TYPE_HEALTH:
 			{
-				ref Param1<float> valueHealth = Param1<float>.Cast( param );
+				Param1<float> valueHealth = Param1<float>.Cast( param );
 				//Print("ReceivedValue health " + valueHealth.param1.ToString());
 				m_HealthClient = valueHealth.param1;
 			}
 			break;
 		case DebugMonitorValues.TYPE_BLOOD:
 			{
-				ref Param1<float> valueBlood = Param1<float>.Cast( param );
+				Param1<float> valueBlood = Param1<float>.Cast( param );
 				//Print("ReceivedValue blood " + valueBlood.param1.ToString());
 				m_BloodClient = valueBlood.param1;
 			}
 			break;
 		case DebugMonitorValues.TYPE_LAST_DAMAGE:
 			{
-				ref Param1<string> valueLastDamage = Param1<string>.Cast( param );
+				Param1<string> valueLastDamage = Param1<string>.Cast( param );
 				//Print("ReceivedValue lastdamage " + valueLastDamage.param1);
 				m_LastDamageClient = valueLastDamage.param1;
 			}
@@ -184,7 +183,7 @@ class DebugMonitorValues
 
 	void OnRPCFloat(ParamsReadContext ctx)
 	{
-		ref Param1<float> value = new Param1<float>(0);
+		Param1<float> value = new Param1<float>(0);
 		
 		ctx.Read(CachedObjectsParams.PARAM2_INT_FLOAT);
 		int value_type 	= CachedObjectsParams.PARAM2_INT_FLOAT.param1;
@@ -195,7 +194,7 @@ class DebugMonitorValues
 	
 	void OnRPCString(ParamsReadContext ctx)
 	{
-		ref Param1<string> value = new Param1<string>("");
+		Param1<string> value = new Param1<string>("");
 
 		ctx.Read(CachedObjectsParams.PARAM2_INT_STRING);
 		int value_type 	= CachedObjectsParams.PARAM2_INT_STRING.param1;

@@ -14,17 +14,13 @@ class ActionUnlockDoors: ActionContinuousBase
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONFB_INTERACT;
 		m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT | DayZPlayerConstants.STANCEMASK_CROUCH;
+		m_Text = "#unlock";
 	}
 	
 	override void CreateConditionComponents()  
 	{	
 		m_ConditionItem = new CCINonRuined;
 		m_ConditionTarget = new CCTCursor;
-	}
-		
-	override string GetText()
-	{
-		return "#unlock";
 	}
 	
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

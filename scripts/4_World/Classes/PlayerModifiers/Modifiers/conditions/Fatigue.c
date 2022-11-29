@@ -15,9 +15,10 @@ class FatigueMdfr: ModifierBase
 		m_TickIntervalInactive 	= DEFAULT_TICK_TIME_INACTIVE_LONG;
 		m_TickIntervalActive 	= DEFAULT_TICK_TIME_ACTIVE;
 	}
+	
 	override bool ActivateCondition(PlayerBase player)
 	{
-		return (player.GetModifiersManager().IsModifierActive(eModifiers.MDF_WOUND_INFECTION1) || player.GetModifiersManager().IsModifierActive(eModifiers.MDF_WOUND_INFECTION2));
+		return (player.GetModifiersManager().IsModifierActive(eModifiers.MDF_WOUND_INFECTION1) || player.GetModifiersManager().IsModifierActive(eModifiers.MDF_POISONING) || player.GetModifiersManager().IsModifierActive(eModifiers.MDF_WOUND_INFECTION2));
 	}
 
 	override void OnActivate(PlayerBase player)
@@ -25,10 +26,11 @@ class FatigueMdfr: ModifierBase
 		if( player.m_NotifiersManager ) 
 			player.m_NotifiersManager.ActivateByType(eNotifiers.NTF_FEVERISH);
 		
-		//player.GetSymptomManager().QueueUpSecondarySymptom(SymptomIDs.SYMPTOM_FEVERBLUR);
+
 		
-		player.GetStaminaHandler().SetRecoveryMultiplier(STAMINA_RECOVERY_MULTIPLIER);
-		player.GetStaminaHandler().SetDepletionMultiplier(STAMINA_DEPLETION_MULTIPLIER);
+		player.GetStaminaHandler().ActivateRecoveryModifier(EStaminaMultiplierTypes.FATIGUE);
+		player.GetStaminaHandler().ActivateDepletionModifier(EStaminaMultiplierTypes.FATIGUE);
+
 	}
 
 	override void OnReconnect(PlayerBase player)
@@ -39,9 +41,9 @@ class FatigueMdfr: ModifierBase
 
 	override void OnDeactivate(PlayerBase player)
 	{
-		//player.GetSymptomManager().RemoveSecondarySymptom(SymptomIDs.SYMPTOM_FEVERBLUR);
-		player.GetStaminaHandler().SetRecoveryMultiplier(1);
-		player.GetStaminaHandler().SetDepletionMultiplier(1);
+		//player.GetStaminaHandler().SetDepletionMultiplier(1);
+		player.GetStaminaHandler().DeactivateRecoveryModifier(EStaminaMultiplierTypes.FATIGUE);
+		player.GetStaminaHandler().DeactivateDepletionModifier(EStaminaMultiplierTypes.FATIGUE);
 	}
 
 
@@ -52,15 +54,6 @@ class FatigueMdfr: ModifierBase
 
 	override void OnTick(PlayerBase player, float deltaT)
 	{
-		/*
-		m_Time += deltaT;
-	
-		if ( m_Time >= m_NextEvent )
-		{
-			player.RequestSoundEvent(EPlayerSoundEventID.SYMPTOM_FATIGUE, false);
-			m_Time = 0;
-			m_NextEvent = Math.RandomFloatInclusive( FATIGUE_EVENT_INTERVAL_MIN, FATIGUE_EVENT_INTERVAL_MAX );
-		}
-		*/
+
 	}
 };

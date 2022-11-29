@@ -69,4 +69,32 @@ class ShelterKit extends KitBase
 			CreateRope(rope);
 		}
 	}
+	
+	//Debug menu Spawn Ground Special
+	override void OnDebugSpawn()
+	{
+		SpawnEntityOnGroundPos("Shovel", GetPosition());
+		SpawnEntityOnGroundPos("Hammer", GetPosition());
+		SpawnEntityOnGroundPos("Pliers", GetPosition());
+
+		for (int i0 = 0; i0 < 4; ++i0)
+		{
+			SpawnEntityOnGroundPos("LongWoodenStick", GetPosition());
+		}
+		
+		for (int i1 = 0; i1 < 8; ++i1)
+		{
+			SpawnEntityOnGroundPos("TannedLeather", GetPosition());
+		}
+		
+		for (int i2 = 0; i2 < 4; ++i2)
+		{
+			SpawnEntityOnGroundPos("Fabric", GetPosition());
+		}	
+		
+		for (int i3 = 0; i3 < 50; ++i3)
+		{
+			SpawnEntityOnGroundPos("WoodenStick", GetPosition());
+		}
+	}
 }

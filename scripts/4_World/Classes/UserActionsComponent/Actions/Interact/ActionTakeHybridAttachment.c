@@ -7,18 +7,13 @@ class ActionTakeHybridAttachment: ActionInteractBase
 	{
 		m_CommandUID        = DayZPlayerConstants.CMD_ACTIONMOD_PICKUP_INVENTORY;
 		m_CommandUIDProne	= DayZPlayerConstants.CMD_ACTIONFB_PICKUP_INVENTORY;
-		m_HUDCursorIcon     = CursorIcons.LootCorpse;
+		m_Text = "#take";
 	}
 
 	override void CreateConditionComponents()  
 	{
 		m_ConditionItem = new CCINone;
 		m_ConditionTarget = new CCTCursor;
-	}
-
-	override string GetText()
-	{
-		return "#take";
 	}
 	
 	override bool HasProneException()

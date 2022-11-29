@@ -13,11 +13,7 @@ class ActionInsertSparkplug: ActionSingleUseBase
 	{
 		m_ConditionItem = new CCINonRuined;
 		m_ConditionTarget = new CCTNonRuined(UAMaxDistances.DEFAULT);
-	}
-		
-	override string GetText()
-	{
-		return "#attach";
+		m_Text = "#attach";
 	}
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

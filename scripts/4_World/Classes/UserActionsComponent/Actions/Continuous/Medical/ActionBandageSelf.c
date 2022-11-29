@@ -19,6 +19,7 @@ class ActionBandageSelf: ActionBandageBase
 		m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_CROUCH;
 		m_SpecialtyWeight = UASoftSkillsWeight.PRECISE_LOW;
+		m_Text = "#treat_wound";
 	}
 
 	override void CreateConditionComponents()  
@@ -30,11 +31,6 @@ class ActionBandageSelf: ActionBandageBase
 	override bool HasTarget()
 	{
 		return false;
-	}
-		
-	override string GetText()
-	{
-		return "#treat_wound";
 	}
 /*
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

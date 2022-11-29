@@ -17,6 +17,7 @@ class ActionCPR: ActionContinuousBase
 		m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_CROUCH;
 		m_SpecialtyWeight = UASoftSkillsWeight.ROUGH_HIGH;
+		m_Text = "#cpr";
 	}
 		
 	override typename GetInputType()
@@ -38,11 +39,6 @@ class ActionCPR: ActionContinuousBase
 	{	
 		m_ConditionItem = new CCINone;
 		m_ConditionTarget = new CCTMan(UAMaxDistances.DEFAULT);
-	}
-		
-	override string GetText()
-	{
-		return "#cpr";
 	}
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

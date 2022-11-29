@@ -1,4 +1,4 @@
-class HandsArea: LayoutHolder
+class HandsArea: Container
 {
 	protected ScrollWidget			m_Scroller;
 	protected ref HandsContainer	m_HandsContainer;
@@ -8,143 +8,75 @@ class HandsArea: LayoutHolder
 
 	void HandsArea( LayoutHolder parent )
 	{
-		m_HandsContainer	= new HandsContainer( this );
+		m_HandsContainer = new HandsContainer( this );
+		m_Body.Insert(m_HandsContainer);
 		
-		m_MainWidget.Update();
+		if ( m_ImmedUpdate )
+			m_MainWidget.Update();
 		
 		m_ParentWidget.GetScript( m_HandsResizer );
 		m_Scroller = ScrollWidget.Cast( m_ParentWidget );
-	}
-
-	override void SetActive( bool active )
-	{
-		m_HandsContainer.SetActive( active );
-	}
-
-	override bool IsActive()
-	{
-		return m_HandsContainer.IsActive();
-	}
-	
-	bool CanEquip()
-	{
-		return m_HandsContainer.CanEquip();
-	}
-	
-	void UnfocusGrid()
-	{
-		m_HandsContainer.UnfocusGrid();
-	}
-	
-	void SetNextActive()
-	{
-		m_HandsContainer.SetNextActive();
-	}
-	
-	void SetPreviousActive()
-	{
-		m_HandsContainer.SetPreviousActive();
+		RecomputeOpenedContainers();
 	}
 
 	bool IsSwapActive()
 	{
 		Widget swap_cursor = m_MainWidget.FindAnyWidget("SwapCursor");
-		if( swap_cursor )
-		{
+		
+		if ( swap_cursor )
 			return swap_cursor.IsVisible();
-		}
 		else
-		{
 			return false;
-		}
 	}
 
 	bool IsCombineActive()
 	{
 		Widget combine_cursor = m_MainWidget.FindAnyWidget("CombineCursor");
 
-		if( combine_cursor )
-		{
+		if ( combine_cursor )
 			return combine_cursor.IsVisible();
-		}
 		else
-		{
 			return false;
-		}
 	}
 	
-	void MoveGridCursor( int direction )
+	override ScrollWidget GetScrollWidget()
 	{
-		if( IsActive() )
-		{
-			m_HandsContainer.MoveGridCursor( direction );
-		}
+		return m_Scroller;
 	}
 	
-	bool EquipItem()
+	override void UpdateSelectionIcons()
 	{
-		return m_HandsContainer.EquipItem();
-	}
-	
-	bool SelectItem()
-	{
-		return m_HandsContainer.SelectItem();
-	}
-
-	bool Select()
-	{
-		return m_HandsContainer.Select();
-	}
-	
-	bool TransferItem()
-	{
-		return m_HandsContainer.TransferItem();
-	}
-	
-	bool TransferItemToVicinity()
-	{
-		return m_HandsContainer.TransferItemToVicinity();
-	}
-	
-	bool InspectItem()
-	{
-		return m_HandsContainer.InspectItem();
-	}
-	
-	bool IsItemActive()
-	{
-		return m_HandsContainer.IsItemActive();
-	}
-	
-	bool IsItemWithQuantityActive()
-	{
-		return m_HandsContainer.IsItemWithQuantityActive();
-	}
-	
-	bool IsEmpty()
-	{
-		return m_HandsContainer.IsEmpty();
+		#ifdef PLATFORM_CONSOLE
+		ScrollToActiveContainer();
+		#endif
 	}
 
 	override void UpdateInterval()
 	{
-		m_Scroller.VScrollToPos01( m_Scroller.GetVScrollPos01() );
+		if (!m_Scroller.IsScrollbarVisible())
+		{
+			m_Scroller.VScrollToPos01(0.0);
+		}
+		else if (m_Scroller.GetVScrollPos01() > 1.0)
+		{
+			m_Scroller.VScrollToPos01(1.0);
+		}
 		m_HandsContainer.UpdateInterval();
 		
 		float x, y;
 		float x2, y2;
 		m_Scroller.GetScreenSize( x, y );
 		m_MainWidget.GetScreenSize( x2, y2 );
-		if( y2 != y )
+		if ( y2 != y )
 			m_ShouldChangeSize = true;
 		
 		bool changed_size;
-		if( m_ShouldChangeSize && m_HandsResizer.ResizeParentToChild( changed_size, InventoryMenu.GetHeight() * 0.5 ) )
+		if ( m_ShouldChangeSize && m_HandsResizer.ResizeParentToChild( changed_size, InventoryMenu.GetHeight() * 0.5 ) )
 			m_Scroller.SetAlpha( 0.3921 );
 		else
 			m_Scroller.SetAlpha( 0 );
 		
-		if( changed_size )
+		if ( changed_size )
 			m_ShouldChangeSize = false;
 	}
 
@@ -157,12 +89,6 @@ class HandsArea: LayoutHolder
 	{
 		m_ParentWidget = m_Parent.GetMainWidget().FindAnyWidget( "HandsPanel" );
 	}
-	
-	EntityAI GetFocusedItem()
-	{
-		return GetGame().GetPlayer().GetHumanInventory().GetEntityInHands();;
-	}
-	
 
 	override void OnShow()
 	{
@@ -172,12 +98,13 @@ class HandsArea: LayoutHolder
 
 	override void Refresh()
 	{
+		UpdateSelectionIcons();
 		m_ShouldChangeSize = true;
 	}
 	
 	void DraggingOverHandsPanel( Widget w, int x, int y, Widget receiver )
 	{
-		if( w == NULL )
+		if ( w == NULL )
 		{
 			return;
 		}

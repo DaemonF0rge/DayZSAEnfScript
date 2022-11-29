@@ -78,7 +78,7 @@ class VirtualHud
 				m_LastTick = GetGame().GetTime();
 			}
 		}
-		if( GetGame().IsClient() || !GetGame().IsMultiplayer() )
+		if( !GetGame().IsDedicatedServer() )
 		{
 			ImmediateUpdate();
 			//DisplayPresence();
@@ -89,7 +89,7 @@ class VirtualHud
 	{
 		int id = element.GetType();
 		m_Elements[id] = element;
-		Log("adding element:"+id.ToString());
+		//Log("adding element:"+id.ToString());
 	}
 	
 	DisplayElementBase GetElement(eDisplayElements element_id)

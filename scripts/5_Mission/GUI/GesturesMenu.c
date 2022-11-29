@@ -14,22 +14,62 @@ class GestureMenuItem
 	protected int 					m_ID;
 	protected string 				m_Name;
 	protected GestureCategories 	m_Category;
+	protected EmoteBase 			m_EmoteClass;
 	protected bool 					m_CanPerformEmote;
 	//radial menu
 	protected Widget 				m_RadialMenuSelector;
 	protected Widget				m_RadialMenuItemCard;
 	
-	void GestureMenuItem( int id, string name, GestureCategories category )
+	void GestureMenuItem(int id, string name, GestureCategories category)
 	{
 		m_ID				= id;
 		m_Name 				= name;
 		m_Category 			= category;
 		m_CanPerformEmote 	= true;
+		
+		PlayerBase player;
+		if (Class.CastTo(player,GetGame().GetPlayer()) && category != GestureCategories.CATEGORIES)
+		{
+			m_EmoteClass = player.GetEmoteManager().GetNameEmoteMap().Get(id);
+		}
 	}
 	
 	string GetName()
 	{
 		return m_Name;
+	}
+	
+	string GetBoundButtonText()
+	{
+		string ret = "";
+		if (GetGame().GetInput().IsEnabledMouseAndKeyboardEvenOnServer() && m_EmoteClass && m_EmoteClass.GetInputActionName() != "")
+		{
+			map<int,ref TStringArray> button_map = InputUtils.GetComboButtonNamesFromInput(m_EmoteClass.GetInputActionName(), EInputDeviceType.MOUSE_AND_KEYBOARD);
+			
+			if (button_map && button_map.Count() > 0)
+			{
+				TStringArray buttons;
+				for (int j = 0; j < button_map.Count(); j++)
+				{
+					if (j > 0)
+					{
+						ret += "; ";
+					}
+					
+					buttons = button_map.GetElement(j);
+					for (int i = 0; i < buttons.Count(); i++)
+					{
+						if (i > 0)
+						{
+							ret += " + ";
+						}
+						ret += buttons[i];
+					}
+				}
+				
+			}
+		}
+		return ret;
 	}
 	
 	int GetID()
@@ -67,11 +107,14 @@ class GesturesMenu extends UIScriptedMenu
 {
 	protected Widget 							m_GestureItemCardPanel;
 	protected ref array<ref GestureMenuItem> 	m_GestureItems;
+	protected Widget 							m_ToolbarPanel;
 	
 	protected TextWidget						m_CategoryNameText;
 	
 	//
 	const string 								RADIAL_TEXT		= "RadialText";
+	const string 								GESTURE_TEXT	= "GestureNameText";
+	const string 								INPUT_TEXT		= "InputActionText";
 	const string 								CATEGORY_NAME	= "CategoryName";
 	//selections
 	protected Widget 							m_SelectedItem;
@@ -93,10 +136,16 @@ class GesturesMenu extends UIScriptedMenu
 		{
 			instance = this;
 		}
+		
+		GetGame().GetMission().GetOnInputPresetChanged().Insert(OnInputPresetChanged);
 	}
 	
 	void ~GesturesMenu()
 	{
+		if (GetGame() && GetGame().GetMission())
+		{
+			GetGame().GetMission().RemoveActiveInputExcludes({"radialmenu"},false);
+		}
 	}
 
 	//============================================
@@ -113,6 +162,15 @@ class GesturesMenu extends UIScriptedMenu
 		instance.OnMenuRelease();
 		
 		GetGame().GetUIManager().Back();
+		
+		//GetGame().GetMission().RemoveActiveInputExcludes({"radialmenu"},false);
+	}
+	
+	protected void OnInputPresetChanged()
+	{
+		#ifdef PLATFORM_CONSOLE
+		UpdateControlsElements();
+		#endif
 	}
 		
 	//============================================
@@ -137,10 +195,8 @@ class GesturesMenu extends UIScriptedMenu
 		//create content (widgets) for items
 		RefreshGestures();
 		
-#ifdef PLATFORM_WINDOWS
-		Widget toolbar_panel = layoutRoot.FindAnyWidget( "toolbar_bg" );
-		toolbar_panel.Show( !RadialMenu.GetInstance().IsUsingMouse() );
-#endif	
+		m_ToolbarPanel = layoutRoot.FindAnyWidget( "toolbar_bg" );
+		m_ToolbarPanel.Show( true );
 		
 		//clear category name text
 		UpdateCategoryName( "" );
@@ -224,11 +280,11 @@ class GesturesMenu extends UIScriptedMenu
 		{
 			GetGestureItems( m_GestureItems, GestureCategories.CATEGORIES );
 			m_CurrentCategory = -1;
+			instance.m_IsCategorySelected = false;
 		}
 		
 		CreateGestureContent();
-		
-		UpdateToolbar();
+		UpdateControlsElements();
 	}
 	
 	protected void GetGestureItems( out ref array<ref GestureMenuItem> gesture_items, GestureCategories category )
@@ -239,67 +295,66 @@ class GesturesMenu extends UIScriptedMenu
 		//All categories
 		if ( category == GestureCategories.CATEGORIES )
 		{
-			gesture_items.Insert( new GestureMenuItem( GestureCategories.CATEGORY_1, "#STR_USRACT_EMOTE_CATEGORY_COMMS", 	GestureCategories.CATEGORIES ) );
-			gesture_items.Insert( new GestureMenuItem( GestureCategories.CATEGORY_2, "#STR_USRACT_EMOTE_CATEGORY_TAUNTS", 	GestureCategories.CATEGORIES ) );
-			gesture_items.Insert( new GestureMenuItem( GestureCategories.CATEGORY_3, "#STR_USRACT_EMOTE_CATEGORY_MISC", 	GestureCategories.CATEGORIES ) );
-			gesture_items.Insert( new GestureMenuItem( GestureCategories.CATEGORY_4, "#STR_USRACT_EMOTE_CATEGORY_REGARDS", 	GestureCategories.CATEGORIES ) );
-			//gesture_items.Insert( new GestureMenuItem( GestureCategories.CATEGORY_5, "Tactical?", 	GestureCategories.CATEGORIES ) );
+			gesture_items.Insert( new GestureMenuItem( GestureCategories.CATEGORY_1, 		"#STR_USRACT_EMOTE_CATEGORY_COMMS", 	category ) );
+			gesture_items.Insert( new GestureMenuItem( GestureCategories.CATEGORY_2, 		"#STR_USRACT_EMOTE_CATEGORY_INTERACTIONS", 	category ) );
+			gesture_items.Insert( new GestureMenuItem( GestureCategories.CATEGORY_3, 		"#STR_USRACT_EMOTE_CATEGORY_POSES", 	category ) );
+			gesture_items.Insert( new GestureMenuItem( GestureCategories.CATEGORY_4, 		"#STR_USRACT_EMOTE_CATEGORY_MISC", 	category ) );
 		}
-		//Category 1 - comms
+		//Category 1 - commands
 		else if ( category == GestureCategories.CATEGORY_1 )
 		{
-			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_TIMEOUT,	"#STR_USRACT_ID_EMOTE_TIMEOUT", 	GestureCategories.CATEGORY_1 ) );
-			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_POINTSELF, 	"#STR_USRACT_ID_EMOTE_POINTSELF",	GestureCategories.CATEGORY_1 ) );
-			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_WATCHING, 	"#STR_USRACT_ID_EMOTE_WATCHING", 	GestureCategories.CATEGORY_1 ) );
-			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_HOLD, 		"#STR_USRACT_ID_EMOTE_HOLD", 		GestureCategories.CATEGORY_1 ) );
-			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_LISTENING, 	"#STR_USRACT_ID_EMOTE_LISTENING", 	GestureCategories.CATEGORY_1 ) );
-			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_SILENT, 	"#STR_USRACT_ID_EMOTE_SILENT", 		GestureCategories.CATEGORY_1 ) );
-			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_POINT, 		"#STR_USRACT_ID_EMOTE_POINT", 		GestureCategories.CATEGORY_1 ) );
-			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_MOVE, 		"#STR_USRACT_ID_EMOTE_MOVE", 		GestureCategories.CATEGORY_1 ) );
-			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_DOWN, 		"#STR_USRACT_ID_EMOTE_DOWN", 		GestureCategories.CATEGORY_1 ) );
-			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_COME, 		"#STR_USRACT_ID_EMOTE_COME", 		GestureCategories.CATEGORY_1 ) );
-			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_NOD, 		"#STR_USRACT_ID_EMOTE_NOD", 		GestureCategories.CATEGORY_1 ) );
-			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_SHAKE, 		"#STR_USRACT_ID_EMOTE_SHAKE", 		GestureCategories.CATEGORY_1 ) );
-			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_SHRUG, 		"#STR_USRACT_ID_EMOTE_SHRUG", 		GestureCategories.CATEGORY_1 ) );
+			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_POINT, 		"#STR_USRACT_ID_EMOTE_POINT", 		category ) );
+			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_MOVE, 		"#STR_USRACT_ID_EMOTE_MOVE", 		category ) );
+			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_HOLD, 		"#STR_USRACT_ID_EMOTE_HOLD", 		category ) );
+			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_LISTENING, 	"#STR_USRACT_ID_EMOTE_LISTENING", 	category ) );
+			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_DOWN, 		"#STR_USRACT_ID_EMOTE_DOWN", 		category ) );
+			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_SILENT, 		"#STR_USRACT_ID_EMOTE_SILENT", 		category ) );
+			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_WATCHING, 	"#STR_USRACT_ID_EMOTE_WATCHING", 	category ) );
+			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_POINTSELF, 	"#STR_USRACT_ID_EMOTE_POINTSELF",	category ) );
+			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_COME, 		"#STR_USRACT_ID_EMOTE_COME", 		category ) );
 		}
-		//Category 2 - taunt
+		//Category 2 - interaction
 		else if ( category == GestureCategories.CATEGORY_2 )
 		{
-			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_LOOKATME, 	"#STR_USRACT_ID_EMOTE_LOOKATME", 	GestureCategories.CATEGORY_2 ) );
-			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_TAUNT, 		"#STR_USRACT_ID_EMOTE_TAUNT", 		GestureCategories.CATEGORY_2 ) );
-			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_TAUNTELBOW, "#STR_USRACT_ID_EMOTE_TAUNTELBOW", 	GestureCategories.CATEGORY_2 ) );
-			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_THROAT, 	"#STR_USRACT_ID_EMOTE_THROAT", 		GestureCategories.CATEGORY_2 ) );
-			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_TAUNTTHINK, "#STR_USRACT_ID_EMOTE_TAUNTTHINK", 	GestureCategories.CATEGORY_2 ) );
-			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_FACEPALM, 	"#STR_USRACT_ID_EMOTE_FACEPALM", 	GestureCategories.CATEGORY_2 ) );
-			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_THUMBDOWN, 	"#STR_USRACT_ID_EMOTE_THUMBDOWN", 	GestureCategories.CATEGORY_2 ) );
+			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_GREETING, 	"#STR_USRACT_ID_EMOTE_GREETING", 	category ) );
+			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_TAUNT, 		"#STR_USRACT_ID_EMOTE_TAUNT", 		category ) );
+			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_SHAKE, 		"#STR_USRACT_ID_EMOTE_SHAKE", 		category ) );
+			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_NOD, 		"#STR_USRACT_ID_EMOTE_NOD", 		category ) );
+			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_LOOKATME, 	"#STR_USRACT_ID_EMOTE_LOOKATME", 	category ) );
+			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_TAUNTELBOW, 	"#STR_USRACT_ID_EMOTE_TAUNTELBOW", 	category ) );
+			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_THUMB, 		"#STR_USRACT_ID_EMOTE_THUMB", 		category ) );
+			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_THUMBDOWN, 	"#STR_USRACT_ID_EMOTE_THUMBDOWN", 	category ) );
+			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_CLAP, 		"#STR_USRACT_ID_EMOTE_CLAP", 		category ) );
 		}
-		//Category 3 - misc
+		//Category 3 - poses
 		else if ( category == GestureCategories.CATEGORY_3 )
 		{
-			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_DANCE, 		"#STR_USRACT_ID_EMOTE_DANCE", 		GestureCategories.CATEGORY_3 ) );
-			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_LYINGDOWN, 	"#STR_USRACT_ID_EMOTE_LYINGDOWN", 	GestureCategories.CATEGORY_3 ) );
-			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_SOS, 		"#STR_USRACT_ID_EMOTE_SOS", 		GestureCategories.CATEGORY_3 ) );
-			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_RPS, 		"#STR_USRACT_ID_EMOTE_RPS", 		GestureCategories.CATEGORY_3 ) );
-			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_SITA, 		"#STR_USRACT_ID_EMOTE_SITA", 		GestureCategories.CATEGORY_3 ) );
-			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_SITB, 		"#STR_USRACT_ID_EMOTE_SITB", 		GestureCategories.CATEGORY_3 ) );
-			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_SUICIDE, 	"#STR_USRACT_ID_EMOTE_SUICIDE", 	GestureCategories.CATEGORY_3 ) );
-			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_CAMPFIRE, 	"#STR_USRACT_ID_EMOTE_CAMPFIRE", 	GestureCategories.CATEGORY_3 ) );
-			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_SURRENDER, 	"#STR_USRACT_ID_EMOTE_SURRENDER", 	GestureCategories.CATEGORY_3 ) );
-			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_VOMIT, 		"#STR_USRACT_ID_EMOTE_VOMIT", 		GestureCategories.CATEGORY_3 ) );
-			//gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_RPS_R, 	"#STR_USRACT_ID_EMOTE_RPS_R", 		GestureCategories.CATEGORY_3 ) );
-			//gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_RPS_P, 	"#STR_USRACT_ID_EMOTE_RPS_P", 		GestureCategories.CATEGORY_3 ) );
-			//gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_RPS_S, 	"#STR_USRACT_ID_EMOTE_RPS_S", 		GestureCategories.CATEGORY_3 ) );
+			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_SUICIDE, 	"#STR_USRACT_ID_EMOTE_SUICIDE", 	category ) );
+			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_SURRENDER, 	"#STR_USRACT_ID_EMOTE_SURRENDER", 	category ) );
+			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_SALUTE, 		"#STR_USRACT_ID_EMOTE_SALUTE", 		category ) );
+			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_SITB, 		"#STR_USRACT_ID_EMOTE_SITB", 		category ) );
+			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_LYINGDOWN, 	"#STR_USRACT_ID_EMOTE_LYINGDOWN", 	category ) );
+			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_SITA, 		"#STR_USRACT_ID_EMOTE_SITA", 		category ) );
+			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_CAMPFIRE, 	"#STR_USRACT_ID_EMOTE_CAMPFIRE", 	category ) );
+			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_SHRUG, 		"#STR_USRACT_ID_EMOTE_SHRUG", 		category ) );
+			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_SOS, 		"#STR_USRACT_ID_EMOTE_SOS", 		category ) );
 		}
-		//Category 4 - regards
+		//Category 4 - special
 		else if ( category == GestureCategories.CATEGORY_4 )
 		{
-			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_GREETING, 	"#STR_USRACT_ID_EMOTE_GREETING", 	GestureCategories.CATEGORY_4 ) );
-			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_THUMB, 		"#STR_USRACT_ID_EMOTE_THUMB", 		GestureCategories.CATEGORY_4 ) );
-			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_HEART, 		"#STR_USRACT_ID_EMOTE_HEART", 		GestureCategories.CATEGORY_4 ) );
-			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_CLAP, 		"#STR_USRACT_ID_EMOTE_CLAP", 		GestureCategories.CATEGORY_4 ) );
-			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_TAUNTKISS, 	"#STR_USRACT_ID_EMOTE_TAUNTKISS", 	GestureCategories.CATEGORY_4 ) );
-			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_SALUTE, 	"#STR_USRACT_ID_EMOTE_SALUTE", 		GestureCategories.CATEGORY_4 ) );
-			//gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_DEBUG, 		"ID_EMOTE_DEBUG", 					GestureCategories.CATEGORY_4 ) );
+			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_DANCE, 		"#STR_USRACT_ID_EMOTE_DANCE", 		category ) );
+			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_HEART, 		"#STR_USRACT_ID_EMOTE_HEART", 		category ) );
+			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_FACEPALM, 	"#STR_USRACT_ID_EMOTE_FACEPALM", 	category ) );
+			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_TIMEOUT,		"#STR_USRACT_ID_EMOTE_TIMEOUT", 	category ) );
+			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_THROAT, 		"#STR_USRACT_ID_EMOTE_THROAT", 		category ) );
+			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_VOMIT, 		"#STR_USRACT_ID_EMOTE_VOMIT", 		category ) );
+			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_RPS, 		"#STR_USRACT_ID_EMOTE_RPS", 		category ) );
+			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_TAUNTTHINK, 	"#STR_USRACT_ID_EMOTE_TAUNTTHINK", 	category ) );
+			gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_TAUNTKISS, 	"#STR_USRACT_ID_EMOTE_TAUNTKISS", 	category ) );
+			//gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_RPS_R, 	"#STR_USRACT_ID_EMOTE_RPS_R", 		category ) );
+			//gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_RPS_P, 	"#STR_USRACT_ID_EMOTE_RPS_P", 		category ) );
+			//gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_RPS_S, 	"#STR_USRACT_ID_EMOTE_RPS_S", 		category ) );
+			//gesture_items.Insert( new GestureMenuItem( EmoteConstants.ID_EMOTE_DEBUG, 	"ID_EMOTE_DEBUG", 					category ) );
 		}
 	}
 	
@@ -341,20 +396,29 @@ class GesturesMenu extends UIScriptedMenu
 	protected void UpdateQuickbarItemCard( GestureMenuItem gesture_item )
 	{
 		Widget gesture_item_card_widget = gesture_item.GetRadialItemCard();
-		
-		//set text
-		ButtonWidget name_widget = ButtonWidget.Cast( gesture_item_card_widget.FindAnyWidget( RADIAL_TEXT ) );
-		name_widget.SetText( gesture_item.GetName() );
+		//texts
+		RichTextWidget gesture_text = RichTextWidget.Cast( gesture_item_card_widget.FindAnyWidget( GESTURE_TEXT ) );
+		RichTextWidget input_text = RichTextWidget.Cast( gesture_item_card_widget.FindAnyWidget( INPUT_TEXT ) );
+		gesture_text.SetText( gesture_item.GetName() );
+		bool input_name_available = gesture_item.GetBoundButtonText() != "";
+		input_text.Show(input_name_available);
+		if (input_name_available)
+		{
+			input_text.SetText(gesture_item.GetBoundButtonText());
+		}
+		//coloring
 		ProcessEmoteConditionRequest(gesture_item);
 		if (gesture_item.GetCanPerformEmote())
 		{
 			gesture_item_card_widget.SetFlags(WidgetFlags.DISABLED); //flag just seems to be...'there', useful for showing radial selector. Still...
-			name_widget.SetTextColor(ARGB(255,255,255,255));
+			gesture_text.SetColor(ARGB(255,255,255,255));
+			input_text.SetColor(ARGB(255,255,255,255));
 		}
 		else
 		{
 			gesture_item_card_widget.ClearFlags(WidgetFlags.DISABLED);
-			name_widget.SetTextColor(ARGB(255,150,150,150));
+			gesture_text.SetColor(ARGB(255,150,150,150));
+			input_text.SetColor(ARGB(255,150,150,150));
 		}
 	} 
 	
@@ -373,52 +437,8 @@ class GesturesMenu extends UIScriptedMenu
 		}		
 	}
 	
-	protected void UpdateToolbar()
-	{
-		#ifdef PLATFORM_CONSOLE
-			//set controller toolbar icons
-			string select_img;
-			//string back_img;
-	
-			ImageWidget toolbar_select = ImageWidget.Cast( layoutRoot.FindAnyWidget( "SelectIcon" ) );
-			//ImageWidget toolbar_back = ImageWidget.Cast( layoutRoot.FindAnyWidget( "BackIcon" ) );
-							 
-			if ( instance.m_IsCategorySelected )
-			{
-				#ifdef PLATFORM_XBOX
-					select_img = "set:xbox_buttons image:A";
-					//back_img = "set:xbox_buttons image:B";
-				#endif		
-				#ifdef PLATFORM_PS4
-					string confirm = "cross";
-					if( GetGame().GetInput().GetEnterButton() == GamepadButton.A )
-					{
-						confirm = "cross";
-					}
-					else
-					{
-						confirm = "circle";
-					}
-					select_img = "set:playstation_buttons image:" + confirm;
-					//back_img = "set:playstation_buttons image:circle";
-				#endif
-			}
-			else
-			{
-				#ifdef PLATFORM_XBOX
-					select_img = "set:xbox_buttons image:R_up";
-					//back_img = "set:xbox_buttons image:B";
-				#endif		
-				#ifdef PLATFORM_PS4
-					select_img = "set:playstation_buttons image:R_up";
-					//back_img = "set:playstation_buttons image:circle";
-				#endif				
-			}
-			
-			toolbar_select.LoadImageFile( 0, select_img );
-			//toolbar_back.LoadImageFile( 0, back_img );
-		#endif
-	}
+	//! DEPRECATED
+	protected void UpdateToolbar() {}
 	
 	protected void UpdateCategoryName( string name )
 	{
@@ -436,18 +456,6 @@ class GesturesMenu extends UIScriptedMenu
 	//Common
 	void OnControlsChanged( RadialMenuControlType type )
 	{
-		//show/hide controller toolbar
-		Widget toolbar_panel = layoutRoot.FindAnyWidget( "toolbar_bg" );
-		if ( type == RadialMenuControlType.CONTROLLER )
-		{
-#ifdef PLATFORM_CONSOLE
-			toolbar_panel.Show( true );
-#endif
-		}
-		else
-		{
-			toolbar_panel.Show( false );
-		}
 	}
 	
 	//Mouse
@@ -463,7 +471,25 @@ class GesturesMenu extends UIScriptedMenu
 
 	void OnMouseExecute( Widget w )
 	{
-		ExecuteSelectedCategory( w );
+	}
+	
+	//! LMB
+	void OnMousePressLeft( Widget w )
+	{
+		if (instance.m_IsCategorySelected)
+		{
+			ExecuteSelectedItem();
+		}
+		else
+		{
+			ExecuteSelectedCategory( w );
+		}
+	}
+	
+	//! RMB
+	void OnMousePressRight( Widget w )
+	{
+		BackOneLevel();
 	}
 			
 	//Controller
@@ -479,39 +505,23 @@ class GesturesMenu extends UIScriptedMenu
 
 	void OnControllerExecute( Widget w )
 	{
-		ExecuteSelectedCategory( w );
 	}
 	
 	void OnControllerPressSelect( Widget w )
 	{
-		ExecuteSelectedItem();
+		if (instance.m_IsCategorySelected)
+		{
+			ExecuteSelectedItem();
+		}
+		else
+		{
+			ExecuteSelectedCategory( w );
+		}
 	}
 	
 	void OnControllerPressBack( Widget w )
 	{
-		//back to category or close menu?
-		/*
-		if ( instance.m_IsCategorySelected )
-		{
-			instance.m_IsCategorySelected = false; 		//reset category selection
-			RefreshGestures();							//back to categories
-		}
-		else
-		{
-			//close menu
-			CloseMenu();
-		}
-		*/
-	}		
-	
-	//Gestures Menu
-	protected void OnMenuRelease()
-	{
-		//execute on release (mouse only)
-		if ( RadialMenu.GetInstance().IsUsingMouse() )
-		{
-			ExecuteSelectedItem();
-		}
+		BackOneLevel();
 	}
 	
 	//Actions
@@ -555,18 +565,18 @@ class GesturesMenu extends UIScriptedMenu
 			}
 			*/
 		}
-	}	
+	}
 	
 	protected void ExecuteSelectedCategory( Widget w )
 	{
 		//only when category is not picked yet
-		if ( w && !instance.m_IsCategorySelected )
+		if ( w )
 		{
 			GestureMenuItem gesture_item;
 			w.GetUserData( gesture_item );
 			
 			//is category
-			if ( gesture_item.GetCategory() == GestureCategories.CATEGORIES )
+			if ( !instance.m_IsCategorySelected && gesture_item.GetCategory() == GestureCategories.CATEGORIES )
 			{
 				//set category selected
 				instance.m_IsCategorySelected = true;
@@ -579,6 +589,10 @@ class GesturesMenu extends UIScriptedMenu
 				//update category name text
 				UpdateCategoryName( gesture_item.GetName() );
 			}
+			/*else
+			{
+				ExecuteSelectedItem();
+			}*/
 		}
 	}
 	
@@ -586,7 +600,7 @@ class GesturesMenu extends UIScriptedMenu
 	{
 		if ( instance.m_IsCategorySelected && instance.m_SelectedItem )
 		{
-			if ( !GetGame().IsMultiplayer() || GetGame().IsClient() )
+			if ( !GetGame().IsDedicatedServer() )
 			{
 				PlayerBase player = PlayerBase.Cast( GetGame().GetPlayer() );
 				
@@ -604,6 +618,13 @@ class GesturesMenu extends UIScriptedMenu
 		}
 	}
 	
+	//only moves to the GestureCategories.CATEGORIES for now
+	protected void BackOneLevel()
+	{
+		RefreshGestures();
+		UpdateCategoryName( "" );
+	}
+	
 	bool IsMenuClosing()
 	{
 		return m_IsMenuClosing;
@@ -612,5 +633,41 @@ class GesturesMenu extends UIScriptedMenu
 	void SetMenuClosing(bool state)
 	{
 		m_IsMenuClosing = state;
+	}
+	
+	protected void UpdateControlsElements()
+	{
+		Widget toolbarBackSpacer = layoutRoot.FindAnyWidget("BackSpacer");
+		//Widget toolbarNavigateSpacer = layoutRoot.FindAnyWidget("NavigateSpacer");
+		
+		RichTextWidget toolbarSelectIcon = RichTextWidget.Cast(layoutRoot.FindAnyWidget("SelectIcon"));
+		RichTextWidget toolbarBackIcon = RichTextWidget.Cast(layoutRoot.FindAnyWidget("BackIcon"));
+		
+		string selectAction;
+		string backAction;
+		int controllerID;
+		
+		if (GetGame().GetInput().IsEnabledMouseAndKeyboardEvenOnServer())
+		{
+			selectAction = "UAMenuSelect";
+			backAction = "UAMenuBack";
+			controllerID = EUAINPUT_DEVICE_KEYBOARDMOUSE;
+		}
+		else
+		{
+			selectAction = "UAUISelect";
+			backAction = "UAUIBack";
+			controllerID = EUAINPUT_DEVICE_CONTROLLER;
+		}
+		
+		toolbarSelectIcon.SetText(InputUtils.GetRichtextButtonIconFromInputAction(selectAction, "", controllerID, InputUtils.ICON_SCALE_TOOLBAR));
+		toolbarBackIcon.SetText(InputUtils.GetRichtextButtonIconFromInputAction(backAction, "", controllerID, InputUtils.ICON_SCALE_TOOLBAR));
+		toolbarBackSpacer.Show(instance.m_IsCategorySelected);
+	}
+	
+//-----------------------------------------------------------------
+	//!DEPRECATED
+	protected void OnMenuRelease()
+	{
 	}
 }	

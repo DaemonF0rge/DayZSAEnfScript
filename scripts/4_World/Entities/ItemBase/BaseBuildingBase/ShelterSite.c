@@ -168,7 +168,6 @@ class ShelterSite extends BaseBuildingBase
 		AddAction(ActionTogglePlaceObject);
 		AddAction(ActionPlaceObject);
 		AddAction(ActionFoldBaseBuildingObject);
-		AddAction(ActionHandsPartSwitch);
 		AddAction(ActionBuildShelter);
 	}
 }

@@ -18,7 +18,7 @@ class DayZAIHitComponentHelpers
 	 * @param[in]	pName			\p		component name (zone in Damage System)
 	 * @param[in]	pWeight			\p		weight of the component (probability)
 	 **/
-	static void RegisterHitComponent(ref array<ref DayZAIHitComponent> pHitComponents, string pName, float pWeight)
+	static void RegisterHitComponent(array<ref DayZAIHitComponent> pHitComponents, string pName, float pWeight)
 	{
 		DayZAIHitComponent newComponent = new DayZAIHitComponent();
 		
@@ -37,12 +37,12 @@ class DayZAIHitComponentHelpers
 	 *
 	 * @return	true if found, false otherwise
 	 **/
-	static bool SelectMostProbableHitComponent(ref array<ref DayZAIHitComponent> pHitComponents, out string pHitComponent)
+	static bool SelectMostProbableHitComponent(array<ref DayZAIHitComponent> pHitComponents, out string pHitComponent)
 	{
 		int weights = SumOfWeights(pHitComponents);
 		float rnd = Math.RandomInt(0, weights);
 
-		for( int i = 0; i < pHitComponents.Count(); ++i )
+		for ( int i = 0; i < pHitComponents.Count(); ++i )
 		{
 			DayZAIHitComponent hitComp = pHitComponents.Get(i);
 			rnd -= hitComp.m_Weight;
@@ -65,7 +65,7 @@ class DayZAIHitComponentHelpers
 	 *
 	 * @return	Sum of weights of all entries in array
 	 **/
-	static int SumOfWeights(ref array<ref DayZAIHitComponent> pHitComponents)
+	static int SumOfWeights(array<ref DayZAIHitComponent> pHitComponents)
 	{
 		int sum = 0;
 

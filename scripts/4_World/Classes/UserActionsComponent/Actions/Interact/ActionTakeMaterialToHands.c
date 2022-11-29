@@ -4,7 +4,7 @@ class ActionTakeMaterialToHands: ActionInteractBase
 	{
 		m_CommandUID        = DayZPlayerConstants.CMD_ACTIONMOD_PICKUP_HANDS;
 		m_CommandUIDProne	= DayZPlayerConstants.CMD_ACTIONFB_PICKUP_HANDS;
-		m_HUDCursorIcon     = CursorIcons.LootCorpse;
+		m_Text = "#take";
 	}
 
 	override void CreateConditionComponents()  
@@ -17,22 +17,16 @@ class ActionTakeMaterialToHands: ActionInteractBase
 	{
 		return true;
 	}
-
-	override string GetText()
+	
+	override void OnActionInfoUpdate( PlayerBase player, ActionTarget target, ItemBase item )
 	{
-		PlayerBase player = PlayerBase.Cast( GetGame().GetPlayer() );
-		if ( player )
-		{
-			ConstructionActionData construction_action_data = player.GetConstructionActionData();
-			EntityAI attachment = construction_action_data.GetActualAttachmentToDetach();
+		ConstructionActionData construction_action_data = player.GetConstructionActionData();
+		EntityAI attachment = construction_action_data.GetActualAttachmentToDetach();
 			
-			if ( attachment )
-			{
-				return "#take" + " " + attachment.GetDisplayName();
-			}
+		if ( attachment )
+		{
+			m_Text = "#take " + attachment.GetDisplayName();
 		}
-		
-		return "";
 	}
 	
 	override typename GetInputType()

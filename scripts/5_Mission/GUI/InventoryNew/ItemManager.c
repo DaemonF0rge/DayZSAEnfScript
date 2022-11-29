@@ -30,6 +30,10 @@ class ItemManager
 	protected Widget					m_CenterDropzone;
 	protected Widget					m_RightDropzone;
 	
+	protected int 						m_TooltipPosX;
+	protected int	 					m_TooltipPosY;
+	protected Widget 					m_TooltipSourceWidget; //stored here for tooltip position updates
+	
 	#ifndef PLATFORM_CONSOLE
 	protected const float TOOLTIP_DELAY = 0.25; // in seconds
 	#else
@@ -348,27 +352,47 @@ class ItemManager
 			m_SlotInfoShown = false;
 			delete m_TooltipSlotTimer;
 		}
-		
+	}
+
+	static int GetItemHealthColor(int pHealthLevel)
+	{
+		switch (pHealthLevel)
+		{
+		case -1:
+		break;
+		case GameConstants.STATE_PRISTINE:
+			return Colors.COLOR_PRISTINE;
+		case GameConstants.STATE_WORN:
+			return Colors.COLOR_WORN;
+		case GameConstants.STATE_DAMAGED:
+			return Colors.COLOR_DAMAGED;
+		case GameConstants.STATE_BADLY_DAMAGED:
+			return Colors.COLOR_BADLY_DAMAGED;
+		case GameConstants.STATE_RUINED:
+			return Colors.COLOR_RUINED;	
+		}
+			
+		return 0x00FFFFFF;
 	}
 	
-	static int GetItemHealthColor( EntityAI item, string zone = "" )
+	static int GetItemHealthColor(EntityAI item, string zone = "")
 	{
-		if( item )
+		if (item)
 		{
-			switch ( item.GetHealthLevel( zone ) )
+			switch (item.GetHealthLevel(zone))
 			{
-				case -1 :
-					break;
-				case GameConstants.STATE_PRISTINE:
-					return Colors.COLOR_PRISTINE;
-				case GameConstants.STATE_WORN:
-					return Colors.COLOR_WORN;
-				case GameConstants.STATE_DAMAGED:
-					return Colors.COLOR_DAMAGED;
-				case GameConstants.STATE_BADLY_DAMAGED:
-					return Colors.COLOR_BADLY_DAMAGED;
-				case GameConstants.STATE_RUINED:
-					return Colors.COLOR_RUINED;	
+			case -1:
+			break;
+			case GameConstants.STATE_PRISTINE:
+				return Colors.COLOR_PRISTINE;
+			case GameConstants.STATE_WORN:
+				return Colors.COLOR_WORN;
+			case GameConstants.STATE_DAMAGED:
+				return Colors.COLOR_DAMAGED;
+			case GameConstants.STATE_BADLY_DAMAGED:
+				return Colors.COLOR_BADLY_DAMAGED;
+			case GameConstants.STATE_RUINED:
+				return Colors.COLOR_RUINED;	
 			}
 		}
 			
@@ -391,7 +415,7 @@ class ItemManager
 			return Colors.COLOR_RUINED;	
 	}
 
-	void SetTemperature( EntityAI item, Widget item_w )
+	void SetTemperature(EntityAI item, Widget item_w)
 	{
 		if ( item_w )
 		{
@@ -405,7 +429,7 @@ class ItemManager
 						string name = item_w.GetName();
 						name.Replace("Render", "Temperature");
 						Widget temperature_widget = item_w.GetParent().FindAnyWidget( name );
-						if( color != -1 )
+						if ( color != -1 )
 						{
 							temperature_widget.Show( true );
 							temperature_widget.SetColor( color );
@@ -422,7 +446,7 @@ class ItemManager
 		}
 	}
 
-	void SetIconTemperature( EntityAI item, Widget item_w )
+	void SetIconTemperature(EntityAI item, Widget item_w)
 	{
 		if ( item_w )
 		{
@@ -446,13 +470,13 @@ class ItemManager
 		}
 	}
 
-	void PrepareTooltip( EntityAI item, int x = 0, int y = 0 )
+	void PrepareTooltip(EntityAI item, int x = 0, int y = 0)
 	{
 		if( IsDragging() || !item )
 		{
 			return;
 		}
-
+		
 		if ( item.IsInherited( InventoryItem ) )
 		{
 			HideTooltip();
@@ -460,38 +484,42 @@ class ItemManager
 			m_HoveredItem = item;
 			InspectMenuNew.UpdateItemInfo( m_TooltipWidget, item );
 			
-			#ifndef PLATFORM_CONSOLE
 			int screen_w, screen_h;
 			float w, h;
-			
-			GetMousePos(x,y);
-			
 			GetScreenSize(screen_w, screen_h);
 			m_TooltipWidget.GetScreenSize(w,h);
-
-			int m_normal_item_size = 70;
+			
+			if (x == -1)//set by icon focusing
+			{
+				x = screen_w/2 - w/2;
+				float x1,y1;
+				m_RootWidget.FindAnyWidget("InventoryFrameWidget").GetScreenPos(x1,y1); //allign to the same height
+				y = y1;
+			}
+			else if (x == 0 && y == 0 && GetGame().GetInput().IsEnabledMouseAndKeyboardEvenOnServer())
+			{
+				GetMousePos(x,y);
+			}
+			
+			//minimal edge distance adjustments..
 			screen_w -= 10;
 			screen_h -= 10;
-			x += m_normal_item_size;
-			y += m_normal_item_size;
-
-			int right_edge = x + w;
-			if (right_edge > screen_w)
+			
+			int rightEdge = x + w;
+			if (rightEdge > screen_w)
 			{
 				x = screen_w - w;
 			}
-
-			int bottom_edge = y + h;
-			if (bottom_edge > screen_h)
+			
+			int bottomEdge = y + h;
+			if (bottomEdge > screen_h)
 			{
-				y = y - h - (2*m_normal_item_size);
+				y = screen_h - h;
 			}
+			
 			m_TooltipWidget.SetPos(x, y);
-
-			#endif
 			
 			m_ToolTipTimer = new Timer();
-			
 			m_ToolTipTimer.Run( TOOLTIP_DELAY, this, "ShowTooltip" );
 			
 			Widget preview_frame = m_TooltipWidget.FindAnyWidget("ItemFrameWidget");
@@ -504,76 +532,113 @@ class ItemManager
 		}
 	}
 	
-	void PrepareSlotsTooltip( string name, string desc, int x = 0, int y = 0 )
+	//! position is currentlycalculated from the owning 'm_TooltipSourceWidget' directly
+	void PrepareSlotsTooltip(string name, string desc, int x = 0, int y = 0)
 	{
 		InspectMenuNew.UpdateSlotInfo( m_TooltipSlotWidget, name, desc );
 		
 		HideTooltip();
-			
-		m_SlotInfoShown = true;
 		
-		#ifndef PLATFORM_CONSOLE
+		if (name != "") 
+		{
+			m_SlotInfoShown = true;
+			//CalculateTooltipSlotPosition(x,y);
+			m_TooltipSlotTimer = new Timer();
+			m_TooltipSlotTimer.Run( TOOLTIP_DELAY, this, "ShowTooltipSlot" );
+		}
+	}
+	
+	void CalculateTooltipSlotPosition(int x = 0, int y = 0)
+	{
 		int screen_w, screen_h;
 		float w, h;
-			
 		GetScreenSize(screen_w, screen_h);
-		m_TooltipSlotWidget.GetScreenSize(w,h);
-		
+		//m_TooltipSlotWidget.GetScreenSize(w,h);
+		m_TooltipSlotWidget.GetSize(w,h);
 		int slot_normal_w = SlotsIcon.GetNormalWidth();
 		int slot_normal_h = SlotsIcon.GetNormalHeight();
-		
-
-		int m_normal_item_size = 20;
+		//minimal edge distance adjustments..
 		screen_w -= 10;
 		screen_h -= 10;
+		
+#ifndef PLATFORM_CONSOLE
 		x += 5;
 		y += slot_normal_h + 5;
-
-		int right_edge = x + w;
-		if (right_edge > screen_w)
-		{
-			x = screen_w - w;
-		}
-
-		int bottom_edge = y + h;
-		if (bottom_edge > screen_h)
-		{
-			y = y - h - 10;
-		}
-		m_TooltipSlotWidget.SetPos(x, y);
-		#else
-		int screen_w, screen_h;
-		float w, h;		
-		
-		GetScreenSize(screen_w, screen_h);
-		m_TooltipSlotWidget.GetScreenSize(w,h);
-		
-		int slot_normal_w = SlotsIcon.GetNormalWidth();
-		int slot_normal_h = SlotsIcon.GetNormalHeight();
-
-		screen_w -= 10;
-		screen_h -= 10;
+#else
 		x += 5;
 		y += 15;
+#endif
+		Widget scrollerWidget = m_TooltipSourceWidget.GetParent();
+		while (scrollerWidget)
+		{
+			if (ScrollWidget.Cast(scrollerWidget))
+			{
+				break;
+			}
+			else
+			{
+				scrollerWidget = scrollerWidget.GetParent();
+			}
+		}
 
-		int right_edge = x + w;
-		if (right_edge > screen_w)
+		int rightEdge = x + w;
+		if (rightEdge > screen_w)
 		{
 			x = screen_w - w;
 		}
 
-		int bottom_edge = y + h;
-		if (bottom_edge > screen_h)
+		int bottomEdge = y + h;
+		if (scrollerWidget)
 		{
-			y = y - h - 10;
+			float scrollerX, scrollerY, scrollerSizeX, scrollerSizeY;
+			scrollerWidget.GetScreenPos(scrollerX,scrollerY);
+			scrollerWidget.GetScreenSize(scrollerSizeX,scrollerSizeY);
+			
+			int scroller_bottom = scrollerY + scrollerSizeY;
+			if (bottomEdge > scroller_bottom)
+			{
+				y = scroller_bottom - slot_normal_h;
+				bottomEdge = y + h;
+			}
 		}
-		m_TooltipSlotWidget.SetPos(x, y);
+		/*else
+		{
+			ErrorEx("No scroller widget! | m_TooltipSourceWidget: " + m_TooltipSourceWidget);
+		}*/
 		
-		#endif
+		if (bottomEdge > screen_h) //should mostly never proc now
+		{
+			y = screen_h - h;
+		}
 		
-		m_TooltipSlotTimer = new Timer();
+		m_TooltipPosX = x;
+		m_TooltipPosY = y;
+	}
+	
+	void UpdateTooltipSlotPosition()
+	{
+		float x, y;
+		m_TooltipSourceWidget.GetScreenPos(x,y);
+		CalculateTooltipSlotPosition(x,y);
+	}
+	
+	void SetTooltipWidget(Widget w)
+	{
+		m_TooltipSourceWidget = w;
+	}
+	
+	bool EvaluateContainerDragabilityDefault(EntityAI entity)
+	{
+		if ( !ItemBase.Cast( entity ) )
+			return false;
 		
-		m_TooltipSlotTimer.Run( TOOLTIP_DELAY, this, "ShowTooltipSlot" );
+		bool draggable;
+		PlayerBase player = PlayerBase.Cast(GetGame().GetPlayer());
+		draggable = !player.GetInventory().HasInventoryReservation( entity, null ) && !player.IsItemsToDelete();
+		draggable = draggable && entity.CanPutIntoHands( GetGame().GetPlayer() );
+		draggable = draggable && entity.GetInventory().CanRemoveEntity();
+		
+		return draggable;
 	}
 	
 	void SetWidgetDraggable( Widget w, bool draggable )
@@ -597,6 +662,8 @@ class ItemManager
 	
 	void ShowTooltipSlot()
 	{	
+		UpdateTooltipSlotPosition();
+		m_TooltipSlotWidget.SetPos(m_TooltipPosX, m_TooltipPosY);
 		m_TooltipSlotWidget.Show( true );
 	}
 	
@@ -631,11 +698,6 @@ class ItemManager
 
 		if( entity1 == m_player.GetHumanInventory().GetEntityInHands() || entity2 == m_player.GetHumanInventory().GetEntityInHands())
 		{
-			if( GetRecipeCount( false, entity1, entity2 ) > 0 )
-			{
-				flags = flags | InventoryCombinationFlags.RECIPE_HANDS;
-			}
-
 			ActionManagerClient amc;
 			Class.CastTo(amc, m_player.GetActionManager());
 			if( entity1 == m_player.GetHumanInventory().GetEntityInHands() )

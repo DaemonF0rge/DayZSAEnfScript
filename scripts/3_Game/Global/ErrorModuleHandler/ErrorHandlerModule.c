@@ -11,7 +11,7 @@ class ErrorHandlerModule
 	proto native void SetCategory(ErrorCategory category);
 	
 	//! Event that gets triggered when an error of the owned category is thrown.
-	protected void OnErrorThrown(int errorCode, string additionalInfo = "")
+	protected void OnErrorThrown(int errorCode, owned string additionalInfo = "")
 	{
 		#ifdef DEVELOPER
 		Print(ErrorModuleHandler.GetErrorHex(errorCode));
@@ -21,13 +21,31 @@ class ErrorHandlerModule
 	//! Retrieve the message shown on Client
 	string GetClientMessage(int errorCode, string additionalInfo = "")
 	{
-		return additionalInfo;
+		return GetSimpleMessage(errorCode, additionalInfo);
+	}
+	
+	//! Retrieve the message shown on Client
+	string GetLastClientMessage(int errorCode)
+	{
+		return GetSimpleMessage(errorCode);
 	}
 	
 	//! Retrieve the message shown on Server
 	string GetServerMessage(int errorCode, string additionalInfo = "")
 	{
-		return additionalInfo;
+		return GetSimpleMessage(errorCode, additionalInfo);
+	}
+	
+	//! Retrieve the message shown on Server
+	string GetLastServerMessage(int errorCode)
+	{
+		return GetSimpleMessage(errorCode);
+	}
+	
+	//! Simple message of just code and info
+	string GetSimpleMessage(int errorCode, string additionalInfo = "")
+	{
+		return string.Format("[%1]: %2", ErrorModuleHandler.GetErrorHex(errorCode), additionalInfo);
 	}
 	
 	//! Event called by ErrorModuleHandler
@@ -44,11 +62,12 @@ class ErrorHandlerModule
 */
 class ErrorHandlerModuleScript : ErrorHandlerModule
 {
-	
 	protected string m_Header = ""; //!< \p Optional: Header (e.g. The header of a Dialogue box)
 	protected string m_Prefix = ""; //!< \p Optional: Prefix (e.g. Fixed text at the start of the messages in the module)
 	protected ref UIScriptedMenu m_UIHandler = null; //!< \p Optional: The UI the handler might generally use	
+	
 	protected int m_LastErrorThrown = 0; //!< Holds the last thrown error in this module, defaults to 0
+	protected string m_LastAdditionalInfo = ""; //!< Holds the last additional info passed in
 	
 	/**
 		\brief \p Map containing the codes that exist for the ErrorHandlerModule
@@ -63,6 +82,14 @@ class ErrorHandlerModuleScript : ErrorHandlerModule
 	{
 		InitOptionalVariables();
 		FillErrorDataMap();
+	}
+	
+	void ~ErrorHandlerModuleScript()
+	{
+		if (m_UIHandler)
+		{
+			delete m_UIHandler;
+		}
 	}
 	
 	//! Function which gets called before FillErrorDataMap, designed to set Optional Variales before ErrorProperties are created
@@ -88,7 +115,9 @@ class ErrorHandlerModuleScript : ErrorHandlerModule
 		ErrorProperties properties = null;
 			
 		if (!m_ErrorDataMap.Find(error, properties))
+		{
 			Error(string.Format("[EHM] Could not find any properties for error %1(%2) in %3", errorCode, ErrorModuleHandler.GetErrorHex(errorCode), this));
+		}
 		
 		return properties;
 	}
@@ -103,9 +132,31 @@ class ErrorHandlerModuleScript : ErrorHandlerModule
 		ErrorProperties properties = GetProperties(errorCode);
 			
 		if ( properties )
+		{
 			return properties.GetClientMessage(additionalInfo);
+		}
 		else
+		{
 			return additionalInfo;
+		}
+	}
+	
+	/**
+	\brief Fetches the Client message for the error code, attempting to retrieve the data from the latest.
+		\param errorCode \p int The full error code to check against
+		\return \p string The Client message for the error
+	*/
+	override string GetLastClientMessage(int errorCode)
+	{
+		if (errorCode == m_LastErrorThrown)
+		{
+			return GetClientMessage(errorCode, m_LastAdditionalInfo);
+		}
+		else
+		{
+			ErrorEx(string.Format("Was unable to get the information on the last error as another has already occurred. (%1 != %2)", ErrorModuleHandler.GetErrorHex(errorCode), ErrorModuleHandler.GetErrorHex(m_LastErrorThrown)));
+			return GetClientMessage(errorCode);
+		}
 	}
 	
 	/**
@@ -118,9 +169,31 @@ class ErrorHandlerModuleScript : ErrorHandlerModule
 		ErrorProperties properties = GetProperties(errorCode);
 			
 		if ( properties )
+		{
 			return properties.GetServerMessage(additionalInfo);
+		}
 		else
+		{
 			return additionalInfo;
+		}
+	}
+	
+	/**
+	\brief Fetches the Server message for the error code, attempting to retrieve the data from the latest.
+		\param errorCode \p int The full error code to check against
+		\return \p string The Server message for the error
+	*/
+	override string GetLastServerMessage(int errorCode)
+	{
+		if (errorCode == m_LastErrorThrown)
+		{
+			return GetServerMessage(errorCode, m_LastAdditionalInfo);
+		}
+		else
+		{
+			ErrorEx(string.Format("Was unable to get the information on the last error as another has already occurred. (%1 != %2)", ErrorModuleHandler.GetErrorHex(errorCode), ErrorModuleHandler.GetErrorHex(m_LastErrorThrown)), ErrorExSeverity.WARNING);
+			return GetServerMessage(errorCode);
+		}
 	}
 	
 	/**
@@ -130,21 +203,26 @@ class ErrorHandlerModuleScript : ErrorHandlerModule
 		\param errorCode \p int The full error code
 		\param additionalInfo \p string Any additional info regarding the error, usually data
 	*/
-	protected override void OnErrorThrown(int errorCode, string additionalInfo = "")
+	protected override void OnErrorThrown(int errorCode, owned string additionalInfo = "")
 	{
 		super.OnErrorThrown(errorCode, additionalInfo);
 		
 		m_LastErrorThrown = errorCode;
+		m_LastAdditionalInfo = additionalInfo;
 		
 		ErrorProperties properties = GetProperties(errorCode);
 			
 		if ( properties )
+		{
 			properties.HandleError(errorCode, additionalInfo);
+		}
 		else
 		{
-			Error(string.Format("[EHM] Error code %1(%2) was thrown but no ErrorProperties was found for it in category %3.", errorCode, ErrorModuleHandler.GetErrorHex(errorCode), GetCategory().ToString()));
+			ErrorEx(string.Format("Error code %1(%2) was thrown but no ErrorProperties was found for it in category %3.", errorCode, ErrorModuleHandler.GetErrorHex(errorCode), GetCategory().ToString()));
 			if (m_ErrorDataMap.Find(-1, properties))
+			{
 				properties.HandleError(errorCode, additionalInfo);
+			}
 		}
 	}
 	
@@ -186,10 +264,10 @@ class ErrorHandlerModuleScript : ErrorHandlerModule
 	{
 		m_ErrorDataMap.Insert(code, DialogueErrorProperties(string.Format("%1%2", m_Prefix, message), serverMessage, m_Header, m_UIHandler, dialogButtonType, defaultButton, dialogMeaningType, displayAdditionalInfo));
 	}
-	
+
 	//! Insert an error with no handling
-	void InsertErrorProperties(int code)
+	void InsertErrorProperties(int code, string message = "")
 	{
-		m_ErrorDataMap.Insert(code, ErrorProperties("", ""));
+		m_ErrorDataMap.Insert(code, ErrorProperties(message, message));
 	}
 }

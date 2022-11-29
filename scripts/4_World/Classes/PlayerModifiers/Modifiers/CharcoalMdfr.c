@@ -1,7 +1,7 @@
 class CharcoalMdfr: ModifierBase
 {
 	float m_Killrate;
-	const int CHARCOAL_LIFETIME = 10;
+	const int CHARCOAL_LIFETIME = 300;
 	const int CHARCOAL_EFFECT_TIME = 100;
 	
 	override void Init()
@@ -11,7 +11,8 @@ class CharcoalMdfr: ModifierBase
 		m_ID 					= eModifiers.MDF_CHARCOAL;
 		m_TickIntervalInactive 	= DEFAULT_TICK_TIME_INACTIVE;
 		m_TickIntervalActive 	= 3;
-		m_Killrate = 2.85;	// # of killed agents * m_TickIntervalActive
+		m_Killrate = 2.85;	// # of killed agents per sec
+		DisableActivateCheck();
 	}
 
 	override bool ActivateCondition(PlayerBase player)
@@ -24,28 +25,42 @@ class CharcoalMdfr: ModifierBase
 		OnActivate( player );
 	}
 	
+	/*
 	override string GetDebugText()
 	{
-		return ( CHARCOAL_LIFETIME - GetAttachedTime() ).ToString();
+		
+		string text;
+		float time_till_effective = CHARCOAL_LIFETIME - CHARCOAL_EFFECT_TIME  - GetAttachedTime();
+		
+		text = "time till effective: " + time_till_effective.ToString() + "\n";
+		
+		if(time_till_effective > 0)
+			text += "killing agents:" + "NO";
+		else
+			text += "killing agents:" + "YES";
+		
+		
+		return text;
+		
 	}
+		*/
 
+	
+	override string GetDebugTextSimple()
+	{
+		return ( (int)(CHARCOAL_LIFETIME - GetAttachedTime()) ).ToString() + " | " + (((int)(CHARCOAL_LIFETIME - CHARCOAL_EFFECT_TIME  - GetAttachedTime())) * -1).ToString();
+	}
 	
 	override void OnActivate(PlayerBase player)
 	{
 		player.IncreaseHealingsCount();
-		/*
-		if ( player.GetNotifiersManager() )
-			player.GetNotifiersManager().ActivateByType(eNotifiers.NTF_PILLS);
-		*/
+
 	}
 	
 	override void OnDeactivate(PlayerBase player)
 	{
 		player.DecreaseHealingsCount();
-		/*
-		if ( player.GetNotifiersManager() )
-			player.GetNotifiersManager().DeactivateByType(eNotifiers.NTF_PILLS);
-		*/
+
 	}
 	
 	override bool DeactivateCondition(PlayerBase player)

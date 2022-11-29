@@ -1,22 +1,22 @@
-bool pushToChamberFromAttachedMagazine (Weapon_Base weapon, int muzzleIndex)
+bool pushToChamberFromAttachedMagazine(Weapon_Base weapon, int muzzleIndex)
 {
 	Magazine mag = weapon.GetMagazine(muzzleIndex);
 	if (mag)
 	{
-		wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(weapon) + " chamberFromAttachedMagazine, using attached magazine mag=" + mag.ToString());
+		if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(weapon) + " chamberFromAttachedMagazine, using attached magazine mag=" + mag.ToString()); }
 		float damage;
 		string type;
 		if (mag && mag.LocalAcquireCartridge(damage, type))
 		{
 			weapon.SelectionBulletShow();
-			wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(weapon) + " chamberFromAttachedMagazine, ok - cartridge acquired: dmg=" + damage + " type=" + type);
+			if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(weapon) + " chamberFromAttachedMagazine, ok - cartridge acquired: dmg=" + damage + " type=" + type); }
 		}
 		else
 			Error("[wpnfsm] " + Object.GetDebugName(weapon) + " chamberFromAttachedMagazine, error - cannot take cartridge from magazine");
 
 		if (weapon.PushCartridgeToChamber(muzzleIndex, damage, type))
 		{
-			wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(weapon) + " chamberFromAttachedMagazine, ok - loaded chamber");
+			if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(weapon) + " chamberFromAttachedMagazine, ok - loaded chamber"); }
 			return true;
 		}
 		else
@@ -29,23 +29,23 @@ bool pushToChamberFromAttachedMagazine (Weapon_Base weapon, int muzzleIndex)
 	return false;
 }
 
-bool pushToChamberFromInnerMagazine (Weapon_Base weapon, int muzzleIndex)
+bool pushToChamberFromInnerMagazine(Weapon_Base weapon, int muzzleIndex)
 {
 
-	wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(weapon) + " chamberFromInnerMagazine, using inner magazine.");
+	if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(weapon) + " chamberFromInnerMagazine, using inner magazine."); }
 	float damage;
 	string type;
 	if (weapon.PopCartridgeFromInternalMagazine(muzzleIndex,damage, type))
 	{
 		weapon.SelectionBulletShow();
-		wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(weapon) + " chamberFromInnerMagazine, ok - cartridge acquired: dmg=" + damage + " type=" + type);
+		if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(weapon) + " chamberFromInnerMagazine, ok - cartridge acquired: dmg=" + damage + " type=" + type); }
 	}
 	else
 		Error("[wpnfsm] " + Object.GetDebugName(weapon) + " chamberFromInnerMagazine, error - cannot take cartridge from magazine");
 
 	if (weapon.PushCartridgeToChamber(muzzleIndex, damage, type))
 	{
-		wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(weapon) + " chamberFromInnerMagazine, ok - loaded chamber");
+		if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(weapon) + " chamberFromInnerMagazine, ok - loaded chamber"); }
 		return true;
 	}
 	else
@@ -54,13 +54,15 @@ bool pushToChamberFromInnerMagazine (Weapon_Base weapon, int muzzleIndex)
 	return false;
 }
 
-void ejectBulletAndStoreInMagazine (Weapon_Base weapon, int muzzleIndex, Magazine mag, DayZPlayer p)
+void ejectBulletAndStoreInMagazine(Weapon_Base weapon, int muzzleIndex, Magazine mag, DayZPlayer p)
 {
 	float damage = 0;
 	string type = string.Empty;
 	string magazineTypeName = weapon.GetChamberedCartridgeMagazineTypeName(muzzleIndex);
 	if (weapon.EjectCartridge(muzzleIndex, damage, type))
-		wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(weapon) + " ejectBulletAndStoreInMagazine, ejected chambered cartridge");
+	{
+		if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(weapon) + " ejectBulletAndStoreInMagazine, ejected chambered cartridge"); }
+	}
 	else
 		Error("[wpnfsm] " + Object.GetDebugName(weapon) + " ejectBulletAndStoreInMagazine, error - cannot eject chambered cartridge!");
 
@@ -71,7 +73,9 @@ void ejectBulletAndStoreInMagazine (Weapon_Base weapon, int muzzleIndex, Magazin
 		{
 			// no magazine configured in parent state, looking in inventory
 			if (DayZPlayerUtils.HandleStoreCartridge(p, weapon, muzzleIndex, damage, type, magazineTypeName))
-				wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(weapon) + " ejectBulletAndStoreInMagazine, ok - cartridge stored in magazine");
+			{
+				if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(weapon) + " ejectBulletAndStoreInMagazine, ok - cartridge stored in magazine"); }
+			}
 			else
 				Error("[wpnfsm] " + Object.GetDebugName(weapon) + " ejectBulletAndStoreInMagazine, error - cannot store cartridge!");
 		}
@@ -80,7 +84,7 @@ void ejectBulletAndStoreInMagazine (Weapon_Base weapon, int muzzleIndex, Magazin
 			if (mag.ServerStoreCartridge(damage, type))
 			{
 				mag.SetSynchDirty();
-				wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(weapon) + " ejectBulletAndStoreInMagazine, ok - cartridge stored in user defined magazine");
+				if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(weapon) + " ejectBulletAndStoreInMagazine, ok - cartridge stored in user defined magazine"); }
 			}
 			else
 				Error("[wpnfsm] " + Object.GetDebugName(weapon) + " ejectBulletAndStoreInMagazine, error - cannot store cartridge in magazine");
@@ -88,7 +92,7 @@ void ejectBulletAndStoreInMagazine (Weapon_Base weapon, int muzzleIndex, Magazin
 	}
 }
 
-bool magazinesHaveEqualSizes (notnull Magazine mag, notnull Magazine mag2)
+bool magazinesHaveEqualSizes(notnull Magazine mag, notnull Magazine mag2)
 {
 	int w, h;
 	GetGame().GetInventoryItemSize(mag, w, h);
@@ -96,11 +100,11 @@ bool magazinesHaveEqualSizes (notnull Magazine mag, notnull Magazine mag2)
 	GetGame().GetInventoryItemSize(mag2, w2, h2);
 	if (w == w2 && h == h2)
 	{
-		wpnDebugPrint("[wpnfsm] guard - same inventory sizes");
+		if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] guard - same inventory sizes"); }
 		return true;
 	}
 
-	wpnDebugPrint("[wpnfsm] guard - different inventory sizes");
+	if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] guard - different inventory sizes"); }
 	return false;
 }
 

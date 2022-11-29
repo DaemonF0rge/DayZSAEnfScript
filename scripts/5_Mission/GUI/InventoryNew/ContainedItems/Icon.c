@@ -19,8 +19,6 @@ class Icon: LayoutHolder
 	protected bool					m_IsDragged;
 	protected bool					m_PreviousFlipOrientation;
 	
-	protected EntityAI				m_am_entity1, m_am_entity2;
-
 	const int NUMBER_OF_TIMERS = 2;
 	
 	protected ItemPreviewWidget		m_ItemPreview;
@@ -89,11 +87,12 @@ class Icon: LayoutHolder
 
 	override void SetActive( bool active )
 	{
+		super.SetActive( active );
 		if( active && GetObject() )
 		{
 			float x, y;
 			GetMainWidget().GetScreenPos( x, y );
-			ItemManager.GetInstance().PrepareTooltip( EntityAI.Cast( GetObject() ), x, y );
+			PrepareOwnedTooltip( EntityAI.Cast( GetObject() ), -1, y );
 		}
 		
 		m_SelectedPanel.Show( active );
@@ -125,7 +124,7 @@ class Icon: LayoutHolder
 	void RefreshQuickbar()
 	{
 		InventoryMenu menu = InventoryMenu.Cast( GetGame().GetUIManager().FindMenu( MENU_INVENTORY ) );
-		ItemManager.GetInstance().HideTooltip();
+		HideOwnedTooltip();
 		if( menu )
 		{
 			menu.RefreshQuickbar();
@@ -176,7 +175,7 @@ class Icon: LayoutHolder
 				{
 					player.PredictiveMoveItemFromHandsToInventory();
 				}
-				ItemManager.GetInstance().HideTooltip();
+				HideOwnedTooltip();
 				if( menu )
 				{
 					menu.RefreshQuickbar();
@@ -240,7 +239,7 @@ class Icon: LayoutHolder
 				}
 			}
 	
-			ItemManager.GetInstance().HideTooltip();
+			HideOwnedTooltip();
 			if( menu )
 			{
 				menu.RefreshQuickbar();
@@ -352,7 +351,7 @@ class Icon: LayoutHolder
 	{
 		if( !m_IsDragged )
 		{
-			ItemManager.GetInstance().PrepareTooltip( m_Obj );
+			PrepareOwnedTooltip( m_Obj, x, y );
 			m_SelectedPanel.Show( true );
 		}
 		
@@ -361,7 +360,7 @@ class Icon: LayoutHolder
 
 	bool MouseLeave( Widget w, Widget s, int x, int y	)
 	{
-		ItemManager.GetInstance().HideTooltip();
+		HideOwnedTooltip();
 		if( !m_IsDragged )
 		{
 			m_SelectedPanel.Show( false );
@@ -611,59 +610,9 @@ class Icon: LayoutHolder
 		}
 	}
 
-	void ShowActionMenu(InventoryItem item)
-	{
-		PlayerBase m_player = PlayerBase.Cast( GetGame().GetPlayer() );
-		ItemManager.GetInstance().HideTooltip();
-		m_am_entity1 = item;
-		m_am_entity2 = null;
-		ContextMenu cmenu = GetGame().GetUIManager().GetMenu().GetContextMenu();
+	
 
-		cmenu.Hide();
-		cmenu.Clear();
-
-		if(m_am_entity1 == null)
-			return;
-
-		ref TSelectableActionInfoArray customActions = new TSelectableActionInfoArray;
-		ItemBase itemBase = ItemBase.Cast( item );
-		
-		///itemBase.GetRecipesActions(m_player, customActions);
-
-		if( ItemBase.GetDebugActionsMask() & DebugActionType.GENERIC_ACTIONS )
-		{
-			itemBase.GetDebugActions(customActions);
-		}
-		if( ItemBase.GetDebugActionsMask() & DebugActionType.PLAYER_AGENTS )
-		{
-			m_player.GetDebugActions(customActions);
-		}
-
-		int actionsCount = customActions.Count();
-		for ( int i = 0; i < customActions.Count(); i++ )
-		{
-			TSelectableActionInfo actionInfo = customActions.Get(i);
-			if( actionInfo )
-			{
-				int actionId = actionInfo.param2;
-				string actionText = actionInfo.param3;
-
-				cmenu.Add(actionText, this, "OnSelectAction", new Param2<ItemBase, int>(itemBase, actionId));
-			}
-		}
-
-		int m_am_Pos_x,  m_am_Pos_y;
-		GetMousePos( m_am_Pos_x, m_am_Pos_y );
-				m_am_Pos_x -= 5;
-		m_am_Pos_y -= 5;
-		cmenu.Show(m_am_Pos_x, m_am_Pos_y);
-	}
-
-	void OnSelectAction(ItemBase item, int actionId)
-	{
-		PlayerBase m_player = PlayerBase.Cast( GetGame().GetPlayer() );
-		m_player.GetActionManager().OnInstantAction(ActionDebug,new Param2<ItemBase,int>(item,actionId));
-	}
+	
 
 	void ShowActionMenuCombine( EntityAI entity1, EntityAI entity2, int combinationFlags, Widget w , bool color_test )
 	{
@@ -744,7 +693,7 @@ class Icon: LayoutHolder
 			ItemManager.GetInstance().GetCenterDropzone().SetAlpha( 1 );
 			ColorManager.GetInstance().SetColor( w, ColorManager.COMBINE_COLOR );
 		}
-		if( combinationFlags & InventoryCombinationFlags.RECIPE_HANDS ||  combinationFlags & InventoryCombinationFlags.RECIPE_ANYWHERE )
+		/*if( combinationFlags & InventoryCombinationFlags.RECIPE_HANDS ||  combinationFlags & InventoryCombinationFlags.RECIPE_ANYWHERE )
 		{
 			if( !color_test )
 			{
@@ -752,7 +701,7 @@ class Icon: LayoutHolder
 				return;
 			}
 		}
-		else if( cmenu.Count() >= 1 )
+		else*/ if( cmenu.Count() >= 1 )
 		{
 			if( !color_test )
 			{
@@ -787,8 +736,6 @@ class Icon: LayoutHolder
 				cmenu.Show( m_am_Pos_x, m_am_Pos_y );
 			}*/
 		}
-		
-		
 	}
 
 	void OnPerformRecipe(int id)
@@ -903,16 +850,16 @@ class Icon: LayoutHolder
 		m_am_Pos_y -= 5;
 
 		MissionGameplay mission = MissionGameplay.Cast( GetGame().GetMission() );
-		if( combinationFlags & InventoryCombinationFlags.RECIPE_HANDS ||  combinationFlags & InventoryCombinationFlags.RECIPE_ANYWHERE )
+		/*if( combinationFlags & InventoryCombinationFlags.RECIPE_HANDS ||  combinationFlags & InventoryCombinationFlags.RECIPE_ANYWHERE )
 		{
 			OnPerformRecipe( id );
 			return true;
 		}
 		else /*if( cmenu.Count() == 1 )*/
-		{
+		//{
 			OnPerformCombination( current_flag );
 			return true;
-		}
+		//}
 		/*else
 		{
 			cmenu.Show( m_am_Pos_x, m_am_Pos_y );
@@ -936,8 +883,10 @@ class Icon: LayoutHolder
 					
 					if( m_HasQuantity )
 						SetQuantity();
+					#ifdef DEVELOPER
 					if( GetDayZGame().IsLeftCtrlDown() )
 						ShowActionMenu( m_Item );
+					#endif
 				}
 			}
 				
@@ -953,11 +902,11 @@ class Icon: LayoutHolder
 				PlayerBase player = PlayerBase.Cast( GetGame().GetPlayer() );
 				if (g_Game.IsLeftCtrlDown())
 				{
-					if ( m_Item.GetInventory().CanRemoveEntity() )
+					if ( player && player.CanDropEntity( m_Item ) )
 					{
 						if ( m_Item.GetTargetQuantityMax() < m_Item.GetQuantity() )
 							m_Item.SplitIntoStackMaxClient( null, -1 );
-						else if ( player )
+						else
 						{
 							player.PhysicalPredictiveDropItem( m_Item );
 						}
@@ -1279,23 +1228,21 @@ class Icon: LayoutHolder
 		ItemManager.GetInstance().SetIsDragging( false );
 		m_IsDragged = false;
 		
-		if( m_Item )
+		if ( m_Item )
 		{
 			m_Item.GetInventory().SetFlipCargo( m_PreviousFlipOrientation );
 			int ww, hh;
 			GetGame().GetInventoryItemSize( m_Item, ww, hh );
-			if( m_PreviousFlipOrientation )
-			{
+			
+			if ( m_PreviousFlipOrientation )
 				SetSize( hh, ww );
-			}
 			else
-			{
 				SetSize( ww, hh );
-			}
+
 			SetSize();
 		}
 		
-		if( m_HandsIcon )
+		if ( m_HandsIcon )
 		{
 			m_ItemPreview.SetForceFlipEnable(true);
 			m_ItemPreview.SetForceFlip(false);
@@ -1307,10 +1254,9 @@ class Icon: LayoutHolder
 		m_SelectedPanel.Show( false );
 
 		InventoryMenu menu = InventoryMenu.Cast( GetGame().GetUIManager().FindMenu( MENU_INVENTORY ) );
-		if( menu )
-		{
+		
+		if ( menu )
 			menu.RefreshQuickbar();
-		}
 	}
 
 	void CreateWhiteBackground()
@@ -1322,17 +1268,14 @@ class Icon: LayoutHolder
 		ItemManager.GetInstance().SetIsDragging( true );
 		int ww, hh;
 		GetGame().GetInventoryItemSize( m_Item, ww, hh );
-		if( m_Item.GetInventory().GetFlipCargo() )
-		{
+		if ( m_Item.GetInventory().GetFlipCargo() )
 			SetSize( hh, ww );
-		}
 		else
-		{
 			SetSize( ww, hh );
-		}
+		
 		SetSize();
 
-		if( !m_HandsIcon )
+		if ( !m_HandsIcon )
 		{
 			Refresh();
 		}
@@ -1402,14 +1345,16 @@ class Icon: LayoutHolder
 	{
 		super.Refresh();
 
-		if( !m_HandsIcon )
+		if ( !m_HandsIcon )
 			SetPos();
 		
-		if( m_HasTemperature )
+		if ( m_HasTemperature )
 			SetTemperature();
-		if( m_IsWeapon )
+		
+		if ( m_IsWeapon )
 			RefreshMuzzleIcon();
-		if( m_HasQuantity )
+		
+		if ( m_HasQuantity )
 			SetQuantity();
 	}
 
@@ -1559,55 +1504,52 @@ class Icon: LayoutHolder
 		}
 	}
 	
-	float GetQuantity()
-	{
-		if( m_Item )
-		{
-			if( m_IsMagazine )
-			{
-				return Magazine.Cast( m_Item ).GetAmmoCount();
-			}
-			else
-			{
-				return m_Item.GetQuantity();
-			}
-		}
-		return -1;
-	}
-
 	void SetQuantity()
 	{
-		if( m_Item && m_CurrQuantity != GetQuantity() )
+		if (m_Item)
 		{
-			m_CurrQuantity = GetQuantity();
-			int has_quantity = QuantityConversions.HasItemQuantity( m_Item );
+			int quantityType = QuantityConversions.HasItemQuantity(m_Item);
+			if (quantityType != QUANTITY_HIDDEN && m_CurrQuantity != QuantityConversions.GetItemQuantity(m_Item))
+			{
+				m_CurrQuantity = QuantityConversions.GetItemQuantity(m_Item);
 			
-			if( has_quantity == QUANTITY_COUNT )
-			{
-				m_QuantityItem.SetText( QuantityConversions.GetItemQuantityText( m_Item ) );
-				m_QuantityStack.Show( true );
-				m_QuantityProgress.Show( false );
-			}
-			else if( has_quantity == QUANTITY_PROGRESS )
-			{
-
-				float progress_max = m_QuantityProgress.GetMax();
-				int max = m_Item.GetQuantityMax();
-				int count = m_Item.ConfigGetInt( "count" );
-				float quantity = QuantityConversions.GetItemQuantity( m_Item );
-
-				if( count > 0 )
+				if (quantityType == QUANTITY_COUNT)
 				{
-					max = count;
-				}
-				if( max > 0 )
-				{
+					string q_text = QuantityConversions.GetItemQuantityText(m_Item);
 
-					float value = Math.Round( ( quantity / max ) * 100 );
-					m_QuantityProgress.SetCurrent( value );
+					if (QuantityConversions.GetItemQuantityMax(m_Item) == 1 || q_text == "")
+					{
+						m_QuantityStack.Show(false);
+					}
+					else
+					{
+						m_QuantityItem.SetText(q_text);
+						m_QuantityStack.Show(true);
+					}
+
+					m_QuantityProgress.Show(false);
 				}
-				m_QuantityStack.Show( false );
-				m_QuantityProgress.Show( true );
+				else if (quantityType == QUANTITY_PROGRESS)
+				{	
+					float progress_max	= m_QuantityProgress.GetMax();
+					int max 			= m_Item.GetQuantityMax();
+					int count 			= m_Item.ConfigGetInt("count");
+					float quantity		= m_CurrQuantity;
+	
+					if (count > 0)
+					{
+						max = count;
+					}
+					
+					if (max > 0)
+					{
+						float value = Math.Round((quantity / max) * 100);
+						m_QuantityProgress.SetCurrent(value);
+					}
+
+					m_QuantityStack.Show(false);
+					m_QuantityProgress.Show(true);
+				}
 			}
 		}
 	}
@@ -1623,19 +1565,24 @@ class Icon: LayoutHolder
 		return GetMainWidget().GetSort( );
 	}
 	
-	void SetItemPreview()
+	void SetItemPreviewEx(bool refresh = true)
 	{
-		m_ItemPreview.Show( true );
+		m_ItemPreview.Show( true, refresh );
 		m_ItemPreview.SetItem( EntityAI.Cast( m_Obj ) );
 		m_ItemPreview.SetModelOrientation( "0 0 0" );
 		m_ItemPreview.SetView( m_Obj.GetViewIndex() );
 	}
 	
-	void SetItemSize()
+	void SetItemPreview()
+	{
+		SetItemPreviewEx();
+	}
+	
+	void SetItemSizeEx(bool refresh = true)
 	{
 		#ifdef PLATFORM_CONSOLE
-		m_ItemSizePanel.Show( true );
-		m_ItemSizeWidget.Show( true );
+		m_ItemSizePanel.Show( true, refresh );
+		m_ItemSizeWidget.Show( true, refresh );
 		
 		int size_x, size_y;
 		GetGame().GetInventoryItemSize( m_Item, size_x, size_y );
@@ -1644,18 +1591,21 @@ class Icon: LayoutHolder
 		#endif
 	}
 	
+	void SetItemSize()
+	{
+		SetItemSizeEx();
+	}
+	
 	void UpdateFlip( bool flipped )
 	{
 		int size_x, size_y;
 		GetGame().GetInventoryItemSize( m_Item, size_x, size_y );
-		if( flipped )
-		{
+		
+		if ( flipped )
 			SetSize( size_y, size_x );
-		}
 		else
-		{
 			SetSize( size_x, size_y );
-		}
+
 		SetSize();
 	}
 	
@@ -1680,23 +1630,23 @@ class Icon: LayoutHolder
 		Refresh();
 	}
 
-	void Init( EntityAI obj )
+	void InitEx( EntityAI obj, bool refresh = true )
 	{
-		if( obj != m_Obj )
+		if ( obj != m_Obj )
 		{
-			if( m_Obj )
+			if ( m_Obj )
 			{
 				m_Obj.GetOnItemFlipped().Remove( UpdateFlip );
 				m_Obj.GetOnViewIndexChanged().Remove( SetItemPreview );
 			}
-			if( obj )
+			if ( obj )
 			{
 				obj.GetOnItemFlipped().Insert( UpdateFlip );
 				obj.GetOnViewIndexChanged().Insert( SetItemPreview );
 			}
 		}
 		
-		if(m_HandsIcon)
+		if (m_HandsIcon)
 		{
 			m_ItemPreview.SetForceFlipEnable(true);
 			m_ItemPreview.SetForceFlip(false);
@@ -1706,7 +1656,7 @@ class Icon: LayoutHolder
 		m_Item	= ItemBase.Cast( m_Obj );
 		m_Lock = null;
 		
-		SetItemPreview();
+		SetItemPreviewEx(refresh);
 		
 		WidgetEventHandler.GetInstance().RegisterOnDrag( GetMainWidget(),  this, "CreateWhiteBackground" );
 		WidgetEventHandler.GetInstance().RegisterOnDrop( GetMainWidget(),  this, "DestroyWhiteBackground" );
@@ -1721,19 +1671,26 @@ class Icon: LayoutHolder
 		WidgetEventHandler.GetInstance().RegisterOnMouseLeave( GetMainWidget(),  this, "MouseLeave" );
 		WidgetEventHandler.GetInstance().RegisterOnDoubleClick( GetMainWidget(),  this, "DoubleClick" );
 		
-		SetItemSize();
+		SetItemSizeEx(refresh);
 		CheckIsWeapon();
-		CheckIsMagazine();
+		CheckIsMagazineEx(refresh);
 		CheckHasTemperature();
-		CheckHasQuantity();
-		m_RootWidget.FindAnyWidget( "Reserved" ).Show( false );
-		Refresh();
+		CheckHasQuantityEx(refresh);
+		m_RootWidget.FindAnyWidget( "Reserved" ).Show( false, refresh );
+		
+		if (refresh)
+			Refresh();
+	}
+	
+	void Init( EntityAI obj )
+	{
+		InitEx( obj );
 	}
 	
 	void CheckIsWeapon()
 	{
 		Weapon_Base wpn = Weapon_Base.Cast( m_Obj );
-		if( wpn )
+		if ( wpn )
 		{
 			m_AmmoIcons = new array<ImageWidget>;
 			m_IsWeapon = true;
@@ -1741,23 +1698,22 @@ class Icon: LayoutHolder
 			float widht = 0.0, height = 0.0; 
 			for (int i = 0; i < wpn.GetMuzzleCount(); i++)
 			{
-				if(i == 1)
+				if (i == 1)
 				{
 					m_AmmoIcons[0].GetSize(widht,height);
 				}
 				x_pos += widht;
 				
 				Widget ammo_icon = Widget.Cast( GetGame().GetWorkspace().CreateWidgets( "gui/layouts/inventory_new/ammo_icon.layout", GetMainWidget() ) );
-				ammo_icon.SetPos(x_pos,0.0,false);
+				ammo_icon.SetPos(x_pos, 0.0, false);
 				
-				ImageWidget ammo_icon_img = ImageWidget.Cast(ammo_icon.GetChildren());
-				
+				ImageWidget ammo_icon_img = ImageWidget.Cast(ammo_icon.GetChildren());				
 				
 				AmmoData data = Magazine.GetAmmoData( wpn.GetChamberAmmoTypeName( i ) );
-				if( data )
+				if ( data )
 				{
 					CartridgeType c_type = data.m_CartridgeType;
-					switch( c_type )
+					switch ( c_type )
 					{
 						case CartridgeType.Pistol:
 						{
@@ -1791,46 +1747,40 @@ class Icon: LayoutHolder
 				}
 				m_AmmoIcons.Insert(ammo_icon_img);
 			}
-			
-			
-			
-			
-
 		}
 		else
 		{
 			m_IsWeapon = false;
-		}
-			
+		}			
 	}
 	
-	void CheckIsMagazine()
+	void CheckIsMagazineEx( bool refresh = true )
 	{
 		Magazine mag = Magazine.Cast( m_Obj );
-		if( mag )
+		if ( mag )
 		{
 			m_IsMagazine = true;
 			AmmoData data = Magazine.GetAmmoData( mag.ClassName() );
-			if( data )
+			if ( data )
 			{
 				ProjectileType p_type = data.m_ProjectileType;
-				switch(p_type)
+				switch (p_type)
 				{
 					case ProjectileType.None:
 					{
-						m_AmmoTypeIcon.Show( false );
+						m_AmmoTypeIcon.Show( false, refresh );
 						break;
 					}
 					case ProjectileType.Tracer:
 					{
 						m_AmmoTypeIcon.LoadImageFile( 0, "set:dayz_gui image:tracer" );
-						m_AmmoTypeIcon.Show( true );
+						m_AmmoTypeIcon.Show( true, refresh );
 						break;
 					}
 					case ProjectileType.AP:
 					{
 						m_AmmoTypeIcon.LoadImageFile( 0, "set:dayz_gui image:armor_piercing" );
-						m_AmmoTypeIcon.Show( true );
+						m_AmmoTypeIcon.Show( true, refresh );
 						break;
 					}
 				}
@@ -1842,24 +1792,33 @@ class Icon: LayoutHolder
 		}
 	}
 	
+	void CheckIsMagazine()
+	{
+		CheckIsMagazineEx();
+	}
+	
 	void CheckHasTemperature()
 	{
-		if( m_Item )
+		if ( m_Item )
 		{
 			m_HasTemperature = ( m_Item.GetTemperatureMax() != 0 && m_Item.GetTemperatureMin() != 0 );
 		}
 	}
 	
-	void CheckHasQuantity()
+	void CheckHasQuantityEx(bool refresh = true)
 	{
-		if( m_Item )
+		if ( m_Item )
 		{
 			m_HasQuantity = ( QuantityConversions.HasItemQuantity( m_Item ) != QUANTITY_HIDDEN );
-			if( m_HasQuantity )
-			{
-				m_QuantityPanel.Show( true );
-			}
+			
+			if ( m_HasQuantity )
+				m_QuantityPanel.Show( true, refresh );
 		}
+	}
+	
+	void CheckHasQuantity()
+	{
+		CheckHasQuantityEx();
 	}
 	
 	void SetPosX( int x )
@@ -1902,31 +1861,36 @@ class Icon: LayoutHolder
 		return m_SizeY;
 	}
 
-	void SetPos()
+	void SetPosEx( bool refresh = true )
 	{
 		CargoContainer c_parent = CargoContainer.Cast( m_Parent );
 		HandsPreview h_parent = HandsPreview.Cast( m_Parent );
 		float icon_size, space_size;
-		if( c_parent )
+		if ( c_parent )
 		{
 			icon_size = c_parent.GetIconSize();
 			space_size = c_parent.GetSpaceSize();
 		}
-		else if( h_parent )
+		else if ( h_parent )
 		{
 			icon_size = h_parent.GetIconSize();
-			GetRootWidget().SetFlags( WidgetFlags.EXACTSIZE );
+			GetRootWidget().SetFlags( WidgetFlags.EXACTSIZE, refresh );
 		}
 		
 		#ifndef PLATFORM_CONSOLE
-			GetRootWidget().SetPos( icon_size * GetPosX() + ( GetPosX() + 1 ) * space_size, icon_size * GetPosY() + ( GetPosY() + 1 ) * space_size );
-			GetRootWidget().SetSize( icon_size * m_SizeX + ( m_SizeX ) * space_size, icon_size * m_SizeY + ( m_SizeY ) * space_size );
+			GetRootWidget().SetPos( icon_size * GetPosX() + ( GetPosX() + 1 ) * space_size, icon_size * GetPosY() + ( GetPosY() + 1 ) * space_size, refresh );
+			GetRootWidget().SetSize( icon_size * m_SizeX + ( m_SizeX ) * space_size, icon_size * m_SizeY + ( m_SizeY ) * space_size, refresh );
 		#else
 			int row = m_CargoPos / 5;
 			int column = m_CargoPos % 5;
-			GetRootWidget().SetPos( icon_size * column, icon_size * row );
-			GetRootWidget().SetSize( icon_size, icon_size );
+			GetRootWidget().SetPos( icon_size * column, icon_size * row, refresh );
+			GetRootWidget().SetSize( icon_size, icon_size, refresh );
 		#endif
+	}
+	
+	void SetPos()
+	{
+		SetPosEx();
 	}
 	
 	void SetSize()
@@ -1954,13 +1918,15 @@ class Icon: LayoutHolder
 	
 	override void UpdateInterval()
 	{
-		if( m_Item )
+		if ( m_Item )
 		{
-			if( m_HasTemperature )
+			if ( m_HasTemperature )
 				SetTemperature();
-			if( m_IsWeapon )
+			
+			if ( m_IsWeapon )
 				RefreshMuzzleIcon();
-			if( m_HasQuantity )
+			
+			if ( m_HasQuantity )
 				SetQuantity();
 		}
 	}

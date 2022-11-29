@@ -5,7 +5,7 @@ class ActionCheckPulse: ActionInteractBase
 	{
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONMOD_INTERACTONCE;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT | DayZPlayerConstants.STANCEMASK_CROUCH;
-		m_HUDCursorIcon = CursorIcons.CloseHood;
+		m_Text = "#check_pulse_target";
 	}
 	
 	override void CreateConditionComponents()  
@@ -56,11 +56,6 @@ class ActionCheckPulse: ActionInteractBase
 		string message = "#"+ "pulse_" + blood_msg + pulse_msg;
 		return message;
 		
-	}
-
-	override string GetText()
-	{
-		return "#check_pulse_target";
 	}
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

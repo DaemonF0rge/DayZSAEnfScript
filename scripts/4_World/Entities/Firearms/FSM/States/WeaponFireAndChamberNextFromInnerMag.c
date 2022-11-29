@@ -46,7 +46,7 @@ class WeaponFireAndChamberNextFromInnerMag extends WeaponStateBase
 
 			int muzzleIndex = m_weapon.GetCurrentMuzzle();
 			float reloadTime = m_weapon.GetReloadTime(muzzleIndex);
-			if ( hic.IsUseButton() && m_dtAccumulator >= reloadTime)
+			if ( hic.IsAttackButton() && m_dtAccumulator >= reloadTime)
 				if (m_weapon.CanProcessWeaponEvents())
 					m_weapon.ProcessWeaponEvent(new WeaponEventReloadTimeout(p));
 		}

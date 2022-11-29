@@ -54,9 +54,13 @@ class DialogueErrorProperties : ErrorProperties
 	
 	override void HandleError(int errorCode, string additionalInfo = "")
 	{
-		if ( g_Game.IsMultiplayer() && g_Game.IsServer() )
-			return;
+#ifdef NO_GUI
+		return; //do not display error if GUI is disabled
+#endif 
 		
+#ifdef SERVER
+		return;
+#else
 		string message;
 		if (m_DisplayAdditionalInfo && additionalInfo != "")
 			message = string.Format(EP_MESSAGE_FORMAT_STRING, m_Message, additionalInfo);
@@ -66,6 +70,7 @@ class DialogueErrorProperties : ErrorProperties
 		GetGame().GetUIManager().ShowDialog(
 			string.Format(EP_HEADER_FORMAT_STRING, m_Header, ErrorModuleHandler.GetErrorHex(errorCode)),
 			message, errorCode, m_DialogButtonType, m_DefaultButton, m_DialogMeaningType, m_Handler);
+#endif
 	}
 	
 	string GetHeader() { return m_Message; }

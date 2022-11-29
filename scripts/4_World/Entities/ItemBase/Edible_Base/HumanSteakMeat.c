@@ -31,5 +31,8 @@ class HumanSteakMeat extends Edible_Base
 		
 		AddAction(ActionForceFeed);
 		AddAction(ActionEatMeat);
+		
+		AddAction(ActionCreateIndoorFireplace);
+		AddAction(ActionCreateIndoorOven);
 	}
 }

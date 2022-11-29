@@ -12,7 +12,7 @@ class ActionWritePaperCB : ActionContinuousBaseCB
 	
 	override void OnStateChange(int pOldState, int pCurrentState)
 	{
-		if (pCurrentState == STATE_NONE && (!GetGame().IsMultiplayer() || GetGame().IsClient()))
+		if (pCurrentState == STATE_NONE && (!GetGame().IsDedicatedServer()))
 		{
 			if (GetGame().GetUIManager() && GetGame().GetUIManager().IsMenuOpen(MENU_NOTE))
 				GetGame().GetUIManager().FindMenu(MENU_NOTE).Close();
@@ -44,6 +44,7 @@ class ActionWritePaper: ActionContinuousBase
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONFB_VIEWNOTE;
 		m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_CROUCH | DayZPlayerConstants.STANCEMASK_ERECT | DayZPlayerConstants.STANCEMASK_PRONE;
+		m_Text = "#write_note";
 	}
 	
 	override void CreateConditionComponents()
@@ -59,11 +60,6 @@ class ActionWritePaper: ActionContinuousBase
 			return true;
 		}
 		return false;
-	}
-	
-	override string GetText()
-	{
-		return "#write_note";
 	}
 	
 	override void OnStartClient( ActionData action_data )
@@ -94,7 +90,7 @@ class ActionWritePaper: ActionContinuousBase
 	{
 		super.OnUpdate(action_data);
 		
-		if(!GetGame().IsMultiplayer() || GetGame().IsClient())
+		if(!GetGame().IsDedicatedServer())
 		{
 			if (action_data.m_State == UA_FINISHED && GetGame().GetUIManager() && !GetGame().GetUIManager().IsMenuOpen(MENU_NOTE))
 			{

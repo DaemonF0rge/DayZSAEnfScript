@@ -20,6 +20,12 @@ class Defibrillator extends ItemBase
 		m_EnergyNeededToCharge = GetEnergyNeededToCharge();
 	}
 	
+	void ~Defibrillator()
+	{
+		SEffectManager.DestroyEffect(m_ChargedAlarm);
+		SEffectManager.DestroyEffect(m_ChargingSound);		
+	}
+	
 	float GetTimeNeededToCharge()
 	{
 		string cfg_path = "CfgVehicles " + GetType() + " ";
@@ -34,8 +40,7 @@ class Defibrillator extends ItemBase
 	
 	override void OnWorkStart()
 	{
-		if (!GetGame().IsMultiplayer()  ||  GetGame().IsClient())
-			//PlaySound(CHARGING_SOUND, 20);
+		if ( !GetGame().IsDedicatedServer() )
 			m_ChargingSound = SEffectManager.PlaySoundOnObject(CHARGING_SOUND, this, 0, 0.15);
 		
 		float energy_needed = m_EnergyNeededToCharge / m_ChargeTime;

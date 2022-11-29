@@ -1,19 +1,31 @@
 class WeldingMask extends ClothingBase
 {
+	override array<int> GetEffectWidgetTypes()
+	{
+		return {EffectWidgetsTypes.HELMET_OCCLUDER/*,EffectWidgetsTypes.HELMET_BREATH*/};
+	}
+	
 	override bool CanPutAsAttachment( EntityAI parent )
 	{
 		if(!super.CanPutAsAttachment(parent)) {return false;}
-		bool is_mask_only = false;
 		
-		if ( parent.FindAttachmentBySlotName( "Mask" ) )
+		Clothing eyewear = Clothing.Cast(parent.FindAttachmentBySlotName("Eyewear"));
+		if ( eyewear && eyewear.ConfigGetBool("isStrap") )
 		{
-			is_mask_only = parent.FindAttachmentBySlotName( "Mask" ).ConfigGetBool( "noHelmet" );
+			return false;
 		}
 		
-		if ( ( GetNumberOfItems() == 0 || !parent || parent.IsMan() ) && !is_mask_only )
+		Clothing mask = Clothing.Cast(parent.FindAttachmentBySlotName("Mask"));
+		if ( mask && mask.ConfigGetBool("noHelmet") && !SantasBeard.Cast(mask) )
 		{
-			return true;
+			return false;
 		}
-		return false;
+		
+		return true;
+	}
+	
+	override int GetGlassesEffectID()
+	{
+		return PPERequesterBank.REQ_GLASSESWELDING;
 	}
 }

@@ -44,9 +44,7 @@ class OpenCan extends RecipeBase
 		InsertIngredient(1,"Hacksaw");
 		InsertIngredient(1,"KitchenKnife");
 		InsertIngredient(1,"SteakKnife");
-		InsertIngredient(1,"HayHook");
 		InsertIngredient(1,"StoneKnife");
-		InsertIngredient(1,"Cleaver");
 		InsertIngredient(1,"CombatKnife");
 		InsertIngredient(1,"HuntingKnife");
 		InsertIngredient(1,"Machete");
@@ -56,34 +54,31 @@ class OpenCan extends RecipeBase
 		InsertIngredient(1,"M9A1_Bayonet");
 		InsertIngredient(1,"Mosin_Bayonet");
 		InsertIngredient(1,"SKS_Bayonet");
-		InsertIngredient(1,"Spear");
 		InsertIngredient(1,"CanOpener");
 		InsertIngredient(1,"FarmingHoe");
 		InsertIngredient(1,"Shovel");
 		InsertIngredient(1,"FieldShovel");
 		InsertIngredient(1,"Crowbar");
 		InsertIngredient(1,"Hammer");
-		InsertIngredient(1,"MeatTenderizer");
 		InsertIngredient(1,"Wrench");
 		InsertIngredient(1,"LugWrench");
 		InsertIngredient(1,"Screwdriver");
 		InsertIngredient(1,"SledgeHammer");
-		InsertIngredient(1,"Broom");
-		InsertIngredient(1,"Chainsaw");
 		InsertIngredient(1,"BaseballBat");
 		InsertIngredient(1,"NailedBaseballBat");
+		InsertIngredient(1,"BarbedBaseballBat");
 		InsertIngredient(1,"PipeWrench");
-		InsertIngredient(1,"TelescopicBaton");
-		InsertIngredient(1,"NewHockeyStick");
-		InsertIngredient(1,"OldHockeyStick");
-		InsertIngredient(1,"Pitchfork");
 		InsertIngredient(1,"Pickaxe");
-		InsertIngredient(1,"Sword");
 		InsertIngredient(1,"WoodAxe");
 		InsertIngredient(1,"FirefighterAxe");
 		InsertIngredient(1,"Hatchet");
 		InsertIngredient(1,"HandSaw");
 		InsertIngredient(1,"Pliers");
+		InsertIngredient(1,"Spear");
+		InsertIngredient(1,"Pitchfork");
+		InsertIngredient(1,"BoneKnife");
+		InsertIngredient(1,"MeatTenderizer");
+		InsertIngredient(1,"Cleaver");
 		
 		m_IngredientAddHealth[1] = -0.5;// 0 = do nothing
 		m_IngredientSetHealth[1] = -1; // -1 = do nothing

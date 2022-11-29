@@ -35,7 +35,7 @@ class UpgradeTorchWithLiquidFuel extends RecipeBase
 		//ingredient 2
 		InsertIngredient(1,"Torch");//you can insert multiple ingredients this way
 		InsertIngredient(1,"LongTorch");//you can insert multiple ingredients this way
-		
+	
 		m_IngredientAddHealth[1] = 0;// 0 = do nothing
 		m_IngredientSetHealth[1] = -1; // -1 = do nothing
 		m_IngredientAddQuantity[1] = -1;// 0 = do nothing
@@ -59,25 +59,13 @@ class UpgradeTorchWithLiquidFuel extends RecipeBase
 	override bool CanDo(ItemBase ingredients[], PlayerBase player)//final check for recipe's validity
 	{
 		ItemBase vessel = ItemBase.Cast(ingredients[0]);
-		Torch torch = Torch.Cast(ingredients[1]);
+		FlammableBase item = Torch.Cast(ingredients[1]);
 		
-		Rag rag_on_torch = Rag.Cast(  torch.GetRag()  );
-		
-		if (rag_on_torch  &&  vessel.GetQuantity() > 0 ) // Check if torch already has rag and if vessel has liquid in it
+		if (item && vessel && vessel.GetQuantity() > 0 && vessel.IsLiquidContainer()) // Check if torch already has rag and if vessel has liquid in it
 		{
-			float quantity = rag_on_torch.GetQuantity();
-			
-			if (quantity > 1  &&  !torch.IsIgnited())
+			if (vessel.GetLiquidType() == LIQUID_GASOLINE  ||  vessel.GetLiquidType() == LIQUID_DIESEL)
 			{
-				// Check if we're working with item Lard or with some vessel filled with gasoline
-				
-				if (vessel  &&  vessel.IsLiquidContainer() )
-				{
-					if (vessel.GetLiquidType() == LIQUID_GASOLINE  ||  vessel.GetLiquidType() == LIQUID_DIESEL)
-					{
-						return torch.CanReceiveUpgrade();
-					}
-				}
+				return item.CanReceiveUpgrade();
 			}
 		}
 		
@@ -87,13 +75,13 @@ class UpgradeTorchWithLiquidFuel extends RecipeBase
 	override void Do(ItemBase ingredients[], PlayerBase player,array<ItemBase> results, float specialty_weight)//gets called upon recipe's completion
 	{
 		ItemBase vessel = ItemBase.Cast(ingredients[0]);
-		Torch torch = Torch.Cast(ingredients[1]);
+		FlammableBase item = Torch.Cast(ingredients[1]);
 		
-		torch.ConsumeRag();
+		//torch.ConsumeRag();
 		
-		if (vessel)
+		if (item && vessel)
 		{
-			torch.ConsumeFuelFromBottle(vessel);
+			item.Upgrade(vessel);
 		}
 	}
 };

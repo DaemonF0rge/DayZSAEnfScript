@@ -15,6 +15,7 @@ class ActionDefibrilateSelf: ActionDefibrilateBase
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONFB_CRAFTING;
 		m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_CROUCH;
+		m_Text = "#defibrilate_myself";
 	}
 	
 	override void CreateConditionComponents()  
@@ -27,11 +28,6 @@ class ActionDefibrilateSelf: ActionDefibrilateBase
 	override bool HasTarget()
 	{
 		return false;
-	}
-		
-	override string GetText()
-	{
-		return "#defibrilate_myself";
 	}
 	
 	override void OnFinishProgressClient( ActionData action_data )

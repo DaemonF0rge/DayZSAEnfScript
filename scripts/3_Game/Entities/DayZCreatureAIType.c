@@ -8,11 +8,16 @@ class DayZCreatureAIType
 	string m_CfgPath;
 	string m_AnimEventsCfgPath;
 
-	void DayZCreatureAIType()
+	private void DayZCreatureAIType()
 	{
 		m_CfgPath = "CfgVehicles " + GetName() + " ";
 		m_AnimEventsCfgPath = m_CfgPath	+ "AnimEvents ";
 		LoadParams();
+	}
+	
+	private void ~DayZCreatureAIType()
+	{
+		
 	}
 	
 	void LoadAnimSoundEvents()
@@ -22,13 +27,13 @@ class DayZCreatureAIType
 		string soundsCfgPath = m_AnimEventsCfgPath + "Sounds ";
 
 		int soundCount = GetGame().ConfigGetChildrenCount(soundsCfgPath);
-		for(int i = 0; i < soundCount; i++)
+		for (int i = 0; i < soundCount; i++)
 		{
 			string soundName;
 			GetGame().ConfigGetChildName(soundsCfgPath, i, soundName);			
 			string soundPath = soundsCfgPath + soundName + " ";
 			AnimSoundEvent soundEvent = new AnimSoundEvent(soundPath);
-			if(soundEvent.IsValid())
+			if (soundEvent.IsValid())
 				m_animSoundEvents.Insert(soundEvent);
 		}
 	}
@@ -40,13 +45,13 @@ class DayZCreatureAIType
 		string soundsCfgPath = m_AnimEventsCfgPath + "SoundVoice ";
 
 		int soundCount = GetGame().ConfigGetChildrenCount(soundsCfgPath);
-		for(int i = 0; i < soundCount; i++)
+		for (int i = 0; i < soundCount; i++)
 		{
 			string soundName;
 			GetGame().ConfigGetChildName(soundsCfgPath, i, soundName);			
 			string soundPath = soundsCfgPath + soundName + " ";
 			AnimSoundVoiceEvent soundEvent = new AnimSoundVoiceEvent(soundPath);
-			if(soundEvent.IsValid())
+			if (soundEvent.IsValid())
 				m_animSoundVoiceEvents.Insert(soundEvent);
 		}
 	}
@@ -57,7 +62,7 @@ class DayZCreatureAIType
 		string stepsCfgPath = m_AnimEventsCfgPath + "Steps ";
 		int stepsCount = GetGame().ConfigGetChildrenCount(stepsCfgPath);
 
-		for(int i = 0; i < stepsCount; i++)
+		for (int i = 0; i < stepsCount; i++)
 		{
 			string stepName;
 			GetGame().ConfigGetChildName(stepsCfgPath, i, stepName);			
@@ -74,7 +79,7 @@ class DayZCreatureAIType
 		string damagesCfgPath = m_AnimEventsCfgPath + "Damages ";
 		int damagesCount = GetGame().ConfigGetChildrenCount(damagesCfgPath);
 
-		for(int i = 0; i < damagesCount; i++)
+		for (int i = 0; i < damagesCount; i++)
 		{
 			string damageName;
 			GetGame().ConfigGetChildName(damagesCfgPath, i, damageName);			
@@ -94,58 +99,58 @@ class DayZCreatureAIType
 
 	AnimStepEvent GetStepEvent(int event_id)
 	{
-		for(int i = 0; i < m_animStepEvents.Count(); i++)
+		for (int i = 0; i < m_animStepEvents.Count(); i++)
 		{
 			AnimStepEvent stepEvent = m_animStepEvents.Get(i);
-			if(stepEvent.m_iID == event_id)
+			if (stepEvent.m_iID == event_id)
 			{
 				return stepEvent;
 			}
 		}
 
-		return NULL;
+		return null;
 	}
 
 	AnimSoundEvent GetSoundEvent(int event_id)
 	{
-		for(int i = 0; i < m_animSoundEvents.Count(); i++)
+		for (int i = 0; i < m_animSoundEvents.Count(); i++)
 		{
 			AnimSoundEvent soundEvent = m_animSoundEvents.Get(i);
-			if(soundEvent.m_iID == event_id)
+			if (soundEvent.m_iID == event_id)
 			{
 				return soundEvent;
 			}
 		}
 
-		return NULL;
+		return null;
 	}
 	
 	AnimSoundVoiceEvent GetSoundVoiceEvent(int event_id)
 	{
-		for(int i = 0; i < m_animSoundVoiceEvents.Count(); i++)
+		for (int i = 0; i < m_animSoundVoiceEvents.Count(); i++)
 		{
 			AnimSoundVoiceEvent voiceEvent = m_animSoundVoiceEvents.Get(i);
-			if(voiceEvent.m_iID == event_id)
+			if (voiceEvent.m_iID == event_id)
 			{
 				return voiceEvent;
 			}
 		}
 
-		return NULL;
+		return null;
 	}
 
 	AnimDamageEvent GetDamageEvent(int event_id)
 	{
-		for(int i = 0; i < m_animDamageEvents.Count(); i++)
+		for (int i = 0; i < m_animDamageEvents.Count(); i++)
 		{
 			AnimDamageEvent damageEvent = m_animDamageEvents.Get(i);
-			if(damageEvent.m_iID == event_id)
+			if (damageEvent.m_iID == event_id)
 			{
 				return damageEvent;
 			}
 		}
 
-		return NULL;
+		return null;
 	}
 
 	proto native owned string GetName();

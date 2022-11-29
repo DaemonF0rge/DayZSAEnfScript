@@ -8,16 +8,11 @@ class ActionRepositionPluggedItem: ActionInteractBase
 		m_CallbackClass = ActionInteractBaseCB;
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONMOD_PICKUP_HANDS;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT | DayZPlayerConstants.STANCEMASK_CROUCH;
-		m_HUDCursorIcon = CursorIcons.Cursor;
 		/*m_CallbackClass = ActionBuildPartCB;
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONFB_ASSEMBLE;
 		m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT;*/
-	}
-
-	override string GetText()
-	{
-		return "#reposition";
+		m_Text = "#reposition";
 	}
 
 	override typename GetInputType()

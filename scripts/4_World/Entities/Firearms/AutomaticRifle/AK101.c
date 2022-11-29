@@ -8,18 +8,17 @@ class AK101_Base : AKM_Base
 	//Debug menu Spawn Ground Special
 	override void OnDebugSpawn()
 	{
-		EntityAI entity;
-		if ( Class.CastTo(entity, this) )
-		{
-			entity.GetInventory().CreateInInventory( "AK_Bayonet" );
-			entity.GetInventory().CreateInInventory( "AK_PlasticBttstck" );	
-			entity.GetInventory().CreateInInventory( "AK_RailHndgrd" );
-			entity.GetInventory().CreateInInventory( "PSO1Optic" );		
-			entity.GetInventory().CreateInInventory( "UniversalLight" );	
-			entity.GetInventory().CreateInInventory( "Battery9V" );
-			entity.GetInventory().CreateInInventory( "Battery9V" );	
-			entity.SpawnEntityOnGroundPos("Mag_AK101_30Rnd", entity.GetPosition());
-		}
+		GameInventory inventory = GetInventory();
+
+		inventory.CreateInInventory( "AK_Bayonet" );
+		inventory.CreateInInventory( "AK_PlasticBttstck" );	
+		inventory.CreateInInventory( "AK_RailHndgrd" );
+		inventory.CreateInInventory( "PSO1Optic" );		
+		inventory.CreateInInventory( "UniversalLight" );	
+		inventory.CreateInInventory( "Battery9V" );
+		inventory.CreateInInventory( "Battery9V" );	
+		
+		SpawnAttachedMagazine("Mag_AK101_30Rnd");
 	}
 };
 

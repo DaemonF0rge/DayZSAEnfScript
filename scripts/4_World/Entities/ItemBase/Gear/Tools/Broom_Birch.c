@@ -1,10 +1,12 @@
-class Broom_Birch: Inventory_Base
+class Broom_Birch: BroomBase
 {
-	override void SetActions()
+	override string GetBurningMaterial()
 	{
-		super.SetActions();
-		
-		AddAction(ActionClapBearTrapWithThisItem);
-		AddAction(ActionBreakLongWoodenStick);
+		return "DZ\\gear\\tools\\data\\broom_birch_emissive.rvmat";
+	}
+	
+	override string GetBurntMaterial()
+	{
+		return "DZ\\gear\\tools\\data\\broom_birch_burn.rvmat";
 	}
 };

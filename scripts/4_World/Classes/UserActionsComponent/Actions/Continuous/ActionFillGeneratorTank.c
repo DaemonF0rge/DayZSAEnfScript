@@ -17,17 +17,13 @@ class ActionFillGeneratorTank: ActionContinuousBase
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT | DayZPlayerConstants.STANCEMASK_CROUCH;
 		m_FullBody = true;
 		m_SpecialtyWeight = UASoftSkillsWeight.PRECISE_LOW;
+		m_Text = "#refuel";
 	}
 	
 	override void CreateConditionComponents()  
 	{	
 		m_ConditionItem = new CCINonRuined;
 		m_ConditionTarget = new CCTNonRuined(UAMaxDistances.DEFAULT);
-	}
-		
-	override string GetText()
-	{
-		return "#refuel";
 	}
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

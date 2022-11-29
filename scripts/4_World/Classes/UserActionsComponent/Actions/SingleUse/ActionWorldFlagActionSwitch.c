@@ -22,12 +22,12 @@ class ActionWorldFlagActionSwitch: ActionSingleUseBase
 		m_ConditionTarget = new CCTCursor;
 	}
 	
-	override string GetText()
+	/*override string GetText()
 	{
 		if (!m_switch_to)
 			return  "#switch_to_flag_raise";
 		return "#switch_to_flag_lower";
-	}
+	}*/
 	
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
 	{

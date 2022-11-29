@@ -15,6 +15,7 @@ class ActionCoverHeadSelf: ActionContinuousBase
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT | DayZPlayerConstants.STANCEMASK_CROUCH;
 		//m_Animation = "INJECTEPIPENS";
 		m_SpecialtyWeight = UASoftSkillsWeight.ROUGH_LOW;
+		m_Text = "#put_on_head";
 	}
 	
 	override void CreateConditionComponents()  
@@ -26,11 +27,6 @@ class ActionCoverHeadSelf: ActionContinuousBase
 	override bool HasTarget()
 	{
 		return false;
-	}
-		
-	override string GetText()
-	{
-		return "#put_on_head";
 	}
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

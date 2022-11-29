@@ -147,57 +147,30 @@ class Analytics
 	// send stats data with log
 	static void PlayerDeath(StatsEventDeathData data)
 	{
-		if (false)
-		{
-			Print("StatsEventDeathData | CharacterId: '" + data.m_CharacterId + "'; CharacterLifetime: " + data.m_CharacterLifetime + "; Cause: '" + data.m_Cause + "'; WeaponName: '" + data.m_WeaponName + "'; Distance: " + data.m_Distance + "; position: " + data.m_Position);
-		}
-		
 		ScriptAnalytics.SendPlayerDeath(data);
 	}
 	
 	// send stats data with log
 	static void PlayerScoredKill(StatsEventScoredKillData data)
 	{
-		if (false)
-		{
-			Print("StatsEventScoredKillData | CharacterId: '" + data.m_CharacterId + "'; WeaponName: '" + data.m_WeaponName + "'; KillDistance: " + data.m_KillDistance + "; PositionKiller: " + data.m_PositionKiller + "; PositionVictim: " + data.m_PositionVictim);
-		}
-		
 		ScriptAnalytics.SendPlayerScoredKill(data);
 	}
 	
 	// send stats data with log
 	static void PlayerDisconnected(StatsEventDisconnectedData data)
 	{
-		if (false)
-		{
-			Print("StatsEventDisconnectedData | CharacterId: " + data.m_CharacterId + "; Reason: " + data.m_Reason);
-		}
-		
 		ScriptAnalytics.SendPlayerDisconnected(data);
 	}
 	
 	// send stats data with log
 	static void PlayerMeasures(StatsEventMeasuresData data)
 	{
-		if (false)
-		{
-			Print("StatsEventMeasuresData 1 | CharacterId: '" + data.m_CharacterId + "'; TimeInterval: " + data.m_TimeInterval + "; DaytimeHour: " + data.m_DaytimeHour + "; PositionStart: " + data.m_PositionStart + "; PositionEnd: " + data.m_PositionEnd + "; DistanceOnFoot: " + data.m_DistanceOnFoot);
-			Print("StatsEventMeasuresData 2 | DistanceVehicle: " + data.m_DistanceVehicle + "; TimeVONIn: " + data.m_TimeVONIn + "; TimeVONOut: " + data.m_TimeVONOut + "; CntLootAny: " + data.m_CntLootAny + "; CntLootFood: " + data.m_CntLootFood + "; CntLootCloth: " + data.m_CntLootCloth +  "; CntLootFirearm: " + data.m_CntLootFirearm + "; CntLootAmmo: " + data.m_CntLootAmmo + "; CntKillInfected: " + data.m_CntKillInfected + "; CntConsumedFood: " + data.m_CntConsumedFood + "; CntConsumedWater: " + data.m_CntConsumedWater + "; HealthRestored: " + data.m_HealthRestored + "; CntFiredAmmo : " + data.m_CntFiredAmmo + "; CntCraftedItem: " + data.m_CntCraftedItem);
-			Print("StatsEventMeasuresData 3 | HealthStatus: " + data.m_HealthStatus + "; BloodStatus: " + data.m_BloodStatus + "; SicknessStatus: " + data.m_SicknessStatus + "TemperatureStatus: " + data.m_TemperatureStatus + "; FoodStatus: " + data.m_FoodStatus + "; HydrationStatus: " + data.m_HydrationStatus);
-		}
-		
 		ScriptAnalytics.SendPlayerMeasures(data);
 	}
 	
 	// send stats data with log
 	static void PlayerSpawned(StatsEventSpawnedData data)
 	{
-		if (false)
-		{
-			Print("StatsEventSpawnedData | CharacterId: '" + data.m_CharacterId + "'; Lifetime: " + data.m_Lifetime + "; Position: " + data.m_Position + "; Population: " + data.m_Population + "; DaytimeHour: " + data.m_DaytimeHour);
-		}
-		
 		ScriptAnalytics.SendPlayerSpawned(data);
 	}
 }

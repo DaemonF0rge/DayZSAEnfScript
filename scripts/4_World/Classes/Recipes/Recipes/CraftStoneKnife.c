@@ -2,6 +2,7 @@ class CraftStoneKnife extends RecipeBase
 {	
 	override void Init()
 	{
+		
 		m_Name = "#STR_CraftStoneKnife0";
 		m_IsInstaRecipe = false;//should this recipe be performed instantly without animation
 		m_AnimationLength = 1.5;//animation length in relative time units
@@ -25,7 +26,7 @@ class CraftStoneKnife extends RecipeBase
 		//INGREDIENTS
 		//ingredient 1
 		InsertIngredient(0,"SmallStone");//you can insert multiple ingredients this way
-
+		
 		m_IngredientAddHealth[0] = 0;// 0 = do nothing
 		m_IngredientSetHealth[0] = -1; // -1 = do nothing
 		m_IngredientAddQuantity[0] = -1;// 0 = do nothing
@@ -34,10 +35,12 @@ class CraftStoneKnife extends RecipeBase
 		
 		//ingredient 2
 		InsertIngredient(1,"SmallStone");//you can insert multiple ingredients this way
+		InsertIngredient(1,"Stone");//you can insert multiple ingredients this way
+
 		
 		m_IngredientAddHealth[1] = 0;// 0 = do nothing
 		m_IngredientSetHealth[1] = -1; // -1 = do nothing
-		m_IngredientAddQuantity[1] = -1;// 0 = do nothing
+		m_IngredientAddQuantity[1] = 0;// 0 = do nothing
 		m_IngredientDestroy[1] = false;// false = do nothing
 		m_IngredientUseSoftSkills[1] = false;// set 'true' to allow modification of the values by softskills on this ingredient
 		//----------------------------------------------------------------------------------------------------------------------
@@ -62,6 +65,10 @@ class CraftStoneKnife extends RecipeBase
 
 	override void Do(ItemBase ingredients[], PlayerBase player,array<ItemBase> results, float specialty_weight)//gets called upon recipe's completion
 	{
-		Debug.Log("Recipe Do method called","recipes");
+		ItemBase ingredient0;
+		Class.CastTo(ingredient0, ingredients[0]);
+		ItemBase result;
+		Class.CastTo(result, results.Get(0));
+		MiscGameplayFunctions.TransferItemProperties(ingredient0,result, false, true, true, true);
 	}
 };

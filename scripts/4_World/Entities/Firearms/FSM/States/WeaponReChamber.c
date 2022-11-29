@@ -36,7 +36,7 @@ class WeaponRechamber extends WeaponStateBase
 	{
 		if (e)
 		{
-			wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponRechamber, mag=" + e.m_magazine.ToString());
+			if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponRechamber, mag=" + e.m_magazine.ToString()); }
 			m_srcMagazine = e.m_magazine;
 			m_loa.m_srcMagazine = m_srcMagazine;
 

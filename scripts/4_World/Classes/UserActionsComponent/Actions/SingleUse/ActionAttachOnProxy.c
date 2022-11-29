@@ -2,6 +2,7 @@ class ActionAttachOnProxy: ActionAttach
 {
 	void ActionAttachOnProxy()
 	{
+		m_Text = "#attach";
 	}
 	
 	override void CreateConditionComponents() 
@@ -10,11 +11,6 @@ class ActionAttachOnProxy: ActionAttach
 		m_ConditionTarget = new CCTCursor;
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONMOD_ATTACHITEM;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT | DayZPlayerConstants.STANCEMASK_CROUCH;
-	}
-	
-	override string GetText()
-	{
-		return "#attach";
 	}
 	
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

@@ -14,7 +14,8 @@ class ActionRaiseMegaphone: ActionContinuousBase
 	{
 		m_CallbackClass = ActionRaiseMegaphoneCB;
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONMOD_RAISEITEM;
-		m_CommandUIDProne = DayZPlayerConstants.CMD_ACTIONFB_RAISEITEM;		
+		m_CommandUIDProne = DayZPlayerConstants.CMD_ACTIONFB_RAISEITEM;	
+		m_Text = "#raise_megaphone";	
 	}
 	
 	override void CreateConditionComponents()  
@@ -36,11 +37,6 @@ class ActionRaiseMegaphone: ActionContinuousBase
 	override bool HasTarget()
 	{
 		return false;
-	}
-
-	override string GetText()
-	{
-		return "#raise_megaphone";
 	}
 
 	override bool ActionCondition ( PlayerBase player, ActionTarget target, ItemBase item )

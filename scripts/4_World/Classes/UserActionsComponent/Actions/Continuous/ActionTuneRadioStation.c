@@ -16,6 +16,8 @@ class ActionTuneRadioStation: ActionContinuousBase
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONMOD_ITEM_TUNE;
 		m_CommandUIDProne = DayZPlayerConstants.CMD_ACTIONFB_ITEM_TUNE;	
 		m_SpecialtyWeight = UASoftSkillsWeight.ROUGH_LOW;
+		
+		m_Text = "#tune_radio_station";
 	}
 	
 	override void CreateConditionComponents()  
@@ -27,11 +29,6 @@ class ActionTuneRadioStation: ActionContinuousBase
 	override bool HasProneException()
 	{
 		return true;
-	}
-		
-	override string GetText()
-	{
-		return "#tune_radio_station";
 	}
 	
 	override bool HasTarget()

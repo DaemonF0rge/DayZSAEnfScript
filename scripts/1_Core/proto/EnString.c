@@ -20,6 +20,19 @@ class string
 	proto native int ToInt();
 	
 	/**
+	\brief Converts string to integer
+		\return \p int - Converted \p string.
+		@code
+			string str = "0xFF";
+			int i = str.HexToInt();
+			Print(i);
+
+			>> i = 255
+		@endcode
+	*/
+	proto native int HexToInt();
+	
+	/**
 	\brief Converts string to float
 		\return \p float - Converted \p string \p in float.
 		@code

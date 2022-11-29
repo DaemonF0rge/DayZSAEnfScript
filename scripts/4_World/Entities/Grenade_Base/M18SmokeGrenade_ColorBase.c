@@ -26,6 +26,18 @@ class M18SmokeGrenade_Red extends M18SmokeGrenade_ColorBase
 	}
 }
 
+// Used for calling in dynamic contaminated areas
+class M18SmokeGrenade_Red_Contaminated extends M18SmokeGrenade_Red
+{
+	override void OnWorkStop()
+	{
+		super.OnWorkStop();
+		
+		if ( GetGame().IsServer() )
+			GetGame().GetCEApi().SpawnGroup( "ContaminatedArea_Dynamic", GetPosition() );
+	}
+}
+
 class M18SmokeGrenade_Green extends M18SmokeGrenade_ColorBase
 {
 	void M18SmokeGrenade_Green()

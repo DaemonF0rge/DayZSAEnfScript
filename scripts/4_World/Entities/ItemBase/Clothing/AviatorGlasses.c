@@ -1,8 +1,7 @@
 class AviatorGlasses extends Clothing 
 {
-	override bool CanPutAsAttachment( EntityAI parent )
+	override int GetGlassesEffectID()
 	{
-		if(!super.CanPutAsAttachment(parent)) {return false;}
-		return CanWearUnderMask( parent );
+		return PPERequesterBank.REQ_GLASSESAVIATOR;
 	}
 };

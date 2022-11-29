@@ -15,6 +15,7 @@ class ActionCollectBloodSelf: ActionContinuousBase
 		m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT | DayZPlayerConstants.STANCEMASK_CROUCH;
 		m_SpecialtyWeight = UASoftSkillsWeight.PRECISE_HIGH;
+		m_Text = "#collect_blood";
 	}
 	
 	override void CreateConditionComponents()
@@ -26,11 +27,6 @@ class ActionCollectBloodSelf: ActionContinuousBase
 	override bool HasTarget()
 	{
 		return false;
-	}
-
-	override string GetText()
-	{
-		return "#collect_blood";
 	}
 
 	override void OnEndServer( ActionData action_data )

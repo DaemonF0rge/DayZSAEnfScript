@@ -5,4 +5,9 @@ class SardinesCan : Edible_Base
 		//super.Open();
 		ReplaceEdibleWithNew("SardinesCan_Opened");
 	}
+	
+	override bool IsOpen()
+	{
+		return false;
+	}
 }

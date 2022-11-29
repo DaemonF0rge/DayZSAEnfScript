@@ -24,7 +24,7 @@ class SneezeSymptom extends SymptomBase
 	override void OnGetActivatedServer(PlayerBase player)
 	{
 		if (LogManager.IsSymptomLogEnable()) Debug.SymptomLog("n/a", this.ToString(), "n/a", "OnGetActivated", m_Player.ToString());
-		if( m_Manager.GetCurrentCommandID() == DayZPlayerConstants.COMMANDID_MOVE )
+		if( m_Manager.GetCurrentCommandID() == DayZPlayerConstants.COMMANDID_MOVE && !player.IsRaised() && player.GetCommand_Move() && !player.GetCommand_Move().IsOnBack())
 		{
 			PlayAnimationADD(0);
 		}
@@ -32,7 +32,7 @@ class SneezeSymptom extends SymptomBase
 		{
 			PlaySound(EPlayerSoundEventID.SYMPTOM_SNEEZE);
 		}
-		player.SpreadAgents();
+		player.SpreadAgentsEx(3);
 	}
 
 	//!gets called once on an Symptom which is being activated

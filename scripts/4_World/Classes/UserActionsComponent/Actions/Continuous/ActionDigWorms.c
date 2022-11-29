@@ -20,6 +20,7 @@ class ActionDigWorms: ActionContinuousBase
 		m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT;
 		m_SpecialtyWeight = UASoftSkillsWeight.ROUGH_MEDIUM;
+		m_Text = "#dig_up_worms";
 	}
 	
 	override void CreateConditionComponents()  
@@ -41,7 +42,7 @@ class ActionDigWorms: ActionContinuousBase
 		if ( height > 0.4 )
 			return false; // Player is not standing on ground
 		
-		if ( !GetGame().IsMultiplayer() || GetGame().IsClient() )
+		if ( !GetGame().IsDedicatedServer() )
 		{
 			if ( !player.IsPlacingLocal() /*&& player.IsCurrentCameraAimedAtGround()*/ )
 			{
@@ -93,11 +94,6 @@ class ActionDigWorms: ActionContinuousBase
 	override bool HasTarget()
 	{
 		return true;
-	}
-
-	override string GetText()
-	{
-		return "#dig_up_worms";
 	}
 
 	override void OnFinishProgressServer( ActionData action_data )

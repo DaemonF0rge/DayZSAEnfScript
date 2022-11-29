@@ -66,7 +66,7 @@ proto native void SetCameraType(int cam, CameraType type);
 
 /*! 
 \brief Post-process effect type.
-\attention Keep enum names in synch with post-process effect material class names. Postfix "Effect" is added automatically.
+\attention Keep enum names in synch with post-process effect material class names. Postfix "Effect" is appended automatically.
 */
 enum PostProcessEffectType
 {
@@ -88,10 +88,10 @@ enum PostProcessEffectType
 	Glow,
 	SMAA,
 	FXAA,
-	Median,
+	Median,//unused?
 	SunMask,
 	GaussFilter,
-	SSR
+	SSR //not available
 };
 /*!
 set postprocess effect to camera
@@ -152,7 +152,13 @@ proto native int SetLightFlags(HLIGHT light, LightFlags flags);
 proto native int ClearLightFlags(HLIGHT light, LightFlags flags);
 //!Sets light cone in degrees (for LightType.SPOT).
 proto native bool SetLightCone(HLIGHT light, float cone);
+
+/*!
+scene multiplicator of light (based on measured scene light levels) - preexposure of light
+*/
+proto native float GetSceneHDRMul(int camera);
 //@}
+
 
 
 //----------------------------------------------
@@ -184,6 +190,7 @@ enum TraceShape
 };
 
 //! collision and tracing
+//! WARNING: Non-managed, needs manual delete call, should not be ref'd
 class TraceContact
 {
 	float	Fraction;

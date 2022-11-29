@@ -6,7 +6,7 @@ class Hit_MeatBones : EffBulletImpactBase
 	{
 		SetEnterParticle(ParticleList.IMPACT_MEATBONES_ENTER);
 		SetExitParticle(ParticleList.IMPACT_MEATBONES_EXIT);
-		//SetRicochetParticle(ParticleList.IMPACT_MEATBONES_RICOCHET);
+		SetRicochetParticle(ParticleList.IMPACT_MEATBONES_RICOCHET);
 		
 		m_AngledEnter = 10;
 		m_EnterSplashCoef = 0.002;
@@ -54,7 +54,7 @@ class Hit_MeatBones : EffBulletImpactBase
 		
 		if (m_ImpactType != ImpactTypes.MELEE)
 		{
-			vector in_speed = m_InSpeed*(-1); // Compiler demands to have this variable
+			vector in_speed = m_InSpeed * (-1); // Compiler demands to have this variable
 			
 			BloodSplatGround( GetPosition(), in_speed , 0.5 );
 			
@@ -71,28 +71,30 @@ class Hit_MeatBones : EffBulletImpactBase
 		float power = m_StoppingForce;
 		float upscale = 1;
 		float rnd_offset = 0.5;
+		float rnd_offset_2 = rnd_offset * 0.5;
 		
 		while (power > 200)
 		{
 			pos = pos + ( speed_vector * 0.001 );
-			pos = pos + Vector( rnd_offset/2 - Math.RandomFloat( 0,rnd_offset ), 0, rnd_offset/2 - Math.RandomFloat( 0,rnd_offset ) );
+			pos = pos + Vector( rnd_offset_2 - Math.RandomFloat( 0, rnd_offset ), 0, rnd_offset_2 - Math.RandomFloat( 0, rnd_offset ) );
 			pos[1] = GetGame().SurfaceY(pos[0], pos[2]);
 			
-			int effect_id = SEffectManager.PlayInWorld( new BloodSplatter, pos);
+			EffectParticle eff = new BloodSplatter();
+			eff.SetAutodestroy(true);
+			SEffectManager.PlayInWorld(eff, pos);
 			
-			Particle blood = EffectParticle.Cast( SEffectManager.GetEffectByID(effect_id) ).GetParticle(); // TO DO: Handle particle changes inside the Effect instance itself! Not here!
+			Particle blood = eff.GetParticle(); // TO DO: Handle particle changes inside the Effect instance itself! Not here!
 
 			vector ori = GetGame().GetSurfaceOrientation(pos[0], pos[2]);
 						
 			blood.SetOrientation(ori);
 			blood.ScaleParticleParam(EmitorParam.SIZE, upscale);
 			
-			Particle blood_chunks = Particle.PlayInWorld(ParticleList.BLOOD_SURFACE_CHUNKS, pos);
+			Particle blood_chunks = ParticleManager.GetInstance().PlayInWorld(ParticleList.BLOOD_SURFACE_CHUNKS, pos);
 			blood_chunks.SetOrientation(ori);
 			
 			power = power * decay_coef;
-			upscale = upscale + Math.RandomFloat(0.1, 1);
-			
+			upscale = upscale + Math.RandomFloat(0.1, 1);			
 			
 			BloodSplatWall();
 		}
@@ -102,7 +104,8 @@ class Hit_MeatBones : EffBulletImpactBase
 	{
 		// Commented out due to age rating process :(
 		
-		/*if (m_OutSpeed.Length() > 0)
+		/*
+		if (m_OutSpeed.Length() > 0)
 		{
 			Object projected_surface;
 			vector hit_pos;
@@ -113,10 +116,13 @@ class Hit_MeatBones : EffBulletImpactBase
 			hit_normal = hit_normal.VectorToAngles();
 			hit_normal[1] = hit_normal[1] + 90;
 			
-			int effect_id = SEffectManager.PlayInWorld( new BloodSplatter, hit_pos);
-			Particle blood = EffectParticle.Cast( SEffectManager.GetEffectByID(effect_id) ).GetParticle();
+			EffectParticle eff = new BloodSplatter();
+			eff.SetAutodestroy(true);
+			SEffectManager.PlayInWorld(eff, hit_pos);
+			Particle blood = eff.GetParticle();
 			blood.SetOrientation(hit_normal);
-		}*/
+		}
+		*/
 	}
 	
 	override void OnEnterCalculations( Particle p )

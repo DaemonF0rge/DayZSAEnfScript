@@ -8,7 +8,7 @@ class Explosion
 	}
 }
 
-class ExplosionTest : Building
+class ExplosionTest : House
 {
 	ref Timer m_Delay;
 	

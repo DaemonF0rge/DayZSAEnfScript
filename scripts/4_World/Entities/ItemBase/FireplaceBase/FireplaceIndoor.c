@@ -157,259 +157,127 @@ class FireplaceIndoor extends FireplaceBase
 		return true;
 	}
 
-	//================================================================
-	// ATTACHMENTS
-	//================================================================	
-	override bool CanReceiveAttachment( EntityAI attachment, int slotId )
+	override void EEItemAttached(EntityAI item, string slot_name)
 	{
-		if ( !super.CanReceiveAttachment(attachment, slotId) )
-			return false;	
+		super.EEItemAttached(item, slot_name);
 		
-		ItemBase item = ItemBase.Cast( attachment );
-		
-		//kindling items
-		if ( IsKindling ( item ) )
-			return true;
-		
-		//fuel items
-		if ( IsFuel ( item ) )
-			return true;
-		
-		//direct cooking slots
-		if ( ( item.Type() == ATTACHMENT_CAULDRON ) || ( item.Type() == ATTACHMENT_COOKING_POT ) || ( item.Type() == ATTACHMENT_FRYING_PAN ) || ( item.IsKindOf( "Edible_Base" ) ) )
-			return true;
-		
-		return false;
-	}
-	
-	override bool CanLoadAttachment( EntityAI attachment )
-	{
-		if ( !super.CanLoadAttachment(attachment) )
-			return false;	
-		
-		ItemBase item = ItemBase.Cast( attachment );
-		
-		//kindling items
-		if ( IsKindling ( item ) )
-			return true;
-		
-		//fuel items
-		if ( IsFuel ( item ) )
-			return true;
-		
-		//direct cooking slots
-		if ( ( item.Type() == ATTACHMENT_CAULDRON ) || ( item.Type() == ATTACHMENT_COOKING_POT ) || ( item.Type() == ATTACHMENT_FRYING_PAN ) || ( item.IsKindOf( "Edible_Base" ) ) )
-			return true;
-		
-		return false;
-	}
-
-	override bool CanReleaseAttachment( EntityAI attachment )
-	{
-		if ( !super.CanReleaseAttachment( attachment ) )
-			return false;
-		
-		ItemBase item = ItemBase.Cast( attachment );
-		
-		//has last attachment and there are still items in cargo
-		if ( GetInventory().AttachmentCount() == 1 && GetInventory().GetCargo().GetItemCount() != 0 )
+		ItemBase item_base = ItemBase.Cast(item);
+		if ( IsKindling(item_base) || IsFuel(item_base))
 		{
-			return false;
-		}
-		
-		//kindling items
-		if ( IsKindling ( item ) && !IsBurning() )
-		{
-			if ( HasLastFuelKindlingAttached() )
-			{
-				if ( HasLastAttachment() )
-				{
-					return true;
-				}
-				else
-				{
-					return false;
-				}
-			}
-			else
-			{
-				return true;
-			}
-		}
-		
-		//fuel items
-		if ( IsFuel( item ) && !IsBurning() )
-		{
-			if ( HasLastFuelKindlingAttached() )
-			{	
-				if ( HasLastAttachment() )
-				{
-					return true;
-				}
-				else
-				{
-					return false;
-				}
-			}
-			else
-			{
-				return true;
-			}
-		}
-		
-		//direct cooking slots
-		if ( ( item.Type() == ATTACHMENT_CAULDRON ) || ( item.Type() == ATTACHMENT_COOKING_POT ) || ( item.Type() == ATTACHMENT_FRYING_PAN ) || ( item.IsKindOf( "Edible_Base" ) ) )
-		{
-			return true;
-		}
-		
-		return false;
-	}
-
-	override void EEItemAttached( EntityAI item, string slot_name ) 
-	{
-		super.EEItemAttached( item, slot_name );
-		
-		ItemBase item_base = ItemBase.Cast( item );
-		
-		//kindling / fuel
-		if ( IsKindling( item_base ) || IsFuel( item_base ) )
-		{
-			//add to consumables
-			AddToFireConsumables ( item_base );
+			AddToFireConsumables(item_base);
 		}
 		
 		// direct cooking slots, smoking slots
 		bool edible_base_attached = false;
 		switch ( slot_name )
 		{
-			case "DirectCookingA":
-				m_DirectCookingSlots[0] = item_base;
-				edible_base_attached = true;
-				break;
+		case "DirectCookingA":
+			m_DirectCookingSlots[0] = item_base;
+			edible_base_attached = true;
+		break;
+		case "DirectCookingB":
+			m_DirectCookingSlots[1] = item_base;
+			edible_base_attached = true;
+		break;
+		case "DirectCookingC":
+			m_DirectCookingSlots[2] = item_base;
+			edible_base_attached = true;
+		break;
 
-			case "DirectCookingB":
-				m_DirectCookingSlots[1] = item_base;
-				edible_base_attached = true;
-				break;
-
-			case "SmokingA":
-				m_SmokingSlots[0] = item_base;
-				edible_base_attached = true;
-				break;
-
-			case "SmokingB":
-				m_SmokingSlots[1] = item_base;
-				edible_base_attached = true;
-				break;
-
-			case "SmokingC":
-				m_SmokingSlots[2] = item_base;
-				edible_base_attached = true;
-				break;
-
-			case "SmokingD":
-				m_SmokingSlots[3] = item_base;
-				edible_base_attached = true;
-				break;
+		case "SmokingA":
+			m_SmokingSlots[0] = item_base;
+			edible_base_attached = true;
+		break;
+		case "SmokingB":
+			m_SmokingSlots[1] = item_base;
+			edible_base_attached = true;
+		break;
+		case "SmokingC":
+			m_SmokingSlots[2] = item_base;
+			edible_base_attached = true;
+		break;
+		case "SmokingD":
+			m_SmokingSlots[3] = item_base;
+			edible_base_attached = true;
+		break;
 		}
 		
 		// reset cooking time (to prevent the cooking exploit)
-		if ( GetGame().IsServer() && edible_base_attached )
+		if (GetGame().IsServer() && edible_base_attached)
 		{
-			Edible_Base edBase = Edible_Base.Cast( item_base );
-			if ( edBase )
+			Edible_Base edBase = Edible_Base.Cast(item_base);
+			if (edBase)
 			{
-				if ( edBase.GetFoodStage() )
-					edBase.SetCookingTime( 0 );
+				if (edBase.GetFoodStage())
+				{
+					edBase.SetCookingTime(0);
+				}
 			}
 		}
 
-		//refresh fireplace visuals
 		RefreshFireplaceVisuals();
 	}
 
-	override void EEItemDetached( EntityAI item, string slot_name ) 
+	override void EEItemDetached(EntityAI item, string slot_name)
 	{
-		super.EEItemDetached( item, slot_name );
+		super.EEItemDetached(item, slot_name);
 		
-		ItemBase item_base = ItemBase.Cast( item );
+		ItemBase item_base = ItemBase.Cast(item);
 		
-		//kindling / fuel
-		if ( IsKindling( item_base ) || IsFuel( item_base ) )
+		if (IsKindling(item_base) || IsFuel(item_base))
 		{
-			//remove from consumables
-			RemoveFromFireConsumables( GetFireConsumableByItem( item_base ) );
+			RemoveFromFireConsumables(GetFireConsumableByItem(item_base));
 		}
 		
-		// We don't want to check this if simply moving food around
-		if ( !item_base.IsInherited( Edible_Base ) )
-		{
-			//no attachments left & no ashes are present
-			CheckForDestroy();
-		}
+		CheckForDestroy();
 		
-		// direct cooking slots
-		switch ( slot_name )
+		// direct cooking/smoking slots
+		switch (slot_name)
 		{
-			case "DirectCookingA":
-				m_DirectCookingSlots[0] = NULL;
-				break;
+		case "DirectCookingA":
+			m_DirectCookingSlots[0] = null;
+		break;
+		case "DirectCookingB":
+			m_DirectCookingSlots[1] = null;
+		break;
+		case "DirectCookingC":
+			m_DirectCookingSlots[2] = null;
+		break;
 
-			case "DirectCookingB":
-				m_DirectCookingSlots[1] = NULL;
-				break;
-
-			case "DirectCookingC":
-				m_DirectCookingSlots[2] = NULL;
-				break;
+		case "SmokingA":
+			m_SmokingSlots[0] = null;
+		break;
+		case "SmokingB":
+			m_SmokingSlots[1] = null;
+		break;
+		case "SmokingC":
+			m_SmokingSlots[2] = null;
+		break;
+		case "SmokingD":
+			m_SmokingSlots[3] = null;
+		break;
 		}
 
-		// smoking slots
-		switch ( slot_name )
-		{
-			case "SmokingA":
-				m_SmokingSlots[0] = NULL;
-				break;
-
-			case "SmokingB":
-				m_SmokingSlots[1] = NULL;
-				break;
-
-			case "SmokingC":
-				m_SmokingSlots[2] = NULL;
-				break;
-
-			case "SmokingD":
-				m_SmokingSlots[3] = NULL;
-				break;
-		}
-
-		// food on direct cooking slots (removal of sound effects)
-		if ( item_base.IsKindOf( "Edible_Base" ) )
-		{
-			Edible_Base food_on_dcs = Edible_Base.Cast( item_base );
-			food_on_dcs.MakeSoundsOnClient( false );
-		}
-		
 		// cookware-specifics (remove audio visuals)
-		if ( item_base.Type() == ATTACHMENT_COOKING_POT )
+		if (item_base.Type() == ATTACHMENT_COOKING_POT)
 		{	
-			Bottle_Base cooking_pot = Bottle_Base.Cast( item );
+			ClearCookingEquipment(item_base);
+			Bottle_Base cooking_pot = Bottle_Base.Cast(item);
 			cooking_pot.RemoveAudioVisualsOnClient();	
 		}
-		if ( item_base.Type() == ATTACHMENT_CAULDRON )
-		{	
-			Bottle_Base cauldron = Bottle_Base.Cast( item );
+		if (item_base.Type() == ATTACHMENT_CAULDRON)
+		{
+			ClearCookingEquipment(item_base);
+			Bottle_Base cauldron = Bottle_Base.Cast(item);
 			cauldron.RemoveAudioVisualsOnClient();	
 		}
-		if ( item_base.Type() == ATTACHMENT_FRYING_PAN )
-		{	
-			FryingPan frying_pan = FryingPan.Cast( item );
+		if (item_base.Type() == ATTACHMENT_FRYING_PAN)
+		{
+			ClearCookingEquipment(item_base);
+			FryingPan frying_pan = FryingPan.Cast(item);
 			frying_pan.RemoveAudioVisualsOnClient();
 		}
 		
-		//refresh fireplace visuals
 		RefreshFireplaceVisuals();
 	}
 		
@@ -432,17 +300,7 @@ class FireplaceIndoor extends FireplaceBase
 	{
 		return super.CanReceiveItemIntoCargo( item );
 	}
-/*
-	override bool CanReleaseCargo( EntityAI cargo )
-	{
-		if ( IsBurning() )
-		{
-			return false;
-		}
 
-		return true;
-	}
-*/	
 	//hands
 	override bool CanPutIntoHands( EntityAI parent )
 	{
@@ -517,52 +375,5 @@ class FireplaceIndoor extends FireplaceBase
 		}
 		
 		return true;	
-	}
-	
-	override void OnRPC( PlayerIdentity sender, int rpc_type, ParamsReadContext ctx ) 
-	{
-		super.OnRPC( sender, rpc_type, ctx );
-		
-		ref Param1<bool> p = new Param1<bool>(false);
-				
-		if (ctx.Read(p))
-		{
-			bool failure = p.param1;
-		}
-		
-		switch ( rpc_type )
-		{
-			case FirePlaceFailure.WIND:
-			
-				if ( failure )
-				{
-					ParticleFireWindyNoIgniteStart();
-					SoundFireStop();
-					SoundFireWindyNoIgniteStart();
-					SoundFireNoFireStart();
-				}
-			
-			break;
-			
-			case FirePlaceFailure.WET:
-				
-				if ( failure )
-				{
-					ParticleWetNoIgniteStart();
-					SoundFireStop();
-					SoundFireWetNoIgniteStart();
-					SoundFireNoFireStart();
-				}
-			
-			break;
-		}
-	}
-	
-	override void SetActions()
-	{
-		super.SetActions();
-		
-		//AddAction(ActionTakeFireplaceIndoor);
-		//AddAction(ActionLightItemOnFire);
 	}
 }

@@ -4,4 +4,10 @@ class TacticalBaconCan : Edible_Base
 	{
 		ReplaceEdibleWithNew("TacticalBaconCan_Opened");
 	}
+	
+	
+	override bool IsOpen()
+	{
+		return false;
+	}
 }

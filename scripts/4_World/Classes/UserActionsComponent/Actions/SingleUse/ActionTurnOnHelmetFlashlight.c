@@ -27,9 +27,7 @@ class ActionTurnOnHelmetFlashlight: ActionBase
 	
 	override typename GetInputType()
 	{
-#ifndef PLATFORM_CONSOLE
 		return ToggleLightsActionInput;
-#endif
 	}
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

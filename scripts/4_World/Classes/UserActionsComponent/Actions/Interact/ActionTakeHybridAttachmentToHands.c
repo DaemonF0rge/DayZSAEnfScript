@@ -4,7 +4,7 @@ class ActionTakeHybridAttachmentToHands: ActionInteractBase
 	{
 		m_CommandUID        = DayZPlayerConstants.CMD_ACTIONMOD_PICKUP_HANDS;
 		m_CommandUIDProne	= DayZPlayerConstants.CMD_ACTIONFB_PICKUP_HANDS;
-		m_HUDCursorIcon     = CursorIcons.LootCorpse;
+		m_Text = "#take_to_hands";
 	}
 
 	override void CreateConditionComponents()  
@@ -16,11 +16,6 @@ class ActionTakeHybridAttachmentToHands: ActionInteractBase
 	override bool HasProneException()
 	{
 		return true;
-	}
-
-	override string GetText()
-	{
-		return "#take_to_hands";
 	}
 	
 	override typename GetInputType()

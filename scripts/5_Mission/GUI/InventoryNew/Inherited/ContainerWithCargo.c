@@ -1,18 +1,27 @@
-class ContainerWithCargo: ClosableContainer
+class ContainerWithCargo extends ClosableContainer
 {
 	protected ref CargoContainer	m_CargoGrid;
 	protected int m_CargoIndex = -1;
 
 	void ContainerWithCargo( Container parent, int sort = -1 )
 	{
+		m_LockCargo = false;
 		m_Parent = parent;
 
 		m_CargoGrid = new CargoContainer( this );
-		this.Insert( m_CargoGrid );
+		Insert( m_CargoGrid );
 		
 		m_CargoGrid.GetRootWidget().SetSort( 1 );
 		
 		WidgetEventHandler.GetInstance().RegisterOnDraggingOver( m_MainWidget,  this, "DraggingOverGrid" );
+		RecomputeOpenedContainers();
+	}
+
+	override bool IsDisplayable()
+	{
+		if (m_Entity)
+			return m_Entity.CanDisplayCargo();
+		return false;
 	}
 	
 	override bool IsEmpty()
@@ -45,52 +54,97 @@ class ContainerWithCargo: ClosableContainer
 		return m_CargoGrid.IsItemWithQuantityActive();
 	}
 	
-	override void UpdateInterval()
+	void LockCargo(bool value)
 	{
-		if( m_Entity )
+		if( value != m_LockCargo )
 		{
-			if( m_Entity.GetInventory().IsInventoryLockedForLockType( HIDE_INV_FROM_SCRIPT ) || m_Closed )
+			if( value )
 			{
-				HideContent();
+				m_LockCargo = true;
+				OnHide();
 			}
 			else
 			{
-				ShowContent();
+				m_LockCargo = false;
+				SetOpenState(!m_Closed);
 			}
+		}	
+	}
+	
+	override void Open()
+	{
+		if( !m_LockCargo )
+		{
+			ItemManager.GetInstance().SetDefaultOpenState( m_Entity.GetType(), true );
+			m_Closed = false;
+			SetOpenForSlotIcon(true);
+			OnShow();
+			m_Parent.m_Parent.Refresh();
+		}
 		
-			m_CargoGrid.UpdateInterval();
+		if ( m_SlotIcon )
+		{
+			m_SlotIcon.GetRadialIconPanel().Show( !m_LockCargo );
 		}
 	}
-
-	override void MoveGridCursor( int direction )
+	
+	override void Close()
 	{
-		m_CargoGrid.MoveGridCursor( direction );
+		if( !m_LockCargo )
+		{
+			ItemManager.GetInstance().SetDefaultOpenState( m_Entity.GetType(), false );
+			m_Closed = true;
+			SetOpenForSlotIcon(false);
+			OnHide();
+			m_Parent.m_Parent.Refresh();
+		}
+		
+		if ( m_SlotIcon )
+		{
+			m_SlotIcon.GetRadialIconPanel().Show( !m_LockCargo );
+		}
 	}
 	
-	override void SetActive( bool active )
+	override bool IsOpened()
 	{
-		super.SetActive( active );
-		m_CargoGrid.SetActive( active );
-		SetFocusedContainer( m_CargoGrid );
+		return !m_Closed && !m_LockCargo;
 	}
 	
-	override void SetLastActive()
+	override void UpdateInterval()
 	{
-		m_CargoGrid.SetLastActive();
-	}
-	
-	override void SetNextActive()
-	{
-		Container.Cast( GetParent() ).SetNextActive();
-		m_ActiveIndex = 1;
-		UnfocusAll();
-	}
-
-	override void SetPreviousActive( bool force = false )
-	{
-		Container.Cast( GetParent() ).SetPreviousActive( force );
-		m_ActiveIndex = 1;
-		UnfocusAll();
+		if ( m_Entity )
+		{
+			if ( m_Entity.GetInventory().IsInventoryLockedForLockType( HIDE_INV_FROM_SCRIPT ) || !m_Entity.CanDisplayCargo()  )
+			{
+				LockCargo(true);
+				if ( m_CargoGrid.IsVisible() )
+				{
+					RecomputeOpenedContainers();
+				}
+			}
+			else
+			{
+				LockCargo(false);
+				if ( !m_CargoGrid.IsVisible() )
+				{
+					RecomputeOpenedContainers();
+				}
+			}
+		
+			super.UpdateInterval();
+			m_CargoGrid.UpdateInterval();
+			
+			bool hide = m_LockCargo || ItemManager.GetInstance().GetDraggedItem() == m_Entity;
+			if (!hide)
+			{
+				SetOpenForSlotIcon(IsOpened());
+			}
+			
+			if ( m_SlotIcon )
+			{
+				m_SlotIcon.GetRadialIconPanel().Show( !hide );
+			}
+		}
 	}
 	
 	override bool IsFirstContainerFocused()
@@ -103,7 +157,7 @@ class ContainerWithCargo: ClosableContainer
 		return m_CargoGrid.IsLastContainerFocused();
 	}
 
-	void SetDefaultFocus( bool while_micromanagment_mode = false )
+	override void SetDefaultFocus( bool while_micromanagment_mode = false )
 	{
 		m_CargoGrid.SetDefaultFocus( while_micromanagment_mode );
 	}
@@ -111,6 +165,11 @@ class ContainerWithCargo: ClosableContainer
 	override void UnfocusAll()
 	{
 		m_CargoGrid.Unfocus();
+	}
+	
+	override bool SplitItem()
+	{
+		return m_CargoGrid.SplitItem();
 	}
 	
 	override bool EquipItem()
@@ -133,30 +192,29 @@ class ContainerWithCargo: ClosableContainer
 		return m_CargoGrid.InspectItem();
 	}
 
-	void SetEntity( EntityAI entity, int cargo_index = 0 )
+	void SetEntity( EntityAI entity, int cargo_index = 0, bool immedUpdate = true )
 	{
 		m_Entity = entity;
 		m_CargoIndex = cargo_index;
 
-		SetOpenState( ItemManager.GetInstance().GetDefaultOpenState( m_Entity.GetType() ) );
+		SetOpenState( true );
 
-		m_CargoGrid.SetEntity( entity );
+		m_CargoGrid.SetEntity( entity, immedUpdate );
 		m_CargoGrid.UpdateHeaderText();
 		m_ClosableHeader.SetItemPreview( entity );
+		CheckHeaderDragability();
+		( Container.Cast( m_Parent ) ).Insert( this, -1, false );
 		
-		( Container.Cast( m_Parent ) ).Insert( this );
-		
-		if( m_Entity.GetInventory().IsInventoryLockedForLockType( HIDE_INV_FROM_SCRIPT ) || m_Closed )
-		{
-			HideContent();
-		}
+		if ( m_Entity.GetInventory().IsInventoryLockedForLockType( HIDE_INV_FROM_SCRIPT ) || !m_Entity.CanDisplayCargo() )
+			LockCargo(true);
 		else
+			LockCargo(false);
+
+		if ( immedUpdate )
 		{
-			ShowContent();
+			Refresh();
+			GetMainWidget().Update();
 		}
-		
-		Refresh();
-		GetMainWidget().Update();
 	}
 
 	EntityAI GetEntity()
@@ -167,24 +225,6 @@ class ContainerWithCargo: ClosableContainer
 	override EntityAI GetFocusedContainerEntity()
 	{
 		return m_Entity;
-	}
-	
-	void EquipmentMoveUp()
-	{
-		PlayerContainer pc = PlayerContainer.Cast( m_Parent );
-		if( pc )
-		{
-			pc.MoveContainerUp( this );
-		}
-	}
-	
-	void EquipmentMoveDown()
-	{
-		PlayerContainer pc = PlayerContainer.Cast( m_Parent );
-		if( pc )
-		{
-			pc.MoveContainerDown( this );
-		}
 	}
 
 	EntityAI GetItemPreviewItem( Widget w )
@@ -214,12 +254,23 @@ class ContainerWithCargo: ClosableContainer
 			return false;
 		}
 		
+		PlayerBase player = PlayerBase.Cast( GetGame().GetPlayer() );
+		if( !player.CanManipulateInventory() )
+		{
+			return false;
+		}
+		
 		EntityAI item = GetItemPreviewItem( w );
 		
 		if( !item )
 		{
 			return false;
 		}
+		
+		if( !item.GetInventory().CanRemoveEntity() )
+		{
+			return false;
+		} 
 
 		int color, c_x, c_y;
 		
@@ -395,7 +446,7 @@ class ContainerWithCargo: ClosableContainer
 			return;
 		
 		PlayerBase player = PlayerBase.Cast( GetGame().GetPlayer() );
-		if( item.GetInventory().CanRemoveEntity() && player.CanManipulateInventory() && ( m_Entity.GetInventory().CanAddEntityInCargo( item, item.GetInventory().GetFlipCargo() ) && (!player.GetInventory().HasEntityInInventory( item ) || !m_Entity.GetInventory().HasEntityInCargo( item )) ) || player.GetHumanInventory().HasEntityInHands( item ) )
+		if( item.GetInventory().CanRemoveEntity() && player.CanManipulateInventory() && m_Entity.GetInventory().CanAddEntityInCargo( item, item.GetInventory().GetFlipCargo() ) && !m_Entity.GetInventory().HasEntityInCargo( item ) )
 		{
 			ColorManager.GetInstance().SetColor( w, ColorManager.GREEN_COLOR );
 			ItemManager.GetInstance().HideDropzones();

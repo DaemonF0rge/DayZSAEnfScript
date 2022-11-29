@@ -158,14 +158,14 @@ class NotificationSystem
 		if ( m_Instance.m_TimeArray.Count() < MAX_NOTIFICATIONS )
 		{
 			float time = GetGame().GetTickTime() + show_time;
-			ref NotificationRuntimeData data = new NotificationRuntimeData(time, m_Instance.GetNotificationData( type ), detail_text);
+			NotificationRuntimeData data = new NotificationRuntimeData(time, m_Instance.GetNotificationData( type ), detail_text);
 			
 			m_Instance.m_TimeArray.Insert( data );
 			m_Instance.m_OnNotificationAdded.Invoke( data );
 		}
 		else
 		{
-			ref NotificationRuntimeData data_def = new NotificationRuntimeData(show_time, m_Instance.GetNotificationData( type ), detail_text);
+			NotificationRuntimeData data_def = new NotificationRuntimeData(show_time, m_Instance.GetNotificationData( type ), detail_text);
 			m_Instance.m_DeferredArray.Insert( data_def );
 		}
 	}
@@ -183,16 +183,16 @@ class NotificationSystem
 		{
 			float time = GetGame().GetTickTime() + show_time;
 			
-			ref NotificationData temp_data = new NotificationData( icon, title_text );
-			ref NotificationRuntimeData data = new NotificationRuntimeData(time, temp_data, detail_text);
+			NotificationData temp_data = new NotificationData( icon, title_text );
+			NotificationRuntimeData data = new NotificationRuntimeData(time, temp_data, detail_text);
 			
 			m_Instance.m_TimeArray.Insert( data );
 			m_Instance.m_OnNotificationAdded.Invoke( data );
 		}
 		else
 		{
-			ref NotificationData temp_data_def = new NotificationData( icon, title_text );
-			ref NotificationRuntimeData data_def = new NotificationRuntimeData(show_time, temp_data_def, detail_text);
+			NotificationData temp_data_def = new NotificationData( icon, title_text );
+			NotificationRuntimeData data_def = new NotificationRuntimeData(show_time, temp_data_def, detail_text);
 			m_Instance.m_DeferredArray.Insert( data_def );
 		}
 	}
@@ -240,7 +240,7 @@ class NotificationSystem
 	
 	static void LoadNotificationData()
 	{
-		ref map<NotificationType, NotificationData> data_array;
+		map<NotificationType, NotificationData> data_array;
 		m_Instance.m_DataArray = new map<NotificationType, ref NotificationData>;
 		JsonFileLoader<map<NotificationType, NotificationData>>.JsonLoadFile( JSON_FILE_PATH, data_array );
 		
@@ -263,7 +263,7 @@ class NotificationSystem
 		{
 			foreach ( NotificationType type2 : types )
 			{
-				ref NotificationData data2 = new NotificationData( "please_add_an_icon", "please_add_a_title", "optional_description" );
+				NotificationData data2 = new NotificationData( "please_add_an_icon", "please_add_a_title", "optional_description" );
 				m_Instance.m_DataArray.Insert( type2, data2 );
 			}
 			JsonFileLoader<map<NotificationType, ref NotificationData>>.JsonSaveFile( JSON_FILE_PATH, m_Instance.m_DataArray );

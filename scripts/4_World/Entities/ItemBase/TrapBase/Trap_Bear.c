@@ -1,125 +1,245 @@
 class BearTrap extends TrapBase
 {
-	// Vertical raycast start positions:    		Center,      North East,    North West,    South East,  South West
-	static const vector m_RaycastSources[5] = {"0.0 0.1 0.0", "0.2 0.1 0.2", "-.2 0.1 0.2", "0.2 0.1 -.2", "-.2 0.1 -.2"}; // Positions are local to model. Vertical offset prevents ground collision.
+	static const int RAYCAST_SOURCES_COUNT = 5;
+	// Raycasts start positions:
+	// Positions are local to model. Vertical offset prevents ground collision.
+	static const vector m_RaycastSources[RAYCAST_SOURCES_COUNT] = {
+		"0.0 0.1 0.0",	// center
+		"0.2 0.1 0.2",	// north east
+		"-.2 0.1 0.2",	// north west
+		"0.2 0.1 -0.2",	// south east
+		"-0.2 0.1 -0.2"	// south west
+	};
 	
 	void BearTrap()
 	{
-		m_DamagePlayers = 5; 		//How much damage player gets when caught
-		m_DefectRate = 0;
-		m_InitWaitTime = 0; 			//After this time after deployment, the trap is activated
-		m_AnimationPhaseGrounded = "placing";
-		m_AnimationPhaseSet = "BearTrap_Set";
-		m_AnimationPhaseTriggered = "placing";
+		m_DamagePlayers 			= 5; 				// How much damage player gets when caught
+		m_DamageOthers 				= 5;         		// How much damage other entities(CreatureAI) gets when caught
+		m_DefectRate 				= 0;
+		m_InitWaitTime 				= 0; 				// After this time after deployment, the trap is activated
+		m_AnimationPhaseGrounded 	= "placing";
+		m_AnimationPhaseSet 		= "BearTrap_Set";
+		m_AnimationPhaseTriggered 	= "placing";
+	}
+	
+	override bool CanBeDisarmed()
+	{
+		return true;
+	}
+	
+	override void EEHealthLevelChanged(int oldLevel, int newLevel, string zone)
+	{
+		super.EEHealthLevelChanged(oldLevel, newLevel, zone);
+
+		if (GetGame().IsServer())
+		{
+			if (newLevel == GameConstants.STATE_RUINED)
+			{
+				SetInactive();
+			}
+		}
+	}
+	
+	override void CreateTrigger()
+	{
+		super.CreateTrigger();
+
+		vector mins		= "-0.1 -0.05 -0.1";
+		vector maxs 	= "0.1 0.4 0.1";
+
+		m_TrapTrigger.SetOrientation(GetOrientation());
+		m_TrapTrigger.SetExtents(mins, maxs);
+		m_TrapTrigger.SetParentObject(this);
+	}
+	
+	override void OnUpdate(EntityAI victim)
+	{
+		if (victim && victim.IsInherited(CarScript))
+		{
+			EntityAI wheel = GetClosestCarWheel(victim);
+			if (wheel)
+			{
+				OnServerSteppedOn(wheel, "");
+			}
+		}
 	}
 	
 	override void OnSteppedOn(EntityAI victim)
-	{		
-		PlayerBase victimPB = PlayerBase.Cast(victim);
-		if (GetGame().IsServer() && victimPB)
+	{
+		if (GetGame().IsServer() && victim)
 		{
-			vector 	contact_pos;
-			vector 	contact_dir;
-			int 	contactComponent;
-			ref set<Object> victims = new set<Object>;
-				
-			for ( int i = 0; i < 5; ++i )
+			if (!victim.GetAllowDamage())
 			{
-				vector raycast_start_pos = ModelToWorld ( m_RaycastSources[i] );
-				vector raycast_end_pos = "0 0.5 0" + raycast_start_pos;
-				DayZPhysics.RaycastRV( raycast_start_pos, raycast_end_pos, contact_pos, contact_dir, contactComponent, victims , NULL, this, true, false, ObjIntersectIFire);
-					
-				/*
-				Print("Checking Raycast hit...");
-				Print(contactComponent);
-				Print(victimPB.GetDamageZoneNameByComponentIndex(contactComponent));
-				*/
-				
-				for ( int j = 0; j < victims.Count(); ++j )
+				return;
+			}
+			
+			ZombieBase zombie;
+			if (victim.IsInherited(CarScript))
+			{
+				//! CarScript specific reaction on BearTrap
+				Param1<EntityAI> params = new Param1<EntityAI>(victim);
+				m_UpdateTimer.Run(UPDATE_TIMER_INTERVAL, this, "OnUpdate", params, true);
+
+				return;
+			}
+			else
+			{
+				for (int i = 0; i < RAYCAST_SOURCES_COUNT; ++i)
 				{
-					Object contact_obj = victims.Get(j);
-					if ( contact_obj.IsMan() )
+					vector raycast_start_pos 			= ModelToWorld(m_RaycastSources[i]);
+					vector raycast_end_pos 				= "0 0.5 0" + raycast_start_pos;
+					
+					RaycastRVParams rayInput 			= new RaycastRVParams(raycast_start_pos, raycast_end_pos, this);
+					rayInput.flags 						= CollisionFlags.ALLOBJECTS;
+					rayInput.type 						= ObjIntersectFire;
+					rayInput.radius 					= 0.05;
+					array<ref RaycastRVResult> results 	= new array<ref RaycastRVResult>;
+			
+					if (DayZPhysics.RaycastRVProxy(rayInput, results))
 					{
-						OnServerSteppedOn(victimPB, victimPB.GetDamageZoneNameByComponentIndex(contactComponent));
-						return;
+						RaycastRVResult res;
+						for (int j = 0; j < results.Count(); j++)
+						{
+							Object contact_obj = results[j].obj;
+							if (contact_obj && !contact_obj.IsInherited(ItemBase) && contact_obj.IsAlive())
+							{
+								OnServerSteppedOn(contact_obj, contact_obj.GetDamageZoneNameByComponentIndex(results[j].component));
+								break;
+							}
+						}
 					}
 				}
+				OnServerSteppedOn(victim, "zone_leg_random");
 			}
-				
-			// Damage random leg since we don't know what part of player's body was caught in the trap.
-			string damageZoneRand = "LeftLeg";
-			if ( Math.RandomIntInclusive(0, 1) == 1 )
-				damageZoneRand = "RightLeg";
-				
-			OnServerSteppedOn(victimPB, damageZoneRand);
 		}
-		else if ( GetGame().IsClient() || !GetGame().IsMultiplayer() )
+		else if (!GetGame().IsDedicatedServer()) //! this is also called on client (OnRPC->SnapOn->OnSteppedOn chain)
 		{
-			if (victimPB)
+			if (victim)
 			{
-				victimPB.SpawnDamageDealtEffect();
+				if (victim.IsInherited(PlayerBase))
+				{
+					victim.SpawnDamageDealtEffect();
+				}
+
 				PlaySoundBiteLeg();
 			}
-			else if (victim.IsInherited(DayZCreatureAI))
-				PlaySoundBiteLeg();
-			else
-				PlaySoundBiteEmpty();
 		}
 	}
 	
-	void OnServerSteppedOn(PlayerBase victim, string damageZone)
+	override void OnSteppedOut(EntityAI victim)
 	{
-		CauseVictimToStartLimping( victim, damageZone );
-		victim.ProcessDirectDamage(DT_CLOSE_COMBAT, this, damageZone, "BearTrapHit", "0 0 0", 1);
+		if (victim.IsInherited(CarScript))
+		{
+			if (m_UpdateTimer && m_UpdateTimer.IsRunning())
+			{
+				m_UpdateTimer.Stop();
+			}
+		}
+	}
+	
+	protected void OnServerSteppedOn(Object obj, string damageZone)
+	{
+		if (obj.IsInherited(CarWheel))
+		{
+			obj.ProcessDirectDamage(DamageType.CLOSE_COMBAT, this, damageZone, "BearTrapHit_CarWheel", "0 0 0", 1);
+			if (m_UpdateTimer.IsRunning())
+			{
+				m_UpdateTimer.Stop();
+			}
+			
+			SetInactive(false);
+			Synch(EntityAI.Cast(obj));
+			
+			return;
+		}
+		
+		ZombieBase zombie;
+		string zoneUsed = damageZone;
+		
+		if (damageZone == "zone_leg_random")
+		{
+			zoneUsed = "LeftLeg";
+			if (Math.RandomIntInclusive(0, 1) == 1)
+			{
+				zoneUsed = "RightLeg";
+			}
+		}
+		
+		//! Generic limp handling
+		if (obj.IsInherited(PlayerBase) || (Class.CastTo(zombie,obj) && !zombie.IsCrawling() && Math.RandomIntInclusive(0, 1) == 1))
+		{
+			CauseVictimToStartLimping(obj, "");
+		}
+		
+		obj.ProcessDirectDamage(DamageType.CLOSE_COMBAT, this, zoneUsed, "BearTrapHit", "0 0 0", 1);
+		
+		SetInactive(false);
+		Synch(EntityAI.Cast(obj));
 	}
 	
 	// Causes the player to start limping. This is temporary and should at some point be replaced by broken legs
-	void CauseVictimToStartLimping( PlayerBase victim, string damagedZone )
+	void CauseVictimToStartLimping(Object obj, string damagedZone)
 	{
-		float damage = victim.GetMaxHealth(); //deal 100% damage to break legs
-		victim.DamageAllLegs(damage); 
+		PlayerBase player;
+		ZombieBase zombie;
+		if (Class.CastTo(player,obj))
+		{
+			player.DamageAllLegs(player.GetMaxHealth() * 2); //reduce legs health (not regular DamageSystem damage, does not transfer!)
+		}
+		else if (Class.CastTo(zombie,obj))
+		{
+			zombie.SetHealth("LeftLeg","Health",0.0);
+			zombie.SetHealth("RightLeg","Health",0.0);
+		}
 	}
-		
+	
 	void PlaySoundBiteLeg()
 	{
 		EffectSound sound = SEffectManager.PlaySound("beartrapCloseDamage_SoundSet", GetPosition(), 0, 0, false);
-		sound.SetSoundAutodestroy( true );
+		sound.SetAutodestroy(true);
 	}
 	
 	void PlaySoundBiteEmpty()
 	{
 		EffectSound sound = SEffectManager.PlaySound("beartrapClose_SoundSet", GetPosition(), 0, 0, false);
-		sound.SetSoundAutodestroy( true );
+		sound.SetAutodestroy(true);
 	}
 	
 	void PlaySoundOpen()
 	{
 		EffectSound sound = SEffectManager.PlaySound("beartrapOpen_SoundSet", GetPosition(), 0, 0, false);
-		sound.SetSoundAutodestroy( true );
+		sound.SetAutodestroy(true);
 	}
 
 	override void OnActivate()
 	{
-		if ( (GetGame().IsClient() || !GetGame().IsMultiplayer()) && GetGame().GetPlayer() )
-		{
-			PlaySoundOpen();
-		}
+		#ifndef SERVER
+		PlaySoundOpen();
+		#endif
+	}
+	
+	override void OnDisarm()
+	{
+		#ifndef SERVER
+		PlaySoundBiteEmpty();
+		#endif
 	}
 	
 	//================================================================
 	// ADVANCED PLACEMENT
 	//================================================================
 	
-	override void OnPlacementComplete( Man player, vector position = "0 0 0", vector orientation = "0 0 0" )
+	override void OnPlacementComplete(Man player, vector position = "0 0 0", vector orientation = "0 0 0")
 	{
-		super.OnPlacementComplete( player, position, orientation );
+		super.OnPlacementComplete(player, position, orientation);
 		
-		if ( GetGame().IsServer() )
+		if (GetGame().IsServer())
 		{
-			PlayerBase player_PB = PlayerBase.Cast( player );
-			StartActivate( player_PB );
+			PlayerBase player_PB = PlayerBase.Cast(player);
+			StartActivate(player_PB);
 			
-			m_TrapTrigger.SetPosition( position );
+			m_TrapTrigger.SetPosition(position);
+			m_TrapTrigger.SetOrientation(orientation);
 		}	
 	}
 	
@@ -141,4 +261,36 @@ class BearTrap extends TrapBase
 		AddAction(ActionTogglePlaceObject);
 		AddAction(ActionDeployObject);
 	}
+
+#ifdef DEVELOPER	
+	//================================================================
+	// DEBUG
+	//================================================================
+			
+	//Debug menu Spawn Ground Special
+	override void OnDebugSpawn()
+	{
+		StartActivate(null);
+	}
+	
+	override void GetDebugButtonNames(out string button1, out string button2, out string button3, out string button4)
+	{
+		button1 = "Activate";
+		button2 = "Deactivate";
+	}
+	
+	override void OnDebugButtonPressServer(int button_index)
+	{
+		switch (button_index)
+		{
+			case 1:
+				StartActivate(null);
+			break;
+			case 2:
+				SetInactive();
+			break;
+		}
+		
+	}
+#endif
 }

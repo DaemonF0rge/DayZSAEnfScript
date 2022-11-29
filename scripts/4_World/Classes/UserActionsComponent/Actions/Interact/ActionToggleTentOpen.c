@@ -3,17 +3,13 @@ class ActionToggleTentOpen: ActionInteractBase
 	void ActionToggleTentOpen()
 	{
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONMOD_INTERACTONCE;
+		m_Text = "#toggle_opening";
 	}
 
 	override void CreateConditionComponents()  
 	{
 		m_ConditionItem = new CCINone;
 		m_ConditionTarget = new CCTCursorParent(UAMaxDistances.DEFAULT);
-	}
-
-	override string GetText()
-	{
-		return "#toggle_opening";
 	}
 	
 	override bool IsUsingProxies()

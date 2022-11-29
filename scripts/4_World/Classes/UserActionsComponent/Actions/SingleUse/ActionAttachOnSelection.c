@@ -2,17 +2,13 @@ class ActionAttachOnSelection: ActionSingleUseBase
 {
 	void ActionAttachOnSelection()
 	{
+		m_Text = "#attach";
 	}
 	
 	override void CreateConditionComponents() 
 	{
 		m_ConditionItem = new CCINonRuined;
 		m_ConditionTarget = new CCTCursor;
-	}
-	
-	override string GetText()
-	{
-		return "#attach";
 	}
 	
 	override ActionData CreateActionData()
@@ -76,14 +72,14 @@ class ActionAttachOnSelection: ActionSingleUseBase
 	override bool SetupAction(PlayerBase player, ActionTarget target, ItemBase item, out ActionData action_data, Param extra_data = NULL)
 	{
 		int attSlotId = InventorySlots.INVALID;
-		if (!GetGame().IsMultiplayer() || GetGame().IsClient() )
+		if (!GetGame().IsDedicatedServer() )
 		{
 			attSlotId = FindSlotIdToAttachOrCombine(player, target, item);
 		}
 		
 		if ( super.SetupAction( player, target, item, action_data, extra_data))
 		{
-			if (!GetGame().IsMultiplayer() || GetGame().IsClient())
+			if (!GetGame().IsDedicatedServer())
 			{
 				if(attSlotId != InventorySlots.INVALID)
 				{
@@ -101,6 +97,9 @@ class ActionAttachOnSelection: ActionSingleUseBase
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
 	{
 		if (GetGame().IsMultiplayer() && GetGame().IsServer() ) return true;
+		
+		//if (BaseBuildingBase.Cast(target.GetObject())) return false;
+		if (target.GetObject() && target.GetObject().CanUseConstruction()) return false;
 		
 		return FindSlotIdToAttachOrCombine(player, target, item) != InventorySlots.INVALID;
 	}

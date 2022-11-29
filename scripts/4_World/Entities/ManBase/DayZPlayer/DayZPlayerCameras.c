@@ -119,6 +119,12 @@ class DayZPlayerCameras
 		RegisterTransitionTime(DAYZCAMERA_3RD_CRO, DAYZCAMERA_OPTICS, TIME_CAMERACHANGE_02, true);	//handheld optics only
 		RegisterTransitionTime(DAYZCAMERA_3RD_PRO, DAYZCAMERA_OPTICS, TIME_CAMERACHANGE_02, true);	//handheld optics only
 		
+		//Uncon camera transitions
+		RegisterTransitionTime(DAYZCAMERA_1ST_UNCONSCIOUS, DAYZCAMERA_3RD_PRO, 1.0, false);
+		RegisterTransitionTime(DAYZCAMERA_1ST_UNCONSCIOUS, DAYZCAMERA_1ST, 0.1, false);
+		RegisterTransitionTime(DAYZCAMERA_1ST_UNCONSCIOUS, DAYZCAMERA_1ST_VEHICLE, 0.5, false);
+		RegisterTransitionTime(DAYZCAMERA_1ST_UNCONSCIOUS, DAYZCAMERA_3RD_VEHICLE, 1.0, false);
+		
 		//! register function to handle camera changes 
 		pType.RegisterCameraOnChangeFnStatic(DayZPlayerCameras, "OnCameraChange");
 	}

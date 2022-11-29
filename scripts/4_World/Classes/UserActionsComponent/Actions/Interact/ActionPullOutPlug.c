@@ -3,11 +3,7 @@ class ActionPullOutPlug: ActionInteractBase
 	void ActionPullOutPlug()
 	{
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONMOD_INTERACTONCE;
-	}
-		
-	override string GetText()
-	{
-		return "#pull_out_plug";
+		m_Text = "#pull_out_plug";
 	}
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

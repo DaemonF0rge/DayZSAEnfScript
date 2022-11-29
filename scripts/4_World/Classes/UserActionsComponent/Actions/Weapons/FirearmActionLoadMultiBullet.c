@@ -5,16 +5,12 @@ class FirearmActionLoadMultiBullet : FirearmActionBase
 	//-----------------------------------------------------
 	void FirearmActionLoadMultiBullet() 
 	{
+		m_Text = "#load_bullets";
 	}	
 	
 	override int GetActionCategory()
 	{
 		return AC_CONTINUOUS;
-	}
-
-	override string GetText() //text game displays in HUD hint 
-	{
-		return "#load_bullets";
 	}
 	
 	/*string GetTargetDescription()

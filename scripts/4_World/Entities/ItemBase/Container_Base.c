@@ -8,12 +8,12 @@ class Container_Base extends ItemBase
 	override bool CanPutInCargo( EntityAI parent )
 	{
 		if( !super.CanPutInCargo(parent) ) {return false;}	
-		if ( parent != this && ( this.GetType() != parent.GetType() ) )
+		if ( parent && ( parent == this || ( this.GetType() == parent.GetType() ) ) )
 		{
-			return true;
+			return false;
 		}
 		
-		return false;
+		return true;
 	}
 }
 
@@ -67,10 +67,12 @@ class DeployableContainer_Base extends Container_Base
 	
 	override bool CanLoadItemIntoCargo( EntityAI item )
 	{
+		if (!super.CanLoadItemIntoCargo( item ))
+			return false;
 		if ( GetHealthLevel() == GameConstants.STATE_RUINED )
 			return false;
 
-		return super.CanLoadItemIntoCargo( item );
+		return true;
 	}
 	
 	/*

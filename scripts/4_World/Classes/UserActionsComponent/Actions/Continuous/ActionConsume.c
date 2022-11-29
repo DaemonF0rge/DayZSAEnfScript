@@ -12,7 +12,8 @@ class ActionConsume: ActionContinuousBase
 	{
 		m_CallbackClass = ActionConsumeCB;
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONMOD_EAT;
-		m_CommandUIDProne = DayZPlayerConstants.CMD_ACTIONFB_EAT;		
+		m_CommandUIDProne = DayZPlayerConstants.CMD_ACTIONFB_EAT;
+		m_Text = "#eat";	
 	}
 	
 	override void CreateConditionComponents()  
@@ -30,27 +31,22 @@ class ActionConsume: ActionContinuousBase
 	{
 		return false;
 	}
-
-	override string GetText()
-	{
-		return "#eat";
-	}
 	
 	override void OnEndServer( ActionData action_data )
 	{	
-		if ( action_data.m_MainItem && action_data.m_MainItem.GetQuantity() <= 0.01 )
+		ItemBase item = action_data.m_MainItem;
+		
+		if ( item && item.GetQuantity() <= 0.01 )
 		{
-			action_data.m_MainItem.SetQuantity(0);
+			item.SetQuantity(0);
 		}
 		
-		EntityAI item = action_data.m_MainItem;
-		PlayerBase player = action_data.m_Player;
-		PluginTransmissionAgents plugin = PluginTransmissionAgents.Cast( GetPlugin(PluginTransmissionAgents) );
-		plugin.TransmitAgents(player, item, AGT_UACTION_TO_ITEM);
-		
-		if ( action_data.m_Player.HasBloodyHands() && !action_data.m_Player.GetInventory().FindAttachment( InventorySlots.GLOVES ) )
+		else if (item && GetProgress(action_data) > 0)
 		{
-			action_data.m_Player.SetBloodyHandsPenalty();
+			// we don't want to inject an agent into an empty container
+			PlayerBase player = action_data.m_Player;
+			PluginTransmissionAgents plugin = PluginTransmissionAgents.Cast( GetPlugin(PluginTransmissionAgents) );
+			plugin.TransmitAgents(player, item, AGT_UACTION_TO_ITEM);
 		}
 	}
 };

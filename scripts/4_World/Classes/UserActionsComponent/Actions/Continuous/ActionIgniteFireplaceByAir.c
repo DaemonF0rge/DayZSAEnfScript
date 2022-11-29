@@ -15,17 +15,13 @@ class ActionIgniteFireplaceByAir: ActionContinuousBase
 		m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_CROUCH;
 		m_SpecialtyWeight = UASoftSkillsWeight.PRECISE_LOW;	
+		m_Text = "#blow_air_into_fireplace";
 	}
 
 	override void CreateConditionComponents()  
 	{	
 		m_ConditionTarget = new CCTNonRuined( UAMaxDistances.DEFAULT );
 		m_ConditionItem = new CCINotPresent;
-	}
-
-	override string GetText()
-	{
-		return "#blow_air_into_fireplace";
 	}
 
 	override typename GetInputType()

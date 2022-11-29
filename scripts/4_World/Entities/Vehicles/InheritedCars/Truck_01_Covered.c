@@ -5,7 +5,9 @@ class Truck_01_Covered_Orange extends Truck_01_Covered
 	override void OnDebugSpawn()
 	{
 		EntityAI entity;
-		
+		EntityAI ent;
+		ItemBase container;
+
 		if ( Class.CastTo(entity, this) )
 		{
 			entity.GetInventory().CreateInInventory( "Truck_01_Wheel" );
@@ -26,6 +28,22 @@ class Truck_01_Covered_Orange extends Truck_01_Covered
 
 			entity.GetInventory().CreateInInventory( "HeadlightH7" );
 			entity.GetInventory().CreateInInventory( "HeadlightH7" );
+			
+			//-----IN CAR CARGO
+			entity.GetInventory().CreateInInventory( "Truck_01_Wheel" );
+			entity.GetInventory().CreateInInventory( "Truck_01_Wheel" );
+			entity.GetInventory().CreateInInventory( "TruckBattery" );
+			entity.GetInventory().CreateInInventory( "HeadlightH7" );
+			//--
+			ent = entity.GetInventory().CreateInInventory( "Blowtorch" );
+			entity = ent.GetInventory().CreateInInventory( "LargeGasCanister" );
+			//--
+			entity.GetInventory().CreateInInventory( "CanisterGasoline" );
+			ent = entity.GetInventory().CreateInInventory( "CanisterGasoline" );
+			if ( Class.CastTo(container, ent) )
+			{
+				container.SetLiquidType(LIQUID_WATER, true);
+			}
 		};
 
 		Fill( CarFluid.FUEL, 120 );
@@ -38,7 +56,9 @@ class Truck_01_Covered_Blue extends Truck_01_Covered
 	override void OnDebugSpawn()
 	{
 		EntityAI entity;
-		
+		EntityAI ent;
+		ItemBase container;
+
 		if ( Class.CastTo(entity, this) )
 		{
 			entity.GetInventory().CreateInInventory( "Truck_01_Wheel" );
@@ -59,6 +79,22 @@ class Truck_01_Covered_Blue extends Truck_01_Covered
 
 			entity.GetInventory().CreateInInventory( "HeadlightH7" );
 			entity.GetInventory().CreateInInventory( "HeadlightH7" );
+			
+			//-----IN CAR CARGO
+			entity.GetInventory().CreateInInventory( "Truck_01_Wheel" );
+			entity.GetInventory().CreateInInventory( "Truck_01_Wheel" );
+			entity.GetInventory().CreateInInventory( "TruckBattery" );
+			entity.GetInventory().CreateInInventory( "HeadlightH7" );
+			//--
+			ent = entity.GetInventory().CreateInInventory( "Blowtorch" );
+			entity = ent.GetInventory().CreateInInventory( "LargeGasCanister" );
+			//--
+			entity.GetInventory().CreateInInventory( "CanisterGasoline" );
+			ent = entity.GetInventory().CreateInInventory( "CanisterGasoline" );
+			if ( Class.CastTo(container, ent) )
+			{
+				container.SetLiquidType(LIQUID_WATER, true);
+			}
 		};
 
 		Fill( CarFluid.FUEL, 120 );

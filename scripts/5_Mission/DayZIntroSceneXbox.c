@@ -44,7 +44,7 @@ class DayZIntroSceneXbox: Managed
 		m_CharacterDir = "0 0 0";
 		
 		//g_Game.m_PlayerName = "Survivor"; //default
-		if( m_MenuData.GetCharactersCount() == 0 )
+		if ( m_MenuData.GetCharactersCount() == 0 )
 		{
 			m_LastPlayedCharacterID = -1;
 		}
@@ -72,9 +72,7 @@ class DayZIntroSceneXbox: Managed
 		m_SceneCamera = CameraCreate(camera_position, camera_rotation_h, camera_rotation_v, camera_fov, camera_focus_distance, camera_focus_streght);
 		m_SceneCamera.SetActive(true);
 		
-		//Vignette
-		PPEffects.Init();
-		PPEffects.SetMenuVignette(0.3);
+		PPEffects.Init(); //Deprecated, left in for legacy purposes only
 		
 		// Character Setup
 		vector cam_dir = m_SceneCamera.GetDirection();
@@ -95,9 +93,7 @@ class DayZIntroSceneXbox: Managed
 		// Xbox check update
 		CheckXboxClientUpdateLoopStart();
 		
-		Material material = GetGame().GetWorld().GetMaterial("graphics/materials/postprocess/chromaber");
-		material.SetParam("PowerX", 0.002);
-		material.SetParam("PowerY", 0.002);
+		GetGame().GetCallQueue(CALL_CATEGORY_GUI).Call(SetInitPostprocesses);
 	}
 	
 	void ~DayZIntroSceneXbox()
@@ -133,12 +129,20 @@ class DayZIntroSceneXbox: Managed
 			m_MenuData.ClearCharacters();
 		}
 		
-		Material material = GetGame().GetWorld().GetMaterial("graphics/materials/postprocess/chromaber");
-		material.SetParam("PowerX", 0.0);
-		material.SetParam("PowerY", 0.0);
+		SEffectManager.DestroyEffect(m_FXParticleCarSmoke);
+		SEffectManager.DestroyEffect(m_FXParticleStreamLeft);
+		SEffectManager.DestroyEffect(m_FXParticleStreamRight);
 		
-		PPEffects.Init();
-		PPEffects.DisableBurlapSackBlindness();
+		PPEManagerStatic.GetPPEManager().StopAllEffects(PPERequesterCategory.ALL);
+	}
+	
+	protected void SetInitPostprocesses()
+	{
+		PPERequester_MenuEffects requester;
+		Class.CastTo(requester,PPERequesterBank.GetRequester(PPERequester_MenuEffects));
+		
+		requester.SetVignetteIntensity(0.3);
+		PPERequesterBank.GetRequester(PPERequester_IntroChromAbb).Start();
 	}
 	
 	//==============================================

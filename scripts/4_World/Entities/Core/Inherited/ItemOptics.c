@@ -4,6 +4,8 @@ class ItemOptics extends InventoryItemSuper
 	bool 				m_allowsDOF; //true if optics DOES NOT have magnification (FOV >= DZPLAYER_CAMERA_FOV_IRONSIGHTS)
 	bool 				m_reddot_displayed
 	bool 				m_isNVOptic = false;
+	int 				m_CurrentOpticMode; //generic optic mode, currently used for NV optics only (could be expanded)
+	int 				m_CurrentOpticModeLocal; //local mirror for sync purposes;
 	int 				m_reddot_index;
 	float 				m_blur_float;
 	float 				m_nearplane_override; //override value for DayZPlayerCameraOptics only!
@@ -12,17 +14,23 @@ class ItemOptics extends InventoryItemSuper
 	string 				m_2D_preload_type;
 	ref array<float> 	m_mask_array;
 	ref array<float> 	m_lens_array;
-	ref array<float> 	m_OpticsDOFProperties = new array<float>;
+	ref array<float> 	m_OpticsDOFProperties;
 		
 	void ItemOptics()
 	{
 		m_mask_array = new array<float>;
 		m_lens_array = new array<float>;
+		m_OpticsDOFProperties = new array<float>;
+		
 		InitReddotData();
 		InitOpticsPPInfo();
 		InitCameraOverrideProperties();
 		InitOpticsDOFProperties(m_OpticsDOFProperties);
 		Init2DPreloadType();
+		InitOpticMode();
+		
+		m_CurrentOpticModeLocal = -1;
+		RegisterNetSyncVariableInt( "m_CurrentOpticMode", 0, 63 );
 	}
 	
 	/**@fn		EnterOptics
@@ -66,33 +74,33 @@ class ItemOptics extends InventoryItemSuper
 	 **/
 	proto native int GetStepFOVCount ();
 	
-	/**@fn		GetStepZoom
-	 * @brief	returns position of currently used value in discreteFov config array
-	 * @return	position of currently used value in discreteFov config array
+	/**@fn		GetStepFOVIndex
+	 * @brief	returns index of currently used value in 'discretefov' config array
+	 * @return	index of currently used value in 'discretefov' config array
 	 **/
 	proto native int GetStepFOVIndex ();
 	
-	/**@fn		SetStepZoom
-	 * @brief sets zoom to fov value defined at given position in discreteFov config array
+	/**@fn		SetStepFOVIndex
+	 * @brief sets zoom to fov value defined at given in 'discretefov' config array
 	 * @param[in] index of configured step, range [0..cfg_max]
 	 * @return	true if zoom set
 	 **/
 	proto native bool SetStepFOVIndex (int step);
 	
-	/**@fn		StepZoomIn
+	/**@fn		StepFOVUp
 	 * @brief sets zoom to next defined (respective to current) value in zoom fov config array
 	 * @return	true if zoom set
 	 **/
 	proto native bool StepFOVUp ();
 	
-	/**@fn		StepZoomOut
+	/**@fn		StepFOVDown
 	 * @brief	sets zoom to previous (respective to current) defined value in zoom fov config array
 	 * @return	true if zoom set
 	 **/
 	proto native bool StepFOVDown ();
 
 	/**@fn		GetCurrentStepFOV
-	 * @brief	returns fov at current index, or _opticInfo._opticsZoomInit
+	 * @brief	returns fov value at current index, or 'OpticsInfo.opticsZoomInit' config value (non-zooming optics)
 	 **/
 	proto native float GetCurrentStepFOV ();
 
@@ -184,12 +192,18 @@ class ItemOptics extends InventoryItemSuper
 	
 	override void OnWorkStart()
 	{
-		ShowReddot(true);
+		if (!GetGame().IsDedicatedServer())
+		{
+			ShowReddot(true);
+		}
 	}
 	
 	override void OnWorkStop()
 	{
-		ShowReddot(false);
+		if (!GetGame().IsDedicatedServer())
+		{
+			ShowReddot(false);
+		}
 	}
 	
 	bool IsWorking()
@@ -244,6 +258,48 @@ class ItemOptics extends InventoryItemSuper
 		SetTakeable(true);
 	}
 	
+	override void OnStoreSave(ParamsWriteContext ctx)
+	{
+		super.OnStoreSave(ctx);
+		
+		ctx.Write(m_CurrentOpticMode);
+	}
+	
+	override bool OnStoreLoad(ParamsReadContext ctx, int version)
+	{
+		if ( !super.OnStoreLoad(ctx,version) )
+		{
+			return false;
+		}
+		m_IsStoreLoad = true;
+		
+		if ( version >= 126 )
+		{
+			if ( !ctx.Read(m_CurrentOpticMode) )
+			{
+				m_IsStoreLoad = false;
+				return false;
+			}
+		}
+		
+		OnOpticModeChange();
+		SetSynchDirty();
+		
+		m_IsStoreLoad = false;
+		return true;
+	}
+	
+	override void OnVariablesSynchronized()
+	{
+		super.OnVariablesSynchronized();
+		
+		if (m_CurrentOpticModeLocal != m_CurrentOpticMode)
+		{
+			OnOpticModeChange();
+			m_CurrentOpticModeLocal = m_CurrentOpticMode;
+		}
+	} 
+	
 	void InitReddotData()
 	{
 		string path = "cfgVehicles " + GetType() + " OpticsInfo";
@@ -270,12 +326,22 @@ class ItemOptics extends InventoryItemSuper
 	
 	void ShowReddot(bool state)
 	{
+		if (GetGame().IsDedicatedServer())
+		{
+			ErrorEx("should not be called on the server!",ErrorExSeverity.INFO);
+			return;
+		}
+		
 		if (!m_data_set)
+		{
 			InitReddotData();
+		}
 		
 		// does not have reddot
 		if (m_reddot_index == -1)
+		{
 			return;
+		}
 		
 		if (state)
 		{
@@ -333,7 +399,7 @@ class ItemOptics extends InventoryItemSuper
 		string path = "cfgVehicles " + GetType() + " OpticsInfo";
 		if ( GetGame().ConfigIsExisting(path + " nearPlaneDistanceOverride") )
 		{
-			m_nearplane_override = GetGame().ConfigGetFloat(path + " nearPlaneDistanceOverride");
+			m_nearplane_override = Math.Max(GetGame().ConfigGetFloat(path + " nearPlaneDistanceOverride"),DayZPlayerCameraBase.CONST_NEARPLANE_OPTICS_MIN);
 		}
 		else
 		{
@@ -368,7 +434,58 @@ class ItemOptics extends InventoryItemSuper
 		return m_isNVOptic;
 	}
 	
-	ref array<float> GetOpticsDOF ()
+	int GetCurrentNVType()
+	{
+		/*
+		//TODO - implement this into NV optics and modify (KazuarOptic example below)
+		if (IsWorking())
+		{
+			switch (m_CurrentOpticMode)
+			{
+				case GameConstants.OPTICS_STATE_DAY:
+					return NVTypes.NV_OPTICS_KAZUAR_DAY;
+				
+				case GameConstants.OPTICS_STATE_NIGHTVISION:
+					return NVTypes.NV_OPTICS_KAZUAR_NIGHT;
+			}
+		}
+		else
+		{
+			return NVTypes.NV_OPTICS_OFF;
+		}
+		*/
+		return NVTypes.NONE;
+	}
+	
+	void SetCurrentOpticMode(int mode)
+	{
+		m_CurrentOpticMode = mode;
+		OnOpticModeChange();
+	}
+	
+	int GetCurrentOpticMode()
+	{
+		return m_CurrentOpticMode;
+	}
+	
+	//! optic-specific behaviour to be defined here (override)
+	void OnOpticModeChange(){}
+	void OnOpticEnter()
+	{
+		if ( GetGame() && !GetGame().IsDedicatedServer() )
+		{
+			HideSelection("hide");
+		}
+	}
+	void OnOpticExit()
+	{
+		if ( GetGame() && !GetGame().IsDedicatedServer() )
+		{
+			ShowSelection("hide");
+		}
+	}
+	
+	ref array<float> GetOpticsDOF()
 	{
 		return m_OpticsDOFProperties;
 	}
@@ -401,6 +518,13 @@ class ItemOptics extends InventoryItemSuper
 			m_2D_preload_type = type_2d;
 		}
 	}
+	
+	void InitOpticMode()
+	{
+		SetCurrentOpticMode(GameConstants.OPTICS_STATE_DAY);
+	}
+	
+	void UpdateSelectionVisibility() {}
 	
 	override void SetActions()
 	{

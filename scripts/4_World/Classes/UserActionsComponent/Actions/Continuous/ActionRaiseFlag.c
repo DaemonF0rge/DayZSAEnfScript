@@ -14,17 +14,13 @@ class ActionRaiseFlag: ActionContinuousBase
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONFB_RAISE_FLAG;
 		m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT;
+		m_Text = "#raise_flag";
 	}
 	
 	override void CreateConditionComponents()  
 	{	
 		m_ConditionTarget = new CCTCursor;
 		m_ConditionItem = new CCINone;
-	}
-	
-	override string GetText()
-	{
-		return "#raise_flag";
 	}
 	
 	override typename GetInputType()
@@ -49,7 +45,7 @@ class ActionRaiseFlag: ActionContinuousBase
 			return false;
 		
 		float state = totem.GetAnimationPhase("flag_mast");
-		if ( totem.FindAttachmentBySlotName("Material_FPole_Flag") && state > 0 && player.GetFlagTendencyRaise() )
+		if ( totem.FindAttachmentBySlotName("Material_FPole_Flag") && state > 0 )
 		{
 			return true;
 		}

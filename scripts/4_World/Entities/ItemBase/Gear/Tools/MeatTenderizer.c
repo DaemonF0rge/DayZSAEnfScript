@@ -4,8 +4,10 @@ class MeatTenderizer: Inventory_Base
 	{
 		super.SetActions();
 		
-		AddAction(ActionBuildPartSwitch);
 		AddAction(ActionBuildPart);
+		AddAction(ActionRepairPart);
+		AddAction(ActionMineRock1H);
+
 
 	}
 };

@@ -9,7 +9,9 @@ class BlindedMdfr: ModifierBase
 		m_ID 					= eModifiers.MDF_BLINDED;
 		m_TickIntervalInactive 	= DEFAULT_TICK_TIME_INACTIVE;
 		m_TickIntervalActive 	= DEFAULT_TICK_TIME_ACTIVE;
+		DisableActivateCheck();
 	}
+	
 	override bool ActivateCondition(PlayerBase player)
 	{
 		return false;

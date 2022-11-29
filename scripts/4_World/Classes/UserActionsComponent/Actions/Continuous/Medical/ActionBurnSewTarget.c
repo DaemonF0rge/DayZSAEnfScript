@@ -12,6 +12,7 @@ class ActionBurnSewTarget: ActionContinuousBase
 	{
 		m_CallbackClass = ActionBurnSewTargetCB;
 		m_SpecialtyWeight = UASoftSkillsWeight.PRECISE_MEDIUM;
+		m_Text = "#treat_persons_wound";
 	}
 	
 	override void CreateConditionComponents()  
@@ -30,11 +31,6 @@ class ActionBurnSewTarget: ActionContinuousBase
 		{
 			return false;
 		}
-	}
-		
-	override string GetText()
-	{
-		return "#treat_persons_wound";
 	}
 
 	override void OnFinishProgressServer( ActionData action_data )

@@ -1,28 +1,11 @@
 class UndergroundStash extends ItemBase
 {
-	void UndergroundStash()
-	{
-		SetEventMask(EntityEvent.INIT);
-	}
-	
-	override void EOnInit(IEntity other, int extra) //!EntityEvent.INIT
-	{
-		vector pos = GetPosition();
-		vector surfOrient = GetGame().GetSurfaceOrientation(pos[0], pos[2]);
-		SetOrientation(surfOrient);
-	}
-	
-	override bool CanDisplayCargo()
-	{
-		super.CanDisplayCargo();
-		
-		return false;
-	}
+	void UndergroundStash() {}
 	
 	void PlaceOnGround()
 	{
 		vector pos = GetPosition();
-		pos[1] = GetGame().SurfaceY(pos[0], pos[2]);
+		pos[1] = GetGame().SurfaceRoadY(pos[0], pos[2]);
 		pos[1] = pos[1] + 0.22;
 		SetPosition(pos);
 	}
@@ -30,18 +13,20 @@ class UndergroundStash extends ItemBase
 	ItemBase GetStashedItem()
 	{
 		ItemBase item;		
-		
-		if ( GetInventory().GetCargo().GetItemCount() > 0 )
+		if (GetInventory().GetCargo().GetItemCount() > 0)
 		{
-			item = ItemBase.Cast( GetInventory().GetCargo().GetItem(0) );
+			item = ItemBase.Cast(GetInventory().GetCargo().GetItem(0));
 		}
 
-		Print("GetStashedItem()");
-		Print(item);
 		return item;
 	}
 	
-	override bool CanPutInCargo( EntityAI parent )
+	override bool CanDisplayCargo()
+	{
+		return false;
+	}
+	
+	override bool CanPutInCargo(EntityAI parent)
 	{
 		return false;
 	}
@@ -63,8 +48,6 @@ class UndergroundStash extends ItemBase
 	
 	override bool CanPutIntoHands(EntityAI parent)
 	{
-		super.CanPutIntoHands( parent );
-		
 		return false;
 	}
 	

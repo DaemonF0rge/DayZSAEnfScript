@@ -30,6 +30,15 @@ enum CarFluid
 
 
 
+//!	Enumerated gearbox types. (native, do not change or extend)
+enum CarGearboxType
+{
+	MANUAL,   //!< classic manual transmission with friction plates between engine and gearbox
+	AUTOMATIC //!< automatic transmission with torque converter between engine and gearbox
+}
+
+
+
 //!	Enumerated vehicle's gears. (native, do not change or extend)
 enum CarGear
 {
@@ -55,28 +64,47 @@ enum CarGear
 
 
 
+//!	Enumerated automatic gearbox modes. (native, do not change or extend)
+enum CarAutomaticGearboxMode
+{
+	P, //!< park
+	R, //!< reverse
+	N, //!< neutral
+	D  //!< drive
+};
+
+
+
 //!	Base native class for all motorized wheeled vehicles.
 class Car extends Transport
 {
-	//!	Returns the instance of vehicle's controller.
+	//!	DEPRECATED, left for backwards compatibility, the methods of this class are now directly accessible on Car itself
 	proto native CarController GetController();
-
+	
 	//!	Returns the current speed of the vehicle in km/h.
 	proto native float GetSpeedometer();
 	
+	//! Returns the current speed of the vehicle in km/h. Value is absolute
+	float GetSpeedometerAbsolute()
+	{
+		return Math.AbsFloat(GetSpeedometer());
+	}
+
 	override bool IsAreaAtDoorFree( int currentSeat, float maxAllowedObjHeight = 0.5, float horizontalExtents = 0.5, float playerHeight = 1.7 )
 	{
-		float speed = GetSpeedometer();
+		float speed = GetSpeedometerAbsolute();
 		vector direction = GetDirection();
 		vector crewPos;
 		vector crewDir;
 		CrewEntryWS( currentSeat, crewPos, crewDir );
 		crewPos[1] = crewPos[1] + maxAllowedObjHeight + playerHeight * 0.5;
 		float vExtents = horizontalExtents;
+
 		if (speed > 8)
 			vExtents *= 6;
 		if (speed > 8)
 			horizontalExtents = 2;
+
 		array<Object> excluded = new array<Object>;
 		array<Object> collided = new array<Object>;
 		excluded.Insert(this);
@@ -85,30 +113,32 @@ class Car extends Transport
 		foreach (Object o : collided)
 		{
 			EntityAI e = EntityAI.Cast(o);			
-			// CanBeSkinned means it is a dead entity which should not block the door
-			if ( IsIgnoredObject(o) )
+			if (IsIgnoredObject(o))
 				continue;
 			
 			vector minmax[2];
-			if ( o.GetCollisionBox(minmax) )
+			if (o.GetCollisionBox(minmax))
 				return false;
 		}
+
 		return true;
 	}
 	
 	override Shape DebugFreeAreaAtDoor( int currentSeat, float maxAllowedObjHeight = 0.5, float horizontalExtents = 0.5, float playerHeight = 1.7 )
 	{
-		float speed = GetSpeedometer();
+		float speed = GetSpeedometerAbsolute();
 		vector direction = GetDirection();
 		vector crewPos;
 		vector crewDir;
 		CrewEntryWS( currentSeat, crewPos, crewDir );
 		crewPos[1] = crewPos[1] + maxAllowedObjHeight + playerHeight * 0.5;
 		float vExtents = horizontalExtents;
+
 		if (speed > 8)
 			vExtents *= 6;
 		if (speed > 8)
 			horizontalExtents = 2;
+
 		array<Object> excluded = new array<Object>;
 		array<Object> collided = new array<Object>;
 		excluded.Insert(this);
@@ -126,7 +156,67 @@ class Car extends Transport
 
 		return Debug.DrawCylinder(crewPos, horizontalExtents, playerHeight, color);
 	}
+	
+	override int GetHideIconMask()
+	{
+		return EInventoryIconVisibility.HIDE_VICINITY;
+	}
 
+//-----------------------------------------------------------------------------
+// controls
+
+	//!	Returns the current steering value in range <-1, 1>.
+	proto native float GetSteering();
+	/*!
+		Sets the steering value.
+
+		\param in     should be in range <-1, 1>
+		\param analog indicates if the input value was taken from analog controller
+	*/
+	proto native void SetSteering( float in, bool analog = false );
+
+	//!	Returns the current thrust turbo modifier value in range <0, 1>.
+	proto native float GetThrustTurbo();
+	//!	Returns the current thrust gentle modifier value in range <0, 1>.
+	proto native float GetThrustGentle();
+	//!	Returns the current thrust value in range <0, 1>.
+	proto native float GetThrust();
+	/*!
+		Sets the thrust value.
+
+		\param in     should be in range <0, 1>
+		\param gentle should be in range <0, 1>, thrust modifier
+		\param turbo  should be in range <0, 1>, thrust modifier
+	*/
+	proto native void SetThrust( float in, float gentle = 0, float turbo = 0 );
+
+	//! Returns the current brake value in range <0, 1>.
+	proto native float GetBrake();
+	/*!
+		Sets the brake value.
+
+		\param in should be in range <0, 1>
+		\param panic should be in range <0, 1>
+	*/
+	proto native void SetBrake( float in, float panic = 0 );
+	
+	//! Returns the current handbrake value in range <0, 1>.
+	proto native float GetHandbrake();
+	/*!
+		Sets the handbrake value.
+
+		\param in should be in range <0, 1>
+	*/
+	proto native void SetHandbrake( float in );
+
+	//!	Returns index of the current gear.
+	proto native int GetGear();
+
+	proto native void ShiftUp();
+	proto native void ShiftTo( CarGear gear );
+	proto native void ShiftDown();
+
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 // fluids
@@ -204,6 +294,12 @@ class Car extends Transport
 
 	//! Is called every time the engine stops.
 	void OnEngineStop() {}
+
+	//! Get actual position of engine (model space)
+	proto native vector GetEnginePos();
+	//! Override the position of engine (model space)
+	proto native void SetEnginePos(vector pos);
+
 //-----------------------------------------------------------------------------
 
 
@@ -212,6 +308,12 @@ class Car extends Transport
 
 	//! Returns total number of gears.
 	proto native int GetGearsCount();
+
+	//! Returns gearbox type. See CarGearboxType enum for more info.
+	proto native CarGearboxType GearboxGetType();
+
+	//! Returns gearbox mode. This is useful when car has automatic gearbox.
+	proto native CarAutomaticGearboxMode GearboxGetMode();
 
 	/*!
 		Is called every time when the simulation changed gear.
@@ -222,6 +324,21 @@ class Car extends Transport
 	void OnGearChanged( int newGear, int oldGear )
 	{
 	}
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+// wheels
+
+	//! Returns true if any of the wheels are locked in terms of its movement.
+	proto native bool WheelIsAnyLocked();
+	/*!
+		Returns true if given wheel is locked in terms of its movement.
+
+		\param[in] wheelIdx index of the wheel, they are counted from left-front to rear-right
+	*/
+	proto native bool WheelIsLocked( int wheelIdx );
+
 //-----------------------------------------------------------------------------
 
 
@@ -252,12 +369,21 @@ class Car extends Transport
 		return oldValue;
 	}
 
-    /*!
-        Is called every game frame.
+	/*!
+		Is called after every input simulation step.
 
-        \param[in] dt frame time in seconds
-    */
-    void OnUpdate( float dt ) {}
+		Note that the player character and other systems can always change the internal state.
+		It is highly recommended to store state of custom inputs elsewhere and call Setters here.
+
+		\param[in] dt frame time in seconds
+	*/
+	void OnInput( float dt ) {}
+
+	/*!
+		Is called every game frame.
+		\param[in] dt frame time in seconds
+	*/
+	void OnUpdate( float dt ) {}
 //-----------------------------------------------------------------------------
 
 
@@ -269,25 +395,28 @@ class Car extends Transport
 
 
 
-//! Native class for controlling a wheeled vehicle (Car class).
+//! DEPRECATED class left for backwards compatibility, methods are available on car itself now
 class CarController
 {
+	private void CarController() {}
+	private void ~CarController() {}
+	
 	//!	Returns the current steering value in range <-1, 1>.
-	proto native float GetSteering();
+	proto float GetSteering();
 	/*!
 		Sets the steering value.
 
 		\param in     should be in range <-1, 1>
 		\param analog indicates if the input value was taken from analog controller
 	*/
-	proto native void SetSteering( float in, bool analog = false );
+	proto void SetSteering( float in, bool analog = false );
 
 	//!	Returns the current thrust turbo modifier value in range <0, 1>.
-	proto native float GetThrustTurbo();
+	proto float GetThrustTurbo();
 	//!	Returns the current thrust gentle modifier value in range <0, 1>.
-	proto native float GetThrustGentle();
+	proto float GetThrustGentle();
 	//!	Returns the current thrust value in range <0, 1>.
-	proto native float GetThrust();
+	proto float GetThrust();
 	/*!
 		Sets the thrust value.
 
@@ -295,21 +424,22 @@ class CarController
 		\param gentle should be in range <0, 1>, thrust modifier
 		\param turbo  should be in range <0, 1>, thrust modifier
 	*/
-	proto native void SetThrust( float in, float gentle = 0, float turbo = 0 );
+	proto void SetThrust( float in, float gentle = 0, float turbo = 0 );
 
 	//! Returns the current brake value in range <0, 1>.
-	proto native float GetBrake();
+	proto float GetBrake();
 	/*!
 		Sets the brake value.
 
 		\param in should be in range <0, 1>
+		\param panic should be in range <0, 1>
 	*/
-	proto native void SetBrake( float in );
+	proto void SetBrake( float in, float panic = 0 );
 
 	//!	Returns index of the current gear.
-	proto native int GetGear();
+	proto int GetGear();
 
-	proto native void ShiftUp();
-	proto native void ShiftTo( CarGear gear );
-	proto native void ShiftDown();
+	proto void ShiftUp();
+	proto void ShiftTo( CarGear gear );
+	proto void ShiftDown();
 };

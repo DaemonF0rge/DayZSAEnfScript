@@ -28,6 +28,7 @@ class ActionDisinfectSelf: ActionDisinfectBase
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONFB_STITCHUPSELF;
 		m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT | DayZPlayerConstants.STANCEMASK_CROUCH;
+		m_Text = "#disinfect_self";
 	}
 	
 	override void CreateConditionComponents()  
@@ -40,15 +41,10 @@ class ActionDisinfectSelf: ActionDisinfectBase
 	{
 		return false;
 	}
-		
-	override string GetText()
-	{
-		return "#disinfect_self";
-	}
 	
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
 	{
-		return (player.IsBleeding() || (player.m_Agents & eAgents.WOUND_AGENT));
+		return (player.IsBleeding() || (player.m_SyncedModifiers & eModifierSyncIDs.MODIFIER_SYNC_WOUND_INFECT_1) || (player.m_SyncedModifiers & eModifierSyncIDs.MODIFIER_SYNC_WOUND_INFECT_2));
 	}
 	
 

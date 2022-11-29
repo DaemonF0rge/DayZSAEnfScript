@@ -1,5 +1,3 @@
-//#ifdef PLATFORM_XBOX
-
 enum EAchievementError
 {
 	ERR_OK,
@@ -50,10 +48,13 @@ enum EAchievementActionId
 	ACTION_HANDCUFF_SURVIVOR,
 };
 
-class AchievementsXbox
+class Achievements
 {
-	proto static native EAchievementError SendEventAction(EAchievementActionId action_id);
-	proto static native EAchievementError SendEventKill(EAchievementTargetId target_id, EAchievementRankId rank_id, EAchievementRangeId range_id, EAchievementHitId hit_id, float distance);
+	private void Achievements();
+	private void ~Achievements();
+	
+	static proto EAchievementError SendEventAction(EAchievementActionId action_id);
+	static proto EAchievementError SendEventKill(EAchievementTargetId target_id, EAchievementRankId rank_id, EAchievementRangeId range_id, EAchievementHitId hit_id, float distance);
 	
 	//===================================
 	// OnActionEat
@@ -193,8 +194,9 @@ class AchievementsXbox
 	{
 		if ( error != EAchievementError.ERR_OK )
 		{
-			Print("OnlineServices: Xbox Achievemnt: Can not send achievemnet event. Error ID: "+ error);
+			Print("Achievements: Cannot send achievement event. Error ID: " + error);
 		}
 	}
 };
-//#endif
+
+typedef Achievements AchievementsXbox;

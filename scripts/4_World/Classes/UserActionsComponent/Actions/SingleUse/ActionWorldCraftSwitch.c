@@ -2,6 +2,7 @@ class ActionWorldCraftSwitch: ActionSingleUseBase
 {
 	void ActionWorldCraftSwitch()
 	{
+		m_Text = "#next_recipe";
 	}
 	
 	override void CreateConditionComponents()  
@@ -23,11 +24,6 @@ class ActionWorldCraftSwitch: ActionSingleUseBase
 	override bool RemoveForceTargetAfterUse()
 	{
 		return false;
-	}
-
-	override string GetText()
-	{
-		return "#next_recipe";
 	}
 	
 	override bool ActionCondition(PlayerBase player, ActionTarget target, ItemBase item )

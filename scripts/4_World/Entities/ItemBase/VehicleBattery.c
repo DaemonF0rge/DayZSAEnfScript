@@ -123,14 +123,19 @@ class VehicleBattery : ItemBase
 		}
 	}
 	
-	override bool CanDisplayAttachmentSlot( string slot_name )
+	override bool CanDisplayAttachmentSlot( int slot_id )
 	{
 		if ( GetCompEM().IsPlugged() )
 			return false;
-		return super.CanDisplayAttachmentSlot( slot_name );
+		return super.CanDisplayAttachmentSlot( slot_id );
 	}
 	
 	override bool DisplayNameRuinAttach()
+	{
+		return true;
+	}
+	
+	override bool ShowZonesHealth()
 	{
 		return true;
 	}
@@ -196,8 +201,8 @@ class VehicleBattery : ItemBase
 			if ( energy_coef < m_EfficiencyDecayStart  &&  m_EfficiencyDecayStart > 0 )			
 			{
 				m_Efficiency0To10 = Math.Round(  (energy_coef / m_EfficiencyDecayStart) * 10  );
-				SetSynchDirty();
 			}
+			SetSynchDirty();
 		}
 	}
 		

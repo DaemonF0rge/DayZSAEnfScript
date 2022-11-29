@@ -10,6 +10,7 @@ class HealthMdfr: ModifierBase
 		m_ID 					= eModifiers.MDF_HEALTH;
 		m_TickIntervalInactive 	= DEFAULT_TICK_TIME_INACTIVE;
 		m_TickIntervalActive 	= DEFAULT_TICK_TIME_ACTIVE;
+		DisableDeactivateCheck();
 	}
 	
 	override bool ActivateCondition(PlayerBase player)

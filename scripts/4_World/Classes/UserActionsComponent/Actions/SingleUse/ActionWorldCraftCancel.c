@@ -2,17 +2,13 @@ class ActionWorldCraftCancel: ActionSingleUseBase
 {
 	void ActionWorldCraftCancel()
 	{
+		m_Text = "#cancel";
 	}
 	
 	override void CreateConditionComponents()  
 	{		
 		m_ConditionItem = new CCINone;
 		m_ConditionTarget = new CCTNone;
-	}
-
-	override string GetText()
-	{
-		return "#cancel";
 	}
 	
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

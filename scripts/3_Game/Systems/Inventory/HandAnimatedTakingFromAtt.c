@@ -20,12 +20,19 @@ class HandTakingAnimated_Show extends HandStartAction
 		{
 			if (m_Src.IsValid())
 			{
+				#ifdef DEVELOPER
+				if ( LogManager.IsInventoryHFSMLogEnable() )
+				{	
+					Debug.InventoryHFSMLog("Action - STS = " + e.m_Player.GetSimulationTimeStamp(), e.ToString() , "n/a", "OnEntry", e.m_Player.ToString() );
+				}
+				#endif
+
 				GameInventory.LocationSyncMoveEntity(m_Src, m_Dst);
 				e.m_Player.OnItemInHandsChanged();
 			}
 			else
 			{
-				Error("[hndfsm] " + Object.GetDebugName(e.m_Player) + " STS=" + e.m_Player.GetSimulationTimeStamp() + " HandTakingAnimated_Show m_Src=invalid, item not in bubble?");
+				Error("[hndfsm] " + Object.GetDebugName(e.m_Player) + " STS = " + e.m_Player.GetSimulationTimeStamp() + " HandTakingAnimated_Show m_Src=invalid, item not in bubble?");
 			}
 		}
 		else
@@ -94,6 +101,12 @@ class HandAnimatedTakingFromAtt extends HandStateBase
 
 	override void OnAbort (HandEventBase e)
 	{
+		#ifdef DEVELOPER
+		if ( LogManager.IsInventoryHFSMLogEnable() )
+		{	
+			Debug.InventoryHFSMLog("Action - STS = " + e.m_Player.GetSimulationTimeStamp(), e.ToString() , "n/a", "OnAbort", e.m_Player.ToString() );
+		}
+		#endif
 		e.m_Player.GetHumanInventory().ClearInventoryReservationEx(m_Dst.GetItem(), m_Dst);
 		if ( GetGame().IsServer() )
 			GetGame().ClearJuncture(e.m_Player, m_Dst.GetItem());

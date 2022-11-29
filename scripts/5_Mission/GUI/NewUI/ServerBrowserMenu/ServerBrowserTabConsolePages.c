@@ -2,6 +2,7 @@ class ServerBrowserTabConsolePages extends ServerBrowserTab
 {
 	private bool m_IsFilterChanged;
 	private bool m_IsFilterFocused;
+	protected bool m_MouseKeyboardControlled
 	
 	private Widget m_WidgetNavFilters;
 	private Widget m_WidgetNavServers;
@@ -86,6 +87,10 @@ class ServerBrowserTabConsolePages extends ServerBrowserTab
 		
 		m_Root.SetHandler( this );
 		m_FilterSearchTextBox.SetHandler( this );
+		
+		GetGame().GetMission().GetOnInputDeviceChanged().Insert(OnInputDeviceChanged);
+
+		OnInputDeviceChanged(GetGame().GetInput().GetCurrentInputDevice());
 	}
 	
 	void ShowHideConsoleWidgets()
@@ -108,16 +113,37 @@ class ServerBrowserTabConsolePages extends ServerBrowserTab
 		m_Root.FindAnyWidget( "server_list_root_nav_img_l1_ps4" ).Show( !is_xbox );
 		m_Root.FindAnyWidget( "server_list_root_nav_img_r1_ps4" ).Show( !is_xbox );
 	}
+
+	protected void OnInputDeviceChanged(EInputDeviceType pInputDeviceType)
+	{
+		switch (pInputDeviceType)
+		{
+		case EInputDeviceType.CONTROLLER:
+			ShowHideConsoleWidgets();
+			UpdatePageButtons();
+			m_WidgetNavFilters.Show(m_IsFilterFocused);
+			m_WidgetNavServers.Show(!m_IsFilterFocused);
+			m_MouseKeyboardControlled = false;
+		break;
+
+		default:
+			if (GetGame().GetInput().IsEnabledMouseAndKeyboardEvenOnServer())
+			{
+				m_WidgetNavFilters.Show(false);
+				m_WidgetNavServers.Show(false);
+				m_ButtonPageLeftImg.Show(false);
+				m_ButtonPageRightImg.Show(false);
+				m_MouseKeyboardControlled = true;
+			}
+		break;
+		}
+	}
 	
 	override void OnLoadServersAsyncConsole( GetServersResult result_list, EBiosError error, string response )
-	{
-		//Print("m_NumServers: "+ result_list.m_NumServers +" m_Pages: "+ result_list.m_Pages + " m_Page: "+ result_list.m_Page);
-		//string smg = "m_NumServers: "+ result_list.m_NumServers +" m_Pages: "+ result_list.m_Pages + " m_Page: "+ result_list.m_Page +" response: "+ response +" error: "+ error;
-		//m_LoadingText.SetText( smg );
-		
+	{	
 		if ( error != EBiosError.OK )
 		{
-			m_LoadingText.SetText( "Error code: " + error );
+			m_LoadingText.SetText( string.Format("Error: %1", ErrorModuleHandler.GetClientMessage(ErrorCategory.BIOSError, error)) );
 			m_Menu.SetServersLoadingTab( TabType.NONE );
 			m_LoadingFinished = true;
 			SetFocusFilters();
@@ -125,14 +151,11 @@ class ServerBrowserTabConsolePages extends ServerBrowserTab
 		}
 				
 		m_PagesCount = result_list.m_Pages;
-		//m_CurrentPageNum = result_list.m_Page;
 		m_TotalServersCount = result_list.m_NumServers;
 		
-		if( m_PagesCount > 0 )
-		{
-			LoadEntries( result_list.m_Page, result_list.m_Results );
-		}
-		else
+		LoadEntries( result_list.m_Page, result_list.m_Results );				
+		
+		if (m_TotalLoadedServers == 0)
 		{
 			SetFocusFilters();
 		}
@@ -143,8 +166,8 @@ class ServerBrowserTabConsolePages extends ServerBrowserTab
 	
 	void OnLoadServersAsyncFinished()
 	{
-		string msg = "#servers_found: " + m_TotalServersCount;
-		if ( m_TotalServersCount == 0 )
+		string msg = "#servers_found: " + m_TotalLoadedServers;
+		if ( m_TotalLoadedServers == 0 )
 		{
 			msg = "#server_browser_tab_unable_to_get_server";
 		}
@@ -154,40 +177,58 @@ class ServerBrowserTabConsolePages extends ServerBrowserTab
 		m_Menu.SetServersLoadingTab( TabType.NONE );
 	}
 	
-	void LoadEntries( int cur_page_index , GetServersResultRowArray page_entries )
+ 	protected void LoadEntries( int cur_page_index , GetServersResultRowArray page_entries )
 	{
-		if( !m_Menu || m_Menu.GetServersLoadingTab() != m_TabType )
+		int index = 0;
+		ServerBrowserEntry entry;
+		m_TotalLoadedServers = m_TotalServersCount;
+		
+		if ( !m_Menu || m_Menu.GetServersLoadingTab() != m_TabType )
 		{
 			return;
 		}
-		if( page_entries )
+		
+		// only load servers if they correspond to current page
+		if (cur_page_index != m_CurrentPageNum)
 		{
-			int index = 0;
-			
-			foreach( GetServersResultRow result : page_entries )
+			return;
+		}
+		
+		if ( m_PagesCount && page_entries )
+		{
+			foreach ( GetServersResultRow result : page_entries )
 			{
-				m_TotalLoadedServers++;
-								
-				if( PassFilter( result ) )
+				if ( PassFilter( result ) )
 				{
-					ServerBrowserEntry entry = GetServerEntryByIndex( index );
-					index++;
-					string server_id = result.m_HostIp + ":" + result.m_HostPort;
+					string ipPort = result.GetIpPort();
+					bool isFavorited = m_Menu.IsFavorited(ipPort);
 					
+					entry = GetServerEntryByIndex( index );
 					entry.FillInfo( result );
+					entry.SetFavorite(isFavorited);
+					entry.SetIsOnline(true);
+					entry.UpdateEntry();
 					
-					entry.SetFavorite( m_Menu.IsFavorited( server_id ) );
+					if (isFavorited && m_OnlineFavServers.Find(ipPort) == -1)
+					{
+						m_OnlineFavServers.Insert(ipPort);
+					}
 										
-					m_EntryWidgets.Insert( server_id, entry );				
+					m_EntryWidgets.Insert(ipPort, entry);
 					m_EntriesSorted[m_SortType].Insert( result );
+					
+					index++;
 				}
 				
-				if( !m_Menu || m_Menu.GetServersLoadingTab() != m_TabType )
+				if ( !m_Menu || m_Menu.GetServersLoadingTab() != m_TabType )
+				{
 					return;
+				}
 			}
-			
-			m_ServerList.Update();
 		}
+		
+		LoadExtraEntries(index);
+		m_ServerList.Update();
 		SetFocusServers();
 	}
 	
@@ -217,56 +258,41 @@ class ServerBrowserTabConsolePages extends ServerBrowserTab
 		return entry;
 	}
 	
-	override void OnFilterFocus( Widget w )
-	{
-		super.OnFilterFocus( w );
-		
-		//ColorHighlight( w );
-	}
-	
 	override void OnFilterChanged()
 	{
 		m_IsFilterChanged = true;
 	}
 	
 	bool CanRefreshServerList()
-	{
-		if ( m_LoadingFinished )
-		{
-			return true;
-		}
-				
-		return false;
+	{	
+		return m_LoadingFinished;
 	}
 	
 	override void RefreshList()
 	{
-		if ( CanRefreshServerList() )
+		for ( int i = 0; i < m_ServerListEntiers.Count(); i++ )
 		{
-			for ( int i = 0; i < m_ServerListEntiers.Count(); i++ )
-			{
-				m_ServerListEntiers[i].Show(false);
-			}
-			
-			for ( int j = 0; j < m_EntriesSorted.Count(); j++ )
-			{
-				array<ref GetServersResultRow> result_rows = m_EntriesSorted.GetElement(j);
-				
-				if ( result_rows )
-				{
-					result_rows.Clear();
-				}
-			}
-			
-			m_IsFilterChanged = false;
-			m_Filters.SaveFilters();
-			
-			super.RefreshList();
-			
-			m_ServerListScroller.VScrollToPos01( 0 );
-			
-			m_LoadingText.SetText( "#dayz_game_loading" );			
+			m_ServerListEntiers[i].Show(false);
 		}
+		
+		for ( int j = 0; j < m_EntriesSorted.Count(); j++ )
+		{
+			array<ref GetServersResultRow> result_rows = m_EntriesSorted.GetElement(j);
+			
+			if ( result_rows )
+			{
+				result_rows.Clear();
+			}
+		}
+		
+		m_IsFilterChanged = false;
+		m_Filters.SaveFilters();
+		
+		super.RefreshList();
+		
+		m_ServerListScroller.VScrollToPos01( 0 );
+		
+		m_LoadingText.SetText( "#dayz_game_loading" );
 	}
 	
 	override void ResetFilters()
@@ -288,11 +314,6 @@ class ServerBrowserTabConsolePages extends ServerBrowserTab
 		RefreshList();
 	}
 	
-	override void OnFilterFocusLost( Widget w )
-	{
-		super.OnFilterFocusLost( w );
-	}
-	
 	override void PressA()
 	{
 		
@@ -304,11 +325,11 @@ class ServerBrowserTabConsolePages extends ServerBrowserTab
 		{
 			m_TimeLastServerRefresh = GetGame().GetTime();
 			
-			if ( m_IsFilterChanged )
+			if ( m_IsFilterChanged)
 			{
 				SetCurrentPage(1);
 			}
-			
+			m_OnlineFavServers.Clear();
 			RefreshList();
 		}
 		
@@ -316,11 +337,11 @@ class ServerBrowserTabConsolePages extends ServerBrowserTab
 	
 	override void PressY()
 	{
-		switch( m_SelectedPanel )
+		switch ( m_SelectedPanel )
 		{
 			case SelectedPanel.BROWSER:
 			{
-				if( m_SelectedServer )
+				if ( m_SelectedServer )
 				{
 					m_Menu.ServerListFocus( true, m_SelectedServer.ToggleFavorite() );
 				}
@@ -328,8 +349,10 @@ class ServerBrowserTabConsolePages extends ServerBrowserTab
 			}
 			case SelectedPanel.FILTERS:
 			{
-				if( m_Filters )
+				if ( m_Filters )
+				{
 					m_Filters.ResetFilters();
+				}
 				break;
 			}
 		}
@@ -428,14 +451,14 @@ class ServerBrowserTabConsolePages extends ServerBrowserTab
 	}
 	override void Focus()
 	{
-		if( m_EntryWidgets.Contains( m_CurrentSelectedServer ) )
+		if ( m_EntryWidgets.Contains( m_CurrentSelectedServer ) )
 		{
 			m_EntryWidgets.Get( m_CurrentSelectedServer ).Focus();
 			ScrollToEntry( m_EntryWidgets.Get( m_CurrentSelectedServer ) );
 		}
 		
 		array<ref GetServersResultRow> entries = m_EntriesSorted[m_SortType];
-		if( entries && entries.Count() > 0 )
+		if ( entries && entries.Count() > 0 )
 			SetFocusServers();
 		else
 			SetFocusFilters();
@@ -444,12 +467,15 @@ class ServerBrowserTabConsolePages extends ServerBrowserTab
 	
 	void SetFocusFilters()
 	{
-		SetEnableFilters( true );
-		SetEnableServers( false );
+		SetEnableFilters(true);
+		SetEnableServers(false);
 		
 		// if loaded servers is 0, then hide Top navigation menu <Left / Right>
-		m_WidgetNavFilters.Show( true );
-		m_WidgetNavServers.Show( false );
+		if (!m_MouseKeyboardControlled)
+		{
+			m_WidgetNavFilters.Show(true);
+			m_WidgetNavServers.Show(false);
+		}
 		
 		m_Filters.Focus();
 		m_IsFilterFocused = true;
@@ -459,23 +485,28 @@ class ServerBrowserTabConsolePages extends ServerBrowserTab
 	
 	void SetFocusServers()
 	{
-		SetEnableServers( true );
-		SetEnableFilters( false );
+		SetEnableServers(true);
+		SetEnableFilters(false);
 		
-		m_WidgetNavFilters.Show( false );
-		m_WidgetNavServers.Show( true );
-				
-		array<ref GetServersResultRow> entries = m_EntriesSorted[m_SortType];
-		if( entries && entries.Count() > 0 )
+		if (!m_MouseKeyboardControlled)
 		{
-			string server_id = entries.Get( 0 ).m_HostIp + ":" + entries.Get( 0 ).m_HostPort;
-			m_EntryWidgets.Get( server_id ).Focus();
+			m_WidgetNavFilters.Show(false);
+			m_WidgetNavServers.Show(true);
+		}
+
+		array<ref GetServersResultRow> entries = m_EntriesSorted[m_SortType];
+		if ( entries && entries.Count() > 0 )
+		{
+			m_EntryWidgets.Get(entries.Get(0).GetIpPort()).Focus();
 		}
 		else
 		{
 			SetFocus( null );
 		}
+		
 		m_IsFilterFocused = false;
+		m_Menu.ShowYButton(true);
+		m_Menu.ShowAButton(true);
 		
 		UpdatePageButtons();
 	}
@@ -505,7 +536,7 @@ class ServerBrowserTabConsolePages extends ServerBrowserTab
 		
 		wgt_page_stat.SetText( GetCurrentPage().ToString() +" / "+ m_PagesCount.ToString() );
 				
-		if ( !m_IsFilterFocused && (m_PagesCount > 1) )
+		if ( !m_IsFilterFocused && (m_PagesCount > 1) && !m_MouseKeyboardControlled )
 		{
 			bool can_left = (GetCurrentPage() > 1);
 			m_ButtonPageLeftImg.Show( can_left );
@@ -528,13 +559,13 @@ class ServerBrowserTabConsolePages extends ServerBrowserTab
 	{
 		super.OnClick( w, x, y, button );
 		
-		if( button == MouseState.LEFT )
+		if ( button == MouseState.LEFT )
 		{
 			if ( w == m_ResetFilters )
 			{
 				ResetFilters();
 			}
-			else if( w == m_ApplyFilter )
+			else if ( w == m_ApplyFilter )
 			{
 				ApplyFilters();
 				return true;
@@ -589,12 +620,12 @@ class ServerBrowserTabConsolePages extends ServerBrowserTab
 			return;
 		}
 		
-		if( w.IsInherited( ButtonWidget ) )
+		if ( w.IsInherited( ButtonWidget ) )
 		{
 			ButtonWidget button = ButtonWidget.Cast( w );
 			button.SetTextColor( ARGB( 255, 255, 255, 255 ) );
 		}
-		else if( !w.IsInherited( EditBoxWidget ) )
+		else if ( !w.IsInherited( EditBoxWidget ) )
 		{
 			w.SetColor( ARGB( 0, 255, 255, 255 ) );
 		}
@@ -606,23 +637,23 @@ class ServerBrowserTabConsolePages extends ServerBrowserTab
 		
 		Widget option	= Widget.Cast( w.FindAnyWidget( w.GetName() + "_option_wrapper" ) );
 		
-		if( text1 )
+		if ( text1 )
 		{
 			text1.SetColor( ARGB( 255, 255, 255, 255 ) );
 		}
 		
-		if( text2 )
+		if ( text2 )
 		{
 			text2.SetColor( ARGB( 255, 255, 255, 255 ) );
 		}
 		
-		if( text3 )
+		if ( text3 )
 		{
 			text3.SetColor( ARGB( 255, 255, 255, 255 ) );
 			w.SetAlpha(0);
 		}
 		
-		if( image )
+		if ( image )
 		{
 			image.SetColor( ARGB( 255, 255, 255, 255 ) );
 		}
@@ -640,7 +671,7 @@ class ServerBrowserTabConsolePages extends ServerBrowserTab
 		#endif
 		
 		ButtonWidget button = ButtonWidget.Cast( w );
-		if( button )
+		if ( button )
 		{
 			button.SetTextColor( ColorManager.COLOR_DISABLED_TEXT );
 		}

@@ -1,3 +1,4 @@
+//! Deprecated
 class KeybindingsGroup extends ScriptedWidgetEventHandler
 {
 	protected Widget									m_Root;
@@ -53,6 +54,8 @@ class KeybindingsGroup extends ScriptedWidgetEventHandler
 			input.GetProfileName( i, profile_text );
 			m_KBDropdown.AddElement( profile_text );
 		}
+		
+		kb_root.Update();
 	}
 	
 	void OnSelectKBPreset( int index )
@@ -236,11 +239,17 @@ class KeybindingsGroup extends ScriptedWidgetEventHandler
 		}
 	}
 	
+	//DEPRECATED
 	void Reset()
+	{
+		ResetEx();
+	}
+	
+	void ResetEx(bool forced = false)
 	{
 		foreach( int index, KeybindingElement element : m_KeyWidgets )
 		{
-			if( element.IsChanged() || element.IsAlternateChanged() )
+			if( element.IsChanged() || element.IsAlternateChanged() || forced )
 			{
 				element.Reload();
 			}

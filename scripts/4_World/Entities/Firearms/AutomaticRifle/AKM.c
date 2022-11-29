@@ -5,7 +5,7 @@ class AKM_Base : RifleBoltFree_Base
 		return new AkmRecoil(this);
 	}
 	
-	override int GetWeaponSpecificCommand(int weaponAction ,int subCommand)
+	/*override int GetWeaponSpecificCommand(int weaponAction ,int subCommand)
 	{
 		if ( weaponAction == WeaponActions.RELOAD)
 		{
@@ -29,7 +29,7 @@ class AKM_Base : RifleBoltFree_Base
 		
 		}
 		return subCommand;
-	}
+	}*/
 	
 	override bool CanEnterIronsights()
 	{
@@ -42,17 +42,17 @@ class AKM_Base : RifleBoltFree_Base
 	//Debug menu Spawn Ground Special
 	override void OnDebugSpawn()
 	{
-		EntityAI entity;
-		if ( Class.CastTo(entity, this) )
-		{
-			entity.GetInventory().CreateInInventory( "AK_WoodBttstck" );
-			entity.GetInventory().CreateInInventory( "AK_RailHndgrd" );
-			entity.GetInventory().CreateInInventory( "AK_Bayonet" );
-			entity.GetInventory().CreateInInventory( "UniversalLight" );
-			entity.GetInventory().CreateInInventory( "KobraOptic" );
-			entity.GetInventory().CreateInInventory( "Battery9V" );
-			entity.GetInventory().CreateInInventory( "Battery9V" );
-			entity.SpawnEntityOnGroundPos("Mag_AKM_Drum75Rnd", entity.GetPosition());
-		}
+		GameInventory inventory = GetInventory();
+
+		inventory.CreateInInventory( "AK_WoodBttstck" );
+		inventory.CreateInInventory( "AK_RailHndgrd" );
+		inventory.CreateInInventory( "AK_Bayonet" );
+		inventory.CreateInInventory( "UniversalLight" );
+		inventory.CreateInInventory( "KobraOptic" );
+		inventory.CreateInInventory( "Battery9V" );
+		inventory.CreateInInventory( "Battery9V" );
+		
+		// Calling super for this one will just pick the 300 round mag
+		SpawnAttachedMagazine("Mag_AKM_Drum75Rnd");
 	}	
 };

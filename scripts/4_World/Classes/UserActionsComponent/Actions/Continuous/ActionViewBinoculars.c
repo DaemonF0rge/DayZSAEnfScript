@@ -1,12 +1,18 @@
 class ActionViewBinoculars : ActionViewOptics
 {
 	bool m_workingRangefinder;
-		
-	override string GetText()
+
+	override void OnActionInfoUpdate( PlayerBase player, ActionTarget target, ItemBase item )
 	{
-		if (!m_workingRangefinder)
-			return "#Look_Through";
-		return "#use_range_finder";
+		Rangefinder rangefinder = Rangefinder.Cast(item);
+		if ( rangefinder )
+		{
+			m_Text = "#use_range_finder";
+		}
+		else
+		{
+			m_Text = "#Look_Through";
+		}
 	}
 	
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
@@ -14,15 +20,6 @@ class ActionViewBinoculars : ActionViewOptics
 		ItemOptics optic;
 		if( Class.CastTo(optic, item) && !optic.IsInOptics() && !player.IsNVGLowered() )
 		{
-			Rangefinder rangefinder = Rangefinder.Cast(item);
-			if ( rangefinder && rangefinder.GetCompEM().CanWork() )
-			{
-				m_workingRangefinder = true;
-			}
-			else
-			{
-				m_workingRangefinder = false;
-			}
 			return true;
 		}
 		return false;
@@ -30,10 +27,12 @@ class ActionViewBinoculars : ActionViewOptics
 	
 	override void EnterOptics(ItemOptics optic, PlayerBase player)
 	{
+		player.SetIronsights(false);
 		player.SetHandheldOpticsInUse(true);
+		player.SetOptics(true);
 		optic.EnterOptics();
 		optic.HideSelection("hide");
-		if ( NVGoggles.Cast(optic) && optic.ConfigIsExisting("simpleHiddenSelections") ) //HACK
+		if ( NVGoggles.Cast(optic) && optic.ConfigIsExisting("simpleHiddenSelections") )
 		{
 			optic.SetSimpleHiddenSelectionState(0,false);
 		}
@@ -53,12 +52,12 @@ class ActionViewBinoculars : ActionViewOptics
 	override void ExitOptics(ItemOptics optic, PlayerBase player)
 	{
 		optic.ShowSelection("hide");
-		if ( NVGoggles.Cast(optic) && optic.ConfigIsExisting("simpleHiddenSelections") ) //HACK
+		if ( NVGoggles.Cast(optic) && optic.ConfigIsExisting("simpleHiddenSelections") )
 		{
 			optic.SetSimpleHiddenSelectionState(0,true);
 		}
-		optic.ExitOptics();
 		player.SetHandheldOpticsInUse(false);
+		player.ExitSights();
 		if ( optic.HasEnergyManager() )
 		{
 			PoweredOptic_Base rf = PoweredOptic_Base.Cast(optic);

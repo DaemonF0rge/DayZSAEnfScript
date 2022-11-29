@@ -17,6 +17,11 @@ class UniversalLight extends Switchable_Base
 		InitAttachmentsSlotsToCheck(m_AttachmentSlotsCheck);
 	}
 	
+	override ScriptedLightBase GetLight()
+	{
+		return m_Light;
+	}
+	
 	override bool CanPutAsAttachment( EntityAI parent )
 	{
 		if ( !super.CanPutAsAttachment(parent) ) {return false;}

@@ -1,16 +1,14 @@
 class ActionZoomIn: ActionSingleUseBase
 {
-	void ActionZoomIn() {}
+	void ActionZoomIn() 
+	{
+		m_Text = "#zoom_in";
+	}
 	
 	override void CreateConditionComponents()
 	{
 		m_ConditionItem = new CCINonRuined;
 		m_ConditionTarget = new CCTNone;
-	}
-
-	override string GetText()
-	{
-		return "#zoom_in";
 	}
 
 	override bool HasTarget()

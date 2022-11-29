@@ -14,7 +14,7 @@ class AnalyticsManagerServer
 		player.StatRegister( STAT_INFECTED_KILLED );
 		player.StatRegister( STAT_LONGEST_SURVIVOR_HIT );
 
-		player.StatSyncToClient();
+		//player.StatSyncToClient();
 	}
 		
 	void OnPlayerDisconnect( Man player )
@@ -34,16 +34,19 @@ class AnalyticsManagerServer
 		Print("");
 		*/
 		
-//		player.StatSyncToClient();
+		//player.StatSyncToClient();
 	}
 	
 	//Entity-Entity hit
 	void OnEntityHit( EntityAI source, Man target )
 	{
-		Man survivor = source.GetHierarchyRootPlayer();
-		if ( survivor && source.IsWeapon() )
+		if (source)
 		{
-			OnPlayerToPlayerHit( survivor, target );
+			Man survivor = source.GetHierarchyRootPlayer();
+			if ( survivor && source.IsWeapon() )
+			{
+				OnPlayerToPlayerHit( survivor, target );
+			}
 		}
 	}
 	
@@ -104,7 +107,7 @@ class AnalyticsManagerServer
 			
 		//update stat
 		killer.StatUpdate( STAT_PLAYERS_KILLED, 1 );
-		killer.StatSyncToClient();		
+//		killer.StatSyncToClient();		
 	}
 	
 	protected void OnInfectedKilled( Man killer, EntityAI target )
@@ -119,6 +122,6 @@ class AnalyticsManagerServer
 			
 		//update stat
 		killer.StatUpdate( STAT_INFECTED_KILLED, 1 );
-		killer.StatSyncToClient();		
+//		killer.StatSyncToClient();		
 	}
 }

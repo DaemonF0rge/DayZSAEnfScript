@@ -1,4 +1,4 @@
-class ActionBuildShelter: ActionBuildPart
+class ActionBuildShelter: ActionContinuousBase
 {
 	string 						m_SoundsetBuildStart;
 	string 						m_SoundsetBuildLoop;
@@ -11,6 +11,7 @@ class ActionBuildShelter: ActionBuildPart
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONFB_DEPLOY_2HD;
 		m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT | DayZPlayerConstants.STANCEMASK_CROUCH;
+		m_Text = "#build_shelter_leather";
 	}
 	
 	void ~ActionBuildShelter()
@@ -30,7 +31,7 @@ class ActionBuildShelter: ActionBuildPart
 		if ( player )
 		{
 			ConstructionActionData construction_action_data = player.GetConstructionActionData();
-			ConstructionPart constrution_part = construction_action_data.GetCurrentBuildPart();
+			ConstructionPart constrution_part = construction_action_data.GetBuildPartNoToolAtIndex(m_VariantID);
 			
 			if ( constrution_part )
 			{
@@ -53,6 +54,35 @@ class ActionBuildShelter: ActionBuildPart
 		}
 		
 		return ret;
+	}
+	
+	override void OnActionInfoUpdate( PlayerBase player, ActionTarget target, ItemBase item )
+	{
+			ConstructionActionData construction_action_data = player.GetConstructionActionData();
+			ConstructionPart constrution_part = construction_action_data.GetBuildPartNoToolAtIndex(m_VariantID);
+			
+			if ( constrution_part )
+			{
+				switch (constrution_part.GetName())
+				{
+					case "leather":
+						m_Text = "#build_shelter_leather";
+					break;
+					
+					case "fabric":
+						m_Text = "#build_shelter_fabric";
+					break;
+					
+					case "stick":
+						m_Text = "#build_shelter_stick";
+					break;
+				}
+			}
+	}
+	
+	override bool CanBeUsedLeaning()
+	{
+		return false;
 	}
 	
 	override typename GetInputType()
@@ -78,41 +108,89 @@ class ActionBuildShelter: ActionBuildPart
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
 	{
 		//Action not allowed if player has broken legs
-		if (player.m_BrokenLegState == eBrokenLegs.BROKEN_LEGS)
+		if (player.GetBrokenLegs() == eBrokenLegs.BROKEN_LEGS)
 			return false;
 		
-		if(target.GetObject() && !target.GetObject().CanUseConstructionBuild())
+		if (target.GetObject() && !target.GetObject().CanUseConstructionBuild())
 			return false;
-		if( player.IsPlacingLocal() || player.IsPlacingServer() )
+		if ( player.IsPlacingLocal() || player.IsPlacingServer() )
 			return false;
 		
-		if( (!GetGame().IsMultiplayer() || GetGame().IsClient()) )
+		if ( (!GetGame().IsDedicatedServer()) )
 		{
-			ConstructionActionData construction_action_data = player.GetConstructionActionData();
-			int start_index = construction_action_data.m_PartIndex;
-			if( construction_action_data.GetConstructionPartsCount() > 0 )
+			if ( MiscGameplayFunctions.ComplexBuildCollideCheckClient(player, target, item, m_VariantID ) )
 			{
-				for(int i = 0; i < construction_action_data.GetConstructionPartsCount(); i++)
-				{
-					if( MiscGameplayFunctions.ComplexBuildCollideCheckClient(player, target, item ) )
-					{
-						return true;
-					}
-					else
-					{
-						construction_action_data.SetNextIndex();
-					}
-				}
-				construction_action_data.m_PartIndex = start_index;
+				return true;
 			}
 			return false;
 		}
 		return true;
 	}
 	
+	//setup
+	override bool SetupAction( PlayerBase player, ActionTarget target, ItemBase item, out ActionData action_data, Param extra_data = NULL )
+	{	
+		if ( super.SetupAction( player, target, item, action_data, extra_data ) )
+		{
+			if ( !GetGame().IsDedicatedServer() )
+			{
+				ConstructionActionData construction_action_data = action_data.m_Player.GetConstructionActionData();
+				BuildPartActionData.Cast(action_data).m_PartType = construction_action_data.GetBuildPartNoToolAtIndex(m_VariantID).GetPartName();
+			}
+			return true;
+		}
+		
+		return false;
+	}
+	
+	override ActionData CreateActionData()
+	{
+		BuildPartActionData action_data = new BuildPartActionData;
+		return action_data;
+	}
+	
+	override void WriteToContext(ParamsWriteContext ctx, ActionData action_data)
+	{
+		super.WriteToContext(ctx, action_data);
+		
+		ctx.Write(BuildPartActionData.Cast(action_data).m_PartType);
+	}
+	
+	override bool ReadFromContext(ParamsReadContext ctx, out ActionReciveData action_recive_data )
+	{
+		action_recive_data = new BuildPartActionReciveData;
+		super.ReadFromContext(ctx, action_recive_data);
+		
+		string part_type;
+		if ( ctx.Read(part_type) )
+		{
+			BuildPartActionReciveData.Cast( action_recive_data ).m_PartType = part_type;
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	
+	override void HandleReciveData(ActionReciveData action_recive_data, ActionData action_data)
+	{
+		super.HandleReciveData(action_recive_data, action_data);
+		
+		BuildPartActionData.Cast(action_data).m_PartType = BuildPartActionReciveData.Cast( action_recive_data ).m_PartType;
+	}
+	
 	override bool ActionConditionContinue( ActionData action_data )
 	{
-		return MiscGameplayFunctions.BuildCondition( action_data.m_Player, action_data.m_Target, action_data.m_MainItem , false );
+		BaseBuildingBase base_building = BaseBuildingBase.Cast( action_data.m_Target.GetObject() );
+		Construction construction = base_building.GetConstruction();
+		string part_name = BuildPartActionData.Cast(action_data).m_PartType;
+		CollisionCheckData check_data = new CollisionCheckData;
+		
+		check_data.m_PartName = part_name;
+		check_data.m_AdditionalExcludes.Insert(action_data.m_Player);
+		
+		return !construction.IsCollidingEx( check_data ) && construction.CanBuildPart( part_name, action_data.m_MainItem, false );
 	}
 	
 	override void OnStart( ActionData action_data )
@@ -173,15 +251,10 @@ class ActionBuildShelter: ActionBuildPart
 		PlayActionFinishSound(action_data);
 	}
 	
-	override protected void SetBuildingAnimation( ItemBase item )
-	{
-		m_CommandUID = DayZPlayerConstants.CMD_ACTIONFB_DEPLOY_2HD;
-	}
-	
 	void DetermineConstructionSounds( ActionData action_data )
 	{
 		ConstructionActionData construction_action_data = action_data.m_Player.GetConstructionActionData();
-		ConstructionPart constrution_part = construction_action_data.GetCurrentBuildPart();
+		ConstructionPart constrution_part = construction_action_data.GetBuildPartNoToolAtIndex(m_VariantID);;
 		if (constrution_part)
 		{
 			switch (constrution_part.GetName())
@@ -216,21 +289,15 @@ class ActionBuildShelter: ActionBuildPart
 	void PlayActionStartSound( ActionData action_data )
 	{
 		EffectSound sound =	SEffectManager.PlaySound(m_SoundsetBuildStart, action_data.m_Target.GetObject().GetPosition());
-		sound.SetSoundAutodestroy( true );
+		sound.SetAutodestroy( true );
 	}
 	
 	void PlayActionLoopSound( ActionData action_data )
 	{
-		if (!m_BuildLoopSound)
+		if ( !m_BuildLoopSound || !m_BuildLoopSound.IsSoundPlaying() )
 		{
-			m_BuildLoopSound = new EffectSound;
-			//m_BuildLoopSound = SEffectManager.CreateSound(m_SoundsetBuildLoop,action_data.m_Target.GetObject().GetPosition(),0,0,true);
+			m_BuildLoopSound = SEffectManager.PlaySound( m_SoundsetBuildLoop, action_data.m_Target.GetObject().GetPosition(), 0, 0, true );
 		}
-		if ( !m_BuildLoopSound.IsSoundPlaying() )
-		{
-			m_BuildLoopSound = SEffectManager.PlaySound( m_SoundsetBuildLoop, action_data.m_Target.GetObject().GetPosition(),0,0,true );
-		}
-		//Print("loop playing: " + m_BuildLoopSound.IsSoundPlaying());
 	}
 	
 	void StopActionLoopSound()
@@ -244,19 +311,12 @@ class ActionBuildShelter: ActionBuildPart
 	
 	void DestroyActionLoopSound()
 	{
-		if (m_BuildLoopSound)
-		{
-			//Print("m_BuildLoopSound destroying: " + m_BuildLoopSound);
-			SEffectManager.DestroySound( m_BuildLoopSound );
-			//Print("m_BuildLoopSound destroyed");
-			//Print(m_BuildLoopSound);
-			//Print("---------");
-		}
+		SEffectManager.DestroyEffect( m_BuildLoopSound );
 	}
 	
 	void PlayActionFinishSound( ActionData action_data )
 	{
 		EffectSound sound =	SEffectManager.PlaySound(m_SoundsetBuildFinish, action_data.m_Target.GetObject().GetPosition());
-		sound.SetSoundAutodestroy( true );
+		sound.SetAutodestroy( true );
 	}
 }

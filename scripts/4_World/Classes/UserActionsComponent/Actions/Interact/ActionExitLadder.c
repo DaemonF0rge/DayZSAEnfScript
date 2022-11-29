@@ -2,18 +2,13 @@ class ActionExitLadder: ActionInteractBase
 {
 	void ActionExitLadder()
 	{
-		m_HUDCursorIcon = CursorIcons.LadderDown;
+		m_Text = "#exit_ladder";
 	}
 	
 	override void CreateConditionComponents()  
 	{
 		m_ConditionItem = new CCINone;
 		m_ConditionTarget = new CCTNone;
-	}
-
-	override string GetText()
-	{
-		return "#exit_ladder";
 	}
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

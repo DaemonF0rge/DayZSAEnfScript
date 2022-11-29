@@ -8,7 +8,7 @@ class ActionMineBushCB : ActionContinuousBaseCB
 	}
 };
 
-class ActionMineBush: ActionContinuousBase
+class ActionMineBush : ActionMineBase
 {
 	void ActionMineBush()
 	{
@@ -23,11 +23,6 @@ class ActionMineBush: ActionContinuousBase
 	{
 		m_ConditionTarget = new CCTCursor(UAMaxDistances.SMALL);
 		m_ConditionItem = new CCINonRuined;
-	}
-	
-	override string GetText()
-	{
-		return "#cut_down_bush";
 	}
 	
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

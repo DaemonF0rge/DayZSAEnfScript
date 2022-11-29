@@ -12,185 +12,158 @@ class ActionDigInStash: ActionContinuousBase
 	
 	void ActionDigInStash()
 	{
-		m_CallbackClass = ActionDigInStashCB;
-		m_CommandUID = DayZPlayerConstants.CMD_ACTIONFB_DIGMANIPULATE;
-		m_FullBody = true;
-		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT;
-		m_SpecialtyWeight = UASoftSkillsWeight.ROUGH_LOW;
+		m_CallbackClass		= ActionDigInStashCB;
+		m_CommandUID		= DayZPlayerConstants.CMD_ACTIONFB_DIGMANIPULATE;
+		m_FullBody			= true;
+		m_StanceMask		= DayZPlayerConstants.STANCEMASK_ERECT;
+		m_SpecialtyWeight	= UASoftSkillsWeight.ROUGH_LOW;
+		m_Text 				= "#bury";
 	}
 	
 	override void CreateConditionComponents()  
-	{	
-		
-		m_ConditionTarget = new CCTObject(UAMaxDistances.DEFAULT);
-		m_ConditionItem = new CCINonRuined;
-	}
-
-	override string GetText()
 	{
-		return "#bury";
+		m_ConditionTarget	= new CCTObject(UAMaxDistances.DEFAULT);
+		m_ConditionItem		= new CCINonRuined();
 	}
 	
-	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
+	override bool ActionCondition(PlayerBase player, ActionTarget target, ItemBase item)
 	{
-		ItemBase target_IB;
-		
-		if ( Class.CastTo(target_IB, target.GetObject()) && target_IB.CanBeDigged() )
+		ItemBase targetIB;
+		if (Class.CastTo(targetIB, target.GetObject()) && targetIB.CanBeDigged())
 		{
-			if ( player.IsPlacingLocal() )
+			if (player.IsPlacingLocal())
+			{
 				return false;
+			}
 			
-			if (target_IB.GetInventory().IsAttachment())
+			if (targetIB.IsRuined() || targetIB.GetInventory().IsAttachment())
+			{
 				return false;
+			}
+			
+			if (targetIB.GetInventory().IsAttachment())
+			{
+				return false;
+			}
+			
+			if (targetIB.IsInherited(UndergroundStash))
+			{
+				return false;
+			}
+
+			//! was initialized from inventory?
+			EntityAI entityToCheck = targetIB;
+			if (targetIB.GetInventory().IsInCargo());
+				entityToCheck = player;
 			
 			// here we check if a stash is nearby and block digging a new one in close proximity
-			array<Object> excluded_objects = new array<Object>;
-			excluded_objects.Insert(target_IB);
-			array<Object> nearby_objects = new array<Object>;
+			array<Object> excludedObjects = new array<Object>;
+			excludedObjects.Insert(targetIB);
+			array<Object> nearbyObjects = new array<Object>;
 			// For now we exclude an area of 2 X 2 X 2 meters
-			if ( GetGame().IsBoxColliding( target_IB.GetPosition(), target_IB.GetOrientation(), "2 2 2", excluded_objects, nearby_objects) )
+			if (GetGame().IsBoxColliding(entityToCheck.GetPosition(), entityToCheck.GetOrientation(), "2 2 2", excludedObjects, nearbyObjects))
 			{
-				for (int i = 0; i < nearby_objects.Count(); i++)
+				for (int i = 0; i < nearbyObjects.Count(); i++)
 				{
-					if ( nearby_objects[i].IsInherited(UndergroundStash) )
+					if (nearbyObjects[i].IsInherited(UndergroundStash))
+					{
 						return false;
+					}
 				}
 			}
 			
 			// Check surface
-			string surface_type;
-			string surface_type2; //introduced to improve behaviour on problematic building floors
-			vector position = target_IB.GetPosition();
+			int liquidType;
+			string surfaceType;
+			GetGame().SurfaceUnderObject(entityToCheck, surfaceType, liquidType);
 			
-			vector minmax[2];
-			target_IB.GetCollisionBox(minmax);
-			vector from = position + Vector(0,minmax[1][1],0);
-			float height = Math.Max(minmax[1][1] + minmax[0][1],1.0) + 0.2;
-			vector to = from - Vector(0,height,0);
-			
-			vector contact_pos;
-			vector contact_dir;
-			int contact_component;
-			
-			RaycastRVParams rayInput = new RaycastRVParams(from, to, target_IB);
-			rayInput.type = ObjIntersectIFire;
-			array<ref RaycastRVResult> results = new array<ref RaycastRVResult>;
-			
-			if ( DayZPhysics.RaycastRVProxy(rayInput, results) )
-			{
-				contact_pos = results[0].pos;
-			}
-			
-			GetGame().SurfaceGetType3D( position[0], position[1], position[2], surface_type );
-			GetGame().SurfaceGetType3D( contact_pos[0], contact_pos[1], contact_pos[2], surface_type2 );
-			/*Print("position: " + position);
-			Print("contact_pos: " + contact_pos);
-			Print("surface_type: " + surface_type);
-			Print("surface_type2: " + surface_type2);*/
-			
-			if ( !GetGame().IsSurfaceDigable(surface_type) || !GetGame().IsSurfaceDigable(surface_type2) )
+			if (!GetGame().IsSurfaceDigable(surfaceType))
 			{
 				return false;
 			}
 			else
 			{
-				// Check slope angle
-				vector posA = position + "0.5 0 0.5";
-				vector posB = position + "-0.5 0 0.5";
-				vector posC = position + "0.5 0 -0.5";
-				vector posD = position + "-0.5 0 -0.5";
+				//! Check slope angle
+				vector position = entityToCheck.GetPosition();
 				
 				array<vector> positions = new array<vector>;
-				positions.Insert( posA );
-				positions.Insert( posB );
-				positions.Insert( posC );
-				positions.Insert( posD );
+				positions.Insert(position + "0.5 0 0.5");
+				positions.Insert(position + "-0.5 0 0.5");
+				positions.Insert(position + "0.5 0 -0.5");
+				positions.Insert(position + "-0.5 0 -0.5");
 				
 				float difference = GetGame().GetHighestSurfaceYDifference(positions);
 				
-				if ( difference < m_DigStashSlopeTolerance )
-				{
-					return true;
-				}
+				return difference < m_DigStashSlopeTolerance;
 			}
 		}
 		
 		return false;
 	}
 
-	override void OnExecuteClient( ActionData action_data )
+	override void OnExecuteClient(ActionData action_data)
 	{
-		super.OnExecuteClient( action_data );
+		super.OnExecuteClient(action_data);
 		
-		SpawnParticleShovelRaise( action_data );
+		SpawnParticleShovelRaise(action_data);
 	}
 	
-	override void OnExecuteServer( ActionData action_data )
+	override void OnExecuteServer(ActionData action_data)
 	{
-		super.OnExecuteServer( action_data );
+		super.OnExecuteServer(action_data);
 		
-		if ( !GetGame().IsMultiplayer() ) // Only in singleplayer
+		if (!GetGame().IsMultiplayer())
 		{
-			SpawnParticleShovelRaise( action_data );
+			SpawnParticleShovelRaise(action_data);
 		}
 	}
 	
-	void SpawnParticleShovelRaise( ActionData action_data )
+	void SpawnParticleShovelRaise(ActionData action_data)
 	{
-		PlayerBase player = action_data.m_Player;
-		Particle.PlayOnObject( ParticleList.DIGGING_STASH, player );
+		ParticleManager.GetInstance().PlayOnObject(ParticleList.DIGGING_STASH, action_data.m_Player);
 	}
-	
-	
-	override void OnFinishProgressServer( ActionData action_data )
+
+	override void OnFinishProgressServer(ActionData action_data)
 	{
-		Object targetObject = action_data.m_Target.GetObject();
-		EntityAI targetEntity = EntityAI.Cast(targetObject);
+		EntityAI targetEntity = EntityAI.Cast(action_data.m_Target.GetObject());
 		if (!targetEntity)
 		{
-			Error("ActionDigStash - Cannot get inventory of targetObject=" + targetObject);
+			ErrorEx("Cannot get entity=" + targetEntity);
 			return;
 		}
 		
-		InventoryLocation target_IL = new InventoryLocation;
-		if (!targetEntity.GetInventory().GetCurrentInventoryLocation(target_IL))
+		InventoryLocation targetIL = new InventoryLocation();
+		if (!targetEntity.GetInventory().GetCurrentInventoryLocation(targetIL))
 		{
-			Error("ActionDigStash: Cannot get inventory location of targetObject=" + targetObject);
+			ErrorEx("Cannot get inventory location of entity=" + targetEntity);
 			return;
 		}
 		
-		ItemBase stashed_item;
-		UndergroundStash stash;
-		vector pos = targetEntity.GetPosition();
-					
-		Class.CastTo(stashed_item,  targetEntity );
-		Class.CastTo(stash,  GetGame().CreateObjectEx("UndergroundStash", pos, ECE_PLACE_ON_SURFACE) );
-		  
-		if ( stash )
+		UndergroundStash stash = UndergroundStash.Cast(GetGame().CreateObjectEx("UndergroundStash", targetEntity.GetPosition(), ECE_PLACE_ON_SURFACE));  
+		if (stash)
 		{
 			stash.PlaceOnGround();
-			
-			if (GameInventory.LocationCanRemoveEntity(target_IL))
+			if (GameInventory.LocationCanRemoveEntity(targetIL))
 			{
-				action_data.m_Player.ServerTakeEntityToTargetCargo(stash, stashed_item);
+				action_data.m_Player.ServerTakeEntityToTargetCargo(stash, targetEntity);
 			}
 			else
-				Print("ActionDigStash: Cannot remove targetObject=" + targetObject + " obj from current location=" + InventoryLocation.DumpToStringNullSafe(target_IL));
+			{
+				Debug.Log(string.Format("Cannot remove entity=%1 obj from current location=%2", targetEntity, InventoryLocation.DumpToStringNullSafe(targetIL)));
+			}
 		}
 		else
 		{
-			Error("ERROR! ActionDigStash: Stash not spawned!");
+			ErrorEx("Stash not spawned!");
 		}
 		
 		//Apply tool damage
-		MiscGameplayFunctions.DealAbsoluteDmg(action_data.m_MainItem, 10);				
-		
-		action_data.m_Player.GetSoftSkillsManager().AddSpecialty( m_SpecialtyWeight );
+		MiscGameplayFunctions.DealAbsoluteDmg(action_data.m_MainItem, 10);
+		action_data.m_Player.GetSoftSkillsManager().AddSpecialty(m_SpecialtyWeight);
 	}
 	
-	override string GetAdminLogMessage( ActionData action_data )
+	override string GetAdminLogMessage(ActionData action_data)
 	{
-		string message = string.Format("Player %1 Dug in %2 at position %3", action_data.m_Player, action_data.m_Target.GetObject(), action_data.m_Target.GetObject().GetPosition() );
-		return message;
+		return string.Format("Player %1 Dug in %2 at position %3", action_data.m_Player, action_data.m_Target.GetObject(), action_data.m_Target.GetObject().GetPosition());
 	}
-};
+}

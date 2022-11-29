@@ -7,6 +7,7 @@ class ActionGagTarget: ActionContinuousBase
 		//m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT | DayZPlayerConstants.STANCEMASK_CROUCH;
 		m_SpecialtyWeight = UASoftSkillsWeight.ROUGH_LOW;
+		m_Text = "#gag_person";
 	}
 	
 	override void CreateConditionComponents()  
@@ -14,11 +15,6 @@ class ActionGagTarget: ActionContinuousBase
 		
 		m_ConditionItem = new CCINonRuined;
 		m_ConditionTarget = new CCTMan(UAMaxDistances.DEFAULT);		
-	}
-		
-	override string GetText()
-	{
-		return "#gag_person";
 	}
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
@@ -34,7 +30,6 @@ class ActionGagTarget: ActionContinuousBase
 			if ( headgear )
 			{
 				bool headgear_restricted;
-				bool exists = headgear.ConfigIsExisting("noMask");
 				headgear_restricted = headgear.ConfigGetBool( "noMask" );
 				if (headgear_restricted)
 				{

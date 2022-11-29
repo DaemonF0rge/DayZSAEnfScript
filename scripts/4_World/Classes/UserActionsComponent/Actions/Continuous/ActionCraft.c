@@ -23,17 +23,14 @@ class ActionCraft: ActionContinuousBase
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONFB_CRAFTING;
 		m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_CROUCH;
+		
+		m_Text = "#craft";
 	}
 	
 	override void CreateConditionComponents()  
 	{	
 		m_ConditionItem = new CCINonRuined;
 		m_ConditionTarget = new CCTNone;
-	}
-		
-	override string GetText()
-	{
-		return "#craft";
 	}	
 		
 	//override void OnStart( ActionData action_data )

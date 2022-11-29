@@ -8,7 +8,7 @@ class AttachmentCategoriesSlotsContainer: Container
 		m_Body.Insert( m_ItemsCont );
 		m_ItemsCont.GetMainWidget().SetUserID( index );
 		
-		for( int k = 0; k < ITEMS_IN_ROW; k++ )
+		for ( int k = 0; k < ITEMS_IN_ROW; k++ )
 		{
 			//WidgetEventHandler.GetInstance().RegisterOnDropReceived( m_ItemsCont.GetSlotIcon( k ).GetMainWidget(),  m_Parent, "OnDropReceivedFromHeader" );
 			//WidgetEventHandler.GetInstance().RegisterOnDropReceived(  m_ItemsCont.GetSlotIcon( k ).GetPanelWidget(),  m_Parent, "OnDropReceivedFromHeader" );
@@ -26,6 +26,17 @@ class AttachmentCategoriesSlotsContainer: Container
 			m_ItemsCont.GetSlotIcon( k ).GetPanelWidget().SetUserID( k );
 		}
 	}
+	
+	override bool IsDisplayable()
+	{
+		for(int i = 0; i < m_Body.Count(); i++)
+		{
+			LayoutHolder c = m_Body[i];
+			if( c && c.IsDisplayable())
+				return true;
+		}
+		return false;
+	}
   
 	override void SetLayoutName()
 	{
@@ -37,26 +48,9 @@ class AttachmentCategoriesSlotsContainer: Container
 		return m_ItemsCont;
 	}
 	
-	override bool IsFirstContainerFocused()
-	{
-		
-		Container first;
-		if( m_Body.Count() > 0 )
-			first = Container.Cast( m_Body[1] );
-		return GetFocusedContainer() == first;
-	}
-	
-	override bool IsLastContainerFocused()
-	{
-		Container last;
-		if( m_Body.Count() > 0 )
-			last = Container.Cast( m_Body[ m_Body.Count() - 1 ] );
-		return GetFocusedContainer() == last;
-	}
-	
 	override EntityAI GetFocusedItem()
 	{
-		return m_ItemsCont.GetSlotIcon( m_FocusedColumn ).GetRender().GetItem();
+		return m_ItemsCont.GetFocusedSlotsIcon().GetRender().GetItem();
 	}
 	
 	int GetParentID()
@@ -66,76 +60,13 @@ class AttachmentCategoriesSlotsContainer: Container
 	
 	int GetFocusedID()
 	{
-		return m_ItemsCont.GetSlotIcon( m_FocusedColumn ).GetMainWidget().GetUserID();
+		return m_ItemsCont.GetFocusedSlotsIcon().GetMainWidget().GetUserID();
 	}
 	
 	void ExpandCollapseContainer( bool expand )
 	{
-		m_ItemsCont.GetSlotIcon( m_FocusedColumn ).GetRadialIcon().Show( expand );
-		m_ItemsCont.GetSlotIcon( m_FocusedColumn ).GetRadialIconClosed().Show( !expand );
-	}
-	
-	override void MoveGridCursor( int direction )
-	{
-		ItemManager.GetInstance().HideTooltip();
-		UnfocusAll();
-		if( direction == Direction.UP )
-		{
-			Container cnt = Container.Cast( m_Parent.GetParent() );
-			if( cnt )
-			{
-				cnt.SetPreviousActive();
-			}
-			else
-			{
-				cnt = Container.Cast( m_Parent );
-				cnt.SetPreviousActive();
-			}
-			return;
-		}
-	
-		if( direction == Direction.DOWN )
-		{
-			cnt = Container.Cast( m_Parent.GetParent() );
-			if( cnt )
-			{
-				cnt.SetNextActive();
-			}
-			else
-			{
-				cnt = Container.Cast( m_Parent );
-				cnt.SetNextActive();
-			}
-			return;
-		}
-	
-		if( direction == Direction.RIGHT )
-		{
-			m_FocusedColumn++;
-			if( m_FocusedColumn > m_ItemsCont.GetColumnCount() )
-			{
-				m_FocusedColumn = 0;
-			}
-		}
-	
-		if( direction == Direction.LEFT )
-		{
-			m_FocusedColumn--;
-			if( m_FocusedColumn < 0 )
-			{
-				m_FocusedColumn = m_ItemsCont.GetColumnCount() - 1;
-			}
-		}
-
-		m_ItemsCont.SetFocus( m_FocusedColumn );
-		
-		EntityAI focused_item = GetFocusedItem();
-		if( focused_item )
-		{
-			float x, y;
-			m_ItemsCont.GetSlotIcon( m_FocusedColumn ).GetCursorWidget().GetScreenPos( x, y );
-			ItemManager.GetInstance().PrepareTooltip( focused_item, x, y );
-		}
+		m_ItemsCont.GetFocusedSlotsIcon().GetRadialIcon().Show( expand );
+		m_ItemsCont.GetFocusedSlotsIcon().GetRadialIconClosed().Show( !expand );
 	}
 	
 	override bool SelectItem()
@@ -159,6 +90,11 @@ class AttachmentCategoriesSlotsContainer: Container
 	}
 	
 	override bool TransferItem()
+	{
+		return false;
+	}
+	
+	override bool SplitItem()
 	{
 		return false;
 	}
@@ -197,4 +133,33 @@ class AttachmentCategoriesSlotsContainer: Container
 	{
 		return false;
 	}
+	
+	string GetAttachmentCategory( string config_path_attachment_categories, int i )
+	{
+		string attachment_category;
+		GetGame().ConfigGetChildName(config_path_attachment_categories, i, attachment_category);
+		return attachment_category;
+	}
+
+	string GetIconName( string config_path_attachment_categories, string attachment_category )
+	{
+		string icon_path = config_path_attachment_categories+ " " + attachment_category + " icon";
+		string icon_name;
+		GetGame().ConfigGetText(icon_path, icon_name);
+		return icon_name;
+	}
+	
+	/*override void Refresh()
+	{
+		super.Refresh();
+		Print("DbgTest | Refresh");
+		
+		CollapsibleContainer cont = CollapsibleContainer.Cast(m_Parent);
+		if (cont)
+		{
+			bool b1 = m_ItemsCont.VerifySlotsIconVisibility();
+			Print("DbgTest | Refresh | b1: " + b1);
+			cont.SetCollapsibleHeaderArrowState(!b1);
+		}
+	}*/
 }

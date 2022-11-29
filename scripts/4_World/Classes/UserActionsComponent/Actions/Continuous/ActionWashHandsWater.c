@@ -14,11 +14,7 @@ class ActionWashHandsWater: ActionContinuousBase
 		m_CommandUID		= DayZPlayerConstants.CMD_ACTIONFB_WASHHANDSPOND;
 		m_FullBody			= true;
 		m_StanceMask		= DayZPlayerConstants.STANCEMASK_CROUCH;
-	}
-
-	override string GetText()
-	{
-		return "#wash_hands";
+		m_Text = "#wash_hands";
 	}
 
 	override void CreateConditionComponents()  

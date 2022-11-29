@@ -9,6 +9,7 @@ class ActionEmptySeedsPack: ActionSingleUseBase
 	{
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONMOD_EMPTYSEEDSPACK;
 		m_FullBody = false;
+		m_Text = "#unbox";
 	}
 	
 	override void CreateConditionComponents()  
@@ -20,11 +21,6 @@ class ActionEmptySeedsPack: ActionSingleUseBase
 	override bool HasTarget()
 	{
 		return false;
-	}
-		
-	override string GetText()
-	{
-		return "#unbox";
 	}
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

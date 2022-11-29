@@ -89,7 +89,7 @@ class LoopedChambering extends WeaponStateBase
 				lhand.SetAttachment(e.m_player, m_srcMagazine, InventorySlots.LEFTHAND);
 				if (GameInventory.LocationSyncMoveEntity(newSrc, lhand))
 				{
-					wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChambering, ok - ammo pile removed from inv (inv->LHand)");
+					if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChambering, ok - ammo pile removed from inv (inv->LHand)"); }
 				}
 				else
 					Error("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChambering, error - cannot remove ammo pile from inv");
@@ -127,7 +127,7 @@ class LoopedChambering extends WeaponStateBase
 						{
 							if( GameInventory.LocationSyncMoveEntity(leftHandIl,m_srcMagazinePrevLocation) )
 							{
-								wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChambering, ok - ammo pile removed from left hand to previous location (LHand->inv) - exit");
+								if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChambering, ok - ammo pile removed from left hand to previous location (LHand->inv) - exit"); }
 								done = true;
 							}
 						}
@@ -142,7 +142,9 @@ class LoopedChambering extends WeaponStateBase
 					if(!il || !il.IsValid())
 					{
 						if (DayZPlayerUtils.HandleDropMagazine(e.m_player, m_srcMagazine))
-							wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChambering, ok - no inventory space for ammo pile - dropped to ground - exit");
+						{
+							if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChambering, ok - no inventory space for ammo pile - dropped to ground - exit"); }
+						}
 						else
 							Error("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChambering, error - cannot drop ammo pile from left hand after not found inventory space for ammo pile - exit");
 					
@@ -151,7 +153,7 @@ class LoopedChambering extends WeaponStateBase
 					{
 						if (GameInventory.LocationSyncMoveEntity(leftHandIl, il))
 						{
-							wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChambering, ok - ammo pile removed from left hand (LHand->inv) - exit");
+							if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChambering, ok - ammo pile removed from left hand (LHand->inv) - exit"); }
 						}
 						else
 							Error("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChambering, error - cannot remove ammo pile from wpn - exit");
@@ -184,7 +186,7 @@ class LoopedChambering extends WeaponStateBase
 						{
 							if( GameInventory.LocationSyncMoveEntity(leftHandIl,m_srcMagazinePrevLocation) )
 							{
-								wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChambering, ok - ammo pile removed from left hand to previous location (LHand->inv) - abort");
+								if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChambering, ok - ammo pile removed from left hand to previous location (LHand->inv) - abort"); }
 								done = true;
 							}
 						}
@@ -199,7 +201,9 @@ class LoopedChambering extends WeaponStateBase
 					if(!il || !il.IsValid())
 					{
 						if (DayZPlayerUtils.HandleDropMagazine(e.m_player, m_srcMagazine))
-							wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChambering, ok - no inventory space for ammo pile - dropped to ground - abort");
+						{
+							if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChambering, ok - no inventory space for ammo pile - dropped to ground - abort"); }
+						}
 						else
 							Error("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChambering, error - cannot drop ammo pile from left hand after not found inventory space for ammo pile - abort");
 					
@@ -208,7 +212,7 @@ class LoopedChambering extends WeaponStateBase
 					{
 						if (GameInventory.LocationSyncMoveEntity(leftHandIl, il))
 						{
-							wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChambering, ok - ammo pile removed from left hand (LHand->inv) - abort");
+							if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChambering, ok - ammo pile removed from left hand (LHand->inv) - abort"); }
 						}
 						else
 							Error("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChambering, error - cannot remove ammo pile from wpn - abort");
@@ -346,7 +350,7 @@ class LoopedChamberingEjectLast extends WeaponStateBase
 				lhand.SetAttachment(e.m_player, m_srcMagazine, InventorySlots.LEFTHAND);
 				if (GameInventory.LocationSyncMoveEntity(newSrc, lhand))
 				{
-					wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChamberingEjectLast, ok - ammo pile removed from inv (inv->LHand)");
+					if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChamberingEjectLast, ok - ammo pile removed from inv (inv->LHand)"); }
 				}
 				else
 					Error("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChamberingEjectLast, error - cannot remove ammo pile from inv");
@@ -384,7 +388,7 @@ class LoopedChamberingEjectLast extends WeaponStateBase
 						{
 							if( GameInventory.LocationSyncMoveEntity(leftHandIl,m_srcMagazinePrevLocation) )
 							{
-								wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChamberingEjectLast, ok - ammo pile removed from left hand to previous location (LHand->inv) - exit");
+								if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChamberingEjectLast, ok - ammo pile removed from left hand to previous location (LHand->inv) - exit"); }
 								done = true;
 							}
 						}
@@ -399,7 +403,9 @@ class LoopedChamberingEjectLast extends WeaponStateBase
 					if(!il || !il.IsValid())
 					{
 						if (DayZPlayerUtils.HandleDropMagazine(e.m_player, m_srcMagazine))
-							wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChamberingEjectLast, ok - no inventory space for ammo pile - dropped to ground - exit");
+						{
+							if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChamberingEjectLast, ok - no inventory space for ammo pile - dropped to ground - exit"); }
+						}
 						else
 							Error("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChamberingEjectLast, error - cannot drop ammo pile from left hand after not found inventory space for ammo pile - exit");
 					
@@ -408,7 +414,7 @@ class LoopedChamberingEjectLast extends WeaponStateBase
 					{
 						if (GameInventory.LocationSyncMoveEntity(leftHandIl, il))
 						{
-							wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChamberingEjectLast, ok - ammo pile removed from left hand (LHand->inv) - exit");
+							if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChamberingEjectLast, ok - ammo pile removed from left hand (LHand->inv) - exit"); }
 						}
 						else
 							Error("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChamberingEjectLast, error - cannot remove ammo pile from wpn - exit");
@@ -441,7 +447,7 @@ class LoopedChamberingEjectLast extends WeaponStateBase
 						{
 							if( GameInventory.LocationSyncMoveEntity(leftHandIl,m_srcMagazinePrevLocation) )
 							{
-								wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChamberingEjectLast, ok - ammo pile removed from left hand to previous location (LHand->inv) - abort");
+								if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChamberingEjectLast, ok - ammo pile removed from left hand to previous location (LHand->inv) - abort"); }
 								done = true;
 							}
 						}
@@ -456,7 +462,9 @@ class LoopedChamberingEjectLast extends WeaponStateBase
 					if(!il || !il.IsValid())
 					{
 						if (DayZPlayerUtils.HandleDropMagazine(e.m_player, m_srcMagazine))
-							wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChamberingEjectLast, ok - no inventory space for ammo pile - dropped to ground - abort");
+						{
+							if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChamberingEjectLast, ok - no inventory space for ammo pile - dropped to ground - abort"); }
+						}
 						else
 							Error("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChamberingEjectLast, error - cannot drop ammo pile from left hand after not found inventory space for ammo pile - abort");
 					
@@ -465,7 +473,7 @@ class LoopedChamberingEjectLast extends WeaponStateBase
 					{
 						if (GameInventory.LocationSyncMoveEntity(leftHandIl, il))
 						{
-							wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChamberingEjectLast, ok - ammo pile removed from left hand (LHand->inv) - abort");
+							if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChamberingEjectLast, ok - ammo pile removed from left hand (LHand->inv) - abort"); }
 						}
 						else
 							Error("[wpnfsm] " + Object.GetDebugName(m_weapon) + " LoopedChamberingEjectLast, error - cannot remove ammo pile from wpn - abort");

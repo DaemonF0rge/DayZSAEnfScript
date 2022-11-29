@@ -11,6 +11,10 @@ class ActionManagerClient: ActionManagerBase
 	protected ref InventoryActionHandler		m_InventoryActionHandler;
 	protected ref InventoryLocation				m_HandInventoryLocationTest;
 	protected ref TTypeNameActionInputMap		m_RegistredInputsMap;
+	protected ref array<ActionInput>			m_OrederedAllActionInput;
+	protected ref array<ActionInput>			m_OrderedStandartActionInputs;
+	protected ref array<ActionInput>			m_DefaultOrderOfActionInputs;
+	protected int 								m_SelectedActionInputToSrollIndex;
 	
 	protected ref ActionData 					m_PendingActionData;
 
@@ -31,7 +35,7 @@ class ActionManagerClient: ActionManagerBase
 		m_ActionWantEndRequest_Send = false;
 		m_ActionInputWantEnd_Send = false;
 		RegisterInputs(player);
-
+		m_SelectedActionInputToSrollIndex = 0;
 	}
 	
 	override void Update(int pCurrentCommandID)
@@ -63,9 +67,15 @@ class ActionManagerClient: ActionManagerBase
 					break;
 			
 				case UA_AM_ACCEPTED:
+					int condition_mask = ActionBase.ComputeConditionMask( m_Player, m_CurrentActionData.m_Target, m_CurrentActionData.m_MainItem );
+				
+					m_CurrentActionData.m_Action.ClearInventoryReservationEx(m_CurrentActionData);
+					//bool can_be_action_done = ((condition_mask & m_CurrentActionData.m_Action.m_ConditionMask) == condition_mask );
+					bool can_be_action_done = m_CurrentActionData.m_Action.Can(m_Player,m_CurrentActionData.m_Target,m_CurrentActionData.m_MainItem);
 					// check pCurrentCommandID before start or reject 
-					if ( m_ActionPossible && pCurrentCommandID != DayZPlayerConstants.COMMANDID_SWIM && pCurrentCommandID != DayZPlayerConstants.COMMANDID_LADDER && ( !m_Player.IsRestrained() || m_CurrentActionData.m_Action.CanBeUsedInRestrain() ) )
+					if ( m_ActionPossible && can_be_action_done && pCurrentCommandID != DayZPlayerConstants.COMMANDID_SWIM )
 					{
+						m_CurrentActionData.m_Action.InventoryReservation(m_CurrentActionData);
 						m_CurrentActionData.m_State = UA_START;
 						m_CurrentActionData.m_Action.Start(m_CurrentActionData);
 						
@@ -93,7 +103,7 @@ class ActionManagerClient: ActionManagerBase
 						{
 							if ( !m_ActionWantEndRequest_Send && ScriptInputUserData.CanStoreInputUserData() )
 							{
-								if( LogManager.IsActionLogEnable() )
+								if ( LogManager.IsActionLogEnable() )
 								{	
 									Debug.ActionLog("Time stamp: " + m_Player.GetSimulationTimeStamp(), m_CurrentActionData.m_Action.ToString() , "n/a", "EndRequest", m_CurrentActionData.m_Player.ToString() );
 								}
@@ -120,7 +130,7 @@ class ActionManagerClient: ActionManagerBase
 						{
 							if ( !m_ActionInputWantEnd_Send && ScriptInputUserData.CanStoreInputUserData() )
 							{
-								if( LogManager.IsActionLogEnable() )
+								if ( LogManager.IsActionLogEnable() )
 								{
 									Debug.ActionLog("Time stamp: " + m_Player.GetSimulationTimeStamp(), m_CurrentActionData.m_Action.ToString() , "n/a", "EndInput", m_CurrentActionData.m_Player.ToString() );
 								}
@@ -159,7 +169,11 @@ class ActionManagerClient: ActionManagerBase
 #endif
 			if (!m_CurrentActionData)
 			{
-				if ( m_Player.IsRaised() || GetGame().GetUIManager().IsMenuOpen(MENU_INVENTORY) )
+				bool isMenuOpen = false;	
+#ifndef NO_GUI
+				isMenuOpen = GetGame().GetUIManager().IsMenuOpen(MENU_INVENTORY);
+#endif
+				if ( m_Player.IsRaised() || isMenuOpen )
 				{
 					m_Targets.Clear();
 				}
@@ -202,7 +216,107 @@ class ActionManagerClient: ActionManagerBase
 			{
 				m_RegistredInputsMap.GetElement(j).Init(player, this);
 			}
+			SetActioninputOrder();
 		}
+		
+	}
+	
+	//Set order of inputs base of priority (output -> m_OrederedAllActionInput )
+	void SetActioninputOrder()
+	{
+		int i, j;
+		int priority;
+		ActionInput input;
+		m_OrederedAllActionInput = new array<ActionInput>;
+		
+		map<int, ref array<ActionInput>> temp_map_for_sort = new map<int, ref array<ActionInput>>;
+		array<int> array_of_priorities_to_sort = new array<int>;
+		ref array<ActionInput> same_priority_input_array;
+		
+		for (i = 0; i < m_RegistredInputsMap.Count(); i++)
+		{
+			input = m_RegistredInputsMap.GetElement(i);
+			priority = input.GetPriority();
+			same_priority_input_array = temp_map_for_sort.Get(priority);
+			if ( same_priority_input_array )
+			{
+				same_priority_input_array.Insert(input);
+				continue;
+			}
+			
+			same_priority_input_array = new array<ActionInput>;
+			same_priority_input_array.Insert(input);
+			temp_map_for_sort.Insert(priority,same_priority_input_array);
+			array_of_priorities_to_sort.Insert(priority);
+		}
+		array_of_priorities_to_sort.Sort();
+		
+		for (i = 0; i < array_of_priorities_to_sort.Count(); i++)
+		{
+			priority = array_of_priorities_to_sort[i];
+			same_priority_input_array = temp_map_for_sort.Get(priority);
+			for (j = 0; j < same_priority_input_array.Count(); j++)
+			{
+				input = same_priority_input_array.Get(j);
+				m_OrederedAllActionInput.Insert(input);
+			}
+		}
+	
+		SetDefaultInputsOrder();
+	}
+	
+	//Order for user action inputs - will be dynamically change base on context (more complex handling viz set m_OrderedStandartActionInputs in UpdateActionCategoryPriority())
+	void SetDefaultInputsOrder()
+	{
+		int i, j;
+		m_DefaultOrderOfActionInputs = new array<ActionInput>;
+		m_OrderedStandartActionInputs = new array<ActionInput>;
+		ActionInput input = m_RegistredInputsMap.Get(ContinuousDefaultActionInput);
+		if (input)
+		{
+			m_OrderedStandartActionInputs.Insert(input);
+		}
+
+		input = m_RegistredInputsMap.Get(DefaultActionInput);
+		if (input)
+		{
+			m_OrderedStandartActionInputs.Insert(input);
+		}
+		
+		input = m_RegistredInputsMap.Get(ContinuousInteractActionInput);
+		if (input)
+		{;
+			m_OrderedStandartActionInputs.Insert(input);
+		}
+		
+		input = m_RegistredInputsMap.Get(InteractActionInput);
+		if (input)
+		{
+			m_OrderedStandartActionInputs.Insert(input);
+		}
+		
+		for (i = 0; i < m_OrederedAllActionInput.Count(); i++)
+		{
+			for (j = 0; j < m_OrderedStandartActionInputs.Count(); j++)
+			{
+				if (m_OrederedAllActionInput[i] == m_OrderedStandartActionInputs[j])
+				{
+					m_DefaultOrderOfActionInputs.Insert(m_OrederedAllActionInput[i]);
+					break;
+				}
+			}
+		}
+	}
+	
+	static ActionVariantManager GetVariantManager( typename actionName )
+	{
+		ActionBase action = GetAction( actionName );
+		if ( action )
+		{
+			return action.GetVariantManager();
+		}
+		//VME ACTION not exist typo most likely
+		return null;
 	}
 	
 	void RequestEndAction()
@@ -223,6 +337,7 @@ class ActionManagerClient: ActionManagerBase
 	
 	void InputsUpdate()
 	{
+		ActionInput ain;
 		if (m_CurrentActionData)
 		{
 			if (!m_ActionInputWantEnd)
@@ -247,9 +362,10 @@ class ActionManagerClient: ActionManagerBase
 		{
 			if ( m_ActionsAvaibale )
 			{
-				for (int i = 0; i < m_RegistredInputsMap.Count();i++)
+				for (int i = 0; i < m_OrederedAllActionInput.Count();i++)
 				{
-					ActionInput ain = m_RegistredInputsMap.GetElement(i);
+					
+					ain = m_OrederedAllActionInput[i];
 					ain.Update();
 				
 					if ( ain.JustActivate() )
@@ -271,7 +387,7 @@ class ActionManagerClient: ActionManagerBase
 		ActionInput action_input = m_RegistredInputsMap.Get(inputType);
 		if(action_input)
 		{
-			return action_input.GetPossibleAction();
+			return action_input.GetAction();
 		}
 		return NULL;
 	}
@@ -294,6 +410,16 @@ class ActionManagerClient: ActionManagerBase
 			return action_input.GetPossibleActionIndex();
 		}
 		return -1;
+	}
+	
+	int GetPossibleActionCount(typename inputType)
+	{
+		ActionInput action_input = m_RegistredInputsMap.Get(inputType);
+		if(action_input)
+		{
+			return action_input.GetPossibleActionsCount();
+		}
+		return 0;
 	}
 
 	//--------------------------------------------------------
@@ -414,15 +540,10 @@ class ActionManagerClient: ActionManagerBase
 			item = FindActionItem();
 			target = FindActionTarget();
 			
-			ItemBase target_item;
-			Class.CastTo(target_item,  target.GetObject() );
-			
-			m_Player.GetCraftingManager().OnUpdate(item,target_item);
-			
 			int actionConditionMask = ActionBase.ComputeConditionMask(m_Player,target,item);
-			for (int i = 0; i < m_RegistredInputsMap.Count();i++)
+			for (int i = 0; i < m_OrederedAllActionInput.Count();i++)
 			{
-				ActionInput ain = m_RegistredInputsMap.GetElement(i);
+				ActionInput ain = m_OrederedAllActionInput[i];
 				ain.UpdatePossibleActions(m_Player,target,item, actionConditionMask);
 			}
 			SetActionContext( target,item );
@@ -435,7 +556,7 @@ class ActionManagerClient: ActionManagerBase
 		bool success = false;
 		if ( action_data.m_Action.IsInstant() )
 		{
-			if( LogManager.IsActionLogEnable() )
+			if ( LogManager.IsActionLogEnable() )
 			{
 				Debug.ActionLog("(-) Inventory lock - Not Used", action_data.m_Action.ToString() , "n/a", "LockInventory", action_data.m_Player.ToString() );
 			}
@@ -443,7 +564,7 @@ class ActionManagerClient: ActionManagerBase
 		}
 		else
 		{
-			if( LogManager.IsActionLogEnable() )
+			if ( LogManager.IsActionLogEnable() )
 			{
 				Debug.ActionLog("(X) Inventory lock", action_data.m_Action.ToString() , "n/a", "LockInventory", action_data.m_Player.ToString() );
 			}
@@ -456,7 +577,7 @@ class ActionManagerClient: ActionManagerBase
 	}
 	void UnlockInventory(ActionData action_data)
 	{
-		if( LogManager.IsActionLogEnable() )
+		if ( LogManager.IsActionLogEnable() )
 		{
 			Debug.ActionLog("(O) Inventory unlock", action_data.m_Action.ToString() , "n/a", "UnlockInventory", action_data.m_Player.ToString() );
 		}
@@ -478,7 +599,7 @@ class ActionManagerClient: ActionManagerBase
 			
 			HandleInputsOnActionStart(action);
 
-			if( LogManager.IsActionLogEnable() )
+			if ( LogManager.IsActionLogEnable() )
 			{
 				Debug.ActionLog("Item = " + item + ", " + target.DumpToString(), action.ToString() , "n/a", "ActionStart", m_Player.ToString() );
 			}
@@ -489,7 +610,7 @@ class ActionManagerClient: ActionManagerBase
 				{
 					DPrint("ScriptInputUserData already posted - ActionManagerClient");
 					
-					if( LogManager.IsActionLogEnable() )
+					if ( LogManager.IsActionLogEnable() )
 					{
 						Debug.ActionLog("Cannot start because ScriptInputUserData is already used", action.ToString() , "n/a", "ActionStart", m_Player.ToString() );
 					}
@@ -497,14 +618,14 @@ class ActionManagerClient: ActionManagerBase
 				}
 			}
 			
-			if( !action.SetupAction(m_Player, target, item, m_CurrentActionData, extra_data ))
+			if ( !action.SetupAction(m_Player, target, item, m_CurrentActionData, extra_data ))
 			{
 				DPrint("Can not inicialize action" + action + " - ActionManagerClient");
 				m_CurrentActionData = NULL;
 				return;
 			}
 			
-			if( LogManager.IsActionLogEnable() )
+			if ( LogManager.IsActionLogEnable() )
 			{
 				Debug.ActionLog("Action data created wait to start", action.ToString() , "n/a", "ActionStart", m_Player.ToString() );
 			}
@@ -545,9 +666,9 @@ class ActionManagerClient: ActionManagerBase
 
 	void HandleInputsOnActionStart(ActionBase action)
 	{
-		for (int i = 0; i < m_RegistredInputsMap.Count();i++)
+		for (int i = 0; i < m_OrederedAllActionInput.Count();i++)
 		{
-			ActionInput ain = m_RegistredInputsMap.GetElement(i);
+			ActionInput ain = m_OrederedAllActionInput[i];
 			if(action.GetInput() == ain)
 			{
 				ain.OnActionStart();
@@ -566,18 +687,18 @@ class ActionManagerClient: ActionManagerBase
 	
 	void ResetInputsState()
 	{
-		for (int i = 0; i < m_RegistredInputsMap.Count();i++)
+		for (int i = 0; i < m_OrederedAllActionInput.Count();i++)
 		{
-			ActionInput ain = m_RegistredInputsMap.GetElement(i);
+			ActionInput ain = m_OrederedAllActionInput[i];
 			ain.Reset();
 		}
 	}
 	
 	void ResetInputsActions()
 	{
-		for (int i = 0; i < m_RegistredInputsMap.Count();i++)
+		for (int i = 0; i < m_OrederedAllActionInput.Count();i++)
 		{
-			ActionInput ain = m_RegistredInputsMap.GetElement(i);
+			ActionInput ain = m_OrederedAllActionInput[i];
 			ain.ActionsSelectReset();
 		}
 	}
@@ -656,38 +777,113 @@ class ActionManagerClient: ActionManagerBase
 	{
 		m_InventoryActionHandler.DeactiveAction();
 	}
+	
+	override typename GetSelectedActionCategory()
+	{
+		return m_OrderedStandartActionInputs[m_SelectedActionInputToSrollIndex].Type();
+	}
+	
+	void UpdateActionCategoryPriority()
+	{
+		int i;
+		int last_target_index = 0;
+		for ( i = 0; i < m_DefaultOrderOfActionInputs.Count(); i++)
+		{
+			if ( m_DefaultOrderOfActionInputs[i].HasTarget() )
+			{
+				m_OrderedStandartActionInputs[last_target_index] = m_DefaultOrderOfActionInputs[i];
+				last_target_index++;
+			}
+		}
+		
+		for ( i = 0; i < m_DefaultOrderOfActionInputs.Count(); i++)
+		{
+			if ( !m_DefaultOrderOfActionInputs[i].HasTarget() )
+			{
+				m_OrderedStandartActionInputs[last_target_index] = m_DefaultOrderOfActionInputs[i];
+				last_target_index++;
+			}
+		}
+	}
+	
+	override void SelectFirstActionCategory()
+	{
+		UpdateActionCategoryPriority();
+		m_SelectedActionInputToSrollIndex = 0;
+		
+		for ( int index = 0; index < m_OrderedStandartActionInputs.Count(); index++)
+		{
+			if ( m_OrderedStandartActionInputs[index].GetPossibleActionsCount() > 1)
+			{
+				m_SelectedActionInputToSrollIndex = index;
+				break;
+			}
+		}
+	}
+	
+	override void SelectNextActionCategory()
+	{
+		int index;
+		
+		for( index = m_SelectedActionInputToSrollIndex + 1; index != m_SelectedActionInputToSrollIndex;; )
+		{
+			if(++index >= m_OrderedStandartActionInputs.Count() )
+			{
+				index = 0;
+			}
+			if( m_OrderedStandartActionInputs[index].GetPossibleActionsCount() > 1)
+			{
+				m_SelectedActionInputToSrollIndex = index;
+				//PossibleGUIUpdate();
+				break;
+			}
+		}		
+	}
+	
+	override void SelectPrevActionCategory()
+	{
+		int index;
+		
+		for( index = m_SelectedActionInputToSrollIndex; index != m_SelectedActionInputToSrollIndex;;)
+		{
+			if(--index < 0 )
+			{
+				index = m_OrderedStandartActionInputs.Count() - 1;
+			}
+			
+			if( m_OrderedStandartActionInputs[index].GetPossibleActionsCount() > 1)
+			{
+				m_SelectedActionInputToSrollIndex = index;
+				//PossibleGUIUpdate();
+				break;
+			}
+		}
+	}
+	
 
 	override void SelectNextAction()
 	{
-		ActionInput ai = m_RegistredInputsMap.Get(InteractActionInput);
-		if(ai && ai.GetPossibleActionsCount() > 1)
+		ActionInput ai;
+		if( m_SelectedActionInputToSrollIndex < m_OrderedStandartActionInputs.Count() )
 		{
-			ai.SelectNextAction();
-			return;
-		}
-		
-		ai = m_RegistredInputsMap.Get(ContinuousInteractActionInput);
-		if(ai && ai.GetPossibleActionsCount() > 1)
-		{
-			ai.SelectNextAction();
-			return;
-		}		
+			ai = m_OrderedStandartActionInputs[m_SelectedActionInputToSrollIndex];
+			if(ai && ai.GetPossibleActionsCount() > 1)
+			{
+				ai.SelectNextAction();
+			}
+		}	
 	}
 	
 	override void SelectPrevAction()
 	{
-		ActionInput ai = m_RegistredInputsMap.Get(InteractActionInput);
-		if(ai && ai.GetPossibleActionsCount() > 1)
+		ActionInput ai;
+		if( m_SelectedActionInputToSrollIndex < m_OrderedStandartActionInputs.Count() )
 		{
-			ai.SelectPrevAction();
-			return;
-		}
-		
-		ai = m_RegistredInputsMap.Get(ContinuousInteractActionInput);
-		if(ai && ai.GetPossibleActionsCount() > 1)
-		{
-			ai.SelectPrevAction();
-			return;
+			ai = m_OrderedStandartActionInputs[m_SelectedActionInputToSrollIndex];
+			if(ai && ai.GetPossibleActionsCount() > 1)
+			{
+				ai.SelectPrevAction();
+			}
 		}
 	}
 
@@ -820,6 +1016,7 @@ class ActionManagerClient: ActionManagerBase
 		}
 	}
 	
+	//TODO Variants support ???
 	bool CanPerformActionFromInventory(ItemBase mainItem, ItemBase targetItem)
 	{	
 		ItemBase itemInHand = m_Player.GetItemInHands();
@@ -831,15 +1028,31 @@ class ActionManagerClient: ActionManagerBase
 		{
 			array<ActionBase_Basic> actions;
 			ActionBase picked_action;
+			int i;
 			
 			//First check single use actions
 			mainItem.GetActions(DefaultActionInput, actions);
 			if (actions)
 			{
-				for ( int i = 0; i < actions.Count(); i++ )
+				for ( i = 0; i < actions.Count(); i++ )
 				{			
 					picked_action = ActionBase.Cast(actions[i]);
 					if ( picked_action && picked_action.Can(m_Player,target, itemInHand) && picked_action.CanBePerformedFromInventory() )
+					{
+						if( hasTarget == picked_action.HasTarget())
+							return true;
+					}
+				}
+			}
+			
+			//Inventory specific actions
+			mainItem.GetActions(InventoryOnlyActionInput, actions);
+			if (actions)
+			{
+				for ( i = 0; i < actions.Count(); i++ )
+				{			
+					picked_action = ActionBase.Cast(actions[i]);
+					if ( picked_action && picked_action.Can(m_Player,target, itemInHand) )
 					{
 						if( hasTarget == picked_action.HasTarget())
 							return true;
@@ -850,6 +1063,7 @@ class ActionManagerClient: ActionManagerBase
 		return false;
 	}
 	
+	//TODO Variants support ???
 	void PerformActionFromInventory(ItemBase mainItem, ItemBase targetItem)
 	{
 		ItemBase itemInHand = m_Player.GetItemInHands();
@@ -861,15 +1075,34 @@ class ActionManagerClient: ActionManagerBase
 		{
 			ActionBase picked_action;
 			array<ActionBase_Basic> actions;
+			int i;
 			
 			//First check single use actions
 			mainItem.GetActions(DefaultActionInput, actions);
 			if (actions)
 			{
-				for ( int j = 0; j < actions.Count(); j++ )
+				for ( i = 0; i < actions.Count(); i++ )
 				{
-					picked_action = ActionBase.Cast(actions[j]);
+					picked_action = ActionBase.Cast(actions[i]);
 					if ( picked_action && picked_action.Can(m_Player,target, itemInHand) && picked_action.CanBePerformedFromInventory() )
+					{
+						if( hasTarget == picked_action.HasTarget())
+						{
+							ActionStart(picked_action, target, mainItem);
+							return;
+						}
+					}
+				}
+			}
+			
+			//Inventory specific actions
+			mainItem.GetActions(InventoryOnlyActionInput, actions);
+			if (actions)
+			{
+				for ( i = 0; i < actions.Count(); i++ )
+				{
+					picked_action = ActionBase.Cast(actions[i]);
+					if ( picked_action && picked_action.Can(m_Player,target, itemInHand) )
 					{
 						if( hasTarget == picked_action.HasTarget())
 						{
@@ -886,13 +1119,20 @@ class ActionManagerClient: ActionManagerBase
 	{
 		ItemBase itemInHand = m_Player.GetItemInHands();
 		ActionTarget target;
-		target = new ActionTarget(targetItem, null, -1, vector.Zero, -1);
+		EntityAI parent = null;
+		if (targetItem)
+		{
+			parent = targetItem.GetHierarchyParent();
+		}
+		target = new ActionTarget(targetItem, parent, -1, vector.Zero, -1);
 		bool hasTarget = targetItem != NULL;
 		
 		if( mainItem )
 		{
 			array<ActionBase_Basic> actions;
+			array<ref ActionBase> variant_actions;
 			ActionBase picked_action;
+			int variants_count,v;
 			
 			//First check single use actions
 			mainItem.GetActions(DefaultActionInput, actions);
@@ -901,10 +1141,27 @@ class ActionManagerClient: ActionManagerBase
 				for ( int i = 0; i < actions.Count(); i++ )
 				{			
 					picked_action = ActionBase.Cast(actions[i]);
-					if ( picked_action && picked_action.Can(m_Player,target, itemInHand) && picked_action.CanBeSetFromInventory() )
+					if ( picked_action.HasVariants() )
 					{
-						if( hasTarget == picked_action.HasTarget())
-							return true;
+						picked_action.UpdateVariants( itemInHand, targetItem, -1);
+						picked_action.GetVariants( variant_actions );
+						for ( v = 0; v < variant_actions.Count(); v ++)
+						{
+							picked_action = variant_actions[v];
+							if ( picked_action && picked_action.CanBeSetFromInventory() && picked_action.Can(m_Player,target, itemInHand) )
+							{
+								if( hasTarget == picked_action.HasTarget())
+									return true;
+							}
+						}
+					}
+					else
+					{
+						if ( picked_action && picked_action.CanBeSetFromInventory() && picked_action.Can(m_Player,target, itemInHand) )
+						{
+							if( hasTarget == picked_action.HasTarget())
+								return true;
+						}
 					}
 				}
 			}
@@ -915,10 +1172,27 @@ class ActionManagerClient: ActionManagerBase
 				for ( int j = 0; j < actions.Count(); j++ )
 				{
 					picked_action = ActionBase.Cast(actions[j]);
-					if ( picked_action && picked_action.HasTarget() && picked_action.Can(m_Player,target, itemInHand) && picked_action.CanBeSetFromInventory() )
+					if ( picked_action.HasVariants() )
 					{
-						if( hasTarget == picked_action.HasTarget())
-							return true;
+						picked_action.UpdateVariants( itemInHand, targetItem, -1 );
+						picked_action.GetVariants( variant_actions );
+						for ( v = 0; v < variant_actions.Count(); v ++)
+						{
+							picked_action = variant_actions[v];
+							if ( picked_action && picked_action.HasTarget() && picked_action.CanBeSetFromInventory() && picked_action.Can(m_Player,target, itemInHand) )
+							{
+								if( hasTarget == picked_action.HasTarget())
+									return true;
+							}
+						}
+					}
+					else
+					{
+						if ( picked_action && picked_action.HasTarget() && picked_action.CanBeSetFromInventory() && picked_action.Can(m_Player,target, itemInHand) )
+						{
+							if( hasTarget == picked_action.HasTarget())
+								return true;
+						}
 					}
 				}
 			}
@@ -926,6 +1200,7 @@ class ActionManagerClient: ActionManagerBase
 		return false;
 	}
 	
+	//TODO fix for variants
 	void SetActionFromInventory(ItemBase mainItem, ItemBase targetItem)
 	{
 		ItemBase itemInHand = m_Player.GetItemInHands();
@@ -979,6 +1254,19 @@ class ActionManagerClient: ActionManagerBase
 	{
 		if(m_CurrentActionData)
 			m_Interrupted = true;
+	}
+	
+	//! client requests action interrupt
+	void RequestInterruptAction()
+	{
+		ScriptInputUserData ctx = new ScriptInputUserData;
+		if ( ctx.CanStoreInputUserData() )
+		{
+			ctx.Write(INPUT_UDT_STANDARD_ACTION_END_REQUEST);
+			ctx.Write(DayZPlayerConstants.CMD_ACTIONINT_INTERRUPT);
+			ctx.Send();
+		}
+		
 	}
 	
 	private ref ActionTarget m_ForceTarget;

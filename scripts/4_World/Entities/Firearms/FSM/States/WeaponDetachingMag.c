@@ -10,7 +10,7 @@ class WeaponDetachingMag_Store extends WeaponStateBase
 
 	override void OnEntry (WeaponEventBase e)
 	{
-		//wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + "  WeaponDetachingMag_Store, Detaching mag=" + m_magazine.ToString() +  "to loc=" + InventoryLocation.DumpToStringNullSafe(m_dst));
+		//if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + "  WeaponDetachingMag_Store, Detaching mag=" + m_magazine.ToString() +  "to loc=" + InventoryLocation.DumpToStringNullSafe(m_dst)); }
 		super.OnEntry(e);
 		if (e)
 		{
@@ -37,7 +37,7 @@ class WeaponDetachingMag_Store extends WeaponStateBase
 			if (GameInventory.LocationSyncMoveEntity(il, m_dst))
 			{
 				m_weapon.HideMagazine();
-				wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponDetachingMag_Store, ok - magazine removed from inv (inv->dst)");
+				if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " WeaponDetachingMag_Store, ok - magazine removed from inv (inv->dst)"); }
 			}
 			else
 			{
@@ -142,13 +142,13 @@ class WeaponDetachingMag extends WeaponStateBase
 			WeaponEventDetachMagazine de;
 			if (Class.CastTo(de, e))
 			{
-				wpnDebugPrint("WeaponDetachingMag type=" + typename.EnumToString(InventoryLocationType, de.m_dst.GetType()));
+				if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("WeaponDetachingMag type=" + typename.EnumToString(InventoryLocationType, de.m_dst.GetType())); }
 				m_magazine = e.m_magazine;
 				m_dst = de.m_dst;
 				
 				m_store.m_magazine = m_magazine;
 				m_store.m_dst = m_dst;
-				wpnDebugPrint("WeaponDetachingMag type=" + typename.EnumToString(InventoryLocationType, m_store.m_dst.GetType()));
+				if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("WeaponDetachingMag type=" + typename.EnumToString(InventoryLocationType, m_store.m_dst.GetType())); }
 			}
 		}
 		super.OnEntry(e); // @NOTE: super at the end (prevent override from submachine start)

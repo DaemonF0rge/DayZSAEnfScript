@@ -58,7 +58,7 @@ class PlayerAgentPool
 			int agent_id = m_VirusPool.GetKey(i);
 			int max_count = m_PluginTransmissionAgents.GetAgentMaxCount( agent_id );
 
-			EStatLevels agent_potency = m_PluginTransmissionAgents.GetPotency( agent_id );
+			EStatLevels agent_potency = m_PluginTransmissionAgents.GetAgentPotencyEx( agent_id, m_Player );
 			
 			float grow_delta;
 
@@ -67,12 +67,12 @@ class PlayerAgentPool
 				bool grow_during_antibiotics = m_PluginTransmissionAgents.GrowDuringAntibioticsAttack(agent_id, m_Player);
 				if (m_Player.IsAntibioticsActive() && !grow_during_antibiotics)
 					continue;
-				float invasibility = m_PluginTransmissionAgents.GetAgentInvasibility( agent_id );
+				float invasibility = m_PluginTransmissionAgents.GetAgentInvasibilityEx( agent_id, m_Player );
 				grow_delta = invasibility * deltaT;
 			}
 			else
 			{
-				float dieoff_speed = m_PluginTransmissionAgents.GetDieOffSpeed( agent_id );
+				float dieoff_speed = m_PluginTransmissionAgents.GetAgentDieOffSpeedEx( agent_id, m_Player );
 				grow_delta = -dieoff_speed * deltaT;
 			}
 
@@ -140,7 +140,7 @@ class PlayerAgentPool
 	{
 		int max_count = m_PluginTransmissionAgents.GetAgentMaxCount(agent_id);
 		
-		if(	!m_VirusPool.Contains(agent_id) )//if it contains, maybe add count only ?
+		if(	!m_VirusPool.Contains(agent_id) && count > 0 )//if it contains, maybe add count only ?
 		{
 			//m_VirusPool.Insert( agent_id, Math.Clamp(count,0,max_count) );
 			SetAgentCount(agent_id,count);

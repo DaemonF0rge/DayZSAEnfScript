@@ -45,16 +45,16 @@ class RifleChambering extends WeaponStateBase
 		{
 			if (e.m_magazine != NULL)
 			{
-				wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " RifleChambering, taking mag from event e.mag=" + e.m_magazine.ToString());
+				if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " RifleChambering, taking mag from event e.mag=" + e.m_magazine.ToString()); }
 				m_srcMagazine = e.m_magazine;
 				m_chamber.m_srcMagazine = m_srcMagazine;
 			}
 		}
 		else
 		{
-			wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " RifleChambering (e=NULL), m_srcMagazine=" + m_srcMagazine.ToString());
+			if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " RifleChambering (e=NULL), m_srcMagazine=" + m_srcMagazine.ToString()); }
 		}
-		wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " m_srcMagazine=" + m_srcMagazine.ToString());
+		if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " m_srcMagazine=" + m_srcMagazine.ToString()); }
 		
 		super.OnEntry(e); // @NOTE: super at the end (prevent override from submachine start)
 	}

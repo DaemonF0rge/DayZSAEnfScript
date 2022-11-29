@@ -49,7 +49,7 @@ class HandAnimatedSwapping extends HandStateBase
 			m_Hide.m_ActionType = es.m_AnimationID;
 			m_Show.m_ActionType = es.m_Animation2ID;
 			
-			if (GetGame().IsClient() || !GetGame().IsMultiplayer())
+			if (!GetGame().IsDedicatedServer())
 			{
 				e.m_Player.GetHumanInventory().AddInventoryReservationEx(m_Dst2.GetItem(), m_Dst2, GameInventory.c_InventoryReservationTimeoutShortMS);
 				e.m_Player.GetHumanInventory().AddInventoryReservationEx(m_Dst1.GetItem(), m_Dst1, GameInventory.c_InventoryReservationTimeoutShortMS);
@@ -61,7 +61,7 @@ class HandAnimatedSwapping extends HandStateBase
 
 	override void OnAbort (HandEventBase e)
 	{
-		if( GetGame().IsClient() || !GetGame().IsMultiplayer())
+		if( !GetGame().IsDedicatedServer())
 		{
 			e.m_Player.GetHumanInventory().ClearInventoryReservationEx(m_Dst2.GetItem(), m_Dst2);
 			e.m_Player.GetHumanInventory().ClearInventoryReservationEx(m_Dst1.GetItem(), m_Dst1);
@@ -82,7 +82,7 @@ class HandAnimatedSwapping extends HandStateBase
 
 	override void OnExit (HandEventBase e)
 	{
-		if( GetGame().IsClient() || !GetGame().IsMultiplayer())
+		if( !GetGame().IsDedicatedServer())
 		{
 			e.m_Player.GetHumanInventory().ClearInventoryReservationEx(m_Dst2.GetItem(), m_Dst2);
 			e.m_Player.GetHumanInventory().ClearInventoryReservationEx(m_Dst1.GetItem(), m_Dst1);		

@@ -85,4 +85,10 @@ class FreeDebugCamera extends Camera
 	\return bool \p true if camera is freezed
 	*/
 	proto native bool IsFreezed();
+	
+	/**
+	\brief Gets object that free camera is currently pointing at
+	\return Object \p reference to Object that FreeDebugCamera is pointing to 
+	*/
+	proto native Object GetCrosshairObject();
 };

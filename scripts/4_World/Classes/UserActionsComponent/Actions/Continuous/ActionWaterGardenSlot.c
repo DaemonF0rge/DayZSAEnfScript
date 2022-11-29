@@ -16,17 +16,13 @@ class ActionWaterGardenSlot: ActionContinuousBase
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONFB_EMPTY_VESSEL;
 		m_FullBody = true;
 		m_SpecialtyWeight = UASoftSkillsWeight.ROUGH_LOW;
+		m_Text = "#water_slot";
 	}
 	
 	override void CreateConditionComponents()  
 	{
 		m_ConditionTarget = new CCTDummy;
 		m_ConditionItem = new CCINonRuined;
-	}
-	
-	override string GetText()
-	{
-		return "#water_slot";
 	}
 	
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

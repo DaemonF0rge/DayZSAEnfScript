@@ -135,10 +135,23 @@ class HudDebugWinCharStats extends HudDebugWinBase
 			for ( int i = 0; i < developer_sync.m_PlayerStatsSynced.Count(); i++ )
 			{
 				string stat_name = developer_sync.m_PlayerStatsSynced.Get( i ).GetName();
-				float value = developer_sync.m_PlayerStatsSynced.Get( i ).GetValue();
 				float val_norm = developer_sync.m_PlayerStatsSynced.Get( i ).GetValueNorm();
-				m_StatValues.Get(i).SetText(value.ToString());
+				float value = developer_sync.m_PlayerStatsSynced.Get( i ).GetValue();
 				
+				if( stat_name == "BloodType" )
+				{
+					string type, name;
+					bool positive;
+					
+					name = value.ToString();
+					name += "("+BloodTypes.GetBloodTypeName( Math.Round(value), type, positive)+")";
+					m_StatValues.Get(i).SetText(name);
+				}
+				else
+				{
+					m_StatValues.Get(i).SetText(value.ToString());
+					
+				}
 				if(!m_ChangingSlider)
 					m_SliderWidgets.GetKeyByValue(stat_name).SetCurrent(val_norm * 100);
 				/*

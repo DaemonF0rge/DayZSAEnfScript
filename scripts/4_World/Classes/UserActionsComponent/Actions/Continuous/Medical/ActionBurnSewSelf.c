@@ -12,6 +12,7 @@ class ActionBurnSewSelf: ActionContinuousBase
 	{
 		m_CallbackClass = ActionBurnSewSelfCB;
 		m_SpecialtyWeight = UASoftSkillsWeight.PRECISE_MEDIUM;
+		m_Text = "#treat_wound";
 	}
 	
 	override void CreateConditionComponents()  
@@ -23,11 +24,6 @@ class ActionBurnSewSelf: ActionContinuousBase
 	override bool HasTarget()
 	{
 		return false;
-	}
-		
-	override string GetText()
-	{
-		return "#treat_wound";
 	}
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

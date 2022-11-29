@@ -31,8 +31,24 @@ class FirearmActionMechanicManipulate : FirearmActionBase
 		if (!super.ActionCondition( player, target, item ))
 			return false;
 		
-		Weapon_Base wpn = Weapon_Base.Cast(item);		
-		return player.GetWeaponManager().CanEjectBullet(wpn);
+		bool result = false;
+		Weapon_Base wpn = Weapon_Base.Cast(item);
+		if ( player.GetWeaponManager().CanEjectBullet(wpn))
+		{
+			if( GetGame().IsServer() && GetGame().IsMultiplayer() )
+			{
+				result = true;
+			}
+			else
+			{ 
+				if( player.GetWeaponManager().CanEjectBulletVerified() )
+				{
+					result = true;
+				}
+				player.GetWeaponManager().SetEjectBulletTryTimestamp();
+			}
+		}
+		return result;
 	}
 	
 	override void Start( ActionData action_data )

@@ -22,8 +22,9 @@ class MeleeAttackSoundEvents extends PlayerSoundEventBase
 	
 	override void OnEnd()
 	{
-		//m_Player.GetStaminaSoundHandlerClient().PostponeStamina(300);
-		StaminaSoundHandlerClient.Cast(m_Player.m_PlayerSoundManagerClient.GetHandler(eSoundHandlers.STAMINA)).PostponeStamina(800);
+		super.OnEnd();
+		if(m_Player)
+			StaminaSoundHandlerClient.Cast(m_Player.m_PlayerSoundManagerClient.GetHandler(eSoundHandlers.STAMINA)).PostponeStamina(800);
 	}
 }
 

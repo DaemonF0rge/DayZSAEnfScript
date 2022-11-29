@@ -10,6 +10,11 @@ class Screwdriver extends ToolBase
 		return true;
 	}
 	
+	override array<int> GetValidFinishers()
+	{
+		return {EMeleeHitType.FINISHER_LIVERSTAB,EMeleeHitType.FINISHER_NECKSTAB};
+	}
+	
 	override void SetActions()
 	{
 		super.SetActions();
@@ -21,5 +26,7 @@ class Screwdriver extends ToolBase
 		AddAction(ActionSkinning);
 		AddAction(ActionLockAttachment);
 		AddAction(ActionDisarmMine);
+		AddAction(ActionDisarmExplosive);
+		AddAction(ActionMineRock1H);
 	}
 }

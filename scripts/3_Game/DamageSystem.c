@@ -5,6 +5,18 @@ class TotalDamageResult: Managed
 };
 
 //-----------------------------------------------------------------------------
+
+//! exposed from C++ (do not change)
+enum DamageType
+{
+	CLOSE_COMBAT,	// 0
+	FIRE_ARM,		// 1
+	EXPLOSION,
+	STUN,
+	CUSTOM
+}
+
+//-----------------------------------------------------------------------------
 class DamageSystem
 {
 	static proto native void CloseCombatDamage(EntityAI source, Object targetObject, int targetComponentIndex, string ammoTypeName, vector worldPos);
@@ -39,8 +51,8 @@ class DamageSystem
 		else
 		{
 			string zone;
-			ref array<string> zone_names = new array<string>;
-			ref array<string> component_names;
+			array<string> zone_names = new array<string>;
+			array<string> component_names;
 			
 			entity.GetDamageZones(zone_names);
 			for (int i = 0; i < zone_names.Count(); i++)
@@ -120,8 +132,9 @@ class DamageSystem
 	{
 		string component_name;
 		entity.GetEntityDamageDisplayNameMap().Find(zone.Hash(), component_name);
+		component_name = Widget.TranslateString(component_name);
 		return component_name;
 	}
 }
 
-typedef map<string,ref array<string>> DamageZoneMap;
+typedef map<string,ref array<string>> DamageZoneMap; //<zone_name,<components>>

@@ -3,28 +3,47 @@ class ConstructionActionData
 	Object m_Target;
 	
 	//base building
-	ref array<ConstructionPart> m_BuildParts;
-	int 						m_PartIndex; //used on client only, action synchronizes it to server to avoid mismatch
-	string 						m_MainPartName;
-	ref ConstructionPart 		m_TargetPart;
+	ref array<ConstructionPart> 	m_BuildParts;
+	ref array<ConstructionPart>	 	m_BuildPartsNoTool;
+	
+	int 							m_PartIndex; //used on client only, action synchronizes it to server to avoid mismatch
+	string 							m_MainPartName;
+	string 							m_MainPartNameNoTool;
+	ref ConstructionPart 			m_TargetPart;
 	
 	//combination lock
-	CombinationLock 			m_CombinationLock;
+	CombinationLock 				m_CombinationLock;
 	
 	//attaching
-	int 						m_SlotId;
-	PlayerBase 					m_ActionInitiator;
+	int 							m_SlotId;
+	PlayerBase 						m_ActionInitiator;
 	//detaching
-	ref array<EntityAI> 		m_Attachments;
-	int 						m_AttachmentsIndex;
+	ref array<EntityAI> 			m_Attachments;
 	
+	protected ActionVariantManager	m_ActionVariantManager;
+	protected ActionVariantManager	m_ActionNoToolVariantManager;
+
+	int 							m_AttachmentsIndex;
+
 	void ConstructionActionData()
 	{
 		m_BuildParts = new ref array<ConstructionPart>;
+		m_BuildPartsNoTool = new ref array<ConstructionPart>;
 		m_PartIndex = 0;
 		
 		m_Attachments = new ref array<EntityAI>;
 		m_AttachmentsIndex = 0;
+
+		if ( GetGame().IsClient() || !GetGame().IsMultiplayer() )
+		{
+			m_ActionVariantManager = ActionManagerClient.GetVariantManager( ActionBuildPart );
+			m_ActionVariantManager.GetOnUpdateInvoker().Clear();
+			m_ActionVariantManager.GetOnUpdateInvoker().Insert(OnUpdateActions);
+				
+			m_ActionNoToolVariantManager = ActionManagerClient.GetVariantManager( ActionBuildShelter );
+			m_ActionNoToolVariantManager.GetOnUpdateInvoker().Clear();
+			m_ActionNoToolVariantManager.GetOnUpdateInvoker().Insert(OnUpdateActionsNoTool);
+		}
 	}
 	
 	//************************************************/
@@ -33,6 +52,11 @@ class ConstructionActionData
 	string GetMainPartName()
 	{
 		return m_MainPartName;
+	}
+	
+	string GetMainPartNameNoTool()
+	{
+		return m_MainPartNameNoTool;
 	}
 	
 	void SetTarget( Object target )
@@ -75,34 +99,59 @@ class ConstructionActionData
 		return m_ActionInitiator;
 	}
 	
-	//base building
+	// deprecated
 	void SetNextIndex()
 	{
-		if ( m_BuildParts.Count() > 1 )
+	}
+	
+	// deprecated
+	void RefreshPartsToBuild( string main_part_name, ItemBase tool, bool use_tool = true )
+	{
+
+	}
+	
+	void OnUpdateActions( Object item, Object target, int component_index )
+	{
+		ItemBase tool = ItemBase.Cast( item );
+		if ( tool )
 		{
-			if ( m_PartIndex <= m_BuildParts.Count() - 2 )
+			BaseBuildingBase base_building_object = BaseBuildingBase.Cast( target );
+			if ( base_building_object )
 			{
-				m_PartIndex++;
+				string main_part_name = target.GetActionComponentName( component_index );
+				base_building_object.GetConstruction().GetConstructionPartsToBuild( main_part_name, m_BuildParts, tool, m_MainPartName, true );
+				m_ActionVariantManager.SetActionVariantCount(m_BuildParts.Count());
 			}
-			else if ( m_PartIndex >= m_BuildParts.Count() >  - 1 )
+			else
 			{
-				m_PartIndex = 0;
+				m_BuildParts.Clear();
+				m_ActionVariantManager.Clear();
 			}
+
 		}
 		else
 		{
-			m_PartIndex = 0;
-		}
+			m_BuildParts.Clear();
+			m_ActionVariantManager.Clear();
+		}		
+		//not needed
+		//m_Target = target;
 	}
 	
-	void RefreshPartsToBuild( string main_part_name, ItemBase tool, bool use_tool = true )
+	void OnUpdateActionsNoTool( Object item, Object target, int component_index )
 	{
-		//m_MainPartName = main_part_name;
-		BaseBuildingBase base_building_object = BaseBuildingBase.Cast( m_Target );
+		BaseBuildingBase base_building_object = BaseBuildingBase.Cast( target );
 		if ( base_building_object )
 		{
-			base_building_object.GetConstruction().GetConstructionPartsToBuild( main_part_name, m_BuildParts, tool, m_MainPartName, use_tool );
+			string main_part_name = target.GetActionComponentName( component_index );
+			base_building_object.GetConstruction().GetConstructionPartsToBuild( main_part_name, m_BuildPartsNoTool, null, m_MainPartNameNoTool, false );
+			m_ActionNoToolVariantManager.SetActionVariantCount(m_BuildPartsNoTool.Count());
 		}
+		else
+		{
+			m_BuildPartsNoTool.Clear();
+			m_ActionNoToolVariantManager.Clear();
+		}	
 	}
 	
 	int GetConstructionPartsCount()
@@ -110,31 +159,28 @@ class ConstructionActionData
 		return m_BuildParts.Count();
 	}
 	
+	// deprecated
 	ConstructionPart GetCurrentBuildPart()
 	{
-		BaseBuildingBase base_building_object = BaseBuildingBase.Cast( m_Target );
-		
-		if ( base_building_object )
-		{
-			Construction construction = base_building_object.GetConstruction();
-			
-			if ( construction )
-			{
-				if ( m_BuildParts.Count() > 0 ) 
-				{
-					m_PartIndex = Math.Clamp( m_PartIndex, 0, m_BuildParts.Count() - 1 );
-					
-					return m_BuildParts.Get( m_PartIndex );
-				}
-			}
-		}
-		
-		return NULL;
+		return null;
 	}
 	
 	ConstructionPart GetBuildPartAtIndex(int idx)
 	{
-		return m_BuildParts.Get( idx );
+		if( m_BuildParts.Count() > idx )
+		{
+			return m_BuildParts.Get( idx );
+		}
+		return null;
+	}
+	
+	ConstructionPart GetBuildPartNoToolAtIndex(int idx)
+	{
+		if( m_BuildPartsNoTool.Count() > idx )
+		{
+			return m_BuildPartsNoTool.Get( idx );
+		}
+		return null;
 	}
 
 	//************************************************/
@@ -220,7 +266,7 @@ class ConstructionActionData
 							{
 								if (  target.GetInventory().CanAddAttachmentEx( item_to_attach, item_slot_id ) && target.CanReceiveAttachment( item_to_attach, item_slot_id ) || attachment_item && attachment_item.CanBeCombined( item_to_attach ) )
 								{
-									if(target.CanDisplayAttachmentSlot(attachment_slots.Get( j )))
+									if(target.CanDisplayAttachmentSlot(target_slot_id))
 										return item_slot_id;
 									else
 										return -1;

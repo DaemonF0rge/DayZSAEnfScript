@@ -16,6 +16,7 @@ class ActionGiveSalineTarget: ActionContinuousBase
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONFB_SALINEBLOODBAGTARGET;
 		m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT | DayZPlayerConstants.STANCEMASK_CROUCH;
+		m_Text = "#give_saline_person";
 	}
 	
 	override void CreateConditionComponents()  
@@ -23,11 +24,6 @@ class ActionGiveSalineTarget: ActionContinuousBase
 		
 		m_ConditionItem = new CCINonRuined;
 		m_ConditionTarget = new CCTMan(UAMaxDistances.DEFAULT);	
-	}
-		
-	override string GetText()
-	{
-		return "#give_saline_person";
 	}
 
 	override void OnFinishProgressServer( ActionData action_data )

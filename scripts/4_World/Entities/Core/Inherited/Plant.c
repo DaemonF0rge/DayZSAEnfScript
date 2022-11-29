@@ -18,7 +18,7 @@ class TreeHard extends PlantSuper
 {
 	override void OnTreeCutDown( EntityAI cutting_entity )
 	{
-		int tree_hard = 14;
+		//int tree_hard = 14;
 		
 		//ToolBase cut_tree_tool = ToolBase.Cast( cutting_tool );		
 		GetGame().RPCSingleParam( cutting_entity, PlantType.TREE_HARD, NULL, true );
@@ -28,14 +28,14 @@ class TreeHard extends PlantSuper
 	{
 		return true;
 	}
-	
+	/*
 	override void InitMiningValues()
 	{
 		super.InitMiningValues();
 		
-		m_BarkType = "Bark_Oak";
+		//m_BarkType = "Bark_Oak";
 	};
-	
+	*/
 	/*override int GetAmountOfDrops(ItemBase item)
 	{
 		if ( item && item.KindOf("Knife") )
@@ -96,14 +96,14 @@ class TreeSoft extends PlantSuper
 	{
 		return true;
 	}
-	
+	/*
 	override void InitMiningValues()
 	{
 		super.InitMiningValues();
 		
 		m_BarkType = "Bark_Oak";
 	};
-	
+	*/
 	/*override int GetAmountOfDrops(ItemBase item)
 	{
 		if ( item && item.KindOf("Knife") )

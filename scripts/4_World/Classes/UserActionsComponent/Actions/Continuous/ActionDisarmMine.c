@@ -10,88 +10,81 @@ class ActionDisarmMine: ActionContinuousBase
 {
 	void ActionDisarmMine()
 	{
-		m_CallbackClass = ActionDisarmMineCB;
-		m_CommandUID = DayZPlayerConstants.CMD_ACTIONFB_INTERACT;
-		m_StanceMask = DayZPlayerConstants.STANCEMASK_CROUCH;
-		m_FullBody = true;
+		m_CallbackClass	= ActionDisarmMineCB;
+		m_CommandUID 	= DayZPlayerConstants.CMD_ACTIONFB_INTERACT;
+		m_StanceMask	= DayZPlayerConstants.STANCEMASK_CROUCH;
+		m_FullBody 		= true;
+		
+		m_Text 			= "#disarm";
 	}
 	
 	override void CreateConditionComponents()
 	{
-		m_ConditionItem = new CCINonRuined;
-		m_ConditionTarget = new CCTCursor;
-	}
-
-	override string GetText()
-	{
-		return "#disarm";
+		m_ConditionItem 	= new CCINonRuined;
+		m_ConditionTarget 	= new CCTCursor;
 	}
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
 	{
-		if ( !target )
+		if (!target)
+		{
 			return false;
-
-		TrapBase target_TB;
-
-		if ( Class.CastTo(target_TB,  target.GetObject() ) &&  item && IsInReach(player, target, UAMaxDistances.DEFAULT) )
-		{		
-			if (target_TB.IsActive() && target_TB.CanBeDisarmed())
-			{
-				return true;
-			}
 		}
+
+		LandMineTrap targetMine;
+		if (Class.CastTo(targetMine, target.GetObject()) && item && IsInReach(player, target, UAMaxDistances.DEFAULT))
+		{		
+			return targetMine.IsActive() && targetMine.CanBeDisarmed();
+		}
+
 		return false;
 	}
 	
-	override void OnStartAnimationLoop( ActionData action_data )
+	override void OnStartAnimationLoop(ActionData action_data)
 	{
-		if ( !GetGame().IsMultiplayer() || GetGame().IsServer() )
+		if (!GetGame().IsMultiplayer() || GetGame().IsServer())
 		{
-			LandMineTrap targetMine = LandMineTrap.Cast( action_data.m_Target.GetObject() );
-			Param1<bool> play = new Param1<bool>( true );
-			GetGame().RPCSingleParam( targetMine, SoundTypeMine.DISARMING, play, true );
+			LandMineTrap targetMine = LandMineTrap.Cast(action_data.m_Target.GetObject());
+			Param1<bool> play = new Param1<bool>(true);
+			GetGame().RPCSingleParam(targetMine, SoundTypeMine.DISARMING, play, true);
 		}
 	}
 	
-	override void OnAnimationEvent( ActionData action_data )
+	override void OnAnimationEvent(ActionData action_data)
 	{
-		if ( !GetGame().IsMultiplayer() || GetGame().IsServer() )
+		if (!GetGame().IsMultiplayer() || GetGame().IsServer())
 		{
-			LandMineTrap targetMine = LandMineTrap.Cast( action_data.m_Target.GetObject() );
-			Param1<bool> play = new Param1<bool>( true );
-			GetGame().RPCSingleParam( targetMine, SoundTypeMine.DISARMING, play, true );
+			LandMineTrap targetMine = LandMineTrap.Cast(action_data.m_Target.GetObject());
+			Param1<bool> play = new Param1<bool>(true);
+			GetGame().RPCSingleParam(targetMine, SoundTypeMine.DISARMING, play, true);
 		}
 	}
 	
 	override void OnEndAnimationLoop( ActionData action_data )
 	{
-		if ( !GetGame().IsMultiplayer() || GetGame().IsServer() )
+		if (!GetGame().IsMultiplayer() || GetGame().IsServer())
 		{
-			LandMineTrap targetMine = LandMineTrap.Cast( action_data.m_Target.GetObject() );
-			Param1<bool> play = new Param1<bool>( false );
-			GetGame().RPCSingleParam( targetMine, SoundTypeMine.DISARMING, play, true );
+			LandMineTrap targetMine = LandMineTrap.Cast(action_data.m_Target.GetObject());
+			Param1<bool> play = new Param1<bool>(false);
+			GetGame().RPCSingleParam(targetMine, SoundTypeMine.DISARMING, play, true);
 		}
 	}
 	
-	override void OnFinishProgressServer( ActionData action_data )
+	override void OnFinishProgressServer(ActionData action_data)
 	{
-		TrapBase target_TB;
-		Class.CastTo( target_TB, action_data.m_Target.GetObject() );
+		LandMineTrap targetMine;
+		Class.CastTo(targetMine, action_data.m_Target.GetObject());
 		
-		ToolBase item_TB;
-		Class.CastTo( item_TB, action_data.m_MainItem );
+		ToolBase tool;
+		Class.CastTo(tool, action_data.m_MainItem);
 		
-		int randNum;
-		randNum = Math.RandomIntInclusive(0, 100);
-		if ( randNum < item_TB.GetDisarmRate() )
+		if (Math.RandomIntInclusive(0, 100) < tool.GetDisarmRate())
 		{
-			target_TB.SetDisarmed(true); 	//Prevent detonation of explosive
-			target_TB.SetHealth("", "", 0); //Effectively destroy mine
+			targetMine.Disarm();
 		}
 		else
 		{
-			target_TB.OnSteppedOn( action_data.m_Player );
+			targetMine.OnSteppedOn(action_data.m_Player);
 		}
 		
 		MiscGameplayFunctions.DealAbsoluteDmg(action_data.m_MainItem, 2);

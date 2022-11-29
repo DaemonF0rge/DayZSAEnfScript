@@ -45,6 +45,7 @@ class CraftFireplace extends RecipeBase
 		InsertIngredient(1,"Rag");//you can insert multiple ingredients this way
 		InsertIngredient(1,"BandageDressing");//you can insert multiple ingredients this way
 		InsertIngredient(1,"Paper");//you can insert multiple ingredients this way
+		InsertIngredient(1,"GiftWrapPaper");//you can insert multiple ingredients this way
 		InsertIngredient(1,"ItemBook");//you can insert multiple ingredients this way
 		InsertIngredient(1,"Bark_Birch");//you can insert multiple ingredients this way
 		InsertIngredient(1,"Bark_Oak");//you can insert multiple ingredients this way
@@ -116,6 +117,7 @@ class CraftFireplace extends RecipeBase
 			ItemBase attachment1 = ItemBase.Cast( result.GetInventory().CreateAttachment( ingredient1_classname ) );
 			MiscGameplayFunctions.TransferItemProperties( ingredient1, attachment1 );
 			attachment1.SetQuantity( 1 );
+			attachment1.SetCleanness(0);
 			
 			//set quantity to ingredient
 			ingredient1.AddQuantity( -1 );
@@ -139,7 +141,7 @@ class CraftFireplace extends RecipeBase
 			ItemBase attachment2 = ItemBase.Cast( result.GetInventory().CreateAttachment( ingredient2_classname ) );
 			MiscGameplayFunctions.TransferItemProperties( ingredient2, attachment2 );
 			attachment2.SetQuantity( 1 );
-			
+			attachment2.SetCleanness(0);
 			//set quantity to ingredient
 			ingredient2.AddQuantity( -1 );
 		}

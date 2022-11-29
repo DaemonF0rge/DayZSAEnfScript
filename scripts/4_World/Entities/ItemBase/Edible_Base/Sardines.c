@@ -2,12 +2,12 @@ class Sardines extends Edible_Base
 {
 	override bool CanBeCookedOnStick()
 	{
-		return false;
+		return true;
 	}	
 
 	override bool CanBeCooked()
 	{
-		return false;
+		return true;
 	}	
 	
 	override bool IsMeat()
@@ -18,5 +18,13 @@ class Sardines extends Edible_Base
 	override bool CanDecay()
 	{
 		return true;
+	}
+	
+	override void SetActions()
+	{
+		super.SetActions();
+		
+		AddAction(ActionForceFeed);
+		AddAction(ActionEatMeat);
 	}
 }

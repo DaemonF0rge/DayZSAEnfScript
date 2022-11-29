@@ -1,6 +1,6 @@
 class LeatherHat_ColorBase extends ClothingBase
 {
-	override bool CanPutAsAttachment( EntityAI parent )
+	/*override bool CanPutAsAttachment( EntityAI parent )
 	{
 		if(!super.CanPutAsAttachment(parent)) {return false;}
 		bool is_mask_only = false;
@@ -15,7 +15,7 @@ class LeatherHat_ColorBase extends ClothingBase
 			return true;
 		}
 		return false;
-	}
+	}*/
 }
 
 class LeatherHat_Natural extends LeatherHat_ColorBase {};

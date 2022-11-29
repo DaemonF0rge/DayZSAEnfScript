@@ -4,25 +4,31 @@ class NoiseAIEvaluate
 	
 	static float GetNoiseMultiplier(DayZPlayerImplement playerImplement)
 	{
-		float speedNoise =  GetNoiseMultiplierByPlayerSpeed(playerImplement);
-		float shoesNoise =  GetNoiseMultiplierByShoes(playerImplement);
-		float surfaceNoise = GetNoiseMultiplierBySurface(playerImplement);
+		float speedNoise	= GetNoiseMultiplierByPlayerSpeed(playerImplement);
+		float shoesNoise	= GetNoiseMultiplierByShoes(playerImplement);
+		float surfaceNoise	= GetNoiseMultiplierBySurface(playerImplement);
 		
-		surfaceNoise *= SURFACE_NOISE_WEIGHT;
-		float avgNoise = (shoesNoise + surfaceNoise)/(1 + SURFACE_NOISE_WEIGHT);
-		avgNoise *= speedNoise;
+		surfaceNoise 		*= SURFACE_NOISE_WEIGHT;
+		float avgNoise 		= (shoesNoise + surfaceNoise)/(1 + SURFACE_NOISE_WEIGHT);
+		avgNoise 			*= speedNoise;
 		
 		return avgNoise;
 	}
 	
 	//Noise multiplier based on player speed
-	protected static float GetNoiseMultiplierByPlayerSpeed(DayZPlayerImplement playerImplement)
+	static float GetNoiseMultiplierByPlayerSpeed(DayZPlayerImplement playerImplement)
 	{
-		ref HumanMovementState hms = new HumanMovementState();
+		HumanMovementState hms = new HumanMovementState();
 		
 		playerImplement.GetMovementState(hms);
 		
-		switch (AITargetCallbacksPlayer.StanceToMovementIdxTranslation(hms))
+		if ( playerImplement.GetCommand_Move() && playerImplement.GetCommand_Move().IsInRoll() )
+		{
+			// When rolling we are prone, so we load that Noise value, hence we multiply
+			return PlayerConstants.AI_NOISE_ROLL;
+		}
+		
+		switch ( AITargetCallbacksPlayer.StanceToMovementIdxTranslation(hms) )
 		{			
 			case DayZPlayerConstants.MOVEMENTIDX_IDLE:
 				return PlayerConstants.AI_NOISE_IDLE;
@@ -46,9 +52,9 @@ class NoiseAIEvaluate
 	
 	
 	//Noise multiplier based on type of boots
-	protected static float GetNoiseMultiplierByShoes(DayZPlayerImplement playerImplement)
+	static float GetNoiseMultiplierByShoes(DayZPlayerImplement playerImplement)
 	{
-		switch(playerImplement.GetBootsType())
+		switch ( playerImplement.GetBootsType() )
 		{
 			case AnimBootsType.None:
 				return PlayerConstants.AI_NOISE_SHOES_NONE;
@@ -65,7 +71,7 @@ class NoiseAIEvaluate
 	}
 	
 	//Gets noise multiplayer base on surface player walks on
-	protected static float GetNoiseMultiplierBySurface(DayZPlayerImplement playerImplement)
+	static float GetNoiseMultiplierBySurface(DayZPlayerImplement playerImplement)
 	{
 		return playerImplement.GetSurfaceNoise(); 
 	}

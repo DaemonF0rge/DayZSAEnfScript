@@ -26,7 +26,9 @@ class PluginConfigDebugProfileFixed extends PluginConfigDebugProfile
 	//========================================
 	void GetAllPositionsNames( out TStringArray arr )
 	{
-		if ( g_Game.GetWorldName() == "enoch")
+		string world = g_Game.GetWorldName();
+		world.ToLower();
+		if ( world == "enoch")
 			GetSubParametersInStringArray( POSITIONS_LIST_ENOCH, SUB_PARAM_POS_NAME, arr );
 		else
 			GetSubParametersInStringArray( POSITIONS_LIST, SUB_PARAM_POS_NAME, arr );
@@ -38,9 +40,11 @@ class PluginConfigDebugProfileFixed extends PluginConfigDebugProfile
 	vector GetPositionByName( string pos_name )
 	{
 		vector pos;
+		string world = g_Game.GetWorldName();
+		world.ToLower();
 		
 		array<ref CfgParam> params;
-		if ( g_Game.GetWorldName() == "enoch")
+		if ( world == "enoch")
 			params = GetArray( POSITIONS_LIST_ENOCH );
 		else
 			params = GetArray( POSITIONS_LIST );		

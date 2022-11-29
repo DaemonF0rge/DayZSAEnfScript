@@ -54,7 +54,8 @@ class ConnectErrorClientModule : ErrorHandlerModuleScript
 		InsertErrorProperties(EConnectErrorClient.PASSWORD);
 		InsertErrorProperties(EConnectErrorClient.BE_LICENCE);
 	}
-	
+
+#ifndef NO_GUI	
 	override void OnEvent(EventType eventTypeId, Param params)
 	{
 		switch (eventTypeId)
@@ -67,6 +68,7 @@ class ConnectErrorClientModule : ErrorHandlerModuleScript
 				break;
 		}
 	}
+#endif
 }
 
 /*class ConnectErrorClientModuleUI : UIScriptedMenu

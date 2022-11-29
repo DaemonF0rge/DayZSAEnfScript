@@ -1,7 +1,7 @@
 class CameraToolsMenu extends UIScriptedMenu
 {
 	protected static CameraToolsMenu											m_Instance;
-	
+	vector 																		m_FreeflightCamTransform[4];
 	protected vector															m_NextCamPosition;
 	
 	protected float																m_Time;
@@ -51,7 +51,12 @@ class CameraToolsMenu extends UIScriptedMenu
 	protected ButtonWidget														m_AddEvent;
 	protected ButtonWidget														m_SaveEvent;
 	protected ButtonWidget														m_DeleteEvent;
-	protected ButtonWidget														m_ViewEvent;
+	protected ButtonWidget														m_ViewEvent;	
+	
+	protected ButtonWidget 														m_CopyButton;
+	protected ButtonWidget 														m_ApplyButton;
+	protected EditBoxWidget 													m_CameraEditbox;
+	protected TextWidget 														m_CameraValues;
 	
 	void CameraToolsMenu()
 	{
@@ -76,31 +81,32 @@ class CameraToolsMenu extends UIScriptedMenu
 		DeveloperFreeCamera.DisableFreeCamera( PlayerBase.Cast( GetGame().GetPlayer() ), false );
 		
 		MissionGameplay ms	= MissionGameplay.Cast( GetGame().GetMission() );
-		ms.GetHud().Show( false );
+		if (ms)
+			ms.GetHud().Show( true );
 	}
 	
 	override void OnShow()
 	{
 		super.OnShow();
-		if( !m_IsPlaying )
+		if ( !m_IsPlaying )
 		{
-			MissionGameplay.Cast( GetGame().GetMission() ).PlayerControlDisable(INPUT_EXCLUDE_ALL);
+			GetGame().GetMission().AddActiveInputExcludes({"menu"});
 		}
 	}
 	
 	override void OnHide()
 	{
 		super.OnHide();
-		if( !m_IsPlaying )
+		if ( !m_IsPlaying && GetGame() && GetGame().GetMission() && GetGame().GetUIManager())
 		{
 			GetGame().GetUIManager().ShowCursor(false);
-			MissionGameplay.Cast( GetGame().GetMission() ).PlayerControlEnable(true);
+			GetGame().GetMission().RemoveActiveInputExcludes({"menu"},true);
 		}
 	}
 	
 	void SelectKeyframe( CTKeyframe kf )
 	{
-		if( m_SelectedKeyframe )
+		if ( m_SelectedKeyframe )
 			m_SelectedKeyframe.Unselect();
 		
 		m_SelectedKeyframe = kf;
@@ -146,19 +152,24 @@ class CameraToolsMenu extends UIScriptedMenu
 		m_ViewKeyframe			= ButtonWidget.Cast( layoutRoot.FindAnyWidget( "snap_to_keyframe" ) );
 		m_SaveEvent				= ButtonWidget.Cast( layoutRoot.FindAnyWidget( "save_event" ) );
 		m_DeleteEvent			= ButtonWidget.Cast( layoutRoot.FindAnyWidget( "delete_event" ) );
-		m_ViewEvent				= ButtonWidget.Cast( layoutRoot.FindAnyWidget( "snap_to_event" ) );
+		m_ViewEvent				= ButtonWidget.Cast( layoutRoot.FindAnyWidget( "snap_to_event" ) );		
+		
+		m_CopyButton			= ButtonWidget.Cast( layoutRoot.FindAnyWidget( "CopyButton" ) );
+		m_ApplyButton			= ButtonWidget.Cast( layoutRoot.FindAnyWidget( "ApplyButton" ) );
+		m_CameraEditbox			= EditBoxWidget.Cast( layoutRoot.FindAnyWidget( "CameraEditbox" ) );
+		m_CameraValues			= TextWidget.Cast( layoutRoot.FindAnyWidget( "CameraValues" ) );
 		
 		MissionGameplay ms		= MissionGameplay.Cast( GetGame().GetMission() );
 		ms.GetHud().Show( false );
 		DeveloperFreeCamera.EnableFreeCameraSceneEditor( PlayerBase.Cast( GetGame().GetPlayer() ) );
 		
-		m_BlurEditWidget.SetText( "1.0" );
+		m_BlurEditWidget.SetText( "0.0" );
 		return layoutRoot;
 	}
 	
 	PlayerBase GetActor( int index )
 	{
-		if( index > -1 && index < m_Actors.Count() )
+		if ( index > -1 && index < m_Actors.Count() )
 			return PlayerBase.Cast( m_Actors.Get( index ).GetObj() );
 		else
 			return null;
@@ -166,10 +177,10 @@ class CameraToolsMenu extends UIScriptedMenu
 	
 	static void PlayAnimOnActor( int actor, int anim )
 	{
-		if( m_Instance )
+		if ( m_Instance )
 		{
 			PlayerBase p = m_Instance.GetActor( actor );
-			if( p )
+			if ( p )
 			{
 				EmoteCB cb = EmoteCB.Cast( p.StartCommand_Action( anim, EmoteCB, DayZPlayerConstants.STANCEMASK_ALL ) );
 				cb.EnableCancelCondition(true);
@@ -179,30 +190,30 @@ class CameraToolsMenu extends UIScriptedMenu
 	
 	void LoadData()
 	{
-		if( !FileExist( g_Game.GetMissionFolderPath() + "/CameraTools" ) )
+		if ( !FileExist( g_Game.GetMissionFolderPath() + "/CameraTools" ) )
 			MakeDirectory( g_Game.GetMissionFolderPath() + "/CameraTools" );
 		
 		m_Cameras.Clear();
 		m_Events.Clear();
 		m_Actors.Clear();
 		
-		ref CTSaveStructure save_data = new CTSaveStructure();
+		CTSaveStructure save_data = new CTSaveStructure();
 		JsonFileLoader<ref CTSaveStructure>.JsonLoadFile( g_Game.GetMissionFolderPath() + "/CameraTools/keyframe_data.json", save_data );
 		
 		m_InterpTypeCombo.SetCurrentItem( save_data.m_InterpType );
 		m_InterpTypeSpeedCombo.SetCurrentItem( save_data.m_InterpSpeed );
 		SetBlurValue( save_data.m_BlurValue );
 		
-		foreach( Param6<vector, vector, float, float, float, int> transform : save_data.m_Cameras )
+		foreach ( Param6<vector, vector, float, float, float, int> transform : save_data.m_Cameras )
 		{
-			ref CTKeyframe kf = new CTKeyframe( m_Cameras.Count(), transform.param1, transform.param2, transform.param3, transform.param4, transform.param5, transform.param6, GetTotalTime( m_Cameras.Count() ), m_KeyframeContent, this );
+			CTKeyframe kf = new CTKeyframe( m_Cameras.Count(), transform.param1, transform.param2, transform.param3, transform.param4, transform.param5, transform.param6, GetTotalTime( m_Cameras.Count() ), m_KeyframeContent, this );
 			kf.SetInterpTime( transform.param3 );
 			m_Cameras.Insert( kf );
 		}
 		
-		foreach( Param4<int, int, float, bool> event_t : save_data.m_Events )
+		foreach ( Param4<int, int, float, bool> event_t : save_data.m_Events )
 		{
-			ref CTEvent ev = new CTEvent( m_Events.Count(), event_t.param1, m_EventContent, event_t.param4, this );
+			CTEvent ev = new CTEvent( m_Events.Count(), event_t.param1, m_EventContent, event_t.param4, this );
 			ev.SetEventType( event_t.param2 );
 			ev.SetEventTime( event_t.param3 );
 			m_Events.Insert( ev );
@@ -210,36 +221,36 @@ class CameraToolsMenu extends UIScriptedMenu
 		
 		foreach( Param5<vector, vector, string, ref array<string>, string> actor_t : save_data.m_Actors )
 		{
-			ref CTActor ac = new CTActor( m_Actors.Count(), actor_t.param1, actor_t.param2, actor_t.param3, actor_t.param4, actor_t.param5, this );
+			CTActor ac = new CTActor( m_Actors.Count(), actor_t.param1, actor_t.param2, actor_t.param3, actor_t.param4, actor_t.param5, this );
 			m_Actors.Insert( ac );
 		}
 	}
 	
 	void SaveData()
 	{
-		if( !FileExist( g_Game.GetMissionFolderPath() + "/CameraTools" ) )
+		if ( !FileExist( g_Game.GetMissionFolderPath() + "/CameraTools" ) )
 			MakeDirectory( g_Game.GetMissionFolderPath() + "/CameraTools" );
 		
-		ref CTSaveStructure save_data	= new CTSaveStructure();
+		CTSaveStructure save_data		= new CTSaveStructure();
 		save_data.m_InterpType			= m_InterpTypeCombo.GetCurrentItem();
 		save_data.m_InterpSpeed			= m_InterpTypeSpeedCombo.GetCurrentItem();
 		save_data.m_BlurValue			= GetBlurValue();
 		
-		foreach( CTKeyframe keyframe : m_Cameras )
+		foreach ( CTKeyframe keyframe : m_Cameras )
 		{
-			ref Param6<vector, vector, float, float, float, int> transform = new Param6<vector, vector, float, float, float, int>( keyframe.GetPosition(), keyframe.GetOrientation(), keyframe.GetInterpTime(), keyframe.GetFOV(), keyframe.GetDOF(), keyframe.GetPin() );
+			Param6<vector, vector, float, float, float, int> transform = new Param6<vector, vector, float, float, float, int>( keyframe.GetPosition(), keyframe.GetOrientation(), keyframe.GetInterpTime(), keyframe.GetFOV(), keyframe.GetDOF(), keyframe.GetPin() );
 			save_data.m_Cameras.Insert( transform );
 		}
 		
-		foreach( CTEvent event_t : m_Events )
+		foreach ( CTEvent event_t : m_Events )
 		{
-			ref Param4<int, int, float, bool> ev = new Param4<int, int, float, bool>( event_t.GetEventActor(), event_t.GetEventType(), event_t.GetEventTime(), event_t.GetEventWalk() );
+			Param4<int, int, float, bool> ev = new Param4<int, int, float, bool>( event_t.GetEventActor(), event_t.GetEventType(), event_t.GetEventTime(), event_t.GetEventWalk() );
 			save_data.m_Events.Insert( ev );
 		}
 		
-		foreach( CTActor actor_t : m_Actors )
+		foreach ( CTActor actor_t : m_Actors )
 		{
-			ref Param5<vector, vector, string, ref array<string>, string> ac = new Param5<vector, vector, string, ref array<string>, string>( actor_t.GetPosition(), actor_t.GetRotation(), actor_t.GetActorType(), actor_t.GetItems(), actor_t.GetHandsItem() );
+			Param5<vector, vector, string, ref array<string>, string> ac = new Param5<vector, vector, string, ref array<string>, string>( actor_t.GetPosition(), actor_t.GetRotation(), actor_t.GetActorType(), actor_t.GetItems(), actor_t.GetHandsItem() );
 			save_data.m_Actors.Insert( ac );
 		}
 		
@@ -250,7 +261,7 @@ class CameraToolsMenu extends UIScriptedMenu
 	{
 		float time;
 		index = Math.Clamp( index, 0, m_Cameras.Count() );
-		for( int i = 0; i < index; i++ )
+		for ( int i = 0; i < index; i++ )
 		{
 			time += m_Cameras.Get( i ).GetInterpTime();
 		}
@@ -259,11 +270,11 @@ class CameraToolsMenu extends UIScriptedMenu
 	
 	void AddKeyframe()
 	{
-		if( Camera.GetCurrentCamera() )
+		if ( Camera.GetCurrentCamera() )
 		{
 			vector pos = Camera.GetCurrentCamera().GetWorldPosition();
 			vector orient = Camera.GetCurrentCamera().GetOrientation();
-			ref CTKeyframe kf = new CTKeyframe( m_Cameras.Count(), pos, orient, 1, 70, 50, -1, GetTotalTime( m_Cameras.Count() ), m_KeyframeContent, this );
+			CTKeyframe kf = new CTKeyframe( m_Cameras.Count(), pos, orient, 1, 70, 50, -1, GetTotalTime( m_Cameras.Count() ), m_KeyframeContent, this );
 			m_Cameras.Insert( kf );
 			SelectKeyframe( kf );
 		}
@@ -271,7 +282,7 @@ class CameraToolsMenu extends UIScriptedMenu
 	
 	void SaveKeyframe()
 	{
-		if( m_SelectedKeyframe && Camera.GetCurrentCamera() )
+		if ( m_SelectedKeyframe && Camera.GetCurrentCamera() )
 		{
 			m_SelectedKeyframe.SetPosition( Camera.GetCurrentCamera().GetWorldPosition() );
 			m_SelectedKeyframe.SetOrientation( Camera.GetCurrentCamera().GetOrientation() );
@@ -280,12 +291,12 @@ class CameraToolsMenu extends UIScriptedMenu
 	
 	void DeleteKeyframe()
 	{
-		if( m_SelectedKeyframe )
+		if ( m_SelectedKeyframe )
 		{
 			int index = m_Cameras.Find( m_SelectedKeyframe );
 			m_Cameras.Remove( index );
 			index = Math.Clamp( index, 0, m_Cameras.Count() - 1 );
-			if( m_Cameras.Count() > 0 )
+			if ( m_Cameras.Count() > 0 )
 			{
 				SelectKeyframe( m_Cameras.Get( index ) );
 			}
@@ -294,7 +305,7 @@ class CameraToolsMenu extends UIScriptedMenu
 	
 	void ViewKeyframe()
 	{
-		if( m_SelectedKeyframe && Camera.GetCurrentCamera() )
+		if ( m_SelectedKeyframe && Camera.GetCurrentCamera() )
 		{
 			Camera.GetCurrentCamera().SetPosition( m_SelectedKeyframe.GetPosition() );
 			Camera.GetCurrentCamera().SetOrientation( m_SelectedKeyframe.GetOrientation() );
@@ -304,16 +315,16 @@ class CameraToolsMenu extends UIScriptedMenu
 	void AddActor( string actor_type )
 	{
 		vector pos = GetCameraLookDir();
-		ref CTActor ac = new CTActor( m_Actors.Count(), pos, "0 0 0", actor_type, new array<string>, "", this );
-		if( ac.GetObj() )
+		CTActor ac = new CTActor( m_Actors.Count(), pos, "0 0 0", actor_type, new array<string>, "", this );
+		if ( ac.GetObj() )
 			m_Actors.Insert( ac );
 	}
 	
 	void AddEvent( int actor_index )
 	{
-		if( actor_index > -1 )
+		if ( actor_index > -1 )
 		{
-			ref CTEvent ev = new CTEvent( m_Events.Count(), actor_index, m_EventContent, false, this );
+			CTEvent ev = new CTEvent( m_Events.Count(), actor_index, m_EventContent, false, this );
 			m_Events.Insert( ev );
 		}
 	}
@@ -322,10 +333,10 @@ class CameraToolsMenu extends UIScriptedMenu
 	void AddItem( string id, string type )
 	{
 		int id_int = id.ToInt();
-		if( m_Actors.Count() > id_int && id_int > -1 )
+		if ( m_Actors.Count() > id_int && id_int > -1 )
 		{
 			CTActor ac = m_Actors.Get( id_int );
-			if( ac )
+			if ( ac )
 				ac.AddItem( type );
 		}
 	}
@@ -333,10 +344,10 @@ class CameraToolsMenu extends UIScriptedMenu
 	void AddHandsItem( string id, string type )
 	{
 		int id_int = id.ToInt();
-		if( m_Actors.Count() > id_int && id_int > -1 )
+		if ( m_Actors.Count() > id_int && id_int > -1 )
 		{
 			CTActor ac = m_Actors.Get( id_int );
-			if( ac )
+			if ( ac )
 				ac.SetHandsItem( type );
 		}
 	}
@@ -358,7 +369,7 @@ class CameraToolsMenu extends UIScriptedMenu
 	
 	Param6<vector, vector, float, float, float, int> GetCameraLine( int index )
 	{
-		if( index > -1 && index < m_CameraLines.Count() )
+		if ( index > -1 && index < m_CameraLines.Count() )
 		{
 			return m_CameraLines[index];
 		}
@@ -367,25 +378,27 @@ class CameraToolsMenu extends UIScriptedMenu
 	
 	void Play()
 	{
-		if( m_Cameras.Count() > 0 )
+		if (Camera.GetCurrentCamera())
+			Camera.GetCurrentCamera().GetTransform(m_FreeflightCamTransform);
+		if ( m_Cameras.Count() > 0 )
 		{
 			layoutRoot.Show( false );
 			GetGame().GetUIManager().ShowCursor( false );
 			m_CameraLines = new array<ref Param6<vector, vector, float, float, float, int>>;
 			
-			foreach( CTKeyframe keyframe : m_Cameras )
+			foreach ( CTKeyframe keyframe : m_Cameras )
 			{
-				ref Param6<vector, vector, float, float, float, int> transform = new Param6<vector, vector, float, float, float, int>( keyframe.GetPosition(), keyframe.GetOrientation(), keyframe.GetInterpTime(), keyframe.GetFOV(), keyframe.GetDOF(), keyframe.GetPin() );
+				Param6<vector, vector, float, float, float, int> transform = new Param6<vector, vector, float, float, float, int>( keyframe.GetPosition(), keyframe.GetOrientation(), keyframe.GetInterpTime(), keyframe.GetFOV(), keyframe.GetDOF(), keyframe.GetPin() );
 				m_CameraLines.Insert( transform );
 				
 			}
 			
-			foreach( CTActor ac : m_Actors )
+			foreach ( CTActor ac : m_Actors )
 			{
 				ac.Hide();
 			}
 			
-			foreach( CTEvent ev : m_Events )
+			foreach ( CTEvent ev : m_Events )
 			{
 				ev.GetEventTime();
 			}
@@ -394,7 +407,7 @@ class CameraToolsMenu extends UIScriptedMenu
 			
 			int time					= SetCameraData( GetCameraLine( 0 ), GetCameraLine( 1 ) );
 			
-			if( GetCameraLine( 0 ).param6 > -1 )
+			if ( GetCameraLine( 0 ).param6 > -1 )
 			{
 				m_FollowingTimeFinished	= time;
 				m_NextCamPosition = "0 0 0";
@@ -426,16 +439,18 @@ class CameraToolsMenu extends UIScriptedMenu
 		m_NextCameraIndex = 1;
 		m_IsPlaying = false;
 		
-		foreach( CTEvent ev : m_Events )
+		foreach ( CTEvent ev : m_Events )
 		{
 			ev.Stop();
 		}
 		
-		foreach( CTActor ac : m_Actors )
+		foreach ( CTActor ac : m_Actors )
 		{
 			ac.Reset();
 			ac.Show();
 		}
+		
+		Camera.GetCurrentCamera().SetTransform(m_FreeflightCamTransform);
 	}
 	
 	vector GetCameraLookDir()
@@ -447,7 +462,7 @@ class CameraToolsMenu extends UIScriptedMenu
 		vector contact_dir;
 		int contact_component;
 		Object ev_obj;
-		if( m_SelectedEvent )
+		if ( m_SelectedEvent )
 			ev_obj = GetActor( m_SelectedEvent.GetEventActor() );
 		if ( DayZPhysics.RaycastRV(from, to, contact_pos, contact_dir, contact_component, null, null, ev_obj) )   
 		{
@@ -466,7 +481,7 @@ class CameraToolsMenu extends UIScriptedMenu
 		vector contact_dir;
 		int contact_component;
 		Object ev_obj;
-		if( m_SelectedEvent )
+		if ( m_SelectedEvent )
 			ev_obj = GetActor( m_SelectedEvent.GetEventActor() );
 		if ( DayZPhysics.RaycastRV(from, to, contact_pos, contact_dir, contact_component, null, null, ev_obj) )   
 		{
@@ -478,9 +493,27 @@ class CameraToolsMenu extends UIScriptedMenu
 	
 	override void Update( float timeslice )
 	{
+		
+		string camPos = MiscGameplayFunctions.TruncateVecToS(FreeDebugCamera.GetInstance().GetPosition(),0);
+		string camOri = MiscGameplayFunctions.TruncateVecToS(FreeDebugCamera.GetInstance().GetOrientation(),0);
+		m_CameraValues.SetText("Pos:" +camPos + " | Rot:" + camOri);
+		
+		if (DiagMenu.GetBool(DiagMenuIDs.DM_ENABLE_REMOTE_CAMERA_BROADCAST))
+		{
+			Camera cam = Camera.GetCurrentCamera();
+			
+			if (!cam && m_Camera1)
+				cam = m_Camera1; 
+			if (cam)
+			{
+				Param4<vector, vector,float,float> p4 = new Param4<vector, vector,float,float>(GetGame().GetCurrentCameraPosition(),GetGame().GetCurrentCameraDirection(), cam.GetNearPlane(), cam.GetCurrentFOV());
+				GetGame().RPCSingleParam(null, ERPCs.DEV_CAMERA_TOOLS_CAM_DATA, p4, false);
+			}
+		
+		}
 		if ( m_CameraLines && m_IsPlaying )
 		{
-			foreach( CTEvent ev : m_Events )
+			foreach ( CTEvent ev : m_Events )
 			{
 				if ( ev.IsTime( m_Time, m_Time + timeslice ) )
 				{
@@ -490,15 +523,15 @@ class CameraToolsMenu extends UIScriptedMenu
 			
 			m_Time += timeslice;
 			
-			if( !Camera.GetCurrentCamera() || !m_Camera1 || !m_Camera2 )
+			if ( !Camera.GetCurrentCamera() || !m_Camera1 || !m_Camera2 )
 			{
 				return;
 			}
 			
-			if( m_FollowingBone )
+			if ( m_FollowingBone )
 			{
 				PlayerBase p = GetActor( m_FollowingBone.param1 );
-				if( p )
+				if ( p )
 				{
 					vector pos = p.GetBonePositionWS( m_FollowingBone.param2 );
 								
@@ -508,35 +541,35 @@ class CameraToolsMenu extends UIScriptedMenu
 					
 					vector new_orient = Math3D.QuatToAngles(bone_rot);
 					
-					Print("Rot: "+ new_orient[0] +", "+ new_orient[1] +", "+ new_orient[2]);
+					//Print("Rot: "+ new_orient[0] +", "+ new_orient[1] +", "+ new_orient[2]);
 					
 					float temp = new_orient[1];
 					new_orient[0] = new_orient[0] + 325; // vertical 
 					new_orient[1] = new_orient[2] + 245;// horizontal
 					new_orient[2] = temp + 290;			// tilt
 					
-					Print("PostRot: "+ new_orient[0] +", "+ new_orient[1] +", "+ new_orient[2]);
+					//Print("PostRot: "+ new_orient[0] +", "+ new_orient[1] +", "+ new_orient[2]);
 					
 					m_Camera1.SetPosition(pos);
 					m_Camera1.SetOrientation(new_orient);
 				}
 			}
 			
-			if( m_NextCameraIndex + 1 == m_CameraLines.Count() )
+			if ( m_NextCameraIndex + 1 == m_CameraLines.Count() )
 			{
 				Stop();
 				DeveloperFreeCamera.EnableFreeCameraSceneEditor( PlayerBase.Cast( GetGame().GetPlayer() ) );
-				foreach( CTEvent ev2 : m_Events )
+				foreach ( CTEvent ev2 : m_Events )
 				{
 					ev2.Stop();
 				}
 				return;
 			}
 			
-			if( Camera.GetCurrentCamera().GetPosition() == m_NextCamPosition || ( m_FollowingTimeFinished != -1 && m_Time >= m_FollowingTimeFinished ) )
+			if ( Camera.GetCurrentCamera().GetPosition() == m_NextCamPosition || ( m_FollowingTimeFinished != -1 && m_Time >= m_FollowingTimeFinished ) )
 			{
 				int time;
-				if( GetCameraLine( m_NextCameraIndex - 1 ).param6 > -1 )
+				if ( GetCameraLine( m_NextCameraIndex - 1 ).param6 > -1 )
 				{
 					m_NextCameraIndex--;
 					GetCameraLine( m_NextCameraIndex ).param6 = -1;
@@ -549,7 +582,7 @@ class CameraToolsMenu extends UIScriptedMenu
 				}
 				
 				m_NextCameraIndex++;
-				if( GetCameraLine( m_NextCameraIndex - 1 ).param6 > -1 )
+				if ( GetCameraLine( m_NextCameraIndex - 1 ).param6 > -1 )
 				{
 					m_FollowingTimeFinished = time + m_Time;
 					m_NextCamPosition = "0 0 0";
@@ -576,21 +609,21 @@ class CameraToolsMenu extends UIScriptedMenu
 		}
 		else
 		{
-			if( m_Camera1.GetPosition() == m_NextCamPosition )
+			if ( m_Camera1.GetPosition() == m_NextCamPosition )
 			{
 				DeveloperFreeCamera.EnableFreeCameraSceneEditor( PlayerBase.Cast( GetGame().GetPlayer() ) );
 			}
 			
-			for( int i = 0; i < ( m_Cameras.Count() - 1 ); i++ )
+			for ( int i = 0; i < ( m_Cameras.Count() - 1 ); i++ )
 			{
 				vector pos0 = m_Cameras.Get( i ).GetPosition();
 				vector pos1 = m_Cameras.Get( i + 1 ).GetPosition();
 				Debug.DrawArrow( pos0, pos1, 2, COLOR_RED, ShapeFlags.ONCE );
 			}
 			
-			if( m_SelectedActor )
+			if ( m_SelectedActor )
 			{
-				if( !g_Game.IsLeftCtrlDown() )
+				if ( !g_Game.IsLeftCtrlDown() )
 					m_SelectedActor.SetPosition( GetMouseLookDir() );
 				else
 				{
@@ -602,7 +635,7 @@ class CameraToolsMenu extends UIScriptedMenu
 					
 			}
 			
-			foreach( CTActor ac : m_Actors )
+			foreach ( CTActor ac : m_Actors )
 			{
 				ac.Update( timeslice );
 			}
@@ -612,17 +645,17 @@ class CameraToolsMenu extends UIScriptedMenu
 	float SetCameraData( Param6<vector, vector, float, float, float,int> transform1, Param6<vector, vector, float, float, float, int> transform2 )
 	{
 		float int_value			= transform1.param3;
-		if( m_InterpTypeSpeedCombo.GetCurrentItem() == 1 )
+		if ( m_InterpTypeSpeedCombo.GetCurrentItem() == 1 )
 		{
 			int_value = vector.Distance( transform1.param1, transform2.param1 ) / int_value;
 		}
 		PlayerBase p;
 		float pQuat[4];
 		int b_index;
-		if( transform1.param6 > -1 )
+		if ( transform1.param6 > -1 )
 		{
 			p = GetActor( transform1.param6 );
-			if( p )
+			if ( p )
 			{
 				b_index = p.GetBoneIndexByName( "LeftHand_Dummy" );
 				m_FollowingBone = new Param2<int, int>(transform1.param6, b_index);
@@ -637,16 +670,16 @@ class CameraToolsMenu extends UIScriptedMenu
 		m_Camera1.SetFOV( transform1.param4 * Math.DEG2RAD );
 		m_Camera1.SetFocus( transform1.param5, GetBlurValue() );
 		
-		if( transform2 )
+		if ( transform2 )
 		{
-			if( transform2.param6 > -1 )
+			if ( transform2.param6 > -1 )
 			{
 				pQuat[4];
 				p = GetActor( transform2.param6 );
-				if( p )
+				if ( p )
 				{
 					b_index = p.GetBoneIndexByName( "LeftHand_Dummy" );
-					if( b_index != -1 )
+					if ( b_index != -1 )
 					{
 						m_Camera2.SetPosition( p.GetBonePositionWS( b_index ) );
 				
@@ -685,16 +718,16 @@ class CameraToolsMenu extends UIScriptedMenu
 	
 	override bool OnMouseButtonDown( Widget w, int x, int y, int button )
 	{
-		if( w == layoutRoot && button == MouseState.RIGHT && !m_IsPlaying )
+		if ( w == layoutRoot && button == MouseState.RIGHT && !m_IsPlaying )
 		{
 			GetGame().GetInput().ResetGameFocus();
 			GetGame().GetInput().ChangeGameFocus(-1);
 			GetGame().GetUIManager().ShowCursor(false);
-			MissionGameplay.Cast( GetGame().GetMission() ).PlayerControlEnable(true);
+			GetGame().GetMission().RemoveActiveInputExcludes({"menu"});
 			SetFocus( layoutRoot );
 			return true;
 		}
-		else if( !IsFocusable( w ) )
+		else if ( !IsFocusable( w ) )
 		{
 			SetFocus( layoutRoot );
 		}
@@ -703,7 +736,7 @@ class CameraToolsMenu extends UIScriptedMenu
 	
 	override bool OnMouseButtonUp( Widget w, int x, int y, int button )
 	{
-		if( w == layoutRoot && button == MouseState.LEFT )
+		if ( w == layoutRoot && button == MouseState.LEFT )
 		{
 			SelectActor( null );
 			return true;
@@ -713,9 +746,9 @@ class CameraToolsMenu extends UIScriptedMenu
 	
 	override bool OnClick( Widget w, int x, int y, int button )
 	{
-		if( button == MouseState.LEFT )
+		if ( button == MouseState.LEFT )
 		{
-			if( w == m_SaveKeyframe )
+			if ( w == m_SaveKeyframe )
 			{
 				SaveKeyframe();
 				return true;
@@ -775,24 +808,48 @@ class CameraToolsMenu extends UIScriptedMenu
 				LoadData();
 				return true;
 			}
-			else if( w == m_AddActor )
+			else if ( w == m_AddActor )
 			{
 				AddActor( m_ActorTypeWidget.GetText() );
 			}
-			else if( w == m_AddItem )
+			else if ( w == m_AddItem )
 			{
 				AddItem( m_ActorIdWidget.GetText(), m_ActorItemTypeWidget.GetText() );
 			}
-			else if( w == m_AddHandsItem )
+			else if ( w == m_AddHandsItem )
 			{
 				AddHandsItem( m_ActorIdWidget.GetText(), m_ActorItemTypeWidget.GetText() );
+			}
+			else if ( w == m_CopyButton )
+			{
+				string clipboardIn = FreeDebugCamera.GetInstance().GetPosition().ToString(false)+"|"+ FreeDebugCamera.GetInstance().GetOrientation().ToString(false);
+				GetGame().CopyToClipboard( clipboardIn );
+				
+				//Print(clipboardIn);
+			}
+			else if ( w == m_ApplyButton )
+			{
+				string camText = m_CameraEditbox.GetText();
+				if (camText && camText.IndexOf("|") !=-1)
+				{
+					int seperatorIndex = camText.IndexOf("|");
+					int length = camText.Length();
+					
+					string posStr = camText.Substring(0,seperatorIndex);
+					string oriStr = camText.Substring(seperatorIndex+1, length - seperatorIndex - 1);
+					FreeDebugCamera.GetInstance().SetPosition(posStr.ToVector());
+					FreeDebugCamera.GetInstance().SetOrientation(oriStr.ToVector());
+				}
 			}
 		}
 		return false;
 	}
 	
+	
 	override bool OnMouseEnter( Widget w, int x, int y )
 	{
+		if ( w == m_CameraEditbox)
+			m_CameraEditbox.SetText("");
 		return true;
 	}
 	
@@ -803,7 +860,7 @@ class CameraToolsMenu extends UIScriptedMenu
 	
 	override bool OnFocus( Widget w, int x, int y )
 	{
-		if( IsFocusable( w ) )
+		if ( IsFocusable( w ) )
 		{
 			ColorRed( w );
 			return true;
@@ -813,7 +870,7 @@ class CameraToolsMenu extends UIScriptedMenu
 	
 	override bool OnFocusLost( Widget w, int x, int y )
 	{
-		if( IsFocusable( w ) )
+		if ( IsFocusable( w ) )
 		{
 			ColorWhite( w, null );
 			return true;
@@ -823,7 +880,7 @@ class CameraToolsMenu extends UIScriptedMenu
 	
 	bool IsFocusable( Widget w )
 	{
-		if( w )
+		if ( w )
 		{
 			return ( w == m_SaveKeyframe  || w == m_DeleteKeyframe || w == m_ViewKeyframe || w == m_SaveEvent || w == m_DeleteEvent || w == m_ViewEvent || w == m_AddKeyframe || w == m_AddEvent || w == m_Play || w == m_Stop || w == m_Save || w == m_Load || w == m_InterpTypeCombo );
 		}
@@ -832,36 +889,37 @@ class CameraToolsMenu extends UIScriptedMenu
 	
 	override bool OnKeyPress(Widget w, int x, int y, int key)
 	{
-		if( key == KeyCode.KC_SPACE )
+		if (!w && key == KeyCode.KC_P )
 		{
-			if( !m_IsPlaying )
+			if ( !m_IsPlaying )
 			{
-				//Play();
+				Play();
 				return true;
 			}
 			else
 			{
-				//Stop();
+				Stop();
 				return true;
 			}
 			return false;
 		}
-		else if( g_Game.IsLeftCtrlDown() && key == KeyCode.KC_S )
+		else if ( g_Game.IsLeftCtrlDown() && key == KeyCode.KC_S )
 		{
 			SaveKeyframe();
 			return true;
 		}
-		else if( g_Game.IsLeftCtrlDown() && key == KeyCode.KC_Q )
+		else if ( g_Game.IsLeftCtrlDown() && key == KeyCode.KC_Q )
 		{
 			AddKeyframe();
 			return true;
 		}
-		else if( g_Game.IsLeftCtrlDown() && key == KeyCode.KC_E )
+		else if ( g_Game.IsLeftCtrlDown() && key == KeyCode.KC_E )
 		{
 			DeleteKeyframe();
 			return true;
 		}
-		else if( g_Game.IsLeftCtrlDown() )
+		
+		else if ( !w && g_Game.IsLeftCtrlDown() )
 		{
 			SelectActor( null );
 			return true;
@@ -873,7 +931,7 @@ class CameraToolsMenu extends UIScriptedMenu
 	void ColorRed( Widget w )
 	{
 		//SetFocus( w );
-		if( w.IsInherited( ButtonWidget ) )
+		if ( w.IsInherited( ButtonWidget ) )
 		{
 			ButtonWidget button = ButtonWidget.Cast( w );
 			button.SetTextColor( ARGB( 255, 255, 0, 0 ) );
@@ -883,11 +941,14 @@ class CameraToolsMenu extends UIScriptedMenu
 	
 	void ColorWhite( Widget w, Widget enterW )
 	{
-		if( w.IsInherited( ButtonWidget ) )
+		if ( w.IsInherited( ButtonWidget ) )
 		{
 			ButtonWidget button = ButtonWidget.Cast( w );
-			button.SetTextColor( ARGB( 255, 255, 255, 255 ) );
-			button.SetAlpha( 0.75 );
+			if (button)
+			{
+				button.SetTextColor( ARGB( 255, 255, 255, 255 ) );
+				button.SetAlpha( 0.75 );
+			}
 		}
 	}
 }

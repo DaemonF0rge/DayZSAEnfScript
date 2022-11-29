@@ -57,8 +57,8 @@ class TitleScreenMenu extends UIScriptedMenu
 				g_Game.GamepadCheck();
 			#endif
 		}
+		layoutRoot.FindAnyWidget("notification_root").Show(false);
 		
-		//hotfix
 		#ifdef PLATFORM_CONSOLE
 		#ifdef PLATFORM_XBOX
 		#ifdef BUILD_EXPERIMENTAL

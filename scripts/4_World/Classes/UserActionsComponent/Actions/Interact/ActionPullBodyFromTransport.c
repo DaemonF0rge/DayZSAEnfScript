@@ -1,20 +1,15 @@
 class ActionPullBodyFromTransport: ActionInteractBase
 {
-	void ActionGetOutTransport()
+	void ActionPullBodyFromTransport()
 	{
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ALL;
-		m_HUDCursorIcon = "GetInDriver";
+		m_Text = "#pull_out_body";
 	}
 
 	override void CreateConditionComponents()  
 	{
 		m_ConditionItem = new CCINone;
 		m_ConditionTarget = new CCTNone;
-	}
-
-	override string GetText()
-	{
-		return "#pull_out_body";
 	}
 
 	override typename GetInputType()

@@ -18,7 +18,7 @@ class ActionEmptyMagazine: ActionContinuousBase
 		m_CallbackClass = ActionEmptyMagazineCB;
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONMOD_EMPTYMAG;
 		m_CommandUIDProne = DayZPlayerConstants.CMD_ACTIONFB_EMPTYMAG;
-
+		m_Text = "#empty_magazine";
 	}
 	
 	override bool SetupAction(PlayerBase player, ActionTarget target, ItemBase item, out ActionData action_data, Param extra_data = NULL)
@@ -69,11 +69,6 @@ class ActionEmptyMagazine: ActionContinuousBase
 	override bool HasTarget()
 	{
 		return false;
-	}
-		
-	override string GetText()
-	{
-		return "#empty_magazine";
 	}
 	
 	override void OnExecuteServer( ActionData action_data )

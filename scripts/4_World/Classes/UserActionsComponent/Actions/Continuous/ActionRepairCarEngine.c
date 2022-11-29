@@ -21,7 +21,6 @@ class ActionRepairCarEngine: ActionContinuousBase
 	typename m_LastValidType;
 	string m_CurrentDamageZone = "";
 	int m_LastValidComponentIndex = -1;
-	const float MAX_ACTION_DIST = 3.0;
 	
 	void ActionRepairCarEngine()
 	{
@@ -33,23 +32,19 @@ class ActionRepairCarEngine: ActionContinuousBase
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT;// | DayZPlayerConstants.STANCEMASK_CROUCH;
 		m_FullBody = true;
 		m_LockTargetOnUse = false;
+		m_Text = "#repair";
 	}
 
 	override void CreateConditionComponents()  
 	{
 		m_ConditionItem = new CCINonRuined; //To change?
-		m_ConditionTarget = new CCTNone; //CCTNonRuined( UAMaxDistances.BASEBUILDING ); ??
-	}
-
-	override string GetText()
-	{
-		return "#repair";
+		m_ConditionTarget 	= new CCTCursor(UAMaxDistances.REPAIR);
 	}
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
 	{
 		//Action not allowed if player has broken legs
-		if (player.m_BrokenLegState == eBrokenLegs.BROKEN_LEGS)
+		if (player.GetBrokenLegs() == eBrokenLegs.BROKEN_LEGS)
 			return false;
 		
 		//m_CurrentDamageZone = "";
@@ -73,7 +68,7 @@ class ActionRepairCarEngine: ActionContinuousBase
 			PluginRepairing module_repairing;
 			Class.CastTo( module_repairing, GetPlugin(PluginRepairing) );
 
-			targetObject.GetActionComponentNameList( target.GetComponentIndex(), selections, "view");
+			targetObject.GetActionComponentNameList( target.GetComponentIndex(), selections, LOD.NAME_VIEW);
 
 			if (m_LastValidType != target.Type() || m_LastValidComponentIndex != target.GetComponentIndex() || m_CurrentDamageZone == "" )
 			{
@@ -88,7 +83,7 @@ class ActionRepairCarEngine: ActionContinuousBase
 					if ( carEntity && DamageSystem.GetDamageZoneFromComponentName( carEntity, compName, damageZone ))
 					{
 						int zoneHP = car.GetHealthLevel( damageZone );
-						if ( zoneHP < GameConstants.STATE_RUINED && zoneHP > GameConstants.STATE_PRISTINE )
+						if (zoneHP > GameConstants.STATE_WORN && zoneHP < GameConstants.STATE_RUINED)
 						{
 							m_CurrentDamageZone = damageZone;
 							m_LastValidComponentIndex = target.GetComponentIndex();
@@ -101,8 +96,8 @@ class ActionRepairCarEngine: ActionContinuousBase
 							else
 								repairPos = car.GetEnginePosWS();
 							
-							float dist = vector.DistanceSq( repairPos, player.GetPosition() );
-							if ( dist < MAX_ACTION_DIST * MAX_ACTION_DIST)
+							/*float dist = vector.DistanceSq( repairPos, player.GetPosition() );
+							if ( dist < MAX_ACTION_DIST * MAX_ACTION_DIST)*/
 								return true;
 						}
 					}
@@ -138,27 +133,21 @@ class ActionRepairCarEngine: ActionContinuousBase
 				float dmgStateValue = zoneMax * GameConstants.DAMAGE_WORN_VALUE;
 				float randomValue = Math.RandomFloatInclusive( zoneMax * 0.05, zoneMax * 0.15);
 				
-				//TODO:: CHECK
-				//GetHealthLevelValue
 				switch ( newDmgLevel )
 				{
 					case GameConstants.STATE_BADLY_DAMAGED:
-						Print( zoneMax * GameConstants.DAMAGE_RUINED_VALUE );
 						car.SetHealth( damageZone, "", (zoneMax * GameConstants.DAMAGE_RUINED_VALUE) + randomValue );
 						break;
 
 					case GameConstants.STATE_DAMAGED:
-						Print(zoneMax * GameConstants.DAMAGE_BADLY_DAMAGED_VALUE );
 						car.SetHealth( damageZone, "", (zoneMax * GameConstants.DAMAGE_BADLY_DAMAGED_VALUE) + randomValue );
 						break;
 
 					case GameConstants.STATE_WORN:
-						Print(zoneMax * GameConstants.DAMAGE_DAMAGED_VALUE );
 						car.SetHealth( damageZone, "", (zoneMax * GameConstants.DAMAGE_DAMAGED_VALUE) + randomValue );
 						break;
 					
 					case GameConstants.STATE_PRISTINE:
-						Print(zoneMax * GameConstants.DAMAGE_WORN_VALUE );
 						car.SetHealth( damageZone, "", (zoneMax * GameConstants.DAMAGE_WORN_VALUE) + randomValue );
 						break;
 					
@@ -166,7 +155,7 @@ class ActionRepairCarEngine: ActionContinuousBase
 						break;
 				}
 
-				MiscGameplayFunctions.DealAbsoluteDmg(usedItem, 35); //Placeholder until proper balancing and functions are deployed
+				MiscGameplayFunctions.DealAbsoluteDmg(usedItem, UADamageApplied.BUILD);
 				
 			}
 		}

@@ -25,6 +25,9 @@ class AIMessageTest : AIMessage
 
 class AIBehaviourHLData
 {
+	private void AIBehaviourHLData() {}
+	private void ~AIBehaviourHLData() {}
+	
 	//void ParseConfig(ParamEntryPar param, AIWorld* world, AIAgentTemplate* agentTemplate) {};
 	void OnParseConfig();	
 	
@@ -38,10 +41,8 @@ class AIBehaviourHLData
 
 class AIBehaviourHL
 {
-	void AIBehaviourHL()
-	{
-		//Print("A1");
-	}
+	private void AIBehaviourHL() {}
+	private void ~AIBehaviourHL() {}
 	
 	proto native AIBehaviourHLData GetTemplateData();
 	
@@ -79,15 +80,9 @@ class AIBehaviourHLZombie2 : AIBehaviourHL
 	{
 		return AIBehaviourHLDataZombie2.Cast( GetTemplateData() );
 	}
-	void AIBehaviourHLZombie2()
-	{
-
-		//data = GetTemplateData();
-		//int i = 5;
-		//i++;
-		//time = 0.0;
-		//Print("B1");
-	}
+	
+	private void AIBehaviourHLZombie2() {}
+	private void ~AIBehaviourHLZombie2() {}
 	
 	override void OnInit()
 	{
@@ -122,6 +117,9 @@ class AIBehaviourHLDataZombie2 : AIBehaviourHLData
 {
 	float m_fDamageToCrawl;
 	float m_fCrawlProbability;
+
+	private void AIBehaviourHLDataZombie2() {}
+	private void ~AIBehaviourHLDataZombie2() {}
 	
 	override void OnParseConfig()
 	{

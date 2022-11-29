@@ -8,10 +8,6 @@ class M16A2_Base : RifleBoltLock_Base
 	//Debug menu Spawn Ground Special
 	override void OnDebugSpawn()
 	{
-		EntityAI entity;
-		if ( Class.CastTo(entity, this) )
-		{
-			entity.SpawnEntityOnGroundPos("Mag_STANAGCoupled_30Rnd", entity.GetPosition());
-		}
+		SpawnAttachedMagazine("Mag_STANAG_60Rnd");
 	}
 };

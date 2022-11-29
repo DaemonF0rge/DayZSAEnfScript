@@ -7,5 +7,6 @@ enum VehicleAnimInstances
 	BUS = 4,
 	S120 = 5,
 	MULTICAR = 6,
-	GOLF = 7
-}
+	GOLF = 7,
+	HMMWV = 8
+};

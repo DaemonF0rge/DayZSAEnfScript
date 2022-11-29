@@ -5,7 +5,7 @@ class Saiga_Base : RifleBoltFree_Base
 		return new SiagaRecoil(this);
 	}
 	
-	override int GetWeaponSpecificCommand(int weaponAction ,int subCommand)
+	/*override int GetWeaponSpecificCommand(int weaponAction ,int subCommand)
 	{
 		if ( weaponAction == WeaponActions.RELOAD)
 		{
@@ -29,7 +29,7 @@ class Saiga_Base : RifleBoltFree_Base
 		
 		}
 		return subCommand;
-	}
+	}*/
 	
 	override bool CanEnterIronsights()
 	{
@@ -42,14 +42,11 @@ class Saiga_Base : RifleBoltFree_Base
 	//Debug menu Spawn Ground Special
 	override void OnDebugSpawn()
 	{
-		EntityAI entity;
-		if ( Class.CastTo(entity, this) )
-		{
-			entity.GetInventory().CreateInInventory( "Saiga_Bttstck" );
-			entity.GetInventory().CreateInInventory( "KobraOptic" );
-			entity.GetInventory().CreateInInventory( "Battery9V" );
-			entity.SpawnEntityOnGroundPos("Mag_Saiga_Drum20Rnd", entity.GetPosition());
-		}
+		super.OnDebugSpawn();
+		GameInventory inventory = GetInventory();
+		inventory.CreateInInventory( "Saiga_Bttstck" );
+		inventory.CreateInInventory( "KobraOptic" );
+		inventory.CreateInInventory( "Battery9V" );
 	}	
 }
 class Saiga : Saiga_Base

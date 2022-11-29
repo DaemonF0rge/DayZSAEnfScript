@@ -22,7 +22,7 @@ class RecipeCacheData
 	void SetMask(int mask)
 	{
 		m_Mask = mask;
-		m_BitCount = GetNumberOfSetBits(mask);
+		m_BitCount = Math.GetNumberOfSetBits(mask);
 	}
 	
 }

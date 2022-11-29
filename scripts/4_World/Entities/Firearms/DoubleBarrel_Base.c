@@ -24,8 +24,8 @@ enum MuzzleIndex
 
 class DoubleBarrelLoadedLoaded extends WeaponStableState
 {
-	override void OnEntry (WeaponEventBase e) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { LoadedLoaded L_L"); super.OnEntry(e); m_weapon.SetCurrentMuzzle(MuzzleIndex.First); }
-	override void OnExit (WeaponEventBase e) { super.OnExit(e); wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } LoadedLoaded L_L"); }
+	override void OnEntry (WeaponEventBase e) { if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { LoadedLoaded L_L"); } super.OnEntry(e); m_weapon.SetCurrentMuzzle(MuzzleIndex.First); }
+	override void OnExit (WeaponEventBase e) { super.OnExit(e); if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } LoadedLoaded L_L"); } }
 	override int GetCurrentStateID () { return DoubleBarrelStableStateID.LoadedLoaded; }
 	override bool HasBullet () { return true; }
 	override bool HasMagazine () { return false; }
@@ -35,8 +35,8 @@ class DoubleBarrelLoadedLoaded extends WeaponStableState
 };
 class DoubleBarrelLoadedEmpty extends WeaponStableState
 {
-	override void OnEntry (WeaponEventBase e) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { LoadedEmpty L_E"); super.OnEntry(e); m_weapon.SetCurrentMuzzle(MuzzleIndex.First);}
-	override void OnExit (WeaponEventBase e) { super.OnExit(e); wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } LoadedEmpty L_E"); }
+	override void OnEntry (WeaponEventBase e) { if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { LoadedEmpty L_E"); } super.OnEntry(e); m_weapon.SetCurrentMuzzle(MuzzleIndex.First);}
+	override void OnExit (WeaponEventBase e) { super.OnExit(e); if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } LoadedEmpty L_E"); } }
 	override int GetCurrentStateID () { return DoubleBarrelStableStateID.LoadedEmpty; }
 	override bool HasBullet () { return true; }
 	override bool HasMagazine () { return false; }
@@ -46,8 +46,8 @@ class DoubleBarrelLoadedEmpty extends WeaponStableState
 };
 class DoubleBarrelEmptyLoaded extends WeaponStableState
 {
-	override void OnEntry (WeaponEventBase e) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { EmptyLoaded E_L"); super.OnEntry(e); m_weapon.SetCurrentMuzzle(MuzzleIndex.Second);}
-	override void OnExit (WeaponEventBase e) { super.OnExit(e); wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } EmptyLoaded E_L"); }
+	override void OnEntry (WeaponEventBase e) { if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { EmptyLoaded E_L"); } super.OnEntry(e); m_weapon.SetCurrentMuzzle(MuzzleIndex.Second);}
+	override void OnExit (WeaponEventBase e) { super.OnExit(e); if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } EmptyLoaded E_L"); } }
 	override int GetCurrentStateID () { return DoubleBarrelStableStateID.EmptyLoaded; }
 	override bool HasBullet () { return true; }
 	override bool HasMagazine () { return false; }
@@ -57,8 +57,8 @@ class DoubleBarrelEmptyLoaded extends WeaponStableState
 };
 class DoubleBarrelFireoutLoaded extends WeaponStableState
 {
-	override void OnEntry (WeaponEventBase e) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { FireoutLoaded F_L"); super.OnEntry(e); m_weapon.SetCurrentMuzzle(MuzzleIndex.Second);}
-	override void OnExit (WeaponEventBase e) { super.OnExit(e); wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } FireoutLoaded F_L"); }
+	override void OnEntry (WeaponEventBase e) { if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { FireoutLoaded F_L"); } super.OnEntry(e); m_weapon.SetCurrentMuzzle(MuzzleIndex.Second);}
+	override void OnExit (WeaponEventBase e) { super.OnExit(e); if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } FireoutLoaded F_L"); } }
 	override int GetCurrentStateID () { return DoubleBarrelStableStateID.FireoutLoaded; }
 	override bool HasBullet () { return true; }
 	override bool HasMagazine () { return false; }
@@ -68,8 +68,8 @@ class DoubleBarrelFireoutLoaded extends WeaponStableState
 };
 class DoubleBarrelFireoutFireout extends WeaponStableState
 {
-	override void OnEntry (WeaponEventBase e) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { FireoutFireout F_F"); super.OnEntry(e); m_weapon.SetCurrentMuzzle(MuzzleIndex.First);}
-	override void OnExit (WeaponEventBase e) { super.OnExit(e); wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } FireoutFireout F_F"); }
+	override void OnEntry (WeaponEventBase e) { if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { FireoutFireout F_F"); } super.OnEntry(e); m_weapon.SetCurrentMuzzle(MuzzleIndex.First);}
+	override void OnExit (WeaponEventBase e) { super.OnExit(e); if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } FireoutFireout F_F"); } }
 	override int GetCurrentStateID () { return DoubleBarrelStableStateID.FireoutFireout; }
 	override bool HasBullet () { return true; }
 	override bool HasMagazine () { return false; }
@@ -80,8 +80,8 @@ class DoubleBarrelFireoutFireout extends WeaponStableState
 
 class DoubleBarrelFireoutEmpty extends WeaponStableState
 {
-	override void OnEntry (WeaponEventBase e) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { FireoutEmpty F_E"); super.OnEntry(e); m_weapon.SetCurrentMuzzle(MuzzleIndex.First);}
-	override void OnExit (WeaponEventBase e) { super.OnExit(e); wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } FireoutEmpty F_E"); }
+	override void OnEntry (WeaponEventBase e) { if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { FireoutEmpty F_E"); } super.OnEntry(e); m_weapon.SetCurrentMuzzle(MuzzleIndex.First);}
+	override void OnExit (WeaponEventBase e) { super.OnExit(e); if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } FireoutEmpty F_E"); } }
 	override int GetCurrentStateID () { return DoubleBarrelStableStateID.FireoutEmpty; }
 	override bool HasBullet () { return true; }
 	override bool HasMagazine () { return false; }
@@ -92,8 +92,8 @@ class DoubleBarrelFireoutEmpty extends WeaponStableState
 
 class DoubleBarrelEmptyFireout extends WeaponStableState
 {
-	override void OnEntry (WeaponEventBase e) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { EmptyFireout E_F"); super.OnEntry(e); m_weapon.SetCurrentMuzzle(MuzzleIndex.First);}
-	override void OnExit (WeaponEventBase e) { super.OnExit(e); wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } EmptyFireout E_F"); }
+	override void OnEntry (WeaponEventBase e) { if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { EmptyFireout E_F"); } super.OnEntry(e); m_weapon.SetCurrentMuzzle(MuzzleIndex.First);}
+	override void OnExit (WeaponEventBase e) { super.OnExit(e); if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } EmptyFireout E_F"); } }
 	override int GetCurrentStateID () { return DoubleBarrelStableStateID.EmptyFireout; }
 	override bool HasBullet () { return true; }
 	override bool HasMagazine () { return false; }
@@ -104,8 +104,8 @@ class DoubleBarrelEmptyFireout extends WeaponStableState
 
 class DoubleBarrelEmptyEmpty extends WeaponStableState
 {
-	override void OnEntry (WeaponEventBase e) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { EmptyEmpty E_E"); super.OnEntry(e); m_weapon.SetCurrentMuzzle(MuzzleIndex.First);}
-	override void OnExit (WeaponEventBase e) { super.OnExit(e); wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } EmptyEmpty E_E"); }
+	override void OnEntry (WeaponEventBase e) { if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { EmptyEmpty E_E"); } super.OnEntry(e); m_weapon.SetCurrentMuzzle(MuzzleIndex.First);}
+	override void OnExit (WeaponEventBase e) { super.OnExit(e); if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } EmptyEmpty E_E"); } }
 	override int GetCurrentStateID () { return DoubleBarrelStableStateID.EmptyEmpty; }
 	override bool HasBullet () { return false; }
 	override bool HasMagazine () { return false; }

@@ -1,20 +1,27 @@
 class DarkMotoHelmet_ColorBase extends HelmetBase
-{	
+{
+	override array<int> GetEffectWidgetTypes()
+	{
+		return {EffectWidgetsTypes.MOTO_OCCLUDER/*,EffectWidgetsTypes.MOTO_BREATH*/};
+	}
+	
 	override bool CanPutAsAttachment( EntityAI parent )
 	{
-		if (!super.CanPutAsAttachment(parent)) {return false;}
-		bool is_mask_only = false;
+		if(!super.CanPutAsAttachment(parent)) {return false;}
 		
-		if ( parent.FindAttachmentBySlotName( "Mask" ) )
+		Clothing eyewear = Clothing.Cast(parent.FindAttachmentBySlotName("Eyewear"));
+		if ( eyewear && eyewear.ConfigGetBool("isStrap") )
 		{
-			is_mask_only = parent.FindAttachmentBySlotName( "Mask" ).ConfigGetBool( "noHelmet" );
+			return false;
 		}
 		
-		if ( ( GetNumberOfItems() == 0 || !parent || parent.IsMan() ) && !is_mask_only )
+		Clothing mask = Clothing.Cast(parent.FindAttachmentBySlotName("Mask"));
+		if ( mask && mask.ConfigGetBool("noHelmet") ) //TODO
 		{
-			return true;
+			return false;
 		}
-		return false;
+		
+		return true;
 	}
 	
 	override bool IsObstructingVoice()
@@ -26,6 +33,11 @@ class DarkMotoHelmet_ColorBase extends HelmetBase
 	{
 		return VoiceEffectObstruction;
 	}
+	
+	override int GetGlassesEffectID()
+	{
+		return PPERequesterBank.REQ_MOTOHELMETBLACK;		
+	}
 }
 
 class DarkMotoHelmet_Black extends DarkMotoHelmet_ColorBase {};
@@ -35,3 +47,5 @@ class DarkMotoHelmet_Lime extends DarkMotoHelmet_ColorBase {};
 class DarkMotoHelmet_Blue extends DarkMotoHelmet_ColorBase {};
 class DarkMotoHelmet_Red extends DarkMotoHelmet_ColorBase {};
 class DarkMotoHelmet_White extends DarkMotoHelmet_ColorBase {};
+class DarkMotoHelmet_Yellow extends DarkMotoHelmet_ColorBase {};
+class DarkMotoHelmet_YellowScarred extends DarkMotoHelmet_ColorBase {};

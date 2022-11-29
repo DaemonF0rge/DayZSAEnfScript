@@ -56,42 +56,46 @@ class DayZInfectedType extends DayZCreatureAIType
 		
 		string lightAttPath = string.Format("cfgVehicles %1 AttackActions AttackShort ammoType", GetName());
 		string heavyAttPath = string.Format("cfgVehicles %1 AttackActions AttackLong ammoType", GetName());
+		string chaseAttPath = string.Format("cfgVehicles %1 AttackActions AttackRun ammoType", GetName());
 		
 		string lightAttAmmo;
 		GetGame().ConfigGetText(lightAttPath, lightAttAmmo);
 		string heavyAttAmmo;
 		GetGame().ConfigGetText(heavyAttPath, heavyAttAmmo);
+		string chaseAttAmmo;
+		GetGame().ConfigGetText(chaseAttPath, chaseAttAmmo);
+		
 		//! chase group
 		m_ChaseAttacksGroup = new array<ref DayZInfectedAttackType>;
 
 		//! center attack
-		RegisterAttack(DayZInfectedAttackGroupType.CHASE, 3.0,  -1, 0, 1, lightAttAmmo, 0, 0.3, 1.0); // center left & light
-		RegisterAttack(DayZInfectedAttackGroupType.CHASE, 3.0,  -1, 1, 1, lightAttAmmo, 0, 0.4, 1.0); // center right & light
+		RegisterAttack(DayZInfectedAttackGroupType.CHASE, /*3.0*/2.4,  -1, 0, 1, chaseAttAmmo, 0, 0.3, 1.0); // center left & light
+		RegisterAttack(DayZInfectedAttackGroupType.CHASE, /*3.0*/2.4,  -1, 1, 1, chaseAttAmmo, 0, 0.4, 1.0); // center right & light
 
 		//! --------------------------------------------------------------------------------
 		//! fight group
 		m_FightAttacksGroup = new array<ref DayZInfectedAttackType>;
 
 		//! up attack
-		RegisterAttack(DayZInfectedAttackGroupType.FIGHT, 2.0,  1, 0, 0, lightAttAmmo, 0, 0.3, 0.7); // up left & light
-		RegisterAttack(DayZInfectedAttackGroupType.FIGHT, 2.0,  1, 1, 0, lightAttAmmo, 0, 0.4, 0.7); // up right & light
+		RegisterAttack(DayZInfectedAttackGroupType.FIGHT, /*2.0*/1.7,  1, 0, 0, lightAttAmmo, 0, 0.3, 0.7); // up left & light
+		RegisterAttack(DayZInfectedAttackGroupType.FIGHT, /*2.0*/1.7,  1, 1, 0, lightAttAmmo, 0, 0.4, 0.7); // up right & light
 		
 		//! center attack
-		RegisterAttack(DayZInfectedAttackGroupType.FIGHT, 2.0,  0, 0, 1, lightAttAmmo, 0, 0.1, 0.9); // center left & light
-		RegisterAttack(DayZInfectedAttackGroupType.FIGHT, 2.0,  0, 1, 1, lightAttAmmo, 0, 0.2, 0.9); // center right & light
-		RegisterAttack(DayZInfectedAttackGroupType.FIGHT, 2.5,  0, 2, 1, heavyAttAmmo, 0/*1*/, 0.3, 0.6); // center left & heavy
-		RegisterAttack(DayZInfectedAttackGroupType.FIGHT, 2.5,  0, 3, 1, heavyAttAmmo, 0/*1*/, 0.4, 0.6); // center right & heavy
+		RegisterAttack(DayZInfectedAttackGroupType.FIGHT, /*2.0*/1.7,  0, 0, 1, lightAttAmmo, 0, 0.1, 0.9); // center left & light
+		RegisterAttack(DayZInfectedAttackGroupType.FIGHT, /*2.0*/1.7,  0, 1, 1, lightAttAmmo, 0, 0.2, 0.9); // center right & light
+		RegisterAttack(DayZInfectedAttackGroupType.FIGHT, /*2.5*/1.4,  0, 2, 1, heavyAttAmmo, 0/*1*/, 0.3, 0.6); // center left & heavy
+		RegisterAttack(DayZInfectedAttackGroupType.FIGHT, /*2.5*/1.4,  0, 3, 1, heavyAttAmmo, 0/*1*/, 0.4, 0.6); // center right & heavy
 		
 		//! down attack
-		RegisterAttack(DayZInfectedAttackGroupType.FIGHT, 2.0,  -1, 0, 2, lightAttAmmo, 0, 0.2, 0.5); // down left & light
-		RegisterAttack(DayZInfectedAttackGroupType.FIGHT, 2.0,  -1, 1, 2, lightAttAmmo, 0, 0.3, 0.4); // down right & light
-		RegisterAttack(DayZInfectedAttackGroupType.FIGHT, 2.5,  -1, 2, 2, heavyAttAmmo, 0/*1*/, 0.5, 0.8); // down left & heavy
-		RegisterAttack(DayZInfectedAttackGroupType.FIGHT, 2.5,  -1, 3, 2, heavyAttAmmo, 0/*1*/, 0.6, 0.8); // down right & heavy
+		RegisterAttack(DayZInfectedAttackGroupType.FIGHT, /*2.0*/1.7,  -1, 0, 2, lightAttAmmo, 0, 0.2, 0.5); // down left & light
+		RegisterAttack(DayZInfectedAttackGroupType.FIGHT, /*2.0*/1.7,  -1, 1, 2, lightAttAmmo, 0, 0.3, 0.4); // down right & light
+		RegisterAttack(DayZInfectedAttackGroupType.FIGHT, /*2.5*/1.4,  -1, 2, 2, heavyAttAmmo, 0/*1*/, 0.5, 0.8); // down left & heavy
+		RegisterAttack(DayZInfectedAttackGroupType.FIGHT, /*2.5*/1.4,  -1, 3, 2, heavyAttAmmo, 0/*1*/, 0.6, 0.8); // down right & heavy
 	}
 	
 	DayZInfectedAttackType ChooseAttack(DayZInfectedAttackGroupType pAttackGroupType, float pDistance, int pPitch)
 	{
-		ref array<ref DayZInfectedAttackType> attackGroup = GetAttackGroup(pAttackGroupType);
+		array<ref DayZInfectedAttackType> attackGroup = GetAttackGroup(pAttackGroupType);
 		float rnd;
 		float highestUtility = -1;
 		DayZInfectedAttackType mostSuitableAttack = NULL;
@@ -188,7 +192,7 @@ class DayZInfectedType extends DayZCreatureAIType
 		return util;
 	}
 
-	protected ref array<ref DayZInfectedAttackType> GetAttackGroup(DayZInfectedAttackGroupType pType)
+	protected array<ref DayZInfectedAttackType> GetAttackGroup(DayZInfectedAttackGroupType pType)
 	{
 		switch ( pType )
 		{

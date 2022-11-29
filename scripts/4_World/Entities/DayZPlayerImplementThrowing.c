@@ -38,7 +38,7 @@ class DayZPlayerImplementThrowing
 		{
 			//! cancel throwing in case of raising hands or heavy item in hands
 			
-			if ( !CanContinueThrowing(pHic) )
+			if ( !CanContinueThrowingEx(pHic, pEntityInHands) )
 			{
 				SetThrowingModeEnabled(false);
 				ResetState();
@@ -68,7 +68,7 @@ class DayZPlayerImplementThrowing
 			//! handle throw force
 			if ( !m_bThrowingAnimationPlaying )
 			{
-				if ( pHic.IsUseButton() )
+				if ( pHic.IsAttackButton() )
 				{
 					if ( !m_bThrowingInProgress )
 						m_bThrowingInProgress = true;
@@ -94,6 +94,7 @@ class DayZPlayerImplementThrowing
 							switch ( itemCfg.m_iType )
 							{
 								case ItemBehaviorType.TWOHANDED:
+								case ItemBehaviorType.POLEARMS:
 									throwType = 2;
 									break;
 								case ItemBehaviorType.FIREARMS:
@@ -180,6 +181,7 @@ class DayZPlayerImplementThrowing
 			if( playerPB.GetWeaponManager().IsRunning() )
 				return false;
 		}
+
 		return true;
 	}
 	
@@ -197,6 +199,14 @@ class DayZPlayerImplementThrowing
 			return false;
 		}
 		return true;
+	}
+	
+	bool CanContinueThrowingEx(HumanInputController pHic, EntityAI pEntityInHands)
+	{
+		if ( pEntityInHands == null )
+			return false;
+		
+		return CanContinueThrowing(pHic);
 	}
 	
 	private DayZPlayer m_Player;

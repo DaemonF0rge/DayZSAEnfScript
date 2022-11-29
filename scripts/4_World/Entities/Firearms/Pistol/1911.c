@@ -8,14 +8,12 @@ class Colt1911_Base : Pistol_Base
 	//Debug menu Spawn Ground Special
 	override void OnDebugSpawn()
 	{
-		EntityAI entity;
-		if ( Class.CastTo(entity, this) )
-		{
-			entity.GetInventory().CreateInInventory( "PistolSuppressor" );
-			entity.GetInventory().CreateInInventory( "TLRLight" );
-			entity.GetInventory().CreateInInventory( "Battery9V" );
-			entity.SpawnEntityOnGroundPos("Mag_1911_7Rnd", entity.GetPosition());
-		}
+		GameInventory inventory = GetInventory();
+		inventory.CreateInInventory( "PistolSuppressor" );
+		inventory.CreateInInventory( "TLRLight" );
+		inventory.CreateInInventory( "Battery9V" );
+		
+		SpawnAttachedMagazine("Mag_1911_7Rnd");
 	}
 };
 

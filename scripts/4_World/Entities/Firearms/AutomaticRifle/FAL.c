@@ -8,13 +8,12 @@ class FAL_Base : RifleBoltLock_Base
 	//Debug menu Spawn Ground Special
 	override void OnDebugSpawn()
 	{
-		EntityAI entity;
-		if ( Class.CastTo(entity, this) )
-		{
-			entity.GetInventory().CreateInInventory( "Fal_OeBttstck" );
-			entity.GetInventory().CreateInInventory( "M4_T3NRDSOptic" );
-			entity.GetInventory().CreateInInventory( "Battery9V" );
-			entity.SpawnEntityOnGroundPos("Mag_FAL_20Rnd", entity.GetPosition());
-		}
+		GameInventory inventory = GetInventory();
+
+		inventory.CreateInInventory( "Fal_OeBttstck" );
+		inventory.CreateInInventory( "M4_T3NRDSOptic" );	
+		inventory.CreateInInventory( "Battery9V" );
+		
+		SpawnAttachedMagazine("Mag_FAL_20Rnd");
 	}
 };

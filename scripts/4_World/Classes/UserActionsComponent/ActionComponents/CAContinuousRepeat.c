@@ -13,7 +13,6 @@ class CAContinuousRepeat : CAContinuousBase
 	
 	override void Setup( ActionData action_data )
 	{
-		m_TimeElpased = 0;
 		if ( !m_SpentUnits )
 		{ 
 			m_SpentUnits = new Param1<float>(0);
@@ -64,5 +63,10 @@ class CAContinuousRepeat : CAContinuousBase
 		float progress = m_TimeElpased/m_TimeToComplete;
 		//Print("progress: " + progress + " | m_TimeElpased: " + m_TimeElpased + " | m_TimeToComplete: " + m_TimeToComplete);
 		return  progress;
+	}
+	
+	void SetProgress(float value)
+	{
+		m_TimeElpased = value;
 	}
 };

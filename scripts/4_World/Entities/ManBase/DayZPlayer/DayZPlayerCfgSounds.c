@@ -326,14 +326,14 @@ void DayZPlayerTypeRegisterSounds(DayZPlayerType pType)
 	pType.RegisterSoundEvent("Sound", -1);
 	pType.RegisterSoundEvent("SoundWeapon", 0.2);
 	pType.RegisterSoundEvent("SoundVoice", -1);
-	if(GetGame().IsClient() || !GetGame().IsMultiplayer())//attachments don't generate noise, so we can ignore them on server
+	if(!GetGame().IsDedicatedServer())//attachments don't generate noise, so we can ignore them on server
 		pType.RegisterSoundEvent("SoundAttachment", 0.2);
 	
 	
 	DayZPlayerTypeVoiceSoundLookupTableImpl voiceTable2 = DayZPlayerTypeVoiceSoundLookupTableImpl.GetInstance();
 	pType.RegisterVoiceSoundLookupTable(voiceTable2);
 	
-	if(GetGame().IsClient() || !GetGame().IsMultiplayer())//sounds are unnecessary on server
+	if(!GetGame().IsDedicatedServer())//sounds are unnecessary on server
 	{
 		pType.RegisterParticleEvent("Particle", -1);
 		//! load and register step sound lookup table

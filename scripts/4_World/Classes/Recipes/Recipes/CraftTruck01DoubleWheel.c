@@ -44,7 +44,7 @@ class CraftTruck01DoubleWheel extends RecipeBase
 		
 		//result1
 		AddResult("Truck_01_WheelDouble");//add results here
-
+		
 		m_ResultSetFullQuantity[0] = false;//true = set full quantity, false = do nothing
 		m_ResultSetQuantity[0] = -1;//-1 = do nothing
 		m_ResultSetHealth[0] = -1;//-1 = do nothing
@@ -78,6 +78,20 @@ class CraftTruck01DoubleWheel extends RecipeBase
 
 	override void Do(ItemBase ingredients[], PlayerBase player,array<ItemBase> results, float specialty_weight)//gets called upon recipe's completion
 	{
-		Debug.Log("Recipe Do method called","recipes");
+		ItemBase ingredient1 = ingredients[0];
+		ItemBase ingredient2 = ingredients[1];
+		vector ingred_pos;
+		
+		if(ingredient1.GetHierarchyRootPlayer())
+		{
+			ingred_pos = ingredient2.GetPosition();
+		}
+		else
+		{
+			ingred_pos = ingredient1.GetPosition();
+		}
+		
+		ItemBase result1 = results.Get(0);
+		result1.SetPosition(ingred_pos);
 	}
 };

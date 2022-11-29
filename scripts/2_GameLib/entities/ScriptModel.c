@@ -40,7 +40,7 @@ class ScriptModel: GenericEntity
 				vector center = (mins + maxs) * 0.5;
 				vector size = maxs - mins;
 								
-				ref PhysicsGeomDef geoms[] = {PhysicsGeomDef("", dGeomCreateBox(size), "material/default", 0xffffffff)};
+				PhysicsGeomDef geoms[] = {PhysicsGeomDef("", dGeomCreateBox(size), "material/default", 0xffffffff)};
 				dBodyCreateDynamicEx(this, center, 1, geoms);
 			}
 			if(dBodyIsSet(this))

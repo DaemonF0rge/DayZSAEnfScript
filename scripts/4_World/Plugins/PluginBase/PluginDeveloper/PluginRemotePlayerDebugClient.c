@@ -28,13 +28,13 @@ class PluginRemotePlayerDebugClient extends PluginBase
 	override void OnUpdate(float delta_time)
 	{
 		#ifndef NO_GUI
-		if( m_DebugType !=0 ) UpdateWidgetsStats();
+		if ( m_DebugType !=0 ) UpdateWidgetsStats();
 		#endif
 	}
 	
 	void InitWidgets()
 	{
-		for(int i = 0; i < MAX_SIMULTANIOUS_PLAYERS; i++)
+		for (int i = 0; i < MAX_SIMULTANIOUS_PLAYERS; i++)
 		{
 			m_RootWidget[i] = GetGame().GetWorkspace().CreateWidgets("gui/layouts/debug/day_z_debug_remoteinfo.layout");
 			m_RootWidgetDamage[i] = GetGame().GetWorkspace().CreateWidgets("gui/layouts/debug/day_z_debug_remoteinfo_damage.layout");
@@ -47,7 +47,7 @@ class PluginRemotePlayerDebugClient extends PluginBase
 	
 	void EnableWidgets(bool enable)
 	{
-		for(int i = 0; i < MAX_SIMULTANIOUS_PLAYERS; i++)
+		for (int i = 0; i < MAX_SIMULTANIOUS_PLAYERS; i++)
 		{
 			m_RootWidget[i].Show(enable);
 			m_RootWidgetDamage[i].Show(enable);
@@ -57,12 +57,12 @@ class PluginRemotePlayerDebugClient extends PluginBase
 	void UpdateWidgetsStats()
 	{
 		int i = 0;
-		for(; i < m_PlayerDebugStats.Count(); i++)
+		for (; i < m_PlayerDebugStats.Count(); i++)
 		{
 			RemotePlayerStatDebug rpd = m_PlayerDebugStats.Get(i);
 			PlayerBase player = rpd.GetPlayer();
 			
-			if(player)
+			if (player)
 			{
 				vector pos = player.GetPosition();
 				vector screen_pos_stats = GetGame().GetScreenPos(pos + "0 0 0");
@@ -70,7 +70,7 @@ class PluginRemotePlayerDebugClient extends PluginBase
 				m_RootWidget[i].SetPos(screen_pos_stats[0],screen_pos_stats[1]);
 				m_RootWidgetDamage[i].SetPos(screen_pos_damage[0],screen_pos_damage[1]);
 				
-				if(screen_pos_stats[2] > 0 && screen_pos_stats[0] > 0 && screen_pos_stats[1] > 0)
+				if (screen_pos_stats[2] > 0 && screen_pos_stats[0] > 0 && screen_pos_stats[1] > 0)
 				{
 					m_RootWidget[i].Show(true);
 					m_RootWidgetDamage[i].Show(true);
@@ -86,7 +86,7 @@ class PluginRemotePlayerDebugClient extends PluginBase
 				
 			}
 		}
-		for(; i < MAX_SIMULTANIOUS_PLAYERS; i++)
+		for (; i < MAX_SIMULTANIOUS_PLAYERS; i++)
 		{
 			m_RootWidget[i].Show(false);
 			m_RootWidgetDamage[i].Show(false);
@@ -97,16 +97,16 @@ class PluginRemotePlayerDebugClient extends PluginBase
 	void UpdateDamageWidget(int index, PlayerBase player)
 	{
 		array<ref DamageData> damage_list = new array<ref DamageData>;
-		if(m_PlayerDebugDamage.Contains(player))
+		if (m_PlayerDebugDamage.Contains(player))
 		{
 			RemotePlayerDamageDebug value = m_PlayerDebugDamage.Get(player);
 			value.GetReversed(damage_list);
 			
 			m_DamageListWidgets[index].ClearItems();
-			if(damage_list.Count() > 0)
+			if (damage_list.Count() > 0)
 			{
 				m_DamageListWidgets[index].Show(true);
-				for(int i = 0; i < damage_list.Count(); i++)
+				for (int i = 0; i < damage_list.Count(); i++)
 				{
 					float value_global = damage_list.Get(i).GetValueGlobal();
 					float value_blood = damage_list.Get(i).GetValueBlood();
@@ -138,19 +138,16 @@ class PluginRemotePlayerDebugClient extends PluginBase
 		rpd.SerializeValues(values,m_DebugType);
 		m_StatListWidgets[index].ClearItems();
 		
-		for(int i = 0; i < names.Count(); i++)
+		for (int i = 0; i < names.Count(); i++)
 		{
-
 			m_StatListWidgets[index].AddItem( names.Get(i),NULL,0,i );
 			m_StatListWidgets[index].SetItem( i, values.Get(i),NULL,1 );
 		}
-		
-
 	}
 
 	void RequestPlayerInfo(PlayerBase player, int type)
 	{
-		if(type == 0)
+		if (type == 0)
 		{
 			EnableWidgets(false);
 		}
@@ -168,25 +165,25 @@ class PluginRemotePlayerDebugClient extends PluginBase
 	
 	void MergeDamage( array<ref RemotePlayerDamageDebug> delta )
 	{
-		for(int i = 0; i < delta.Count();i++)
+		for (int i = 0; i < delta.Count();i++)
 		{
 		
 			RemotePlayerDamageDebug value_delta = delta.Get(i);
 			PlayerBase player_delta = value_delta.GetPlayer();
 			
-			if( m_PlayerDebugDamage.Contains(null) )
+			if ( m_PlayerDebugDamage.Contains(null) )
 			{
 				//cleans up garbage
 				m_PlayerDebugDamage.Remove(null);
 			}
 			
-			if( m_PlayerDebugDamage.Contains(player_delta) )
+			if ( m_PlayerDebugDamage.Contains(player_delta) )
 			{
 				RemotePlayerDamageDebug value_local = m_PlayerDebugDamage.Get(player_delta);
 				array<ref DamageData> damage_list = new array<ref DamageData>;
 				value_delta.GetReversed(damage_list);
 				
-				for(int x = 0; x < damage_list.Count(); x++)
+				for (int x = 0; x < damage_list.Count(); x++)
 				{
 					value_local.InsertDamageObject( damage_list.Get(x) );
 				}
@@ -200,7 +197,7 @@ class PluginRemotePlayerDebugClient extends PluginBase
 	
 	void DebugDamage(PlayerBase player)
 	{
-		for(int i = 0; i < m_PlayerDebugStats.Count(); i++)
+		for (int i = 0; i < m_PlayerDebugStats.Count(); i++)
 		{
 			player = m_PlayerDebugStats.Get(i).GetPlayer();
 			
@@ -209,14 +206,14 @@ class PluginRemotePlayerDebugClient extends PluginBase
 			PrintString("-------------------------------------");
 		}
 		
-		for(i = 0; i < m_PlayerDebugDamage.Count(); i++)
+		for (i = 0; i < m_PlayerDebugDamage.Count(); i++)
 		{
 			PrintString("-------------------------------------");
 			if( m_PlayerDebugDamage.GetElement(i) ) m_PlayerDebugDamage.GetElement(i).Debug();
 			PrintString("-------------------------------------");
 		}
 		
-		for(i = 0; i < m_PlayerDebugDamage.Count();i++)
+		for (i = 0; i < m_PlayerDebugDamage.Count();i++)
 		{
 			PrintString("------------Debug Damage Start--------------");
 			PlayerBase player2 = m_PlayerDebugDamage.GetKey(i);
@@ -234,10 +231,10 @@ class PluginRemotePlayerDebugClient extends PluginBase
 		
 		ctx.Read(player_damage);
 		PlayerBase player;
-		for(int x = 0; x < player_damage.Count(); x++)
+		for (int x = 0; x < player_damage.Count(); x++)
 		{
 			RemotePlayerDamageDebug value = player_damage.Get(x);
-			if(value)
+			if (value)
 			{
 				player = value.GetPlayer();
 				PrintString("debug damage: "+x.ToString() + "," + player.ToString());
@@ -247,6 +244,6 @@ class PluginRemotePlayerDebugClient extends PluginBase
 			}
 		}
 		
-		if(player_damage.Count() > 0 ) MergeDamage(player_damage);
+		if (player_damage.Count() > 0 ) MergeDamage(player_damage);
 	}
 }

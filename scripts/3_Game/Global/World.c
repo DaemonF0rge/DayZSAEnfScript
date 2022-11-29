@@ -60,8 +60,39 @@ class World: Managed
 	proto native void SetViewDistance(float distance);
 
 	proto native void SetObjectViewDistance(float distance);
+	
+	proto native void SetExplicitVolumeFactor_EnvSounds2D(float factor, float fadeTime);
+	
+	proto int GetWorldSize();
 
-	proto native void	LoadNewLightingCfg(string path);
+	/**
+	\brief Translates world coordinates to a grid coordinates(map grid)
+		\param pos
+		\param size of grid in meters
+		\param x grid position result [out]
+		\param z grid position result [out]
+		@code
+			int x,z;
+			GetGame().GetWorld().GetGridCoords(GetGame().GetPlayer().GetPosition(), 100, x, z);
+		@endcode
+	*/	
+	proto void GetGridCoords(vector pos, float gridSize, out int gridX, out int gridZ);
+
+	/**
+	load light config 
+	*/
+	proto native void LoadNewLightingCfg(string path);
+
+	/**
+	load user light config (just first item is used) 
+	*/
+	proto native void LoadUserLightingCfg(string path, string name);
+
+	/**
+	set lerp to user lighting cfg
+	*/
+	proto native void SetUserLightingLerp(float val);
+
 	
 	proto native AIWorld GetAIWorld();
 	
@@ -141,9 +172,10 @@ class World: Managed
 	
 	/*!
 	enables/disables player's voice communication
-	\param on					enable or disable voice
+	\param listening			enable or disable microphone
+	\param toggled				enable or disable PTT/Voice activation
 	*/
-	proto native void SetVoiceOn(bool on);
+	proto void SetVoiceOn(bool listening, bool toggled = false);
 
 	/*!
 	create sphere

@@ -29,11 +29,15 @@ class Mosin9130 extends Mosin9130_Base
 	//Debug menu Spawn Ground Special
 	override void OnDebugSpawn()
 	{
+		super.OnDebugSpawn();
+		GameInventory inventory = GetInventory();
+
+		inventory.CreateInInventory( "PUScopeOptic" );
+		inventory.CreateInInventory( "Mosin_Compensator" );	
+		
 		EntityAI entity;
 		if ( Class.CastTo(entity, this) )
 		{
-			entity.GetInventory().CreateInInventory( "Mosin_Compensator" );	
-			entity.GetInventory().CreateInInventory( "PUScopeOptic" );
 			entity.SpawnEntityOnGroundPos("Ammo_762x54", entity.GetPosition());
 		}
 	}

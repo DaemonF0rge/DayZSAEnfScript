@@ -39,13 +39,27 @@ class BarrelHoles_ColorBase extends FireplaceBase
 		return "disableContainerDamage";
 	}
 	
-	override void EEInit()
+	override void OnWasAttached( EntityAI parent, int slot_id)
 	{
-		super.EEInit();
+		super.OnWasAttached(parent, slot_id);
 		
-		//hide in inventory
-		//GetInventory().LockInventory(HIDE_INV_FROM_SCRIPT);
+		Open();
 	}
+	
+	override void OnWasDetached(EntityAI parent, int slot_id)
+	{
+		super.OnWasDetached(parent, slot_id);
+		
+		Close();
+	}
+	
+	override bool CanDetachAttachment( EntityAI parent )
+	{
+		if ( GetNumberOfItems() == 0)
+			return true;
+		return false;
+	}
+	
 	
 	override void OnStoreSave( ParamsWriteContext ctx )
 	{   
@@ -144,204 +158,127 @@ class BarrelHoles_ColorBase extends FireplaceBase
 		if ( GetHealthLevel() == GameConstants.STATE_RUINED )
 			return false;
 
-		if ( ( item.Type() == ATTACHMENT_CAULDRON ) || ( item.Type() == ATTACHMENT_COOKING_POT ) || ( item.Type() == ATTACHMENT_FRYING_PAN ) || ( item.IsKindOf( "Edible_Base" ) ) || IsKindling( item ) || IsFuel( item ) )
-			return super.CanLoadAttachment(attachment);
-
-		return false;
+		return super.CanLoadAttachment(attachment);
 	}
 
-	override bool CanReleaseAttachment( EntityAI attachment )
+	override void EEItemAttached(EntityAI item, string slot_name)
 	{
-		if( !super.CanReleaseAttachment( attachment ) )
-			return false;
+		super.EEItemAttached(item, slot_name);
 		
-		ItemBase item = ItemBase.Cast( attachment );
-		//kindling items
-		if ( IsKindling ( item ) && !IsBurning() && IsOpen() )
+		ItemBase item_base = ItemBase.Cast(item);
+		
+		if (IsKindling(item_base) || IsFuel(item_base))
 		{
-			if ( HasLastFuelKindlingAttached() )
-			{
-				if ( HasLastAttachment() )
-				{
-					return true;
-				}
-				else
-				{
-					return false;
-				}
-			}
-			else
-			{
-				return true;
-			}
+			AddToFireConsumables(item_base);
 		}
 		
-		//fuel items
-		if ( IsFuel ( item ) && !IsBurning() && IsOpen() )
-		{
-			if ( HasLastFuelKindlingAttached() )
-			{	
-				if ( HasLastAttachment() )
-				{
-					return true;
-				}
-				else
-				{
-					return false;
-				}
-			}
-			else
-			{
-				return true;
-			}
-		}
-		
-		//direct cooking slots
-		if ( ( item.Type() == ATTACHMENT_CAULDRON ) || ( item.Type() == ATTACHMENT_COOKING_POT ) || ( item.Type() == ATTACHMENT_FRYING_PAN ) || ( item.IsKindOf( "Edible_Base" ) ) )
-		{
-			return true;
-		}
-		
-		return false;
-	}
-
-	override void EEItemAttached ( EntityAI item, string slot_name ) 
-	{
-		super.EEItemAttached( item, slot_name );
-		
-		ItemBase item_base = ItemBase.Cast( item );
-		
-		//kindling / fuel
-		if ( IsKindling ( item_base ) || IsFuel ( item_base ) )
-		{
-			//add to consumables
-			AddToFireConsumables ( item_base );
-		}
-		
-		// direct cooking slots, smoking slots
+		// direct cooking/smoking slots
 		bool edible_base_attached = false;
-		switch ( slot_name )
+		switch (slot_name)
 		{
-			case "DirectCookingA":
-				m_DirectCookingSlots[0] = item_base;
-				edible_base_attached = true;
-				break;
+		case "DirectCookingA":
+			m_DirectCookingSlots[0] = item_base;
+			edible_base_attached = true;
+		break;
+		case "DirectCookingB":
+			m_DirectCookingSlots[1] = item_base;
+			edible_base_attached = true;
+		break;
+		case "DirectCookingC":
+			m_DirectCookingSlots[2] = item_base;
+			edible_base_attached = true;
+		break;
 
-			case "DirectCookingB":
-				m_DirectCookingSlots[1] = item_base;
-				edible_base_attached = true;
-				break;
-
-			case "DirectCookingC":
-				m_DirectCookingSlots[2] = item_base;
-				edible_base_attached = true;
-				break;
-
-			case "SmokingA":
-				m_SmokingSlots[0] = item_base;
-				edible_base_attached = true;
-				break;
-
-			case "SmokingB":
-				m_SmokingSlots[1] = item_base;
-				edible_base_attached = true;
-				break;
-
-			case "SmokingC":
-				m_SmokingSlots[2] = item_base;
-				edible_base_attached = true;
-				break;
-
-			case "SmokingD":
-				m_SmokingSlots[3] = item_base;
-				edible_base_attached = true;
-				break;
+		case "SmokingA":
+			m_SmokingSlots[0] = item_base;
+			edible_base_attached = true;
+		break;
+		case "SmokingB":
+			m_SmokingSlots[1] = item_base;
+			edible_base_attached = true;
+		break;
+		case "SmokingC":
+			m_SmokingSlots[2] = item_base;
+			edible_base_attached = true;
+		break;
+		case "SmokingD":
+			m_SmokingSlots[3] = item_base;
+			edible_base_attached = true;
+		break;
 		}
 		
 		// reset cooking time (to prevent the cooking exploit)
-		if ( GetGame().IsServer() && edible_base_attached )
+		if (GetGame().IsServer() && edible_base_attached)
 		{
-			Edible_Base edBase = Edible_Base.Cast( item_base );
-			if ( edBase )
+			Edible_Base edBase = Edible_Base.Cast(item_base);
+			if (edBase)
 			{
-				if ( edBase.GetFoodStage() )
-					edBase.SetCookingTime( 0 );
+				if (edBase.GetFoodStage())
+				{
+					edBase.SetCookingTime(0);
+				}
 			}
 		}
 
-		//refresh fireplace visuals
 		RefreshFireplaceVisuals();
 	}
-
-	override void EEItemDetached ( EntityAI item, string slot_name ) 
+	
+	override bool IsPrepareToDelete()
 	{
-		super.EEItemDetached ( item, slot_name );
+		return false;
+	}
+
+	override void EEItemDetached(EntityAI item, string slot_name)
+	{
+		super.EEItemDetached(item, slot_name);
 		
-		ItemBase item_base = ItemBase.Cast( item );
-		
-		//kindling / fuel
-		if ( IsKindling ( item_base ) || IsFuel ( item_base ) )
+		ItemBase item_base = ItemBase.Cast(item);
+		if (IsKindling(item_base) || IsFuel(item_base))
 		{
-			//remove from consumables
-			RemoveFromFireConsumables ( GetFireConsumableByItem( item_base ) );
+			RemoveFromFireConsumables(GetFireConsumableByItem(item_base));
 		}
 		
-		// direct cooking slots
-		switch ( slot_name )
+		// direct cooking / smoking slots
+		switch (slot_name)
 		{
-			case "DirectCookingA":
-				m_DirectCookingSlots[0] = NULL;
-				break;
+		case "DirectCookingA":
+			m_DirectCookingSlots[0] = null;
+		break;
+		case "DirectCookingB":
+			m_DirectCookingSlots[1] = null;
+		break;
+		case "DirectCookingC":
+			m_DirectCookingSlots[2] = null;
+		break;
 
-			case "DirectCookingB":
-				m_DirectCookingSlots[1] = NULL;
-				break;
-
-			case "DirectCookingC":
-				m_DirectCookingSlots[2] = NULL;
-				break;
-		}
-
-		// smoking slots
-		switch ( slot_name )
-		{
-			case "SmokingA":
-				m_SmokingSlots[0] = NULL;
-				break;
-
-			case "SmokingB":
-				m_SmokingSlots[1] = NULL;
-				break;
-
-			case "SmokingC":
-				m_SmokingSlots[2] = NULL;
-				break;
-
-			case "SmokingD":
-				m_SmokingSlots[3] = NULL;
-				break;
-		}
-
-		// food on direct cooking slots (removal of sound effects)
-		if ( item_base.IsKindOf( "Edible_Base" ) )
-		{
-			Edible_Base food_on_dcs = Edible_Base.Cast( item_base );
-			food_on_dcs.MakeSoundsOnClient( false );
+		case "SmokingA":
+			m_SmokingSlots[0] = null;
+		break;
+		case "SmokingB":
+			m_SmokingSlots[1] = null;
+		break;
+		case "SmokingC":
+			m_SmokingSlots[2] = null;
+		break;
+		case "SmokingD":
+			m_SmokingSlots[3] = null;
+		break;
 		}
 
 		// cookware-specifics (remove audio visuals)
-		if ( ( item.Type() == ATTACHMENT_CAULDRON ) || item_base.Type() == ATTACHMENT_COOKING_POT )
-		{	
-			Bottle_Base cooking_pot = Bottle_Base.Cast( item );
+		if (item_base.Type() == ATTACHMENT_CAULDRON || item_base.Type() == ATTACHMENT_COOKING_POT)
+		{
+			ClearCookingEquipment(item_base);
+			Bottle_Base cooking_pot = Bottle_Base.Cast(item);
 			cooking_pot.RemoveAudioVisualsOnClient();	
 		}
-		if ( item_base.Type() == ATTACHMENT_FRYING_PAN )
-		{	
-			FryingPan frying_pan = FryingPan.Cast( item );
+		if (item_base.Type() == ATTACHMENT_FRYING_PAN)
+		{
+			ClearCookingEquipment(item_base);
+			FryingPan frying_pan = FryingPan.Cast(item);
 			frying_pan.RemoveAudioVisualsOnClient();
 		}
 
-		//refresh fireplace visuals
 		RefreshFireplaceVisuals();
 	}
 	
@@ -377,13 +314,16 @@ class BarrelHoles_ColorBase extends FireplaceBase
 	
 	override bool CanLoadItemIntoCargo( EntityAI item )
 	{
+		if (!super.CanLoadItemIntoCargo( item ))
+			return false;
+		
 		if ( GetHealthLevel() == GameConstants.STATE_RUINED )
 			return false;
 
 		if ( GetHierarchyParent() )
 			return false;
 
-		return super.CanLoadItemIntoCargo( item );
+		return true;
 	}
 
 	override bool CanReleaseCargo( EntityAI cargo )
@@ -392,13 +332,22 @@ class BarrelHoles_ColorBase extends FireplaceBase
 	}
 	
 	//hands
-	override bool CanPutIntoHands( EntityAI parent )
+	override bool CanPutIntoHands(EntityAI parent)
 	{
-		if ( !super.CanPutIntoHands( parent ) )
+		if (!super.CanPutIntoHands(parent))
+		{
 			return false;
+		}
 
-		if ( IsBurning() || !IsCargoEmpty() || DirectCookingSlotsInUse() || IsOpen() )
+		if (IsBurning() || !IsCargoEmpty() || DirectCookingSlotsInUse() || SmokingSlotsInUse())
+		{
 			return false;
+		}
+		
+		if ( !GetInventory().IsAttachment() && IsOpen() )
+		{
+			return false;
+		}
 		
 		return true;
 	}
@@ -446,36 +395,37 @@ class BarrelHoles_ColorBase extends FireplaceBase
 		m_RoofAbove = false;
 		
 		SoundSynchRemote();
+		SetTakeable(false);
 		UpdateVisualState();
 	}
 	
 	void OpenLoad()
 	{
 		m_Openable.Open();
-		
 		m_RoofAbove = false;
 		
 		SetSynchDirty();
+		SetTakeable(false);
 		UpdateVisualState();
 	}
 	
 	override void Close()
 	{
 		m_Openable.Close();
-		
 		m_RoofAbove = true;
 		
 		SoundSynchRemote();
+		SetTakeable(true);
 		UpdateVisualState();
 	}
 	
 	void CloseLoad()
 	{
 		m_Openable.Close();
-		
 		m_RoofAbove = true;
 		
 		SetSynchDirty();
+		SetTakeable(true);
 		UpdateVisualState();
 	}
 	
@@ -564,13 +514,13 @@ class BarrelHoles_ColorBase extends FireplaceBase
 	void SoundBarrelOpenPlay()
 	{
 		EffectSound sound =	SEffectManager.PlaySound( "barrel_open_SoundSet", GetPosition() );
-		sound.SetSoundAutodestroy( true );
+		sound.SetAutodestroy( true );
 	}
 	
 	void SoundBarrelClosePlay()
 	{
 		EffectSound sound =	SEffectManager.PlaySound( "barrel_close_SoundSet", GetPosition() );
-		sound.SetSoundAutodestroy( true );
+		sound.SetAutodestroy( true );
 	}
 	
 	void DestroyClutterCutter( Object clutter_cutter )
@@ -585,12 +535,6 @@ class BarrelHoles_ColorBase extends FireplaceBase
 		{
 			return false;
 		}
-		
-		//check roof
-		/*if ( !IsCeilingHighEnoughForSmoke() && IsOnInteriorSurface() )
-		{
-			return false;
-		}*/
 		
 		//check surface
 		if ( IsOnWaterSurface() )
@@ -617,9 +561,14 @@ class BarrelHoles_ColorBase extends FireplaceBase
 		
 		AddAction(ActionOpenBarrelHoles);
 		AddAction(ActionCloseBarrelHoles);
-		AddAction(ActionTakeFireplaceFromBarrel);
-		//AddAction(ActionLightItemOnFire);
 		AddAction(ActionPlaceObject);
 		AddAction(ActionTogglePlaceObject);
+	}
+	
+	override void OnDebugSpawn()
+	{
+		m_Openable.Open();
+		super.OnDebugSpawn();
+		m_Openable.Close();
 	}
 }

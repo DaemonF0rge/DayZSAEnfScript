@@ -2,6 +2,8 @@ class ButtstockBase extends Inventory_Base
 {
 	override void OnWasAttached(EntityAI parent, int slot_id)
 	{
+		super.OnWasAttached(parent, slot_id);
+		
 		if( parent.IsWeapon() )
 		{
 			parent.SetButtstockAttached(true,slot_id);
@@ -10,6 +12,8 @@ class ButtstockBase extends Inventory_Base
 	
 	override void OnWasDetached(EntityAI parent, int slot_id)
 	{
+		super.OnWasDetached(parent, slot_id);
+		
 		if( parent.IsWeapon() )
 		{
 			parent.SetButtstockAttached(false);
@@ -32,3 +36,4 @@ class M4_MPBttstck : ButtstockBase {};
 class M4_OEBttstck : ButtstockBase {};
 class MP5k_StockBttstck : ButtstockBase {};
 class Saiga_Bttstck : ButtstockBase {};
+class PP19_Bttstck : ButtstockBase {};

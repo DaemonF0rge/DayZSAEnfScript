@@ -6,6 +6,7 @@ class ActionExtinguishFireplaceByExtinguisherCB : ActionContinuousBaseCB
 	override void CreateActionComponent()
 	{
 		m_ActionData.m_ActionComponent = new CAContinuousQuantityExtinguish( UAQuantityConsumed.FIREPLACE_EXTINGUISHER, TIME_TO_REPEAT, WETNESS_GAIN_MULTIPLIER );
+		CAContinuousQuantityExtinguish.Cast(m_ActionData.m_ActionComponent).MultiplyQuantityUsed(m_ActionData.m_MainItem.GetLiquidThroughputCoef());
 	}
 };
 
@@ -18,6 +19,7 @@ class ActionExtinguishFireplaceByExtinguisher: ActionContinuousBase
 		m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT;
 		m_SpecialtyWeight = UASoftSkillsWeight.ROUGH_MEDIUM;
+		m_Text = "#extinguish";
 	}
 	
 	override void CreateConditionComponents()  
@@ -25,11 +27,6 @@ class ActionExtinguishFireplaceByExtinguisher: ActionContinuousBase
 		
 		m_ConditionItem = new CCINonRuined;
 		m_ConditionTarget = new CCTDummy;
-	}
-		
-	override string GetText()
-	{
-		return "#extinguish";
 	}
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

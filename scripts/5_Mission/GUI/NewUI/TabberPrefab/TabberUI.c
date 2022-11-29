@@ -4,76 +4,107 @@ class TabberUI extends ScriptedWidgetEventHandler
 	protected Widget				m_Root;
 	protected Widget				m_TabControlsRoot;
 	
+	protected int 					m_TabsCount;
 	protected ref map<int, Widget>	m_TabControls;
 	protected ref map<int, Widget>	m_Tabs;
 	
 	protected int					m_SelectedIndex;
 	protected float					m_ResolutionMultiplier;
+	protected bool					m_CanSwitch;
 	
 	ref ScriptInvoker				m_OnTabSwitch = new ScriptInvoker();
+	ref ScriptInvoker				m_OnAttemptTabSwitch = new ScriptInvoker();
 	ref Timer						m_InitTimer;
+	
+	protected void OnInputPresetChanged()
+	{
+		Init();
+
+		#ifdef PLATFORM_CONSOLE
+		UpdateControlsElements();
+		#endif
+	}
+	
+	protected void OnInputDeviceChanged(EInputDeviceType pInputDeviceType)
+	{
+		switch (pInputDeviceType)
+		{
+		case EInputDeviceType.CONTROLLER:
+			UpdateControlsElements();
+			m_TabControlsRoot.FindAnyWidget("ConsoleControls").Show(true);
+		break;
+
+		default:
+			if (GetGame().GetInput().IsEnabledMouseAndKeyboardEvenOnServer())
+			{
+				m_TabControlsRoot.FindAnyWidget("ConsoleControls").Show(false);
+			}
+		break;
+		}
+	}
+	
+	void Init()
+	{
+		int x, y;
+		GetScreenSize( x, y );
+		m_ResolutionMultiplier	= y / 1080;
+		m_CanSwitch = true;
+		m_TabsCount	= 0;
+		
+		Widget tab_controls	= m_Root.FindAnyWidget("Tab_Control_Container");
+		if ( tab_controls )
+		{
+			Widget tab_child	= tab_controls.GetChildren();
+			
+			while ( tab_child )
+			{
+				m_TabsCount++;
+				tab_child = tab_child.GetSibling();
+			}
+			
+			for ( int i = 0; i < m_TabsCount; i++ )
+			{
+				Widget tab_control	= tab_controls.FindAnyWidget("Tab_Control_" + i);
+				Widget tab_widget	= m_Root.FindAnyWidget("Tab_" + i);
+				if (tab_control && tab_widget)
+				{
+					tab_control.SetHandler(this);
+					m_TabControls.Insert(i, tab_control);
+					m_Tabs.Insert(i, tab_widget);
+				}
+				else
+				{
+					Error("Tabber could not find correctly named tab or control at index " + i);
+				}
+			}
+			
+			AlignTabbers();
+			#ifdef PLATFORM_CONSOLE
+			UpdateControlsElements();
+			#endif
+			
+			SelectTabControl(0);
+			
+			m_InitTimer.Run(0.01, this, "AlignTabbers");
+		}
+		
+		GetGame().GetMission().GetOnInputPresetChanged().Insert(OnInputPresetChanged);
+		GetGame().GetMission().GetOnInputDeviceChanged().Insert(OnInputDeviceChanged);
+		
+		OnInputDeviceChanged(GetGame().GetInput().GetCurrentInputDevice());
+	}
 
 	void OnWidgetScriptInit( Widget w )
 	{
+		m_TabsCount				= 0;
 		m_TabControls			= new map<int, Widget>;
 		m_Tabs					= new map<int, Widget>;
 		
 		m_Root					= w;
 		m_InitTimer				= new Timer();
-		m_TabControlsRoot		= m_Root.FindAnyWidget( "TabControls" );
+		m_TabControlsRoot		= m_Root.FindAnyWidget("TabControls");
 		
-		int x, y;
-		GetScreenSize( x, y );
-		m_ResolutionMultiplier	= y / 1080;
-		
-		
-		Widget tab_controls	= m_Root.FindAnyWidget( "Tab_Control_Container" );
-		if( tab_controls )
-		{
-			Widget tab_child	= tab_controls.GetChildren();
-			
-			int tab_count;
-			
-			while( tab_child )
-			{
-				tab_count++;
-				tab_child = tab_child.GetSibling();
-			}
-			
-			for( int i = 0; i < tab_count; i++ )
-			{
-				Widget tab_control	= tab_controls.FindAnyWidget( "Tab_Control_" + i );
-				Widget tab_widget	= m_Root.FindAnyWidget( "Tab_" + i );
-				if( tab_control && tab_widget )
-				{
-					tab_control.SetHandler( this );
-					m_TabControls.Insert( i, tab_control );
-					m_Tabs.Insert( i, tab_widget );
-				}
-				else
-				{
-					Error( "Tabber could not find correctly named tab or control at index " + i );
-				}
-			}
-			
-			AlignTabbers();
-			Widget xb_controls = m_Root.FindAnyWidget( "ConsoleControls" );
-			#ifdef PLATFORM_CONSOLE
-				if( xb_controls )
-					xb_controls.Show( tab_count > 1 );
-			#endif
-			
-			#ifdef PLATFORM_PS4
-				ImageWidget toolbar_lb = xb_controls.FindAnyWidget( "TabLeftControl" );
-				ImageWidget toolbar_rb = xb_controls.FindAnyWidget( "TabRightControl" );
-				toolbar_lb.LoadImageFile( 0, "set:playstation_buttons image:L1" );
-				toolbar_rb.LoadImageFile( 0, "set:playstation_buttons image:R1" );
-			#endif
-			
-			SelectTabControl( 0 );
-			
-			m_InitTimer.Run( 0.01, this, "AlignTabbers" );
-		}
+		Init();
 	}
 	
 	void AlignTabbers()
@@ -82,14 +113,15 @@ class TabberUI extends ScriptedWidgetEventHandler
 		float x, y;
 		
 		Widget tab_controls_container = m_TabControlsRoot.FindAnyWidget( "Tab_Control_Container" );
+		Widget tab_controls_scroller = m_TabControlsRoot.FindAnyWidget( "Tab_Control_Scroller" );
 		
 		m_TabControlsRoot.Update();
 		tab_controls_container.Update();
 		
 		Widget tab_child = tab_controls_container.GetChildren();
-		while( tab_child )
+		while ( tab_child )
 		{
-			if( tab_child.IsVisible() )
+			if ( tab_child.IsVisible() )
 			{
 				TextWidget tab_text = TextWidget.Cast( tab_child.FindAnyWidget( tab_child.GetName() + "_Title" ) );
 				int t_x, t_y;
@@ -109,7 +141,7 @@ class TabberUI extends ScriptedWidgetEventHandler
 		float x_f_c, y_f_c;
 		tab_controls_container.GetScreenPos( x_f_c, y_f_c );
 		
-		while( tab_child )
+		while ( tab_child )
 		{
 			Widget tab_bg = tab_child.FindAnyWidget( tab_child.GetName() + "_Background" );
 			tab_child.GetScreenPos( x, y );
@@ -123,11 +155,9 @@ class TabberUI extends ScriptedWidgetEventHandler
 		
 		m_TabControlsRoot.SetSize( total_size, y );
 		tab_controls_container.Update();
+		if (tab_controls_scroller)
+			tab_controls_scroller.Update();
 		m_TabControlsRoot.Update();
-		
-		#ifdef PLATFORM_CONSOLE
-			m_Root.FindAnyWidget( "ConsoleControls" ).Show( m_Tabs.Count() > 1 );
-		#endif
 	}
 	
 	int AddTab( string name )
@@ -155,7 +185,7 @@ class TabberUI extends ScriptedWidgetEventHandler
 	
 	void RemoveTab( int index )
 	{
-		
+
 	}
 	
 	
@@ -169,16 +199,44 @@ class TabberUI extends ScriptedWidgetEventHandler
 		return m_Tabs.Count();
 	}
 	
+	bool CanSwitchTab()
+	{
+		return m_CanSwitch;
+	}
+	
+	void SetCanSwitch(bool value)
+	{
+		m_CanSwitch = value;
+	}
+	
+	void PerformSwitchTab(int index)
+	{
+		DeselectTabControl( m_SelectedIndex );
+		DeselectTabPanel( m_SelectedIndex );
+		
+		SelectTabControl( index );
+		SelectTabPanel( index );
+		
+		m_SelectedIndex = index;
+		m_OnTabSwitch.Invoke( m_SelectedIndex );
+		
+		if ( m_FirstInit )
+		{
+			AlignTabbers();
+			m_FirstInit = false;
+		}
+	}
+	
 	override bool OnMouseEnter( Widget w, int x, int y )
 	{
 		int index = m_TabControls.GetKeyByValue( w );
-		if( m_SelectedIndex == index )
+		if ( m_SelectedIndex == index )
 		{
 			return false;
 		}
 		
 		Widget tab_control = m_TabControls.Get( index );
-		if( tab_control )
+		if ( tab_control )
 		{			
 			Widget tab_title = TextWidget.Cast(tab_control.FindAnyWidget( tab_control.GetName() + "_Title" ));
 			tab_title.SetColor( ARGB(255, 255, 0, 0) );
@@ -191,13 +249,13 @@ class TabberUI extends ScriptedWidgetEventHandler
 	override bool OnMouseLeave( Widget w, Widget enterW, int x, int y )
 	{
 		int index = m_TabControls.GetKeyByValue( w );
-		if( m_SelectedIndex == index )
+		if ( m_SelectedIndex == index )
 		{
 			return false;
 		}
 		
 		Widget tab_control = m_TabControls.Get( index );
-		if( tab_control )
+		if ( tab_control )
 		{			
 			Widget tab_title = TextWidget.Cast(tab_control.FindAnyWidget( tab_control.GetName() + "_Title" ));
 			tab_title.SetColor( ARGB(255, 255, 255, 255) );
@@ -208,27 +266,18 @@ class TabberUI extends ScriptedWidgetEventHandler
 	
 	override bool OnMouseButtonUp( Widget w, int x, int y, int button )
 	{
-		if( button == MouseState.LEFT )
+		if ( button == MouseState.LEFT )
 		{
 			int index = m_TabControls.GetKeyByValue( w );
-			if( m_SelectedIndex != index )
+			if ( m_SelectedIndex != index )
 			{
-				DeselectTabControl( m_SelectedIndex );
-				DeselectTabPanel( m_SelectedIndex );
-				
-				SelectTabControl( index );
-				SelectTabPanel( index );
-				
-				m_SelectedIndex = index;
-				m_OnTabSwitch.Invoke( m_SelectedIndex );
-				
-				if( m_FirstInit )
+				m_OnAttemptTabSwitch.Invoke( m_SelectedIndex, index );
+				if ( CanSwitchTab() )
 				{
-					AlignTabbers();
-					m_FirstInit = false;
+					PerformSwitchTab(index);
+					
+					return true;
 				}
-				
-				return true;
 			}
 		}
 		
@@ -237,7 +286,7 @@ class TabberUI extends ScriptedWidgetEventHandler
 	
 	override bool OnChildAdd( Widget w, Widget child )
 	{
-		if( w == m_Root.FindAnyWidget( "Tab_Control_Container" ) )
+		if ( w == m_Root.FindAnyWidget( "Tab_Control_Container" ) )
 		{
 			AlignTabbers();
 			return true;
@@ -247,7 +296,7 @@ class TabberUI extends ScriptedWidgetEventHandler
 	
 	override bool OnChildRemove( Widget w, Widget child )
 	{
-		if( w == m_Root.FindAnyWidget( "Tab_Control_Container" ) )
+		if ( w == m_Root.FindAnyWidget( "Tab_Control_Container" ) )
 		{
 			AlignTabbers();
 			return true;
@@ -258,7 +307,7 @@ class TabberUI extends ScriptedWidgetEventHandler
 	void EnableTabControl( int index, bool enable )
 	{
 		Widget tab_control = m_Root.FindAnyWidget( "Tab_Control_" + index );
-		if( tab_control )
+		if ( tab_control )
 			tab_control.Show( enable );
 		AlignTabbers();
 	}
@@ -266,7 +315,7 @@ class TabberUI extends ScriptedWidgetEventHandler
 	void SelectTabControl( int index )
 	{
 		Widget tab_control = m_TabControls.Get( index );
-		if( tab_control )
+		if ( tab_control )
 		{
 			/*
 			Widget tab_bg = tab_control.FindAnyWidget( tab_control.GetName() + "_Background" );
@@ -294,7 +343,7 @@ class TabberUI extends ScriptedWidgetEventHandler
 	void SelectTabPanel( int index )
 	{
 		Widget tab = m_Tabs.Get( index );
-		if( tab )
+		if ( tab )
 		{
 			tab.Show( true );
 		}
@@ -303,7 +352,7 @@ class TabberUI extends ScriptedWidgetEventHandler
 	void DeselectTabControl( int index )
 	{
 		Widget tab_control = m_TabControls.Get( index );
-		if( tab_control )
+		if ( tab_control )
 		{
 			/*
 			Widget tab_bg = tab_control.FindAnyWidget( tab_control.GetName() + "_Background" );
@@ -321,9 +370,18 @@ class TabberUI extends ScriptedWidgetEventHandler
 	void DeselectTabPanel( int index )
 	{
 		Widget tab = m_Tabs.Get( index );
-		if( tab )
+		if ( tab )
 		{
 			tab.Show( false );
+		}
+	}
+	
+	void DeselectAll()
+	{
+		for (int i = 0; i < m_TabControls.Count(); i++)
+		{
+			DeselectTabControl(i);
+			DeselectTabPanel(i);
 		}
 	}
 	
@@ -331,29 +389,26 @@ class TabberUI extends ScriptedWidgetEventHandler
 	{
 		int next_index = m_SelectedIndex + 1;
 		
-		while( next_index < m_Tabs.Count() && !m_TabControls[next_index].IsVisible() )
+		while ( next_index < m_Tabs.Count() && !m_TabControls[next_index].IsVisible() )
 		{
 			next_index++;
 		}
 		
-		if( next_index >= m_Tabs.Count() )
+		if ( next_index >= m_Tabs.Count() )
 		{
 			next_index = 0;
 		}
 		
-		if( m_SelectedIndex != next_index )
+		if ( m_SelectedIndex != next_index )
 		{
-			DeselectTabControl( m_SelectedIndex );
-			DeselectTabPanel( m_SelectedIndex );
-				
-			SelectTabControl( next_index );
-			SelectTabPanel( next_index );
-			
-			m_SelectedIndex = next_index;
-			m_OnTabSwitch.Invoke( m_SelectedIndex );
+			m_OnAttemptTabSwitch.Invoke( m_SelectedIndex, next_index );
+			if ( CanSwitchTab() )
+			{
+				PerformSwitchTab(next_index);
+			}
 		}
 		
-		if( m_FirstInit )
+		if ( m_FirstInit )
 		{
 			AlignTabbers();
 			m_FirstInit = false;
@@ -364,29 +419,26 @@ class TabberUI extends ScriptedWidgetEventHandler
 	{
 		int next_index = m_SelectedIndex - 1;
 		
-		if( next_index < 0 )
+		if ( next_index < 0 )
 		{
 			next_index = m_TabControls.Count() - 1;
 		}
 		
-		while( next_index > 0 && !m_TabControls[next_index].IsVisible() )
+		while ( next_index > 0 && !m_TabControls[next_index].IsVisible() )
 		{
 			next_index--;
 		}
 		
-		if( m_SelectedIndex != next_index )
+		if ( m_SelectedIndex != next_index )
 		{
-			DeselectTabControl( m_SelectedIndex );
-			DeselectTabPanel( m_SelectedIndex );
-				
-			SelectTabControl( next_index );
-			SelectTabPanel( next_index );
-			
-			m_SelectedIndex = next_index;
-			m_OnTabSwitch.Invoke( m_SelectedIndex );
+			m_OnAttemptTabSwitch.Invoke( m_SelectedIndex, next_index );
+			if ( CanSwitchTab() )
+			{
+				PerformSwitchTab(next_index);
+			}
 		}
 		
-		if( m_FirstInit )
+		if ( m_FirstInit )
 		{
 			AlignTabbers();
 			m_FirstInit = false;
@@ -396,5 +448,50 @@ class TabberUI extends ScriptedWidgetEventHandler
 	int GetSelectedIndex()
 	{
 		return m_SelectedIndex;
+	}
+	
+	void RefreshTab(bool performInitAlignment = false)
+	{
+		m_FirstInit = performInitAlignment;
+		DeselectAll();
+		PerformSwitchTab(m_SelectedIndex);
+	}
+	
+	protected void UpdateControlsElements()
+	{
+		Widget xbControls = m_Root.FindAnyWidget("ConsoleControls");
+		if (xbControls)
+		{
+			xbControls.Show(m_TabsCount > 1);
+	
+			RichTextWidget toolbar_lb = RichTextWidget.Cast(xbControls.FindAnyWidget("TabLeftControl"));
+			RichTextWidget toolbar_rb = RichTextWidget.Cast(xbControls.FindAnyWidget("TabRightControl"));
+			if (toolbar_lb)
+			{
+				toolbar_lb.SetText(InputUtils.GetRichtextButtonIconFromInputAction("UAUITabLeft", "", EUAINPUT_DEVICE_CONTROLLER, InputUtils.ICON_SCALE_TOOLBAR));
+			}
+
+			if (toolbar_rb)
+			{
+				toolbar_rb.SetText(InputUtils.GetRichtextButtonIconFromInputAction("UAUITabRight", "", EUAINPUT_DEVICE_CONTROLLER, InputUtils.ICON_SCALE_TOOLBAR));
+			}
+		}
+	}
+	
+	//! useful if we want to disable actual tabs for whatever reason
+	void DisableTabs(bool disable)
+	{
+		foreach (Widget w : m_Tabs)
+		{
+			if (disable)
+			{
+				w.SetFlags( WidgetFlags.IGNOREPOINTER );
+			}
+			else
+			{
+				w.ClearFlags( WidgetFlags.IGNOREPOINTER );
+			}
+			w.Enable(!disable);
+		}
 	}
 }

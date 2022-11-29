@@ -2,6 +2,7 @@ class ActionClose: ActionSingleUseBase
 {
 	void ActionClose()
 	{
+		m_Text = "#close";
 	}
 	
 	override void CreateConditionComponents()  
@@ -13,11 +14,6 @@ class ActionClose: ActionSingleUseBase
 	override bool HasTarget()
 	{
 		return false;
-	}
-
-	override string GetText()
-	{
-		return "#close";
 	}
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

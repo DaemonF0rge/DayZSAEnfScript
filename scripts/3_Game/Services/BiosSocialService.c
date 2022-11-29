@@ -55,7 +55,7 @@ class BiosSocialService
 		@param friend_list list of BiosFriendInfo for each friend. NULL if failed.
 		@param error error indicating success or fail of the async operation.
 	*/
-	void OnFriendsAsync(ref BiosFriendInfoArray friend_list, EBiosError error)
+	void OnFriendsAsync(BiosFriendInfoArray friend_list, EBiosError error)
 	{
 		OnlineServices.OnFriendsAsync( friend_list, error );
 	}

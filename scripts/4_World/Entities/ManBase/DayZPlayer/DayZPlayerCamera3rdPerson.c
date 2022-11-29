@@ -45,7 +45,6 @@ class DayZPlayerCamera3rdPerson extends DayZPlayerCameraBase
 	//	
 	override void 		OnUpdate(float pDt, out DayZPlayerCameraResult pOutResult)
 	{
-		
 		m_pPlayer.GetMovementState(m_MovementState);
 
 		//! update angles from input 
@@ -53,15 +52,8 @@ class DayZPlayerCamera3rdPerson extends DayZPlayerCameraBase
 		m_CurrentCameraPitch = udAngle;
 		m_fLeftRightAngle	= UpdateLRAngle(m_fLeftRightAngle, CONST_LR_MIN, CONST_LR_MAX, pDt);
 
-		if(m_CameraShake)
-		{
-			float x,y;
-			m_CameraShake.Update(pDt, x, y);
-			m_fLeftRightAngle += x;
-			m_fUpDownAngleAdd += y;
-			//Print(x);
-		}
-		
+		ProcessCameraShake(pDt, m_fLeftRightAngle, m_fUpDownAngleAdd);
+
 		// update l/r offsets and set it as 
 		if (m_pInput.Camera3rdIsRightShoulder())
 		{
@@ -113,7 +105,7 @@ class DayZPlayerCamera3rdPerson extends DayZPlayerCameraBase
 		pOutResult.m_fDistance 		= m_fDistance;
 		pOutResult.m_fUseHeading 	= 1.0;
 		pOutResult.m_fInsideCamera 	= 0.0;
-
+		
 		InitCameraOnPlayer();
 		StdFovUpdate(pDt, pOutResult);
 		UpdateCameraNV(PlayerBase.Cast(m_pPlayer));
@@ -204,6 +196,7 @@ class DayZPlayerCamera3rdPersonJump extends DayZPlayerCamera3rdPersonErc
 
 		float yPos = m_pPlayer.GetOrigin()[1];
 		float yDiff = yPos - m_fJumpStartY;
+		yDiff = Math.Clamp(yDiff, 0.0, 2.0);
 		
 		if( m_fDelayTimer < m_fDelay )
 		{
@@ -474,6 +467,9 @@ class DayZPlayerCamera3rdPersonProneBase extends DayZPlayerCamera3rdPerson
 		// Print("OY: " + orientYaw.ToString() + " HY: " + headYaw.ToString());
 	
 		// update l/r offsets and set it as 
+		
+		ProcessCameraShake(pDt, m_fLeftRightAngle, m_fUpDownAngleAdd);
+		
 		if (m_pInput.Camera3rdIsRightShoulder())
 		{
 			m_fCameraLRShoulder = Math.SmoothCD(m_fCameraLRShoulder, 1.0, m_fCameraLRShoulderVel, 0.14, 1000, pDt);

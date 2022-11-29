@@ -87,6 +87,7 @@ class HudDebug extends Hud
 	static const int HUD_WIN_CHAR_LEVELS		= 5;
 	static const int HUD_WIN_CHAR_STOMACH		= 6;
 	static const int HUD_WIN_VERSION			= 7;
+	static const int HUD_WIN_TEMPERATURE		= 8;
 	
 	Widget							m_WgtRoot;
 	Widget							m_Crosshair;
@@ -153,6 +154,10 @@ class HudDebug extends Hud
 		// Register Window Version
 		HudDebugWinVersion win_version = new HudDebugWinVersion( m_WgtRoot.FindAnyWidget( "wdw_Version" ) );
 		m_Panels.Insert( win_version );
+		
+		// Register Window Temperature
+		HudDebugWinTemperature win_temp = new HudDebugWinTemperature( m_WgtRoot.FindAnyWidget( "wdw_Temp" ) );
+		m_Panels.Insert( win_temp );
 		
 		
 		RefreshByLocalProfile();
@@ -284,6 +289,7 @@ class HudDebug extends Hud
 			SetPanelVisible( HudDebug.HUD_WIN_CHAR_DEBUG, 		module_cfg_profile.GetCharacterDebugVisible() );
 			SetPanelVisible( HudDebug.HUD_WIN_CHAR_STOMACH, 	module_cfg_profile.GetCharacterStomachVisible() );
 			SetPanelVisible( HudDebug.HUD_WIN_VERSION, 			module_cfg_profile.GetVersionVisible() );
+			SetPanelVisible( HudDebug.HUD_WIN_TEMPERATURE, 		module_cfg_profile.GetTempVisible() );
 		}
 	}
 	

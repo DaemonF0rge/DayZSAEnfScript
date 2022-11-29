@@ -15,6 +15,7 @@ class ActionDismantleStoneCircle: ActionContinuousBase
 		m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_CROUCH;
 		m_SpecialtyWeight = UASoftSkillsWeight.ROUGH_HIGH;
+		m_Text = "#dismantle_stonecircle";
 	}
 	
 	override void CreateConditionComponents()  
@@ -22,11 +23,6 @@ class ActionDismantleStoneCircle: ActionContinuousBase
 		
 		m_ConditionTarget = new CCTNonRuined( UAMaxDistances.DEFAULT );
 		m_ConditionItem = new CCINotPresent;
-	}
-		
-	override string GetText()
-	{
-		return "#dismantle_stonecircle";
 	}
 	
 	override typename GetInputType()

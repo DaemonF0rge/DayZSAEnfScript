@@ -6,6 +6,7 @@ class ActionInjectSelf: ActionSingleUseBase
 		m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_CROUCH;
 		m_SpecialtyWeight = UASoftSkillsWeight.PRECISE_MEDIUM;
+		m_Text = "#inject";
 	}
 	
 	override void CreateConditionComponents()  
@@ -17,11 +18,6 @@ class ActionInjectSelf: ActionSingleUseBase
 	override bool HasTarget()
 	{
 		return false;
-	}
-
-	override string GetText()
-	{
-		return "#inject";
 	}
 
 	override void OnExecuteServer( ActionData action_data )
@@ -47,5 +43,12 @@ class ActionInjectSelf: ActionSingleUseBase
 		{
 			action_data.m_MainItem.DeleteOnClient();
 		}
+	}
+	
+	override void ApplyModifiers( ActionData action_data )
+	{
+		action_data.m_MainItem.OnApply(action_data.m_Player);
+		//action_data.m_Player.m_ModifiersManager.DeactivateModifier(eModifiers.MDF_HEART_ATTACK);
+		
 	}
 };

@@ -2,7 +2,7 @@ class Hit_Water : EffBulletImpactBase
 {
 	void Hit_Water()
 	{
-		SetEnterParticle(ParticleList.IMPACT_WATER_SMALL_ENTER);
+		SetSingleParticle(ParticleList.IMPACT_WATER_SMALL_ENTER);
 		
 		m_AngledEnter = 10;
 	}

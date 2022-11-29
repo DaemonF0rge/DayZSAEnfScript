@@ -18,6 +18,7 @@ class ActionBreakLongWoodenStick: ActionContinuousBase
 		m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_CROUCH | DayZPlayerConstants.STANCEMASK_ERECT;
 		m_SpecialtyWeight = UASoftSkillsWeight.ROUGH_HIGH;
+		m_Text = "#STR_split0";
 	}
 	
 	override void CreateConditionComponents()  
@@ -28,7 +29,7 @@ class ActionBreakLongWoodenStick: ActionContinuousBase
 	
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
 	{
-		if( item.IsEmpty() )
+		if (item.IsEmpty() && (!item.GetCompEM() || !item.GetCompEM().IsWorking()))
 		{
 			return true;
 		}
@@ -42,11 +43,6 @@ class ActionBreakLongWoodenStick: ActionContinuousBase
 	{
 		return false;
 	}
-
-	override string GetText()
-	{
-		return "#STR_split0";
-	}
 	
 	override void OnFinishProgressServer( ActionData action_data )
 	{
@@ -55,7 +51,7 @@ class ActionBreakLongWoodenStick: ActionContinuousBase
 		BreakLongWoodenStick lambda = new BreakLongWoodenStick(action_data.m_MainItem, "WoodenStick", action_data.m_Player, 3);
 		action_data.m_Player.ServerReplaceItemInHandsWithNew(lambda);
 		
-		if(LongWoodenStick.Cast(startingItem) == null) // case if it is a broom
+		if (LongWoodenStick.Cast(startingItem) == null) // case if it is a broom
 		{
 			EntityAI longStick = action_data.m_Player.SpawnEntityOnGroundPos("LongWoodenStick", action_data.m_Player.GetPosition());
 			
@@ -71,22 +67,23 @@ class BreakLongWoodenStick : ReplaceItemWithNewLambdaBase
 {
 	int m_ItemCount;
 	
-	void BreakLongWoodenStick (EntityAI old_item, string new_item_type, PlayerBase player, int count) 
+	void BreakLongWoodenStick(EntityAI old_item, string new_item_type, PlayerBase player, int count) 
 	{
 		m_ItemCount = count; 
 	}
 
-	override void CopyOldPropertiesToNew (notnull EntityAI old_item, EntityAI new_item)
+	override void CopyOldPropertiesToNew(notnull EntityAI old_item, EntityAI new_item)
 	{
 		super.CopyOldPropertiesToNew(old_item, new_item);
 
 		ItemBase sticks;
 		Class.CastTo(sticks, new_item);
-		sticks.SetQuantity(m_ItemCount);
-					
+		
 		ItemBase ingredient;
 		Class.CastTo(ingredient, old_item);
 		
 		MiscGameplayFunctions.TransferItemProperties(ingredient, sticks);
+		
+		sticks.SetQuantity(m_ItemCount);
 	}
 };

@@ -20,9 +20,7 @@ class AnalyticsManagerClient
 	//===================================
 	void OnActionEat()
 	{
-		#ifdef PLATFORM_CONSOLE
-			AchievementsXbox.OnActionEat();
-		#endif
+		Achievements.OnActionEat();
 	}
 	
 	//===================================
@@ -30,9 +28,7 @@ class AnalyticsManagerClient
 	//===================================
 	void OnActionDrink()
 	{
-		#ifdef PLATFORM_CONSOLE
-			AchievementsXbox.OnActionDrink();
-		#endif
+		Achievements.OnActionDrink();
 	}
 	
 	//===================================
@@ -40,9 +36,7 @@ class AnalyticsManagerClient
 	//===================================
 	void OnActionCookedSteak()
 	{
-		#ifdef PLATFORM_CONSOLE
-			AchievementsXbox.OnCookedSteak();
-		#endif
+		Achievements.OnCookedSteak();
 	}
 	
 	//===================================
@@ -50,9 +44,7 @@ class AnalyticsManagerClient
 	//===================================
 	void OnActionFinishedShaveSelf()
 	{
-		#ifdef PLATFORM_CONSOLE
-			AchievementsXbox.OnActionShave();
-		#endif
+		Achievements.OnActionShave();
 	}
 	
 	//===================================
@@ -60,9 +52,7 @@ class AnalyticsManagerClient
 	//===================================
 	void OnActionFinishedGutDeer()
 	{
-		#ifdef PLATFORM_CONSOLE
-			AchievementsXbox.OnActionGutDeer();
-		#endif
+		Achievements.OnActionGutDeer();
 	}
 	
 	//===================================
@@ -70,19 +60,15 @@ class AnalyticsManagerClient
 	//===================================
 	void OnActionRestrain()
 	{		
-		#ifdef PLATFORM_CONSOLE
-			AchievementsXbox.OnActionHandcuff();
-		#endif
+		Achievements.OnActionHandcuff();
 	}
 	
 	//===================================
 	// OnActionBandageTarget
 	//===================================
 	void OnActionBandageTarget()
-	{		
-		#ifdef PLATFORM_CONSOLE
-			AchievementsXbox.OnActionMedsSurvivor();
-		#endif
+	{	
+		Achievements.OnActionMedsSurvivor();
 	}
 	
 	//===================================
@@ -94,65 +80,66 @@ class AnalyticsManagerClient
 		bool melee_present;
 		bool backpack_present;
 		HumanInventory inventory;
-		//#ifdef PLATFORM_XBOX
-			if ( GetDayZGame().GetGameState() != DayZGameState.IN_GAME )
-			{
-				return;
-			}
-		
-			Man player = GetGame().GetPlayer();
-			if (!player)
+
+		if ( GetDayZGame().GetGameState() != DayZGameState.IN_GAME )
+		{
 			return;
+		}
 		
-			inventory = player.GetHumanInventory();
+		Man player = GetGame().GetPlayer();
+		if (!player)
+		{
+			return;
+		}
+		
+		inventory = player.GetHumanInventory();
 			
-			if ( player && inventory )
+		if ( player && inventory )
+		{
+			for ( int i = 0; i < GEAR_COUNT; ++i )
 			{
-				for ( int i = 0; i < GEAR_COUNT; ++i )
-				{
-					int slot_id = InventorySlots.GetSlotIdFromString(m_FullGear[i]);
-					EntityAI att_item = inventory.FindAttachment( slot_id ); // Boris V [27.2.2019]: Consider using player.GetItemOnSlot(m_FullGear[i]) instead.
+				int slot_id = InventorySlots.GetSlotIdFromString(m_FullGear[i]);
+				EntityAI att_item = inventory.FindAttachment( slot_id ); // Boris V [27.2.2019]: Consider using player.GetItemOnSlot(m_FullGear[i]) instead.
 					
-					if ( !att_item )
-					{
-						//Print("index: "+ i +" slot_id: "+ slot_id +" = "+ att_item + " EMPTY");
-						continue;
-					}
-				
-					//checks for firearm
-					if (att_item.IsWeapon())
-						weapon_present = true;
-					//checks for melee weapon
-					else if (!att_item.IsWeapon() && att_item.GetInventory().HasInventorySlot(InventorySlots.GetSlotIdFromString("Melee")))
-						melee_present = true;
-					//checks for backpack
-					else if (!att_item.IsWeapon() && att_item.GetInventory().HasInventorySlot(InventorySlots.GetSlotIdFromString("Back")))
-						backpack_present = true;
-					//Print("index: "+ i +" slot_id: "+ slot_id +" = "+ att_item + " ATTACHED");
-				}
-				
-				//separate check for hand slot; TODO remove duplicates
-				att_item = inventory.GetEntityInHands();
-				if ( att_item )
+				if ( !att_item )
 				{
-					//checks for firearm
-					if (att_item.IsWeapon())
-						weapon_present = true;
-					//checks for melee weapon
-					else if (!att_item.IsWeapon() && att_item.GetInventory().HasInventorySlot(InventorySlots.GetSlotIdFromString("Melee")) )
-						melee_present = true;
-					//checks for backpack
-					else if (!att_item.IsWeapon() && att_item.GetInventory().HasInventorySlot(InventorySlots.GetSlotIdFromString("Back")))
-						backpack_present = true;
+					//Print("index: "+ i +" slot_id: "+ slot_id +" = "+ att_item + " EMPTY");
+					continue;
 				}
 				
-				if (weapon_present && melee_present && backpack_present)
-				{
-					//Print("---EAchievementActionId.ACTION_EQUIP_GEAR");
-					AchievementsXbox.OnEquippedFullGear();
-				}
+				//checks for firearm
+				if (att_item.IsWeapon())
+					weapon_present = true;
+				//checks for melee weapon
+				else if (!att_item.IsWeapon() && att_item.GetInventory().HasInventorySlot(InventorySlots.GetSlotIdFromString("Melee")))
+					melee_present = true;
+				//checks for backpack
+				else if (!att_item.IsWeapon() && att_item.GetInventory().HasInventorySlot(InventorySlots.GetSlotIdFromString("Back")))
+					backpack_present = true;
+				//Print("index: "+ i +" slot_id: "+ slot_id +" = "+ att_item + " ATTACHED");
 			}
-		//#endif
+				
+			//separate check for hand slot; TODO remove duplicates
+			att_item = inventory.GetEntityInHands();
+			if ( att_item )
+			{
+				//checks for firearm
+				if (att_item.IsWeapon())
+					weapon_present = true;
+				//checks for melee weapon
+				else if (!att_item.IsWeapon() && att_item.GetInventory().HasInventorySlot(InventorySlots.GetSlotIdFromString("Melee")) )
+					melee_present = true;
+				//checks for backpack
+				else if (!att_item.IsWeapon() && att_item.GetInventory().HasInventorySlot(InventorySlots.GetSlotIdFromString("Back")))
+					backpack_present = true;
+			}
+				
+			if (weapon_present && melee_present && backpack_present)
+			{
+				//Print("---EAchievementActionId.ACTION_EQUIP_GEAR");
+				Achievements.OnEquippedFullGear();
+			}
+		}
 	}
 	
 	//===================================
@@ -164,17 +151,17 @@ class AnalyticsManagerClient
 		{
 			case EFireIgniteType.Matchbox:
 			{
-				AchievementsXbox.OnActionIgniteMatchbox();
+				Achievements.OnActionIgniteMatchbox();
 				break;
 			}
 			case EFireIgniteType.Roadflare:
 			{
-				AchievementsXbox.OnActionIgniteRoadflare();
+				Achievements.OnActionIgniteRoadflare();
 				break;
 			}
 			case EFireIgniteType.HandDrill:
 			{
-				AchievementsXbox.OnActionIgniteDrill();
+				Achievements.OnActionIgniteDrill();
 				break;
 			}
 		}
@@ -185,12 +172,9 @@ class AnalyticsManagerClient
 	//===================================
 	void Event_OnEntityKilled(EntityAI victim, EntityAI killer, EntityAI source, bool is_headshot)
 	{
-		#ifdef PLATFORM_CONSOLE
-		// Xbox Achievement
 		if ( killer != null && killer.IsPlayer() && killer.GetID() == GetGame().GetPlayer().GetID() )
 		{
-			AchievementsXbox.OnPlayerKilled(victim, killer, source, is_headshot);
+			Achievements.OnPlayerKilled(victim, killer, source, is_headshot);
 		}
-		#endif
 	}
 }

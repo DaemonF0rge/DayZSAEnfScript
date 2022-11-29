@@ -5,6 +5,7 @@ class ActionTurnOnWeaponFlashlight: ActionSingleUseBase
 	void ActionTurnOnWeaponFlashlight()
 	{
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONMOD_ITEM_ON;//CMD_ACTIONMOD_INTERACTONCE
+		m_Text = "#switch_on";
 	}
 	
 	override void CreateConditionComponents()  
@@ -16,11 +17,6 @@ class ActionTurnOnWeaponFlashlight: ActionSingleUseBase
 	override bool HasTarget()
 	{
 		return false;
-	}
-
-	override string GetText()
-	{
-		return "#switch_on";
 	}
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

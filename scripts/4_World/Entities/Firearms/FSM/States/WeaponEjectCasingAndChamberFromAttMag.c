@@ -8,7 +8,7 @@ class WeaponEjectCasing extends WeaponStateBase
 		super.OnEntry(e);
 		if (e)
 		{
-			wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " ejected fired out casing");
+			if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " ejected fired out casing"); }
 			int mi = m_weapon.GetCurrentMuzzle();
 			if(m_weapon.IsChamberFiredOut(mi))
 			{
@@ -29,7 +29,7 @@ class WeaponEjectCasingMultiMuzzle extends WeaponStateBase
 		super.OnEntry(e);
 		if (e)
 		{
-			wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " ejected fired out casing multi muzzle");
+			if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " ejected fired out casing multi muzzle"); }
 			for( int i = 0; i < m_weapon.GetMuzzleCount(); i++ )
 			{
 				if(m_weapon.IsChamberFiredOut(i))
@@ -82,7 +82,7 @@ class WeaponEjectAllMuzzles extends WeaponStateBase
 			}
 			
 			
-			wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " ejected bullets from all muzzles");
+			if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " ejected bullets from all muzzles"); }
 			for( int i = 0; i < m_weapon.GetMuzzleCount(); i++ )
 			{
 				if(m_weapon.IsChamberFiredOut(i))

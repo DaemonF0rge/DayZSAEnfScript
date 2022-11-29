@@ -113,23 +113,23 @@ class MainMenu extends UIScriptedMenu
 	
 	void LoadMods()
 	{
-		ref array<ref ModInfo> modArray = new array<ref ModInfo>;		
+		array<ref ModInfo> modArray = new array<ref ModInfo>;		
 		GetGame().GetModInfos( modArray );
 
-		if( modArray.Count() > 0 )
+		if ( modArray.Count() > 0 )
 		{
 			modArray.Remove( modArray.Count() - 1 );
 			modArray.Invert();
 		}
 		
-		if( m_ModsSimple )
+		if ( m_ModsSimple )
 			delete m_ModsSimple;
-		if( m_ModsDetailed )
+		if ( m_ModsDetailed )
 			delete m_ModsDetailed;
 		
 		m_ModdedWarning.Show( GetGame().GetModToBeReported() );
 		
-		if( modArray.Count() > 0 )
+		if ( modArray.Count() > 0 )
 		{
 			layoutRoot.FindAnyWidget("ModsSimple").Show( true );
 			m_ModsTooltip = new ModsMenuTooltip(layoutRoot);
@@ -508,6 +508,7 @@ class MainMenu extends UIScriptedMenu
 	void OpenCredits()
 	{
 		EnterScriptedMenu(MENU_CREDITS);
+		m_Mission.OnMenuEnter(MENU_CREDITS);
 	}
 	
 	void Exit()
@@ -562,10 +563,8 @@ class MainMenu extends UIScriptedMenu
 		{
 			if( result == 2 )
 				GetGame().GetCallQueue(CALL_CATEGORY_GUI).Call(g_Game.RequestExit, IDC_MAIN_QUIT);
-			#ifdef PLATFORM_WINDOWS
 			if( result == 3 )
 				ColorNormal( GetFocus() );
-			#endif
 			return true;
 		}
 		else if( code == 555 )
@@ -587,11 +586,6 @@ class MainMenu extends UIScriptedMenu
 		int color_pnl = ARGB(255, 0, 0, 0);
 		int color_lbl = ARGB(255, 255, 0, 0);
 		int color_img = ARGB(255, 200, 0, 0);
-		
-		#ifdef PLATFORM_CONSOLE
-			color_pnl = ARGB(255, 200, 0, 0);
-			color_lbl = ARGB(255, 255, 255, 255);
-		#endif
 		
 		ButtonSetColor(w, color_pnl);
 		ButtonSetTextColor(w, color_lbl);

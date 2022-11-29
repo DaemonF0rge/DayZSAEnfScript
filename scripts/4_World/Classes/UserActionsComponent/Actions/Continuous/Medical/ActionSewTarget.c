@@ -16,17 +16,13 @@ class ActionSewTarget: ActionBandageBase
 		m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT | DayZPlayerConstants.STANCEMASK_CROUCH;
 		m_SpecialtyWeight = UASoftSkillsWeight.PRECISE_MEDIUM;
+		m_Text = "#sew_targets_cuts";
 	}
 	
 	override void CreateConditionComponents()  
 	{	
 		m_ConditionItem = new CCINonRuined;
 		m_ConditionTarget = new CCTMan(UAMaxDistances.DEFAULT);
-	}
-		
-	override string GetText()
-	{
-		return "#sew_targets_cuts";
 	}
 	/*
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

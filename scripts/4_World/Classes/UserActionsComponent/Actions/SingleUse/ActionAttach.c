@@ -8,6 +8,7 @@ class ActionAttach: ActionSingleUseBase
 {
 	void ActionAttach()
 	{
+		m_Text = "#attach";
 	}
 
 	override void CreateConditionComponents() 
@@ -16,11 +17,6 @@ class ActionAttach: ActionSingleUseBase
 		m_ConditionTarget = new CCTNonRuined( UAMaxDistances.DEFAULT );
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONMOD_ATTACHITEM;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT | DayZPlayerConstants.STANCEMASK_CROUCH;
-	}
-		
-	override string GetText()
-	{
-		return "#attach";
 	}
 	
 	override ActionData CreateActionData()
@@ -32,7 +28,7 @@ class ActionAttach: ActionSingleUseBase
 	override bool SetupAction(PlayerBase player, ActionTarget target, ItemBase item, out ActionData action_data, Param extra_data = NULL)
 	{
 		ref InventoryLocation il = new InventoryLocation;
-		if (!GetGame().IsMultiplayer() || GetGame().IsClient())
+		if (!GetGame().IsDedicatedServer())
 		{
 			EntityAI target_entity;
 			
@@ -51,7 +47,7 @@ class ActionAttach: ActionSingleUseBase
 			
 		if ( super.SetupAction( player, target, item, action_data, extra_data))
 		{
-			if (!GetGame().IsMultiplayer() || GetGame().IsClient())
+			if (!GetGame().IsDedicatedServer())
 			{
 				AttachActionData action_data_a = AttachActionData.Cast(action_data);
 				action_data_a.m_AttSlot = il.GetSlot();
@@ -81,6 +77,7 @@ class ActionAttach: ActionSingleUseBase
 		if (GetGame().IsMultiplayer())
 			return;
 		
+		ClearInventoryReservationEx(action_data);
 		AttachActionData action_data_a = AttachActionData.Cast(action_data);
 		EntityAI target_EAI;
 			
@@ -119,5 +116,10 @@ class ActionAttach: ActionSingleUseBase
 		{
 			action_data_a.m_Player.PredictiveTakeEntityToTargetAttachmentEx(target_EAI, action_data_a.m_MainItem, action_data_a.m_AttSlot);
 		}
+	}
+	
+	override bool CanBeSetFromInventory()
+	{
+		return false;
 	}
 }

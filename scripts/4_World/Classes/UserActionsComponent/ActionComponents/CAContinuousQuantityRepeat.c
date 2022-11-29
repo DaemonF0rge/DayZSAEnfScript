@@ -76,8 +76,10 @@ class CAContinuousQuantityRepeat : CAContinuousBase
 		{
 			return UA_ERROR;
 		}
-		
-		CalcAndSetQuantity( action_data );
+		if (GetProgress() > 0)
+		{
+			CalcAndSetQuantity( action_data );
+		}
 		return UA_CANCEL;
 	}	
 	

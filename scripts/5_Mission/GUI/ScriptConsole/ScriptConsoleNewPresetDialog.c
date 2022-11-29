@@ -26,10 +26,10 @@ class ScriptConsoleNewPresetDialog extends UIScriptedMenu
 		if (w.GetUserID() == IDC_OK)
 		{
 			UIScriptedMenu ui_menu = GetGame().GetUIManager().FindMenu(MENU_SCRIPTCONSOLE);
-			if ( ui_menu != NULL )
+			if ( ui_menu != NULL && m_Editbox.GetText() )
 			{
 				ScriptConsole scripted_console = ScriptConsole.Cast( ui_menu );
-				scripted_console.NewPreset( m_Editbox.GetText() );;
+				scripted_console.NewPreset( m_Editbox.GetText());
 			}
 
 			Close();

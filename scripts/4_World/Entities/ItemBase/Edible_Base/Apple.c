@@ -26,6 +26,8 @@ class Apple : Edible_Base
 		
 		AddAction(ActionForceFeed);
 		AddAction(ActionEatFruit);
+		AddAction(ActionCreateIndoorFireplace);
+		AddAction(ActionCreateIndoorOven);
 	}
 	
 	override void EEOnCECreate()

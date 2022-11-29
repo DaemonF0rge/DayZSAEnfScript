@@ -1,3 +1,10 @@
+enum ProcessDirectDamageFlags
+{
+	NO_ATTACHMENT_TRANSFER, //!< Do not transfer damage to attachments
+	NO_GLOBAL_TRANSFER, 	//!< Do not transfer damage to global
+	NO_TRANSFER, 			//!< NO_ATTACHMENT_TRANSFER | NO_GLOBAL_TRANSFER
+}
+
 class Object extends IEntity
 {
 	private void ~Object();
@@ -8,9 +15,28 @@ class Object extends IEntity
 		return false;
 	}
 	
+	/**@brief Delete this object in next frame
+	 * @return \p void
+	 *
+	 * @code
+	 *			ItemBase item = GetGame().GetPlayer().CreateInInventory("GrenadeRGD5");
+	 *			item.Delete();
+	 * @endcode
+	**/
+	void Delete()
+	{
+		GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).Call(GetGame().ObjectDelete, this);
+	}
+	
 	proto native void AddProxyPhysics(string proxySelectionName);	
 	
 	proto native void RemoveProxyPhysics(string proxySelectionName);	
+	
+	//! Object entered trigger
+	void OnEnterTrigger(ScriptedEntity trigger) {}
+	
+	//! Object left trigger
+	void OnLeaveTrigger(ScriptedEntity trigger) {}
 
 	//! Retrieve all LODS	
 	proto native bool GetLODS(notnull out array<LOD> lods);
@@ -60,7 +86,7 @@ class Object extends IEntity
 	void Explode(int damageType, string ammoType = "")
 	{
 		if (ammoType == "")
-			ammoType = this.ConfigGetString("ammoType");
+			ammoType = ConfigGetString("ammoType");
 		
 		if (ammoType == "")
 			ammoType = "Dummy_Heavy";
@@ -68,20 +94,18 @@ class Object extends IEntity
 		if ( GetGame().IsServer() )
 		{
 			SynchExplosion();
-			DamageSystem.ExplosionDamage(EntityAI.Cast(this), NULL, ammoType, GetPosition(), damageType);
+			DamageSystem.ExplosionDamage(EntityAI.Cast(this), null, ammoType, GetPosition(), damageType);
 		}
 	}
 	
 	void SynchExplosion()
 	{
-		if ( GetGame().IsServer()  &&  GetGame().IsMultiplayer() ) // Multiplayer server
+		if ( GetGame().IsDedicatedServer() ) // Multiplayer server
 		{
-			Param1<EntityAI> p = new Param1<EntityAI>(NULL);
-			
+			Param1<EntityAI> p = new Param1<EntityAI>(null);			
 			GetGame().RPCSingleParam( this, ERPCs.RPC_EXPLODE_EVENT, p, true);
 		}
-		
-		if ( GetGame().IsServer()  &&  !GetGame().IsMultiplayer() ) // Singleplayer
+		else if ( !GetGame().IsMultiplayer() ) // Singleplayer
 		{
 			OnExplodeClient();
 		}
@@ -90,41 +114,21 @@ class Object extends IEntity
 	//! Called on clients when this object explodes
 	void OnExplodeClient()
 	{
-		string ammoType = this.ConfigGetString("ammoType");
+		string ammoType = ConfigGetString("ammoType");
 		
 		if (ammoType == "")
 			ammoType = "Dummy_Heavy";
 		
-		// Handle spawn of particle
-		string particle_path = "cfgAmmo " + ammoType + " particle";
-		string particle_name;
-		GetGame().ConfigGetText(particle_path, particle_name);
+		vector pos = GetPosition();
 		
-		int particle_ID = ParticleList.GetParticleID(ParticleList.GetPathToParticles() + particle_name);
+		// Handle spawn of particle if one is configured in config
+		AmmoEffects.PlayAmmoParticle(ammoType, pos);			
 		
-		if (particle_ID > 0)
-		{
-			Particle.PlayInWorld(particle_ID, GetPosition());
-		}
-		
-		// Handle spawn of Effect, which allows more complex behavior
-		string effect_path = "cfgAmmo " + ammoType + " effect";
-		string effect_name;
-		
-		GetGame().ConfigGetText(effect_path, effect_name);
-		
-		typename effect_type_name = effect_name.ToType();
-		
-		if ( effect_type_name )
-		{
-			Effect eff; 
-			Class.CastTo(eff, effect_type_name.Spawn());
-			
-			SEffectManager.PlayInWorld(eff, GetPosition() );
-		}
+		// Handle spawn of Effect if one is configured in config
+		AmmoEffects.PlayAmmoEffect(ammoType, pos);
 	}
 	
-	void OnExplosionEffects (Object source, Object directHit, int componentIndex, string surface, vector pos, vector surfNormal, float energyFactor, float explosionFactor, bool isWater, string ammoType) { }
+	void OnExplosionEffects(Object source, Object directHit, int componentIndex, string surface, vector pos, vector surfNormal, float energyFactor, float explosionFactor, bool isWater, string ammoType) { }
 	
 	//! returns action component name by given component index, 'geometry' can be "fire" or "view" (default "" for mixed/legacy mode)
 	proto native owned string GetActionComponentName(int componentIndex, string geometry = "");
@@ -182,6 +186,12 @@ class Object extends IEntity
 	\note object up vector is always y-axis
 	*/
 	proto native void SetDirection(vector vPos);
+	
+	//! Retrieve direction up vector
+	proto native vector GetDirectionUp();
+	
+	//! Retrieve direction aside vector
+	proto native vector GetDirectionAside();
 	
 	//! Calculate local position of other entity to this entity
 	proto native vector GetLocalPos(vector vPos);
@@ -407,6 +417,7 @@ class Object extends IEntity
 		return false;
 	}
 	
+	//Returns true for protector cases and similar items. Usually can be nested in other cargo while full, unlike clothing..
 	bool IsContainer()
 	{
 		return false;
@@ -500,6 +511,11 @@ class Object extends IEntity
 	{
 		return false;
 	}
+	//! Returns if this entity is a weapon which can shoot explosive ammo
+	bool ShootsExplosiveAmmo()//placed on Object so that we can optimize early checks in DayZGame without casting
+	{
+		return false;
+	}
 	
 	//! Returns if this entity is Fuel Station (extends Building)
 	bool IsFuelStation()
@@ -518,7 +534,7 @@ class Object extends IEntity
 	{
 		return false;
 	}
-	
+
 	//! Returns if this entity can be constucted,deconstructed (e.g. fence,watchtower)
 	bool CanUseConstruction()
 	{
@@ -537,10 +553,17 @@ class Object extends IEntity
 		return false;
 	}
 	
+	bool IsBeingBackstabbed()
+	{
+		return false;
+	}
+	
+	void SetBeingBackstabbed(int backstabType){}
+	
 	//! Returns if this entity if a food item
 	bool IsFood()
 	{
-		return ( IsFruit() || IsMeat() || IsMushroom() );
+		return ( IsFruit() || IsMeat() || IsCorpse() || IsMushroom() );
 	}
 	
 	bool IsFruit()
@@ -549,6 +572,11 @@ class Object extends IEntity
 	}
 	
 	bool IsMeat()
+	{
+		return false;
+	}
+	
+	bool IsCorpse()
 	{
 		return false;
 	}
@@ -634,6 +662,9 @@ class Object extends IEntity
 		return "null";
 	}
 	
+	//! native GetDebugName which is internally overloaded where needed
+	proto string GetDebugNameNative();
+	
 	//! Remote procedure call shortcut, see CGame.RPC / CGame.RPCSingleParam
 	void RPC(int rpc_type, array<ref Param> params, bool guaranteed, PlayerIdentity recipient = NULL)
 	{
@@ -687,6 +718,13 @@ class Object extends IEntity
 	// config class API	
 	
 	proto string ConfigGetString(string entryName);
+	/**
+  \brief Get a raw strings from config entry.
+	@param entryName 
+	\return value output string
+	\note use 'FormatRawConfigStringKeys' method to change localization keys to script-friendly
+	*/
+	proto string ConfigGetStringRaw(string entryName);
 	proto int ConfigGetInt(string entryName);
 	bool ConfigGetBool(string entryName)
 	{
@@ -704,6 +742,14 @@ class Object extends IEntity
 	*/
 	proto native void		ConfigGetTextArray(string entryName, out TStringArray values);
 
+	/**
+  \brief Get array of raw strings from config entry.
+	@param entryName 
+	@param value output in raw format (localization keys '$STR_' are not translated).
+	\note use 'FormatRawConfigStringKeys' method to change localization keys to script-friendly
+	*/
+	proto native void		ConfigGetTextArrayRaw(string entryName, out TStringArray values);
+	
 	/**
   \brief Get array of floats from config entry.
 	@param entryName 
@@ -766,7 +812,7 @@ class Object extends IEntity
 	
 	// Damage system
 	/**
-  	\brief Checks if object has DamageSystem.
+  	\brief Checks if object's DamageSystem has been initialized(despite the name, does not really reliably answer the question whether the object is configured to have damage system or not)
 	*/
 	proto native bool   HasDamageSystem();
 	
@@ -860,6 +906,19 @@ class Object extends IEntity
 	{
 		SetHealth("", "", health);
 	}
+	//! Sets specific health level. It will use the cutoff value as returned by 'GetHealthLevelValue' as the health value for the given health level, which means it will always be set to the max health as allowed by the given health level.
+	void SetHealthLevel(int healthLevel, string zone = "")
+	{
+		SetHealth01(zone,"", GetHealthLevelValue(healthLevel, zone));
+	}
+	//! Similar to 'SetHealthLevel', but allows to jump up/down 'healthLevelDelta' amount of health levels from the current one. Positive values cause health level increase, therefore damage the item, and vice-versa.
+	void AddHealthLevel(int healthLevelDelta, string zone = "")
+	{
+		int maxHealthLevel = GetNumberOfHealthLevels(zone) - 1;
+		int newHealthLevel = Math.Clamp(GetHealthLevel(zone) + healthLevelDelta,0,maxHealthLevel);
+		SetHealthLevel(newHealthLevel,zone);
+	}
+	
 	//! Sets health relative to its maximum
 	void SetHealth01(string zoneName, string healthType, float coef)
 	{
@@ -893,12 +952,22 @@ class Object extends IEntity
   \brief Applies damage on object.
 	@param damageType DT_CLOSE_COMBAT/DT_FIRE_ARM/DT_EXPLOSION/DT_CUSTOM
 	@param source source of damage
-	@param compomentName which component was hit
+	@param componentName which 'DamageZone' was hit (NOT a component name, actually!)
 	@param ammoName ammoType, which defines how much damage should be applied
 	@param directHitModelPos local position of hit
 	@param damageCoef multiplier of applied damage
+	@param flags enables/disables special behaviour depending on the flags used (ProcessDirectDamageFlags type)
 	*/
-	proto native void ProcessDirectDamage(int damageType, EntityAI source, string componentName, string ammoName, vector modelPos, float damageCoef = 1.0);
+	proto native void ProcessDirectDamage(int damageType, EntityAI source, string componentName, string ammoName, vector modelPos, float damageCoef = 1.0, int flags = 0);
+	
+	/**
+  	\brief Event called from C++ right before damage is applied
+		@return whether to apply the damage or not
+	*/
+	bool EEOnDamageCalculated(TotalDamageResult damageResult, int damageType, EntityAI source, int component, string dmgZone, string ammo, vector modelPos, float speedCoef)
+	{
+		return true;
+	}
 	
 	/**
   \brief Obtains a list of nammes of all object's damage zones
@@ -938,8 +1007,13 @@ class Object extends IEntity
 	*/
 	proto native float GetHealthLevelValue(int healthLevel, string zone = "");
 	
+
 	/**
-  \brief Enable or disable object to receive damage
+  	\brief Returns if object can receive damage
+	*/
+	proto native bool GetAllowDamage();
+	/**
+  	\brief Enable or disable object to receive damage
 	@param enable or disable
 	*/
 	proto native void SetAllowDamage(bool val);
@@ -967,13 +1041,14 @@ class Object extends IEntity
 	*/
 	bool IsRuined()
 	{
-		if ( IsDamageDestroyed() )
-		{
-			return true;
-		}
-		
-		return false;
+		return IsDamageDestroyed();
 	}
+	
+	//! Event called from C++ when simulation is enabled
+	void OnSimulationEnabled() {}
+	
+	//! Event called from C++ when simulation is disabled
+	void OnSimulationDisabled() {}
 
 	void GetActions(typename action_input_type, out array<ActionBase_Basic> actions)
 	{
@@ -994,7 +1069,7 @@ class Object extends IEntity
 	//! EffectSound - plays soundset on this object and returns state of the sound (true - played, false - not played)
 	bool PlaySoundSet( out EffectSound sound, string sound_set, float fade_in, float fade_out, bool loop = false )
 	{
-		if ( GetGame() && ( !GetGame().IsMultiplayer() || GetGame().IsClient() ) )
+		if ( GetGame() && !GetGame().IsDedicatedServer() )
 		{
 			if ( sound )
 			{
@@ -1009,7 +1084,7 @@ class Object extends IEntity
 			}
 			
 			sound = SEffectManager.PlaySoundOnObject( sound_set, this, fade_in, fade_out, loop );
-			sound.SetSoundAutodestroy( true );
+			sound.SetAutodestroy( true );
 			
 			return true;
 		}
@@ -1023,13 +1098,48 @@ class Object extends IEntity
 		return PlaySoundSet( sound, sound_set, fade_in, fade_out, true );
 	}
 	
+	//! Same as PlaySoundSetAtMemoryPointLooped, only requests stoppage of the currently playing EffectSound if it already exists and playing, before playing the new sound
+	bool PlaySoundSetAtMemoryPointLoopedSafe(out EffectSound sound, string soundSet, string memoryPoint,float play_fade_in = 0, float stop_fade_out = 0)
+	{
+		if (sound && sound.IsPlaying())
+		{
+			sound.SoundStop();
+		}
+		return PlaySoundSetAtMemoryPointLooped(sound, soundSet, memoryPoint, play_fade_in, stop_fade_out);
+	}
+	
+	bool PlaySoundSetAtMemoryPointLooped(out EffectSound sound, string soundSet, string memoryPoint, float play_fade_in = 0, float stop_fade_out = 0)
+	{
+		return PlaySoundSetAtMemoryPoint(sound, soundSet, memoryPoint, true, play_fade_in, stop_fade_out);
+	}
+
+	
+	bool PlaySoundSetAtMemoryPoint(out EffectSound sound, string soundSet, string memoryPoint, bool looped = false, float play_fade_in = 0, float stop_fade_out = 0)
+	{
+		vector pos;
+		
+		if (MemoryPointExists(memoryPoint))
+		{
+			pos = GetMemoryPointPos(memoryPoint);
+			pos = ModelToWorld(pos);
+		}
+		else
+		{
+			ErrorEx(string.Format("Memory point %1 not found when playing soundset %2 at memory point location", memoryPoint, soundSet));
+			return false;
+		}
+		
+		sound = SEffectManager.PlaySoundEnviroment(soundSet, pos, play_fade_in, stop_fade_out, looped);
+		return true;
+	}
+	
 	//! EffectSound - stops soundset and returns state of the sound (true - stopped, false - not playing)
 	bool StopSoundSet( out EffectSound sound )
 	{
-		if ( sound && GetGame() && ( !GetGame().IsMultiplayer() || GetGame().IsClient() ) )
+		if ( sound && GetGame() && ( !GetGame().IsDedicatedServer() ) )
 		{
 			sound.SoundStop();
-			sound = NULL;
+			sound = null;
 			
 			return true;
 		}
@@ -1082,6 +1192,11 @@ class Object extends IEntity
 			return GetPosition() + Vector(0, 0.2, 0);
 		}
 	}
+	
+	#ifdef DEVELOPER
+	void SetDebugItem();
+	#endif
+	
 	
 	//Debug
 	//----------------------------------------------

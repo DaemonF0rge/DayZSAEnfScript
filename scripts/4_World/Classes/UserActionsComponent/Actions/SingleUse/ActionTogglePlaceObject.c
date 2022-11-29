@@ -3,6 +3,7 @@ class ActionTogglePlaceObject: ActionSingleUseBase
 
 	void ActionTogglePlaceObject()
 	{
+		m_Text = "#toggle_placing";
 	}
 	
 	override void CreateConditionComponents()  
@@ -34,11 +35,6 @@ class ActionTogglePlaceObject: ActionSingleUseBase
 	override bool RemoveForceTargetAfterUse()
 	{
 		return false;
-	}
-
-	override string GetText()
-	{
-		return "#toggle_placing";
 	}
 	
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

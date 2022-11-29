@@ -13,6 +13,9 @@
 // -------------------------------------------------------------------------
 class UAIDWrapper
 {
+	private void UAIDWrapper() {}
+	private void ~UAIDWrapper() {}
+	
 	proto native UAInput InputP();			// get input pointer
 };
 
@@ -56,7 +59,9 @@ class UAInput
 	// normal state is there are no limits, input generates all the events
 	// but if there is an limiter, 
 	proto native bool IsLimited();	// return true if there is an event limit
-	
+
+	proto native bool IsLimitConditionActive();	// return true if event limits matches current control item activity
+
 	proto native bool IsPressLimit();		// if limited to PRESS
 	proto native bool IsReleaseLimit();		// if limited to RELEASE
 	proto native bool IsHoldLimit();		// if limited to HOLD
@@ -89,6 +94,9 @@ class UAInput
 // -------------------------------------------------------------------------
 class UAInterface
 {
+	private void UAInterface() {}
+	private void ~UAInterface() {}
+	
 	// getting action state
 	/**
 	\brief Get action state
@@ -155,17 +163,21 @@ class UAInterface
 // -------------------------------------------------------------------------
 class UAInputAPI
 {
+	private void UAInputAPI() {}
+	private void ~UAInputAPI() {}
+	
 	proto native void ListCurrentProfile();
 	proto native void ListCurrentPreset();
 	proto native void ListAvailableButtons();
 	proto native void ListActiveGroup();
 
-	proto native void GetActiveInputs( out TIntArray items ); // return list of all bindable inputs
+	proto native void GetActiveInputs( out TIntArray items ); //! returns list of all bindable (i.e. visible) inputs from the active group ('core' by default)
 
 	proto native UAInput GetInputByID( int iID );
 	proto native UAInput GetInputByName( string sInputName );
 
 	proto native owned string GetButtonName( int iHash );	// get localized name for any button hash
+	proto native owned string GetButtonIcon( int iHash );	// get associated icon path for any button hash
 
 	proto native int ModificatorCount();	// modificator count
 	proto native owned string GetModificatorName( int index );	// modificator name
@@ -186,6 +198,7 @@ class UAInputAPI
 	proto native void ActivateExclude( string sExcludeName );
 	proto native void ActivateContext( string sContextName );
 	proto native void ActivateModificator( string sModName );
+	proto native void DeactivateModificator( string sModName );
 
 	proto native void DeactivateContext();
 
@@ -197,10 +210,12 @@ class UAInputAPI
 	proto native owned string PresetName( int index ); // name of selected preset
 
 	proto native int SortingCount(); // sorting group count
-	proto native owned string SortingName( int index );	// sorting group name
+	proto native owned string SortingName( int index );	// sorting group name (different from localization!)
+	proto native owned string SortingLocalization( int index );	// sorting group localized name
 
 	proto native void Export(); // export XML (user) configuration
 	proto native void Revert(); // revert XML (user) configuration - all of it and use default PBO content!
+	proto native void SaveInputPresetMiscData(); // saves preset index on consoles, where the regular XMLs are unavailable
 	proto native void SupressNextFrame( bool bForce); // supress inputs for nextframe (until key release - call this when leaving main menu and alike - to avoid button collision after character control returned)
 	
 	proto native void Backlit_None(); // turn off backlit

@@ -23,10 +23,13 @@ class ContextMenu extends ScriptedWidgetEventHandler
 	//--------------------------------------------------------------------------
 	void Init(Widget layoutRoot)
 	{
-		m_context_menu_root_widget = GetGame().GetWorkspace().CreateWidgets("gui/layouts/day_z_inventory_context_menu.layout", layoutRoot);
-		m_context_menu_panel_widget = m_context_menu_root_widget.FindAnyWidget("PanelWidget");
-		m_context_menu_root_widget.Show(false);
-		m_context_menu_root_widget.SetHandler(this);
+		if(!m_context_menu_root_widget)
+		{
+			m_context_menu_root_widget = GetGame().GetWorkspace().CreateWidgets("gui/layouts/day_z_inventory_context_menu.layout", layoutRoot);
+			m_context_menu_panel_widget = m_context_menu_root_widget.FindAnyWidget("PanelWidget");
+			m_context_menu_root_widget.Show(false);
+			m_context_menu_root_widget.SetHandler(this);
+		}
 	}
 	
 	//--------------------------------------------------------------------------

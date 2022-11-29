@@ -18,17 +18,14 @@ class ActionDisinfectPlant: ActionContinuousBase
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONFB_SPRAYPLANT;
 		//m_StanceMask = DayZPlayerConstants.STANCEMASK_CROUCH;
 		m_FullBody = true;
+		
+		m_Text = "#apply";
 	}
 	
 	override void CreateConditionComponents()  
 	{	
 		m_ConditionTarget = new CCTNonRuined(UAMaxDistances.DEFAULT);
 		m_ConditionItem = new CCINotRuinedAndEmpty;
-	}
-		
-	override string GetText()
-	{
-		return "#apply";
 	}
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

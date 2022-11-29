@@ -8,6 +8,8 @@ enum ActionConditionMask
 	ACM_RAISED			= 16,
 	ACM_ON_BACK			= 32,
 	ACM_THROWING		= 64,
+	ACM_LEANING			= 128,
+	ACM_BROKEN_LEGS		= 256,
 }
 class ActionReciveData
 {
@@ -44,6 +46,7 @@ class ActionBase : ActionBase_Basic
 	protected int					m_RefreshReservationTimerValue = 140;
 	// Configurable action parameters
 	protected string				m_Sound; //sound played at the beggining of action
+	protected string				m_Text;
 
 	protected bool					m_LockTargetOnUse;	//this parameter sets wheter player can perform actions on target while other player is already performing action on it. defaulted as true
 	protected bool 					m_FullBody; //tells whether action is full body or additive
@@ -53,7 +56,9 @@ class ActionBase : ActionBase_Basic
 	ref CCTBase						m_ConditionTarget; 	//Condition Component
 	protected ActionInput			m_Input;
 	protected int 					m_ActionID;
+	protected int					m_VariantID;
 	int 							m_ConditionMask;
+	protected ref ActionVariantManager	m_VariantManager;
 
 	//RUNTIME DATA
 	protected ref Param1<string> 	m_MessageParam; //used for passing messages from server to client
@@ -71,6 +76,7 @@ class ActionBase : ActionBase_Basic
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT | DayZPlayerConstants.STANCEMASK_CROUCH | DayZPlayerConstants.STANCEMASK_PRONE;
 		m_FullBody = false;
 		m_Sound = "";
+		m_Text = "default action text";
 		m_LockTargetOnUse = HasTarget();
 		// dont override
 		m_MessageParam = new Param1<string>("");
@@ -118,6 +124,16 @@ class ActionBase : ActionBase_Basic
 		{
 			m_ConditionMask |= ActionConditionMask.ACM_THROWING;
 		}
+		
+		if (CanBeUsedLeaning())
+		{
+			m_ConditionMask |= ActionConditionMask.ACM_LEANING;
+		}
+		
+		if (CanBeUsedWithBrokenLegs())
+		{
+			m_ConditionMask |= ActionConditionMask.ACM_BROKEN_LEGS;
+		}
 	}
 	
 	bool SetupAction(PlayerBase player, ActionTarget target, ItemBase item, out ActionData action_data, Param extra_data = NULL )
@@ -139,16 +155,19 @@ class ActionBase : ActionBase_Basic
 		{
 			HandleReciveData(action_recive_data,action_data);
 			
-			if( UseMainItem() && MainItemAlwaysInHands() )
+			if ( UseMainItem() && MainItemAlwaysInHands() )
 			{
-				if( player.GetItemInHands() != action_data.m_MainItem )
+				if ( player.GetItemInHands() != action_data.m_MainItem )
 				{
 					return false;
 				}
 			}
 		}
 		
-		if ( (!GetGame().IsMultiplayer() || GetGame().IsClient()) && !IsInstant() )
+		if ( !Post_SetupAction( action_data ) )
+			return false;
+		
+		if ( (!GetGame().IsDedicatedServer()) && !IsInstant() )
 		{
 			if (!InventoryReservation(action_data))
 			{
@@ -156,15 +175,20 @@ class ActionBase : ActionBase_Basic
 				return false;
 			}
 			
-			if( LogManager.IsActionLogEnable() )
+			if ( LogManager.IsActionLogEnable() )
 			{
-				for( int i = 0; i < action_data.m_ReservedInventoryLocations.Count(); i++)
+				for ( int i = 0; i < action_data.m_ReservedInventoryLocations.Count(); i++)
 				{
 					Debug.ActionLog( InventoryLocation.DumpToStringNullSafe( action_data.m_ReservedInventoryLocations[i] ), action_data.m_Action.ToString() , "n/a", "LockInventoryList", action_data.m_Player.ToString() );
 				}
 			}
 		}
 		
+		return true;
+	}
+	
+	bool Post_SetupAction( ActionData action_data )
+	{
 		return true;
 	}
 	
@@ -257,9 +281,8 @@ class ActionBase : ActionBase_Basic
 
 	string GetText() //text game displays in HUD hint 
 	{
-		return "default action text";
+		return m_Text;
 	}
-	
 	/*string GetTargetDescription()
 	{
 		return "default target description";
@@ -313,6 +336,16 @@ class ActionBase : ActionBase_Basic
 	bool CanBeUsedThrowing()
 	{
 		return false;
+	}
+	
+	bool CanBeUsedLeaning()
+	{
+		return true;
+	}
+	
+	bool CanBeUsedWithBrokenLegs()
+	{
+		return true;
 	}
 	
 	//! Is an action directly related to deployment/advanced placing
@@ -540,7 +573,7 @@ class ActionBase : ActionBase_Basic
 	{
 		action_data.m_State = UA_START;
 		
-		if( LogManager.IsActionLogEnable() )
+		if ( LogManager.IsActionLogEnable() )
 		{
 			Debug.ActionLog("Time stamp: " + action_data.m_Player.GetSimulationTimeStamp(), this.ToString() , "n/a", "OnStart", action_data.m_Player.ToString() );
 		}
@@ -636,17 +669,22 @@ class ActionBase : ActionBase_Basic
 			mask |= ActionConditionMask.ACM_THROWING;
 		}
 		
+		if (player.IsLeaning())
+		{
+			mask |= ActionConditionMask.ACM_LEANING;
+		}
+		
+		if (player.GetBrokenLegs() == eBrokenLegs.BROKEN_LEGS)
+		{
+			mask |= ActionConditionMask.ACM_BROKEN_LEGS;
+		}
+		
 		return mask;
 	}
 
 	bool Can( PlayerBase player, ActionTarget target, ItemBase item, int condition_mask )
 	{
 		if ( ( (condition_mask & m_ConditionMask) != condition_mask ) || ( !IsFullBody(player) && !player.IsPlayerInStance(GetStanceMask(player)) ) || player.IsRolling() )
-			return false;
-		
-		int stanceIdx = DayZPlayerUtils.ConvertStanceMaskToStanceIdx(GetStanceMask(player));
-		
-		if ( stanceIdx != -1 && IsFullBody(player) && !DayZPlayerUtils.PlayerCanChangeStance(player, stanceIdx ))
 			return false;
 		
 		if ( HasTarget() )
@@ -669,7 +707,17 @@ class ActionBase : ActionBase_Basic
 		if ( m_ConditionItem && !m_ConditionItem.Can(player, item))
 			return false;
 		
-		return ActionCondition(player, target, item);
+		if ( !ActionCondition(player, target, item) )
+			return false;
+		
+		if ( IsFullBody(player) )
+		{
+			int stanceIdx = DayZPlayerUtils.ConvertStanceMaskToStanceIdx(GetStanceMask(player));
+			if (stanceIdx != -1 && !DayZPlayerUtils.PlayerCanChangeStance(player, stanceIdx ))
+				return false;
+		}
+		
+		return true;
 	}
 	
 	bool Can( PlayerBase player, ActionTarget target, ItemBase item )
@@ -685,6 +733,50 @@ class ActionBase : ActionBase_Basic
 			return false;
 
 		return ActionConditionContinue(action_data);
+	}
+	
+	bool HasVariants()
+	{
+		return m_VariantManager != null;
+	}
+	
+	int GetVariantsCount( )
+	{
+		if ( m_VariantManager )
+			return m_VariantManager.GetActionsCount();
+		return 0;
+	}
+	
+	int GetVariants( out array<ref ActionBase> variants )
+	{
+		if ( m_VariantManager )
+			return m_VariantManager.GetActions( variants );
+		return 0;
+	}
+	
+	void SetVariantID( int ID )
+	{
+		m_VariantID = ID;
+	}
+	
+	int GetVariantID()
+	{
+		return m_VariantID;
+	}
+	
+	void UpdateVariants( Object item, Object target, int componet_index )
+	{
+		if ( m_VariantManager )
+		{
+			m_VariantManager.UpdateVariants( item, target, componet_index );
+		}
+	}
+	
+	ActionVariantManager GetVariantManager()
+	{
+		if ( !m_VariantManager )
+			m_VariantManager = new ActionVariantManager(this.Type());
+		return m_VariantManager;
 	}
 	
 	// call only on client side for lock inventory before action
@@ -727,6 +819,10 @@ class ActionBase : ActionBase_Basic
 		}
 		else
 		{
+			if (HasTarget())
+			{
+				action_data.m_Player.GetInventory().ClearInventoryReservation(targetItem, targetInventoryLocation);
+			}
 			action_data.m_Player.GetInventory().AddInventoryReservationEx( action_data.m_Player.GetItemInHands(), handInventoryLocation, GameInventory.c_InventoryReservationTimeoutMS);
 		}
 		
@@ -956,13 +1052,17 @@ class ActionBase : ActionBase_Basic
 		return NULL;
 	}
 	
+	void OnActionInfoUpdate( PlayerBase player, ActionTarget target, ItemBase item )
+	{
+	}
+	
 	// EVENTS ------------------------------------------------
 	void OnUpdate(ActionData action_data)
 	{}
 	
 	void OnUpdateClient(ActionData action_data)
 	{
-		if ( GetGame().IsClient() || !GetGame().IsMultiplayer() )
+		if ( !GetGame().IsDedicatedServer() )
 		{
 			if (action_data.m_RefreshReservationTimer > 0)
 			{

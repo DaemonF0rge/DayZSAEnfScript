@@ -5,6 +5,11 @@ class AK_Bayonet extends ToolBase
 		return true;
 	}
 	
+	override array<int> GetValidFinishers()
+	{
+		return {EMeleeHitType.FINISHER_LIVERSTAB,EMeleeHitType.FINISHER_NECKSTAB};
+	}
+	
 	override bool CanPutAsAttachment( EntityAI parent )
 	{
 		if(!super.CanPutAsAttachment(parent)) {return false;}
@@ -17,6 +22,8 @@ class AK_Bayonet extends ToolBase
 
 	override void OnWasAttached(EntityAI parent, int slot_id)
 	{
+		super.OnWasAttached(parent, slot_id);
+		
 		if( parent.IsWeapon() )
 		{
 			parent.SetBayonetAttached(true,slot_id);
@@ -25,6 +32,8 @@ class AK_Bayonet extends ToolBase
 	
 	override void OnWasDetached(EntityAI parent, int slot_id)
 	{
+		super.OnWasDetached(parent, slot_id);
+		
 		if( parent.IsWeapon() )
 		{
 			parent.SetBayonetAttached(false);
@@ -44,6 +53,7 @@ class AK_Bayonet extends ToolBase
 		AddAction(ActionDigWorms);
 		AddAction(ActionShaveTarget);
 		AddAction(ActionDisarmMine);
+		AddAction(ActionDisarmExplosive);
 		AddAction(ActionShave);
 	}
 }

@@ -1,20 +1,19 @@
-class AttachmentsWrapper: Container
+class AttachmentsWrapper: AttachmentsGroupContainer
 {
 	Attachments m_Attachments;
+	protected Widget m_AttachmentsFalseHeader;
+	protected RichTextWidget m_AttachmentsFalseHeaderText;
+	
+	void AttachmentsWrapper(LayoutHolder parent) 
+	{
+		m_AttachmentsFalseHeader 		= m_RootWidget.FindAnyWidget( "attachmets_wrapper_header_spacer" );
+		m_AttachmentsFalseHeaderText 	= RichTextWidget.Cast(m_AttachmentsFalseHeader.FindAnyWidget("TextWidget0"));
+		m_AttachmentsFalseHeader.Show( false );
+	}
 	
 	void SetParent( Attachments atts )
 	{
 		m_Attachments = atts;
-	}
-	
-	override void SetLayoutName()
-	{
-		m_LayoutName = WidgetLayoutName.AttachmentsWrapper;
-	}
-	
-	override void SetLastActive()
-	{
-		m_Attachments.SetLastActive();
 	}
 	
 	override bool Select()
@@ -47,6 +46,11 @@ class AttachmentsWrapper: Container
 		return m_Attachments.InspectItem();
 	}
 	
+	override bool SplitItem()
+	{
+		return m_Attachments.SplitItem();
+	}
+	
 	override bool EquipItem()
 	{
 		return m_Attachments.EquipItem();
@@ -64,12 +68,12 @@ class AttachmentsWrapper: Container
 	
 	override bool CanCombineAmmo()
 	{
-		return false;
+		return m_Attachments.CanCombineAmmo();
 	}
 	
-	override bool IsEmpty()
+	override bool IsDisplayable()
 	{
-		return m_Attachments.IsEmpty();
+		return !IsEmpty();
 	}
 	
 	override bool IsItemActive()
@@ -82,8 +86,29 @@ class AttachmentsWrapper: Container
 		return m_Attachments.IsItemWithQuantityActive();
 	}
 	
-	override EntityAI GetFocusedItem()
+	override void UpdateInterval()
 	{
-		return m_Attachments.GetFocusedItem();
+		super.UpdateInterval();
+		m_Attachments.UpdateInterval();
+	}
+	
+	int GetFocusedSlot()
+	{
+		return m_Attachments.GetFocusedSlot();
+	}
+	
+	void ShowFalseAttachmentsHeader(bool show)
+	{
+		m_AttachmentsFalseHeader.Show(show);
+	}
+	
+	void SetFalseAttachmentsHeaderText(string text)
+	{
+		m_AttachmentsFalseHeaderText.SetText(text);
+	}
+	
+	TextWidget GetFalseHeaderTextWidget()
+	{
+		return m_AttachmentsFalseHeaderText;
 	}
 }

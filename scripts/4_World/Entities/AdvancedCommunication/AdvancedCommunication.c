@@ -6,7 +6,7 @@ class AdvancedCommunication extends EntityAI
 	
 	void AdvancedCommunication()
 	{
-		if (GetGame().IsClient() || !GetGame().IsMultiplayer())
+		if (!GetGame().IsDedicatedServer())
 		{
 			if(GetGame().GetPlayer())
 			{
@@ -88,27 +88,28 @@ class AdvancedCommunication extends EntityAI
 	{
 		ActionBase action = ActionManagerBase.GetAction(actionName);
 
-		if(!action)
+		if (!action)
 		{
 			Debug.LogError("Action " + actionName + " dosn't exist!");
 			return;
 		}		
 		
 		typename ai = action.GetInputType();
-		if(!ai)
+		if (!ai)
 		{
 			m_ActionsInitialize = false;
 			return;
 		}
-		ref array<ActionBase_Basic> action_array = m_InputActionMap.Get( ai );
 		
-		if(!action_array)
+		array<ActionBase_Basic> action_array = m_InputActionMap.Get( ai );
+		
+		if (!action_array)
 		{
 			action_array = new array<ActionBase_Basic>;
 			m_InputActionMap.Insert(ai, action_array);
 		}
 		
-		if( LogManager.IsActionLogEnable() )
+		if ( LogManager.IsActionLogEnable() )
 		{
 			Debug.ActionLog(action.ToString() + " -> " + ai, this.ToString() , "n/a", "Add action" );
 		}
@@ -120,9 +121,9 @@ class AdvancedCommunication extends EntityAI
 		PlayerBase player = PlayerBase.Cast(GetGame().GetPlayer());
 		ActionBase action = player.GetActionManager().GetAction(actionName);
 		typename ai = action.GetInputType();
-		ref array<ActionBase_Basic> action_array = m_InputActionMap.Get( ai );
+		array<ActionBase_Basic> action_array = m_InputActionMap.Get( ai );
 		
-		if(action_array)
+		if (action_array)
 		{
 			action_array.RemoveItem(action);
 		}

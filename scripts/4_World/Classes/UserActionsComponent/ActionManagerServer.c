@@ -94,13 +94,25 @@ class ActionManagerServer: ActionManagerBase
 
 			case INPUT_UDT_STANDARD_ACTION_END_REQUEST:
 			{
-				//Debug.Log("Action want end request, STS=" + m_Player.GetSimulationTimeStamp());
-				m_ActionWantEndRequest = true;
+				//Debug.Log("Action want end request, STS = " + m_Player.GetSimulationTimeStamp());
+				int commandID = -10;
+				ctx.Read(commandID);
+				
+				if ( commandID == DayZPlayerConstants.CMD_ACTIONINT_INTERRUPT )
+				{
+					//Print("INPUT_UDT_STANDARD_ACTION_END_REQUEST | CMD_ACTIONINT_INTERRUPT");
+					DayZPlayerSyncJunctures.SendActionInterrupt(m_Player);
+				}
+				else
+				{
+					//Print("INPUT_UDT_STANDARD_ACTION_END_REQUEST | m_ActionWantEndRequest");
+					m_ActionWantEndRequest = true;
+				}
 			}
 			
 			case INPUT_UDT_STANDARD_ACTION_INPUT_END:
 			{
-				//Debug.Log("Action input ended, STS=" + m_Player.GetSimulationTimeStamp());
+				//Debug.Log("Action input ended, STS = " + m_Player.GetSimulationTimeStamp());
 				m_ActionInputWantEnd = true;
 			}
 			default:
@@ -128,7 +140,7 @@ class ActionManagerServer: ActionManagerBase
 	
 	override void StartDeliveredAction()
 	{
-		if( !m_CurrentActionData )
+		if ( !m_CurrentActionData )
 		{
 			//! error - expected action data
 			//Interrupt();
@@ -140,22 +152,22 @@ class ActionManagerServer: ActionManagerBase
 		ActionBase picked_action;
 		bool accepted = false;
 		bool is_target_free = true;
-		ref ActionTarget target;
+		ActionTarget target;
 		ItemBase item;
 		
 		picked_action = m_CurrentActionData.m_Action;
 		target = m_CurrentActionData.m_Target;
 		item = m_CurrentActionData.m_MainItem;
 
-		if( LogManager.IsActionLogEnable() )
+		if ( LogManager.IsActionLogEnable() )
 		{
 			Debug.ActionLog("Item = " + item + ", " + target.DumpToString(), picked_action.ToString() , "n/a", "DeliveredAction", m_Player.ToString() );
 		}
 
-		if( is_target_free && !m_Player.GetCommandModifier_Action() && !m_Player.GetCommand_Action() && !m_Player.IsSprinting() && picked_action && picked_action.Can(m_Player,target,item)) 
+		if ( is_target_free && !m_Player.GetCommandModifier_Action() && !m_Player.GetCommand_Action() && !m_Player.IsSprinting() && picked_action && picked_action.Can(m_Player,target,item)) 
 		{
 			accepted = true;
-			if( picked_action.HasTarget())
+			if ( picked_action.HasTarget())
 			{
 				EntityAI targetEntity;
 				if ( EntityAI.CastTo(targetEntity,target.GetObject()) )
@@ -166,10 +178,10 @@ class ActionManagerServer: ActionManagerBase
 					//{
 					//	accepted = false;
 					//}
-					if( !AdvancedCommunication.Cast(targetEntity) && !Building.Cast(targetEntity) && !Fireplace.Cast(targetEntity) )
+					if ( !AdvancedCommunication.Cast(targetEntity) && !Building.Cast(targetEntity) && !Fireplace.Cast(targetEntity) )
 					{
 						//Lock target
-						if( !GetGame().AddActionJuncture(m_Player,targetEntity,10000) )
+						if ( !GetGame().AddActionJuncture(m_Player,targetEntity,10000) )
 						{
 							accepted = false;
 						}
@@ -178,14 +190,14 @@ class ActionManagerServer: ActionManagerBase
 			}
 		}
 		
-		if( accepted )
+		if ( accepted )
 		{
-			if( LogManager.IsActionLogEnable() )
+			if ( LogManager.IsActionLogEnable() )
 			{
 				Debug.ActionLog("Action accepted", picked_action.ToString() , "n/a", "CheckDeliveredAction", m_Player.ToString() );
 			}
 			//Debug.Log("[AM] Action acccepted");
-			if(picked_action.UseAcknowledgment())
+			if (picked_action.UseAcknowledgment())
 			{
 						//Unlock target
 						//GetGame().ClearJuncture(m_Player, oldTrgetItem);
@@ -199,7 +211,7 @@ class ActionManagerServer: ActionManagerBase
 		}
 		else
 		{
-			if( LogManager.IsActionLogEnable() )
+			if ( LogManager.IsActionLogEnable() )
 			{
 				Debug.ActionLog("Action rejected", picked_action.ToString() , "n/a", "CheckDeliveredAction", m_Player.ToString() );
 			}
@@ -216,7 +228,7 @@ class ActionManagerServer: ActionManagerBase
 	
 	override void OnActionEnd()
 	{
-		//Debug.Log("Action ended - hard, STS=" + m_Player.GetSimulationTimeStamp());
+		//Debug.Log("Action ended - hard, STS = " + m_Player.GetSimulationTimeStamp());
 		if (m_CurrentActionData)
 		{
 			if ( m_CurrentActionData.m_Target )
@@ -246,13 +258,13 @@ class ActionManagerServer: ActionManagerBase
 			}
 			else
 			{
-				ref ActionTarget target = new ActionTarget(NULL, NULL, -1, vector.Zero, 0); 
+				ActionTarget target = new ActionTarget(NULL, NULL, -1, vector.Zero, 0); 
 				bool success = true;
 
 				m_ActionWantEndRequest = false;
 				m_ActionInputWantEnd = false;
 					
-				if( LogManager.IsActionLogEnable() )
+				if ( LogManager.IsActionLogEnable() )
 				{	
 					Debug.ActionLog("n/a", m_PendingAction.ToString() , "n/a", "HandlePendingAction", m_Player.ToString() );
 				}
@@ -314,7 +326,10 @@ class ActionManagerServer: ActionManagerBase
 			
 				case UA_AM_ACCEPTED:
 					// check pCurrentCommandID before start or reject 
-					if ( ActionPossibilityCheck(pCurrentCommandID) )
+				
+					int condition_mask = ActionBase.ComputeConditionMask( m_Player, m_CurrentActionData.m_Target, m_CurrentActionData.m_MainItem );
+					bool can_be_action_done = m_CurrentActionData.m_Action.Can(m_Player,m_CurrentActionData.m_Target,m_CurrentActionData.m_MainItem);
+					if ( can_be_action_done && ActionPossibilityCheck(pCurrentCommandID) )
 					{
 						m_CurrentActionData.m_State = UA_START;
 						m_CurrentActionData.m_Action.Start(m_CurrentActionData);

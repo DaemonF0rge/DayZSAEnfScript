@@ -14,6 +14,7 @@ class ActionUnpackBox: ActionContinuousBase
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONMOD_OPENITEM;
 		m_CommandUIDProne = DayZPlayerConstants.CMD_ACTIONFB_OPENITEM;
 		m_SpecialtyWeight = UASoftSkillsWeight.PRECISE_LOW;
+		m_Text = "#unbox";
 	}
 	
 	override void CreateConditionComponents()  
@@ -30,11 +31,6 @@ class ActionUnpackBox: ActionContinuousBase
 	override bool HasTarget()
 	{
 		return false;
-	}
-		
-	override string GetText()
-	{
-		return "#unbox";
 	}
 
 	override void OnFinishProgressServer( ActionData action_data )

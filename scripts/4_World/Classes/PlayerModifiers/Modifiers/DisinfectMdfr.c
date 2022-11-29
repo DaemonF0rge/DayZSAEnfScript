@@ -11,7 +11,8 @@ class DisinfectionMdfr: ModifierBase
 		m_ID 					= eModifiers.MDF_DISINFECTION;
 		m_TickIntervalInactive 	= DEFAULT_TICK_TIME_INACTIVE;
 		m_TickIntervalActive 	= DEFAULT_TICK_TIME_ACTIVE;
-		m_WoundAgentInvasibility = m_PluginTransmissionAgents.GetAgentInvasibility(eAgents.WOUND_AGENT);
+		//m_WoundAgentInvasibility = m_PluginTransmissionAgents.GetAgentInvasibility(eAgents.WOUND_AGENT);
+		DisableActivateCheck();
 	}
 
 	override bool ActivateCondition(PlayerBase player)
@@ -70,11 +71,11 @@ class DisinfectionMdfr: ModifierBase
 	{
 		if(player.GetModifiersManager().IsModifierActive(eModifiers.MDF_WOUND_INFECTION2))
 		{
-			player.m_AgentPool.AddAgent(eAgents.WOUND_AGENT, -m_WoundAgentInvasibility * deltaT);
+			player.m_AgentPool.AddAgent(eAgents.WOUND_AGENT, -m_PluginTransmissionAgents.GetAgentInvasibility(eAgents.WOUND_AGENT) * deltaT);
 		}
 		else
 		{
-			player.m_AgentPool.AddAgent(eAgents.WOUND_AGENT, -m_WoundAgentInvasibility * 2 * deltaT);
+			player.m_AgentPool.AddAgent(eAgents.WOUND_AGENT, -m_PluginTransmissionAgents.GetAgentInvasibility(eAgents.WOUND_AGENT) * 2 * deltaT);
 		}
 	}
 };

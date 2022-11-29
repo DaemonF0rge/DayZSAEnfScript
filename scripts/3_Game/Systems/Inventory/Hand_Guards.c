@@ -239,13 +239,13 @@ class HandGuardHasRoomForItem extends HandGuardBase
 	{
 		if (e.GetDst() && e.GetDst().IsValid())
 		{
-			if( GetGame().IsClient() || !GetGame().IsMultiplayer())
+			if( !GetGame().IsDedicatedServer())
 			{
 				if(m_Player)
 					m_Player.GetHumanInventory().ClearInventoryReservationEx(e.GetDst().GetItem(),e.GetDst());
 			}
 
-			if (!GameInventory.LocationTestAddEntity(e.GetDst(), false, true, true, true, true))
+			if (!GameInventory.LocationTestAddEntity(e.GetDst(), false, true, true, true, true, false))
 			{
 				#ifdef DEVELOPER
 				if ( LogManager.IsInventoryHFSMLogEnable() )
@@ -259,7 +259,7 @@ class HandGuardHasRoomForItem extends HandGuardBase
 			}
 				
 			
-			if( GetGame().IsClient() || !GetGame().IsMultiplayer())
+			if( !GetGame().IsDedicatedServer())
 			{
 				if(m_Player)
 					m_Player.GetHumanInventory().AddInventoryReservationEx(e.GetDst().GetItem(), e.GetDst(), GameInventory.c_InventoryReservationTimeoutShortMS);
@@ -323,6 +323,38 @@ class HandGuardCanForceSwap extends HandGuardBase
 		if ( LogManager.IsInventoryHFSMLogEnable() )
 		{	
 			Debug.InventoryHFSMLog("GuardCondition result: " + result, "HandGuardCanForceSwap" , "n/a", "GuardCondition", m_Player.ToString() );
+		}
+		#endif
+
+		return result;
+	}
+};
+
+class HandGuardInstantForceSwap extends HandGuardBase
+{
+	protected Man m_Player;
+	void HandGuardInstantForceSwap(Man p = NULL) { m_Player = p; }
+
+	override bool GuardCondition(HandEventBase e)
+	{
+		HandEventForceSwap es = HandEventForceSwap.Cast(e);
+		
+		InventoryLocation src1 = es.m_Src;
+		InventoryLocation dst2 = es.m_Dst2;
+		
+		bool result = false;
+		if (src1.GetType() == InventoryLocationType.CARGO && dst2.GetType() == InventoryLocationType.CARGO)
+		{
+			if (src1.GetParent() == dst2.GetParent())
+			{
+				result = true;
+			}
+		}
+
+		#ifdef DEVELOPER
+		if (LogManager.IsInventoryHFSMLogEnable())
+		{	
+			Debug.InventoryHFSMLog("GuardCondition result: " + result, "HandGuardInstantForceSwap" , "n/a", "GuardCondition", m_Player.ToString() );
 		}
 		#endif
 

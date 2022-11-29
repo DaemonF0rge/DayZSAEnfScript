@@ -16,11 +16,19 @@ class PluginConfigDebugProfile extends PluginConfigHandler
 	protected const string CHAR_STOMACH_VIS					= "console_character_stomach_visible";
 	protected const string FREE_CAMERA_CROSSHAIR			= "console_free_camera_crosshair_visible";
 	protected const string VERSION_VIS						= "console_version_visible";
+	protected const string MERGE_TYPE						= "category_merge_type";
+	protected const string TEMP_VIS							= "console_temperature_visible";
 	protected const string SUB_PARAM_ITEM					= "item";
 	protected const string SUB_PARAM_ITEM_NAME				= "name";
 	protected const string SUB_PARAM_ITEM_HEALTH			= "health";
 	protected const string SUB_PARAM_ITEM_QUANTITY			= "quantity";
 	protected const string LOGS_ENABLED						= "logs_enabled";
+	protected const string CONFIG_CLASSES_FLAG				= "toggled_config_classes_flag";
+	protected const string ITEM_CATEGORY_FLAG				= "toggled_item_categories_flag";
+	protected const string ITEM_PREVIEW						= "show_item_preview";
+	protected const string BATCH_RECT						= "batch_spawn_rect";
+	protected const string BATCH_QUANT						= "batch_spawn_quantity";
+	protected const string SOUNDFILTER						= "soundset_editbox";
 	
 	protected ref map<string, ref CfgParam>				m_DefaultValues;
 	protected ref TStringArray 							m_PresetList;	
@@ -290,6 +298,33 @@ class PluginConfigDebugProfile extends PluginConfigHandler
 		m_DefaultValues.Insert(CHAR_DEBUG_VIS, 			GetNewCfgParamBool(false) );
 		m_DefaultValues.Insert(FREE_CAMERA_CROSSHAIR, 	GetNewCfgParamBool(true) );
 		m_DefaultValues.Insert(VERSION_VIS,				GetNewCfgParamBool(true) );
+		m_DefaultValues.Insert(CONFIG_CLASSES_FLAG,		GetNewCfgParamInt(15) );
+		m_DefaultValues.Insert(TEMP_VIS,				GetNewCfgParamBool(false) );
+		m_DefaultValues.Insert(MERGE_TYPE,				GetNewCfgParamBool(false) );
+		m_DefaultValues.Insert(ITEM_PREVIEW,			GetNewCfgParamBool(true) );
+		m_DefaultValues.Insert(BATCH_RECT,				GetNewCfgParamArray(GetDefaultBatchRectParams()) );
+		m_DefaultValues.Insert(BATCH_QUANT,				GetNewCfgParamInt(10) );
+		m_DefaultValues.Insert(SOUNDFILTER,				GetNewCfgParamString("") );
+	}
+	
+	array<ref CfgParam> GetDefaultBatchRectParams()
+	{
+		array<ref CfgParam> params = new array<ref CfgParam>;
+		CfgParamInt param1 = new CfgParamInt("");
+		param1.SetValue(5);
+		CfgParamInt param2 = new CfgParamInt("");
+		param2.SetValue(5);
+		CfgParamFloat param3 = new CfgParamFloat("");
+		param3.SetValue(1.0);
+		CfgParamFloat param4 = new CfgParamFloat("");
+		param4.SetValue(1.0);
+		
+		params.Insert(param1);
+		params.Insert(param2);
+		params.Insert(param3);
+		params.Insert(param4);
+		
+		return params;
 	}
 	
 	//========================================
@@ -382,6 +417,48 @@ class PluginConfigDebugProfile extends PluginConfigHandler
 		SetString( PRESET_DEFAULT, value );
 	}
 	
+	//========================================
+	// Batch Spawn Params
+	//========================================
+	array<ref CfgParam> GetBatchSpawnRectangle()
+	{
+		return GetArray( BATCH_RECT );
+	}
+	
+	void SetBatchSpawnRectangle( int row, int column, float rowStep, float columnStep)
+	{
+		array<ref CfgParam> params = GetArray( BATCH_RECT );
+		params.Clear();
+		CfgParamString param;
+		
+		CfgParamInt param1 = new CfgParamInt("");
+		param1.SetValue(row);
+		CfgParamInt param2 = new CfgParamInt("");
+		param2.SetValue(column);
+		CfgParamFloat param3 = new CfgParamFloat("");
+		param3.SetValue(rowStep);
+		CfgParamFloat param4 = new CfgParamFloat("");
+		param4.SetValue(columnStep);
+		
+		params.Insert(param1);
+		params.Insert(param2);
+		params.Insert(param3);
+		params.Insert(param4);
+		SaveConfigToFile();
+	}
+	
+	//========================================
+	// Batch Spawn Quantity
+	//========================================
+	int GetBatchSpawnQuantity()
+	{
+		return GetInt( BATCH_QUANT );
+	}
+	
+	void SetBatchSpawnQuantity(int value)
+	{
+		SetInt( BATCH_QUANT, value );
+	}
 	//========================================
 	// ItemSearch
 	//========================================
@@ -529,6 +606,86 @@ class PluginConfigDebugProfile extends PluginConfigHandler
 	}
 	
 	//========================================
+	// Merge Type
+	//========================================	
+	bool GetMergeType()
+	{
+		return GetBool( MERGE_TYPE );
+	}
+
+	void SetMergeType( bool is_visible )
+	{
+		SetBool( MERGE_TYPE, is_visible );
+	}	
+	
+	//========================================
+	// Soundset Filter
+	//========================================	
+	string GetSoundsetFilter()
+	{
+		return GetString( SOUNDFILTER );
+	}
+
+	void SetSoundsetFilter( string content )
+	{
+		SetString( SOUNDFILTER, content );
+	}
+	
+	//========================================
+	// TemperatureVisible
+	//========================================	
+	bool GetTempVisible()
+	{
+		return GetBool( TEMP_VIS );
+	}
+
+	void SetTempVisible( bool is_visible )
+	{
+		SetBool( TEMP_VIS, is_visible );
+	}
+	
+	//========================================
+	// Show Item Preview
+	//========================================	
+	bool GetShowItemPreview()
+	{
+		return GetBool( ITEM_PREVIEW );
+	}
+
+	void SetShowItemPreview( bool show )
+	{
+		SetBool( ITEM_PREVIEW, show );
+	}
+	
+	
+	//========================================
+	// ConfigClassesFlag
+	//========================================	
+	int GetConfigClassesFlag()
+	{
+		return GetInt( CONFIG_CLASSES_FLAG );
+	}
+
+	void SetConfigClassesFlag( int flag )
+	{
+		SetInt( CONFIG_CLASSES_FLAG, flag );
+	}
+	
+	
+	//========================================
+	// Item Category Flag
+	//========================================	
+	int GetItemCategoryFlag()
+	{
+		return GetInt( ITEM_CATEGORY_FLAG );
+	}
+
+	void SetItemCategoryFlag( int flag )
+	{
+		SetInt( ITEM_CATEGORY_FLAG, flag );
+	}
+	
+	//========================================
 	// Presets
 	//========================================
 	TStringArray GetPresets()
@@ -573,14 +730,15 @@ class PluginConfigDebugProfile extends PluginConfigHandler
 		}
 	}
 	
-	bool GetPresetItems( string preset_name, out TStringArray arr )
+	bool GetPresetItems( string preset_name, out TStringArray arr, string param_name = "" )
 	{
 		if ( m_PresetList.Find(preset_name) == -1 )
 		{
 			return false;
 		}
-		
-		GetSubParametersInStringArray( preset_name, SUB_PARAM_ITEM_NAME, arr );
+		if(param_name == "")
+			param_name = SUB_PARAM_ITEM_NAME;
+		GetSubParametersInStringArray( preset_name, param_name, arr );
 		
 		return true;
 	}

@@ -9,7 +9,7 @@ class DayZPlayerImplementJumpClimb
 	{
 		SHumanCommandClimbSettings hcls = m_Player.GetDayZPlayerType().CommandClimbSettingsW();
 		
-		if( m_Player.m_MovementState.m_iMovement != DayZPlayerConstants.MOVEMENTIDX_IDLE )
+		if ( m_Player.m_MovementState.m_iMovement != DayZPlayerConstants.MOVEMENTIDX_IDLE )
 			hcls.m_fFwMaxDistance = 2.5;
 		else
 			hcls.m_fFwMaxDistance = 1.2;
@@ -17,14 +17,14 @@ class DayZPlayerImplementJumpClimb
 		SHumanCommandClimbResult climbRes = new SHumanCommandClimbResult();
 		
 		HumanCommandClimb.DoClimbTest(m_Player, climbRes, 0);
-		if( climbRes.m_bIsClimb || climbRes.m_bIsClimbOver )
+		if ( climbRes.m_bIsClimb || climbRes.m_bIsClimbOver )
 		{
 			int climbType = GetClimbType(climbRes.m_fClimbHeight);
 
 			if ( !m_Player.CanClimb( climbType,climbRes ) )
 				return;
 
-			if( Climb(climbRes) )
+			if ( Climb(climbRes) )
 			{
 				if ( climbType == 1 )
 					m_Player.DepleteStamina(EStaminaModifiers.VAULT);
@@ -44,7 +44,7 @@ class DayZPlayerImplementJumpClimb
 	
 	void CheckAndFinishJump(int pLandType = 0)
 	{
-		if( m_bIsJumpInProgress )
+		if ( m_bIsJumpInProgress )
 		{
 			m_bIsJumpInProgress = false;
 			m_Player.OnJumpEnd(pLandType);

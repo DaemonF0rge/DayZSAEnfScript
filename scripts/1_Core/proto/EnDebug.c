@@ -3,7 +3,7 @@
  * @{
  */
 
- /**
+/**
 \brief Prints current call stack (stack trace)
 	\return \p void
 	@code
@@ -26,19 +26,67 @@
 */
 proto void DumpStack();
 
+/**
+\brief Prints current call stack (stack trace) to given output
+	\return \p void
+	@code
+    string tmp;
+		DumpStackString(tmp);
+    Print(tmp);
+
+	@endcode
+
+	\verbatim
+	Output:
+	  SaveFile() Scripts\Entities\Modules\ModuleBase\ModuleFileHandler.c : 51
+	  SaveConfigToFile() Scripts\Entities\Modules\ModuleBase\ModuleFileHandler\ModuleLocalProfile.c : 114
+	  SaveParameterArray() Scripts\Entities\Modules\ModuleBase\ModuleFileHandler\ModuleLocalProfile.c : 133
+	  SetParameterArray() Scripts\Entities\Modules\ModuleBase\ModuleFileHandler\ModuleLocalProfile.c : 231
+	  PresetAdd() Scripts\Entities\Modules\ModuleBase\ModuleFileHandler\ModuleLocalProfile\ModuleLocalProfileUI.h : 46
+	  OnKeyPress() Scripts/mission/missionGameplay.c : 215
+	  OnKeyPress() Scripts/DayZGame.c : 334
+	\endverbatim
+*/
+proto void DumpStackString(out string stack);
+
 //! Triggers breakpoint in C++ in run time(when app is running in debug enviroment)
 proto void DebugBreak(bool condition = true, void param1 = NULL, void param2 = NULL, void param3 = NULL, void param4 = NULL, void param5 = NULL, void param6 = NULL, void param7 = NULL, void param8 = NULL, void param9 = NULL);
 
 //! Triggers breakpoint in C++ in compile time(when app is running in debug enviroment)
 void CompileBreak();
 
-//!Prints content of variable to console/log. Should be used for critical messages so it will appear in debug log
+//! Prints content of variable to console/log. Should be used for critical messages so it will appear in debug log
 proto void DPrint(string var);
 
-//!Messagebox with error message
+enum ErrorExSeverity
+{
+	INFO,
+	WARNING,
+	ERROR,
+}
+
+/**
+\brief Error message, prefixed by method name, above 'INFO' will show a messagebox
+	\note Format: [%className%::%methodName%] :: [%severity%] :: %errString%
+	\param \p string Error message to use
+	@code
+	class ErrorExTest
+	{
+		void ThrowWarning()
+		{
+			// [ErrorExTest::ThrowWarning] :: [WARNING] :: This is a warning.
+			ErrorEx("This is a warning.", ErrorExSeverity.WARNING);		
+		}
+	}
+	@endcode
+*/
+proto void ErrorEx(string err, ErrorExSeverity severity = ErrorExSeverity.ERROR);
+proto void ErrorExString(string err, out string str, ErrorExSeverity severity = ErrorExSeverity.ERROR);
+
+//! Messagebox with error message
 proto native void Error2(string title, string err);
 
-//!Messagebox with error message
+//! Messagebox with error message
 void Error(string err)
 {
 	Error2("", err);
@@ -107,8 +155,10 @@ class Shape
 	//!don't call destructor directly. Use Destroy() instead
 	proto private void ~Shape();
 
+	proto native void GetMatrix(out vector mat[4]);
 	proto native void SetMatrix(vector mat[4]);
 	proto native void SetDirection(vector direction);
+	proto native void SetPosition(vector position);
 	proto native void SetColor(int color);
 	proto native void SetFlags(ShapeFlags flags);
 	proto native void Destroy();
@@ -117,6 +167,7 @@ class Shape
 	proto static native Shape CreateLines(int color, ShapeFlags flags, vector p[], int num);
 	proto static native Shape CreateTris(int color, ShapeFlags flags, vector p[], int num);
 	proto static native Shape CreateSphere(int color, ShapeFlags flags, vector origin, float radius);
+	proto static native Shape CreateFrustum(float horizontalAngle, float verticalAngle, float length, int color, ShapeFlags flags);
 	proto static native Shape CreateCylinder(int color, ShapeFlags flags, vector origin, float radius, float length);
 
 	static Shape CreateArrow(vector from, vector to, float size, int color, ShapeFlags flags)

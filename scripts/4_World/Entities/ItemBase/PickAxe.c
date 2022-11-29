@@ -4,16 +4,11 @@ class Pickaxe extends ItemBase
 	{
 		return true;
 	}
-
-	override bool IsMeleeFinisher()
-	{
-		return true;
-	}
 	
 	override void SetActions()
 	{
 		super.SetActions();
-		AddAction(ActionBuildPartSwitch);
+
 		AddAction(ActionTogglePlaceObject);
 		AddAction(ActionDigGardenPlot);
 		AddAction(ActionDismantleGardenPlot);
@@ -21,7 +16,8 @@ class Pickaxe extends ItemBase
 		AddAction(ActionMineRock);
 		AddAction(ActionDismantlePart);
 		AddAction(ActionBuildPart);
-		//AddAction(ActionDestroyPart);
+		AddAction(ActionBuryBody);
+		AddAction(ActionBuryAshes);
 		AddAction(ActionDigWorms);
 		AddAction(ActionSkinning);
 		AddAction(ActionDigOutStash);

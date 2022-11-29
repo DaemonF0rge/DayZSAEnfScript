@@ -10,6 +10,11 @@ class TLRLight extends Switchable_Base
 	static string 		LIGHT_ON_GLASS = "dz\\gear\\tools\\data\\flashlight_glass_on.rvmat";
 	static string 		LIGHT_ON_REFLECTOR = "dz\\weapons\\attachments\\data\\TLS3_on.rvmat";
 	
+	override ScriptedLightBase GetLight()
+	{
+		return m_Light;
+	}
+	
 	override bool CanPutAsAttachment( EntityAI parent )
 	{
 		if(!super.CanPutAsAttachment(parent)) {return false;}
@@ -20,8 +25,7 @@ class TLRLight extends Switchable_Base
 		
 		return false;
 	}
-	
-	
+
 	override void OnWorkStart()
 	{
 		if ( !GetGame().IsServer()  ||  !GetGame().IsMultiplayer() ) // Client side

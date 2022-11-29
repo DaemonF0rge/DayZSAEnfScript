@@ -81,4 +81,9 @@ class Flashlight extends ItemBase
 		AddAction(ActionTurnOnWhileInHands);
 		AddAction(ActionTurnOffWhileInHands);
 	}
+	
+	override void OnDebugSpawn()
+	{
+		Battery9V.Cast(GetInventory().CreateInInventory("Battery9V"));
+	}
 }

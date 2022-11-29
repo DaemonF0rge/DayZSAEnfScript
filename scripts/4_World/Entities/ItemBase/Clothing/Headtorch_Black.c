@@ -4,4 +4,9 @@ class Headtorch_Black : Headtorch_ColorBase
 	{
 		m_Light.SetColorToRed();
 	}
+
+	override void OnDebugSpawn()
+	{
+		Battery9V.Cast(GetInventory().CreateInInventory("Battery9V"));
+	}
 }

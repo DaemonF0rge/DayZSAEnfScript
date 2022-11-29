@@ -1,6 +1,3 @@
-// in configs all the structures(Houses, Buildings) inherits from config class House
-typedef Building House;
-
 class Building extends EntityAI
 {
 	proto native int GetLaddersCount();

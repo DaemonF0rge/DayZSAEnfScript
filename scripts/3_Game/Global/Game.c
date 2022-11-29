@@ -2,7 +2,7 @@
  *  Game Class provide most "world" or global engine API functions.
  */
 
-static int GAME_STORAGE_VERSION = 121;
+static int GAME_STORAGE_VERSION = 130;
 
 class CGame
 {
@@ -24,9 +24,11 @@ class CGame
 	
 	void CGame()
 	{
+		Math.Randomize(-1);
+		
 		LogManager.Init();
 		m_ParamCache = new array<ref Param>;
-		m_ParamCache.Insert(NULL);
+		m_ParamCache.Insert(null);
 		
 		//analytics
 		m_AnalyticsManagerServer = new AnalyticsManagerServer;
@@ -40,9 +42,25 @@ class CGame
 		#ifdef DEVELOPER
 		m_EnergyManagerArray = new array<ComponentEnergyManager>;
 		#endif
+		
+		if (!IsDedicatedServer())
+		{
+			SEffectManager.Init();
+			AmmoEffects.Init();
+			VONManager.Init();
+		}
 	}
 	
-	private void ~CGame();
+	private void ~CGame()
+	{
+		// Clean these up even if it is dedicated server, just to be safe
+		SEffectManager.Cleanup();	
+		AmmoEffects.Cleanup();
+		VONManager.CleanupInstance();
+		
+		// Is initialized in StartupEvent
+		ParticleManager.CleanupInstance();
+	}
 	
 	proto native WorkspaceWidget GetWorkspace();
 	proto native WorkspaceWidget GetLoadingWorkspace();
@@ -112,6 +130,15 @@ class CGame
 	void OnUpdate(bool doSim, float timeslice) 
 	{
 	}
+	
+	/**
+  \brief Called on World update after simulation of entities
+  @param doSim False when simulation is paused, True otherwise
+	@param timeslice time elapsed from last call
+	*/
+	void OnPostUpdate(bool doSim, float timeslice) 
+	{
+	}
 
 	/**
   \brief Called when key is pressed
@@ -164,7 +191,7 @@ class CGame
 	void	OnRPC(PlayerIdentity sender, Object target, int rpc_type, ParamsReadContext ctx)
 	{
 	}
-	
+
 	/**
   \brief Sets exit code and quits in the right moment
 	*/
@@ -179,6 +206,16 @@ class CGame
   \brief Gets the server address. (from client)
 	*/
 	proto bool				GetHostAddress( out string address, out int port );
+	
+	/**
+  \brief Gets the server name. (from client)
+	*/
+	proto owned string		GetHostName();
+	
+	/**
+  \brief Gets the server data. (from client)
+	*/
+	proto GetServersResultRow GetHostData();
 	
 	/**
   \brief Connects to IsServer
@@ -294,6 +331,13 @@ class CGame
 	proto native Object 	GetObjectByNetworkId( int networkIdLowBits, int networkIdHighBits );
 
 	/**
+	\brief Static objects cannot be replicated by default (there are too many objects on the map). Use this method when you want to replicate some scripted variables. Cannot be called in object's constructor, because networking is not initialized yet
+		@param object static object to replicate
+		@return false, if registration wasn't successful or when object is already registered
+	*/
+	proto native bool		RegisterNetworkStaticObject(Object object);
+	
+	/**
   	\brief Creates spectator object (mostly cameras)
 		@param identity identity used in MP (use NULL in singleplayer)
 		@param spectatorObjType classname for spectator object (like cameras)
@@ -372,6 +416,15 @@ class CGame
 	proto bool					ConfigGetText(string path, out string value);
 	
 	/**
+	\brief Get raw string value from config on path.
+		@param path of value, classes are delimited by empty space. You can specify config file by using "configFile" or "missionConfigFile" as a first class name.
+		@param value output in raw format (localization keys '$STR_' are not translated)
+		\return true on success
+		\note use 'FormatRawConfigStringKeys' method to change localization keys to script-friendly
+	*/
+	proto bool					ConfigGetTextRaw(string path, out string value);
+	
+	/**
 	\brief Get string value from config on path.
 		@param path of value, classes are delimited by empty space. You can specify config file by using "configFile" or "missionConfigFile" as a first class name.
 		\return value output string
@@ -381,6 +434,18 @@ class CGame
 		string ret_s;
 		ConfigGetText(path, ret_s);
 		return ret_s;
+	}
+	
+	/**
+	\brief Changes localization key format to script-friendly format.
+		@param original config string.
+		\return value output string with '$' substituted to script-friendly '#'. If not found, does nothing.
+	*/
+	bool FormatRawConfigStringKeys(inout string value)
+	{
+		int ret;
+		ret = value.Replace("$STR_","#STR_");
+		return ret > 0;
 	}
 	
 	/**
@@ -454,11 +519,24 @@ class CGame
 	\n usage :
 	@code
 	TStringArray characterAnimations = new TStringArray;
-	GetGate().ConfigGetTextArray("CfgMovesMaleSdr2 States menu_idleUnarmed0 variantsPlayer", characterAnimations);
+	GetGame().ConfigGetTextArray("CfgMovesMaleSdr2 States menu_idleUnarmed0 variantsPlayer", characterAnimations);
 	@endcode
 	*/
 	proto native void		ConfigGetTextArray(string path, out TStringArray values);
 
+	/**
+  \brief Get array of raw strings from config on path.
+	@param path of value, classes are delimited by empty space. You can specify config file by using "configFile" or "missionConfigFile" as a first class name.
+	@param value output in raw format (localization keys '$STR_' are not translated)
+	\n usage :
+	@code
+	TStringArray characterAnimations = new TStringArray;
+	GetGame().ConfigGetTextArrayRaw("CfgMovesMaleSdr2 States menu_idleUnarmed0 variantsPlayer", characterAnimations);
+	@endcode
+	\note use 'FormatRawConfigStringKeys' method to change localization keys to script-friendly
+	*/
+	proto native void		ConfigGetTextArrayRaw(string path, out TStringArray values);
+	
 	/**
   \brief Get array of floats from config on path.
 	@param path of value, classes are delimited by empty space. You can specify config file by using "configFile" or "missionConfigFile" as a first class name.
@@ -625,16 +703,19 @@ class CGame
 	
 	bool	AddInventoryJunctureEx(Man player, notnull EntityAI item, InventoryLocation dst, bool test_dst_occupancy, int timeout_ms)
 	{
-		bool result = AddInventoryJuncture(player, item, dst, test_dst_occupancy, timeout_ms);
+		bool result = AddInventoryJuncture(player, item, dst, test_dst_occupancy, timeout_ms/*10000000*/);
 		#ifdef DEVELOPER
 		if ( LogManager.IsInventoryReservationLogEnable() )
 		{
 			Debug.InventoryReservationLog("STS = " + player.GetSimulationTimeStamp() + " result: " + result + " item:" + item + " dst: " + InventoryLocation.DumpToStringNullSafe(dst), "n/a" , "n/a", "AddInventoryJuncture",player.ToString() );	
 		}
 		#endif
-		//Print("Juncture - STS=" + player.GetSimulationTimeStamp() + " item:" + item + " dst: " + InventoryLocation.DumpToStringNullSafe(dst));
+		//Print("Juncture - STS = " + player.GetSimulationTimeStamp() + " item:" + item + " dst: " + InventoryLocation.DumpToStringNullSafe(dst));
 		return result;
 	}
+	
+	//Has inventory juncture for any player
+	proto native bool 	HasInventoryJunctureItem(notnull EntityAI item);
 	
 	proto native bool 	HasInventoryJunctureDestination(Man player, notnull InventoryLocation dst);
 	proto native bool	AddActionJuncture(Man player, notnull EntityAI item, int timeout_ms);
@@ -839,6 +920,22 @@ class CGame
 	*/
 	proto native int		GetVoiceLevel(Object player = null);
 
+	/**
+	 \brief Enable microphone to locally capture audio from user. Audio heard does NOT automatically get transmitted over network
+	@param enable enables or disabled listening
+	*/
+	proto native void 		EnableMicCapture(bool enable);
+	
+	/**
+	 \brief Returns whether mic is currently capturing audio from user
+	*/
+	proto native bool		IsMicCapturing();
+	
+	/**
+	 \brief Returns whether user is currently in a voice party (currently only supported on xbox)
+	*/
+	proto native bool 		IsInPartyChat();
+	
 	// mission
 	proto native Mission 	GetMission();
 	proto native void		SetMission(Mission mission);
@@ -867,8 +964,13 @@ class CGame
 	proto native bool		IsMultiplayer();
 	proto native bool		IsClient();
 	proto native bool		IsServer();
+	/**
+	 \brief Robust check which is preferred than the above, as it is valid much sooner
+	 	\note You may want to use #ifdef SERVER instead for slight performance gain...
+	*/
+	proto native bool		IsDedicatedServer();
 
-	//! Server config parsing
+	//! Server config parsing. Returns 0 if not found.
 	proto native int		ServerConfigGetInt(string name);
 	
 	// Interny build
@@ -902,8 +1004,8 @@ class CGame
 	proto native float		SurfaceRoadY(float x, float z);
 	proto void				SurfaceGetType(float x, float z, out string type);
 	proto void				SurfaceGetType3D(float x, float y, float z, out string type);
-	proto void				SurfaceUnderObject(Object object, out string type, out int liquidType);
-	proto void				SurfaceUnderObjectByBone(Object object, int boneType, out string type, out int liquidType);
+	proto void				SurfaceUnderObject(notnull Object object, out string type, out int liquidType);
+	proto void				SurfaceUnderObjectByBone(notnull Object object, int boneType, out string type, out int liquidType);
 	proto native float		SurfaceGetNoiseMultiplier(Object directHit, vector pos, int componentIndex);
 	proto native vector		SurfaceGetNormal(float x, float z);
 	proto native float		SurfaceGetSeaLevel();
@@ -922,7 +1024,7 @@ class CGame
 		for (int i = 0; i < positions.Count(); i++)
 		{
 			vector pos = positions.Get(i);
-			pos[1] = SurfaceY( pos[0], pos[2]);
+			pos[1] = SurfaceRoadY( pos[0], pos[2]);
 			float y = pos[1];
 			
 			if ( y > high )
@@ -1035,12 +1137,13 @@ class CGame
 		@endcode
 	*/
 	proto native bool		IsBoxCollidingGeometry(vector center, vector orientation, vector edgeLength, int iPrimaryType, int iSecondaryType, array<Object> excludeObjects, array<Object> collidedObjects = NULL); 
-	
+
+	proto native bool		IsBoxCollidingGeometryProxy(notnull BoxCollidingParams params, array<Object> excludeObjects, array<ref BoxCollidingResult> collidedObjects = NULL); 
 		
 	//! Returns weather controller object.
 	proto native Weather GetWeather();
 
-	//! Sets custom camera camera EV.
+	//! Sets custom camera camera EV. range: -50.0..50.0? //TODO
 	proto native void	SetEVUser(float value);
 
 	proto native void 	OverrideDOF(bool enable, float focusDistance, float focusLength, float focusLengthNear, float blur, float focusDepthOffset);
@@ -1250,12 +1353,7 @@ class CGame
 	//! Returns true when current mission is Main Menu
 	bool IsMissionMainMenu()
 	{
-		if ( g_Game.GetMissionState() == DayZGame.MISSION_STATE_MAINMENU )
-		{
-			return true;
-		}
-		
-		return false;
+		return (g_Game.GetMissionState() == DayZGame.MISSION_STATE_MAINMENU);
 	}
 	
 	MenuDefaultCharacterData GetMenuDefaultCharacterData(bool fill_data = true)

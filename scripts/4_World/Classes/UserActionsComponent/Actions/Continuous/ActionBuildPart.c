@@ -41,6 +41,7 @@ class ActionBuildPart: ActionContinuousBase
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT;
 		
 		m_SpecialtyWeight = UASoftSkillsWeight.ROUGH_HIGH;
+		m_Text = "#build";
 	}
 	
 	override void CreateConditionComponents()  
@@ -49,21 +50,20 @@ class ActionBuildPart: ActionContinuousBase
 		m_ConditionTarget = new CCTNone;
 	}
 	
-	override string GetText()
+	override void OnActionInfoUpdate( PlayerBase player, ActionTarget target, ItemBase item )
 	{
-		PlayerBase player = PlayerBase.Cast( GetGame().GetPlayer() );
-		if ( player )
-		{
-			ConstructionActionData construction_action_data = player.GetConstructionActionData();
-			ConstructionPart constrution_part = construction_action_data.GetCurrentBuildPart();
+		ConstructionActionData construction_action_data = player.GetConstructionActionData();
+		ConstructionPart constrution_part = construction_action_data.GetBuildPartAtIndex(m_VariantID);
 			
-			if ( constrution_part )
-			{
-				return "#build" + " " + constrution_part.GetName();
-			}
+		if ( constrution_part )
+		{
+			m_Text = "#build " + constrution_part.GetName();
 		}
-		
-		return "";
+	}
+	
+	override bool CanBeUsedLeaning()
+	{
+		return false;
 	}
 	
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
@@ -72,33 +72,19 @@ class ActionBuildPart: ActionContinuousBase
 			return false;
 		
 		//Action not allowed if player has broken legs
-		if (player.m_BrokenLegState == eBrokenLegs.BROKEN_LEGS)
+		if (player.GetBrokenLegs() == eBrokenLegs.BROKEN_LEGS)
 			return false;
 		
 		//hack - gate
+		//WTF
 		if (target.GetObject() && (!target.GetObject().CanUseConstructionBuild() || target.GetObject().CanUseHandConstruction()))
 			return false;
 		
-		if ( (!GetGame().IsMultiplayer() || GetGame().IsClient()) )
+		if ( (!GetGame().IsDedicatedServer()) )
 		{
-			ConstructionActionData construction_action_data = player.GetConstructionActionData();
-			int start_index = construction_action_data.m_PartIndex;
-			if ( construction_action_data.GetConstructionPartsCount() > 0 )
+			if ( MiscGameplayFunctions.ComplexBuildCollideCheckClient(player, target, item, m_VariantID ) )
 			{
-				for (int i = 0; i < construction_action_data.GetConstructionPartsCount(); i++)
-				{
-					if ( MiscGameplayFunctions.ComplexBuildCollideCheckClient(player, target, item ) )
-					{
-						//Print("i: " + i + " | name: " + construction_action_data.GetCurrentBuildPart().GetPartName());
-						return true;
-					}
-					else
-					{
-						construction_action_data.SetNextIndex();
-					}
-				}
-				construction_action_data.m_PartIndex = start_index;
-				//Print("fail | name: " + construction_action_data.GetCurrentBuildPart().GetPartName());
+				return true;
 			}
 			return false;
 		}
@@ -107,8 +93,6 @@ class ActionBuildPart: ActionContinuousBase
 	
 	override bool ActionConditionContinue( ActionData action_data )
 	{
-		//return MiscGameplayFunctions.BuildCondition( action_data.m_Player, action_data.m_Target, action_data.m_MainItem , false );
-		//return MiscGameplayFunctions.ComplexBuildCollideCheckClient(action_data.m_Player, action_data.m_Target, action_data.m_MainItem);
 		BaseBuildingBase base_building = BaseBuildingBase.Cast( action_data.m_Target.GetObject() );
 		Construction construction = base_building.GetConstruction();
 		string part_name = BuildPartActionData.Cast(action_data).m_PartType;
@@ -154,10 +138,10 @@ class ActionBuildPart: ActionContinuousBase
 		{
 			SetBuildingAnimation( item );
 			
-			if ( !GetGame().IsMultiplayer() || GetGame().IsClient() )
+			if ( !GetGame().IsDedicatedServer() )
 			{
 				ConstructionActionData construction_action_data = action_data.m_Player.GetConstructionActionData();
-				BuildPartActionData.Cast(action_data).m_PartType = construction_action_data.GetCurrentBuildPart().GetPartName();
+				BuildPartActionData.Cast(action_data).m_PartType = construction_action_data.GetBuildPartAtIndex(m_VariantID).GetPartName();
 			}
 			return true;
 		}
@@ -226,10 +210,27 @@ class ActionBuildPart: ActionContinuousBase
 		string message = string.Format("Built %1 on %2 with %3", partName, action_data.m_Target.GetObject().GetDisplayName(), action_data.m_MainItem.GetDisplayName() );
 		return message;
 	}
-	
-	void SetNextIndex(ActionData action_data)
+}
+
+class ActionActionBuildPartNoTool: ActionBuildPart
+{
+	override typename GetInputType()
 	{
-		ConstructionActionData construction_action_data = action_data.m_Player.GetConstructionActionData();
-		construction_action_data.SetNextIndex();
+		return ContinuousInteractActionInput;
+	}
+	
+	override bool UseMainItem()
+	{
+		return false;
+	}
+	
+	override bool HasProgress()
+	{
+		return true;
+	}
+	
+	override bool HasAlternativeInterrupt()
+	{
+		return false;
 	}
 }

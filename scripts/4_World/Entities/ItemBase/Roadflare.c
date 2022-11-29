@@ -97,11 +97,8 @@ class Roadflare : ItemBase
 		
 		if ( GetGame() )
 		{
-			if ( m_BurningSound )
-			{
-				StopSoundSet( m_BurningSound );
-			}
-			
+			SEffectManager.DestroyEffect( m_BurningSound );	
+			SEffectManager.DestroyEffect( m_IgniteSound );			
 			delete m_FinalSmokeTimer;
 		}
 		
@@ -329,7 +326,7 @@ class Roadflare : ItemBase
 	// Updates all (in)active particles
 	void UpdateActiveParticles()
 	{
-		if ( GetGame().IsServer()  &&  GetGame().IsMultiplayer() )
+		if ( GetGame().IsDedicatedServer() )
 			return;
 		
 		switch (m_BurningState)
@@ -344,8 +341,8 @@ class Roadflare : ItemBase
 				if (!m_ParInitialFire)
 				{
 					DestroyAllParticles();
-					m_ParInitialFire = Particle.PlayOnObject( PARTICLE_INIT_FIRE, this, m_FlameLocalPos);
-					m_ParInitialFire.SetWiggle( 10, 0.3);
+					m_ParInitialFire = ParticleManager.GetInstance().PlayOnObject( PARTICLE_INIT_FIRE, this, m_FlameLocalPos);
+					m_ParInitialFire.SetWiggle( 10, 0.3 );
 				}
 				break;
 				
@@ -353,11 +350,11 @@ class Roadflare : ItemBase
 				
 				if (!m_ParMainFire)
 				{
-					m_ParMainFire = Particle.PlayOnObject( PARTICLE_MAIN_FIRE, this, m_FlameLocalPos);
-					m_ParMainFire.SetWiggle( 7, 0.3);
+					m_ParMainFire = ParticleManager.GetInstance().PlayOnObject( PARTICLE_MAIN_FIRE, this, m_FlameLocalPos);
+					m_ParMainFire.SetWiggle( 7, 0.3 );
 				}
 				
-				DestroyParticle(m_ParInitialFire);
+				DestroyParticleEx(m_ParInitialFire);
 				
 				break;	
 				
@@ -366,8 +363,8 @@ class Roadflare : ItemBase
 				if (!m_ParFinalFire)
 				{
 					DestroyAllParticles();
-					m_ParFinalFire = Particle.PlayOnObject( PARTICLE_FINAL_FIRE, this, m_FlameLocalPos);
-					m_ParFinalFire.SetWiggle( 4, 0.3);
+					m_ParFinalFire = ParticleManager.GetInstance().PlayOnObject( PARTICLE_FINAL_FIRE, this, m_FlameLocalPos);
+					m_ParFinalFire.SetWiggle( 4, 0.3 );
 				}
 				break;
 				
@@ -376,8 +373,8 @@ class Roadflare : ItemBase
 				if (!m_ParJustSmoke)
 				{
 					DestroyAllParticles();
-					m_ParJustSmoke = Particle.PlayOnObject( PARTICLE_FINAL_SMOKE, this, m_FlameLocalPos);
-					m_ParJustSmoke.SetWiggle( 2, 0.3);
+					m_ParJustSmoke = ParticleManager.GetInstance().PlayOnObject( PARTICLE_FINAL_SMOKE, this, m_FlameLocalPos);
+					m_ParJustSmoke.SetWiggle( 2, 0.3 );
 				}
 				break;
 		}
@@ -393,13 +390,19 @@ class Roadflare : ItemBase
 		}
 	}
 	
+	void DestroyParticleEx( out Particle p )
+	{
+		DestroyParticle(p);
+		p = null;
+	}
+	
 	// Destroys all particles
 	void DestroyAllParticles()
 	{
-		DestroyParticle(m_ParInitialFire);
-		DestroyParticle(m_ParMainFire);
-		DestroyParticle(m_ParFinalFire);
-		DestroyParticle(m_ParJustSmoke);
+		DestroyParticleEx(m_ParInitialFire);
+		DestroyParticleEx(m_ParMainFire);
+		DestroyParticleEx(m_ParFinalFire);
+		DestroyParticleEx(m_ParJustSmoke);
 	}
 	
 	// Stop releasing final smoke
@@ -433,7 +436,7 @@ class Roadflare : ItemBase
 		if ( !super.CanPutInCargo(parent) ) 
 			return false;
 		
-		if ( parent.IsInherited( FireplaceBase ) )
+		if ( parent && parent.IsInherited( FireplaceBase ) )
 			return true;
 		
 		if ( m_BurningState != RoadflareBurningState.NOT_BURNING )
@@ -450,9 +453,12 @@ class Roadflare : ItemBase
 		ShowSelection(STANDS_FOLDED);
 	}
 	
-	override void OnActivatedByTripWire()
+	override void OnActivatedByItem(notnull ItemBase item)
 	{
-		GetCompEM().SwitchOn();
+		if (item.IsInherited(TripwireTrap))
+		{
+			GetCompEM().SwitchOn();
+		}
 	}
 	
 	override bool CanIgniteItem(EntityAI ignite_target = NULL)
@@ -471,6 +477,8 @@ class Roadflare : ItemBase
 	{
 		super.SetActions();
 		
+		AddAction(ActionAttach);
+		AddAction(ActionDetach);
 		AddAction(ActionLightItemOnFire);
 		AddAction(ActionTurnOnWhileInHands);
 	}

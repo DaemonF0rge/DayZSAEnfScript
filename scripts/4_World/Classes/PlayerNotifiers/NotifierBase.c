@@ -37,14 +37,12 @@ class NotifierBase
 		m_Manager = manager;
 		m_Player = manager.GetPlayer();
 		m_TickInterval = 1000;
+		manager.RegisterItself(GetNotifierType(), this);
 	}
 
 	bool IsTimeToTick(int current_time)
 	{
-		if( current_time > m_TickIntervalLastTick + m_TickInterval )
-			return true;
-
-		return false;
+		return ( current_time > m_TickIntervalLastTick + m_TickInterval );
 	}
 	
 	

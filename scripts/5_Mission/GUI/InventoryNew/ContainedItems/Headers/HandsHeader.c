@@ -23,12 +23,13 @@ class HandsHeader: Header
 	override void UpdateInterval()
 	{
 		PlayerBase p = PlayerBase.Cast( GetGame().GetPlayer() );
-		if(!p)
+		if (!p)
 			return;
+		
 		EntityAI item = p.GetHumanInventory().GetEntityInHands();
-		if( !m_ForceHideCollapseButtons )
+		if ( !m_ForceHideCollapseButtons )
 		{
-			if( item && !item.GetInventory().IsInventoryLockedForLockType( HIDE_INV_FROM_SCRIPT ) )
+			if ( item && !item.GetInventory().IsInventoryLockedForLockType( HIDE_INV_FROM_SCRIPT ) && item.CanDisplayCargo() )
 			{
 				ShowCollapseButtons( true );
 			}
@@ -37,6 +38,7 @@ class HandsHeader: Header
 				ShowCollapseButtons( false );
 			}
 		}
+		
 		m_ItemHeader.Show( item != null );
 	}
 	

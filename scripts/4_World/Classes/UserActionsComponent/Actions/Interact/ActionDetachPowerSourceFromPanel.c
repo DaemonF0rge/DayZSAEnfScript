@@ -3,11 +3,7 @@ class ActionDetachPowerSourceFromPanel: ActionInteractBase
 {
 	void ActionDetachPowerSourceFromPanel()
 	{
-	}
-		
-	override string GetText()
-	{
-		return "#detach_power_source";
+		m_Text = "#detach_power_source";
 	}
 	
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

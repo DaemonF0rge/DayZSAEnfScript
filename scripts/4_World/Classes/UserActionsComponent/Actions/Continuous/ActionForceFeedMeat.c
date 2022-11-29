@@ -14,16 +14,12 @@ class ActionForceFeedMeat: ActionForceConsume
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONFB_FORCEFEED;
 		m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT | DayZPlayerConstants.STANCEMASK_CROUCH;
+		m_Text = "#feed";
 	}
 	
 	override void CreateConditionComponents() 
 	{
 		m_ConditionTarget = new CCTMan(UAMaxDistances.DEFAULT);
 		m_ConditionItem = new CCINonRuined;
-	}
-		
-	override string GetText()
-	{
-		return "#feed";
 	}
 };

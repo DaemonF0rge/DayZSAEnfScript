@@ -20,8 +20,8 @@ enum RBLStableStateID
 
 class RBL_CLO_BU0_MA0 extends WeaponStableState
 {
-	override void OnEntry (WeaponEventBase e) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { close nobull nomag"); super.OnEntry(e); }
-	override void OnExit (WeaponEventBase e) { super.OnExit(e); wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } close nobull nomag"); }
+	override void OnEntry (WeaponEventBase e) { if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { close nobull nomag"); } super.OnEntry(e); }
+	override void OnExit (WeaponEventBase e) { super.OnExit(e); if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } close nobull nomag"); } }
 	override int GetCurrentStateID () { return RBLStableStateID.RBL_CLO_BU0_MA0; }
 	override bool HasBullet () { return false; }
 	override bool HasMagazine () { return false; }
@@ -31,8 +31,8 @@ class RBL_CLO_BU0_MA0 extends WeaponStableState
 };
 class RBL_CLO_BU1_MA0 extends WeaponStableState
 {
-	override void OnEntry (WeaponEventBase e) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { close bullet nomag"); super.OnEntry(e); }
-	override void OnExit (WeaponEventBase e) { super.OnExit(e); wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } close bullet nomag"); }
+	override void OnEntry (WeaponEventBase e) { if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { close bullet nomag"); } super.OnEntry(e); }
+	override void OnExit (WeaponEventBase e) { super.OnExit(e); if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } close bullet nomag"); } }
 	override int GetCurrentStateID () { return RBLStableStateID.RBL_CLO_BU1_MA0; }
 	override bool HasBullet () { return true; }
 	override bool HasMagazine () { return false; }
@@ -42,8 +42,8 @@ class RBL_CLO_BU1_MA0 extends WeaponStableState
 };
 class RBL_CLO_BU1_MA1 extends WeaponStableState
 {
-	override void OnEntry (WeaponEventBase e) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { close bullet mag"); super.OnEntry(e); }
-	override void OnExit (WeaponEventBase e) { super.OnExit(e); wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } close bullet mag"); }
+	override void OnEntry (WeaponEventBase e) { if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { close bullet mag"); } super.OnEntry(e); }
+	override void OnExit (WeaponEventBase e) { super.OnExit(e); if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } close bullet mag"); } }
 	override int GetCurrentStateID () { return RBLStableStateID.RBL_CLO_BU1_MA1; }
 	override bool HasBullet () { return true; }
 	override bool HasMagazine () { return true; }
@@ -53,8 +53,8 @@ class RBL_CLO_BU1_MA1 extends WeaponStableState
 };
 class RBL_CLO_BU0_MA1 extends WeaponStableState
 {
-	override void OnEntry (WeaponEventBase e) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { close nobull mag"); super.OnEntry(e); }
-	override void OnExit (WeaponEventBase e) { super.OnExit(e); wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } close nobull mag"); }
+	override void OnEntry (WeaponEventBase e) { if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { close nobull mag"); } super.OnEntry(e); }
+	override void OnExit (WeaponEventBase e) { super.OnExit(e); if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } close nobull mag"); } }
 	override int GetCurrentStateID () { return RBLStableStateID.RBL_CLO_BU0_MA1; }
 	override bool HasBullet () { return false; }
 	override bool HasMagazine () { return true; }
@@ -64,8 +64,8 @@ class RBL_CLO_BU0_MA1 extends WeaponStableState
 };
 class RBL_OPN_BU0_MA1 extends WeaponStableState
 {
-	override void OnEntry (WeaponEventBase e) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { lock nobull mag"); super.OnEntry(e); }
-	override void OnExit (WeaponEventBase e) { super.OnExit(e); wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } open nobull mag"); }
+	override void OnEntry (WeaponEventBase e) { if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { lock nobull mag"); } super.OnEntry(e); }
+	override void OnExit (WeaponEventBase e) { super.OnExit(e); if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } open nobull mag"); } }
 	override int GetCurrentStateID () { return RBLStableStateID.RBL_OPN_BU0_MA1; }
 	override bool HasBullet () { return false; }
 	override bool HasMagazine () { return true; }
@@ -76,8 +76,8 @@ class RBL_OPN_BU0_MA1 extends WeaponStableState
 };
 class RBL_OPN_BU0_MA0 extends WeaponStableState
 {
-	override void OnEntry (WeaponEventBase e) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { lock nobull nomag"); super.OnEntry(e); }
-	override void OnExit (WeaponEventBase e) { super.OnExit(e); wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } open nobull nomag"); }
+	override void OnEntry (WeaponEventBase e) { if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { lock nobull nomag"); } super.OnEntry(e); }
+	override void OnExit (WeaponEventBase e) { super.OnExit(e); if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } open nobull nomag"); } }
 	override int GetCurrentStateID () { return RBLStableStateID.RBL_OPN_BU0_MA0; }
 	override bool HasBullet () { return false; }
 	override bool HasMagazine () { return false; }
@@ -88,8 +88,8 @@ class RBL_OPN_BU0_MA0 extends WeaponStableState
 };
 class RBL_JAM_BU1_MA0 extends WeaponStateJammed
 {
-	override void OnEntry (WeaponEventBase e) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { jammed bullet nomag"); super.OnEntry(e); }
-	override void OnExit (WeaponEventBase e) { super.OnExit(e); wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } jammed bullet nomag"); }
+	override void OnEntry (WeaponEventBase e) { if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { jammed bullet nomag"); } super.OnEntry(e); }
+	override void OnExit (WeaponEventBase e) { super.OnExit(e); if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } jammed bullet nomag"); } }
 	override int GetCurrentStateID () { return RBLStableStateID.RBL_JAM_BU1_MA0; }
 	override bool HasBullet () { return true; }
 	override bool HasMagazine () { return false; }
@@ -100,8 +100,8 @@ class RBL_JAM_BU1_MA0 extends WeaponStateJammed
 };
 class RBL_JAM_BU1_MA1 extends WeaponStateJammed
 {
-	override void OnEntry (WeaponEventBase e) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { jammed bullet mag"); super.OnEntry(e); }
-	override void OnExit (WeaponEventBase e) { super.OnExit(e); wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } jammed bullet mag"); }
+	override void OnEntry (WeaponEventBase e) { if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " { jammed bullet mag"); } super.OnEntry(e); }
+	override void OnExit (WeaponEventBase e) { super.OnExit(e); if (LogManager.IsWeaponLogEnable()) { wpnPrint("[wpnfsm] " + Object.GetDebugName(m_weapon) + " } jammed bullet mag"); } }
 	override int GetCurrentStateID () { return RBLStableStateID.RBL_JAM_BU1_MA1; }
 	override bool HasBullet () { return true; }
 	override bool HasMagazine () { return true; }

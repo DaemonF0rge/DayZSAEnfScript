@@ -70,11 +70,11 @@ class PlayerStat<Class T> extends PlayerStatBase
 			DebugPrint.LogAndTrace("stack");
 		}
 		*/
-		if( value > m_MaxValue )
+		if ( value > m_MaxValue )
 		{
 			m_Value = m_MaxValue;
 		}
-		else if(value < m_MinValue)
+		else if (value < m_MinValue)
 		{
 			m_Value = m_MinValue;
 		}
@@ -130,7 +130,7 @@ class PlayerStat<Class T> extends PlayerStatBase
 	
 	override float GetNormalized()
 	{
-		return ((Get()- GetMin()) / (GetMax() - GetMin()));
+		return Math.InverseLerp(GetMin(), GetMax(), Get());
 	}
 	
 	override array<PlayerStatRecord> GetRecords()

@@ -1,5 +1,5 @@
 /**
- * \defgroup Mouse Events
+ * \defgroup MouseEvents Mouse Events
  * \desc constants for mouse events in PluginKeyBinding
  * @{
  */
@@ -18,7 +18,7 @@ class PluginKeyBinding extends PluginBase
 	// System Public Events
 	void PluginKeyBinding()
 	{
-		if ( instance == NULL )
+		if ( instance == null )
 		{
 			instance = this;
 		}
@@ -45,17 +45,25 @@ class PluginKeyBinding extends PluginBase
 		//					|constants.h					|constants.h			|constants.h		|only plugin name		|only function					|								|
 		//					|MENU_***						|KeyCode.KC_***			|KeyCode.KC_***		|						|in plugin						|								|
 		//------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+		#ifdef DEVELOPER
 		RegisterKeyBind(	 MENU_ANY						,KeyCode.KC_LCONTROL	,KeyCode.KC_F1		,"PluginDeveloper"		,"ToggleHelpScreen" 			,"[LCTRL]+[F1]"					,"Show/Hide help screen");
 		RegisterKeyBind(	 MENU_ANY						,KeyCode.KC_LCONTROL	,KeyCode.KC_F2		,"PluginDeveloper"		,"ResetGUI" 					,"[LCTRL]+[F2]"					,"Resets shown UI for testing purposes");
 		RegisterKeyBind(	 MENU_NONE|MENU_SCRIPTCONSOLE	,KeyCode.KC_LCONTROL	,KeyCode.KC_GRAVE	,"PluginDeveloper"		,"ToggleScriptConsole" 			,"[LCTRL]+[~]"					,"Show/Hide this script console");
 		RegisterKeyBind(	 MENU_NONE|MENU_SCRIPTCONSOLE	,KeyCode.KC_RCONTROL	,KeyCode.KC_GRAVE	,"PluginDeveloper"		,"ToggleScriptConsole" 			,"[RCTRL]+[~]"					,"Show/Hide this script console");
 		RegisterKeyBind(	 MENU_NONE|MENU_SCENE_EDITOR	,KeyCode.KC_LCONTROL	,KeyCode.KC_TAB		,"PluginSceneManager"	,"EditorToggle"					,"[LCTRL]+[TAB]"				,"Show/Hide Scripted Scene Editor");
 		RegisterKeyBind(	 MENU_NONE|MENU_SCENE_EDITOR	,KeyCode.KC_RCONTROL	,KeyCode.KC_TAB		,"PluginSceneManager"	,"EditorToggle"					,"[RCTRL]+[TAB]"				,"Show/Hide Scripted Scene Editor");
-		RegisterKeyBind(	 MENU_NONE						,KeyCode.KC_RSHIFT		,-1					,"PluginDeveloper"		,"SpawnFromClipboard"			,"[Right Shift]"				,"Spawn item from clipboard");
+		RegisterKeyBind(	 MENU_NONE						,KeyCode.KC_LCONTROL	,KeyCode.KC_V		,"PluginDeveloper"		,"SpawnFromClipboard"			,"[Right Shift]"				,"Spawn item from clipboard");
+		#endif
+		
+		#ifdef DIAG_DEVELOPER
 		RegisterKeyBind(	 MENU_NONE						,KeyCode.KC_INSERT		,-1					,"PluginDeveloper"		,"TeleportAtCursor"				,"[Insert]"		 				,"Teleport player to cursor position");
 		RegisterKeyBind(	 MENU_NONE						,KeyCode.KC_HOME		,-1					,"PluginDeveloper"		,"ToggleFreeCamera"				,"[Home]"						,"Toggle free camera and teleport player to its position");
 		RegisterKeyBind(	 MENU_NONE						,KeyCode.KC_DIVIDE		,-1					,"PluginDeveloper"		,"ToggleFreeCameraBackPos"		,"[Divide numeric]"				,"Toggle free camera, no player teleport");
+		RegisterKeyBind(	 MENU_NONE						,KeyCode.KC_LCONTROL	,KeyCode.KC_NUMPAD9	,"PluginDeveloperSync"	,"ToggleFocus"					,"[LCtrl]+[NUMPAD9]"			,"Toggle game focus");
+		#endif
 		
+		#ifdef DEVELOPER
+		RegisterKeyBind(	 MENU_NONE						,KeyCode.KC_LCONTROL	,KeyCode.KC_Z		,"PluginDeveloper"		,"SetDeveloperItemClient"		,"Starts watching the item"		,"Sets the target as Watched item for debug purposes");
 		RegisterKeyBind(	 MENU_SCRIPTCONSOLE				,KeyCode.KC_PRIOR		,-1					,"PluginDeveloper"		,"ScriptHistoryBack"			,"[Page Up]"					,"Debug Console => Script history back");
 		RegisterKeyBind(	 MENU_SCRIPTCONSOLE				,KeyCode.KC_NEXT		,-1					,"PluginDeveloper"		,"ScriptHistoryNext"			,"[Page Down]"					,"Debug Console => Script history next");	
 		RegisterKeyBind(	 MENU_SCENE_EDITOR				,KeyCode.KC_DELETE		,-1					,"PluginSceneManager"	,"DeleteSelectedObject"			,"[Delete]"						,"Scene Editor => Delete current selected object");	
@@ -68,13 +76,12 @@ class PluginKeyBinding extends PluginBase
 		RegisterKeyBind(	 MENU_ANY						,KeyCode.KC_LCONTROL	,KeyCode.KC_NUMPAD0	,"PluginDayzPlayerDebug","ToggleDebugWindowEvent"		,"[LCtrl]+[NUMPAD0]"			,"Open/Close Player debug window");
 		RegisterKeyBind(	 MENU_ANY						,KeyCode.KC_LCONTROL	,KeyCode.KC_DECIMAL	,"PluginDayzPlayerDebug","ToggleDebugWindowEventP"		,"[LCtrl]+[DECIMAL]"			,"Open/Close Player debug window");
 		RegisterKeyBind(	 MENU_ANY						,KeyCode.KC_LCONTROL	,KeyCode.KC_I		,"PluginDayZInfectedDebug","ToggleDebugWindowEvent"							,"[LCtrl]+[NUMPAD1]"			,"Open/Close Infected debug window");
-		RegisterKeyBind(	 MENU_NONE						,KeyCode.KC_LCONTROL	,KeyCode.KC_NUMPAD9	,"PluginDeveloperSync"	,"ToggleFocus"					,"[LCtrl]+[NUMPAD9]"			,"Toggle game focus");
 		RegisterKeyBind(	 MENU_NONE						,KeyCode.KC_LCONTROL	,KeyCode.KC_SCROLL	,"PluginNutritionDumper"		,"CheckInit"					,"[LCtrl]+[SCROLL LOCK]"		,"Enable Door Ruler");
 		RegisterKeyBind(	 MENU_NONE						,KeyCode.KC_LCONTROL	,KeyCode.KC_RBRACKET,"PluginCharPlacement"	,"CheckInit"					,"[LCtrl]+[)]"					,"Enable CharPlacer");
 		
 		RegisterKeyBind(	 MENU_NONE|MENU_CAMERA_TOOLS	,KeyCode.KC_LCONTROL	,KeyCode.KC_K		,"PluginCameraTools"	,"ToggleCameraTools"			,"[LCtrl]+[K]"					,"Toggle Camera Recording Tools");
 		RegisterKeyBind(	 MENU_CAMERA_TOOLS				,KeyCode.KC_LCONTROL	,KeyCode.KC_S		,"PluginCameraTools"	,"Save"							,"[X]"							,"Recording Tools => Start Recording Camera Path");
-		RegisterKeyBind(	 MENU_CAMERA_TOOLS				,KeyCode.KC_SPACE		,-1					,"PluginCameraTools"	,"PlayPause"					,"[C]"							,"Recording Tools => Stop Recording Camera Path");
+		RegisterKeyBind(	 MENU_CAMERA_TOOLS				,KeyCode.KC_P			,-1					,"PluginCameraTools"	,"PlayPause"					,"[C]"							,"Recording Tools => Stop Recording Camera Path");
 		RegisterKeyBind(	 MENU_CAMERA_TOOLS				,KeyCode.KC_LCONTROL	,KeyCode.KC_Q		,"PluginCameraTools"	,"AddKeyframe"					,"[C]"							,"Recording Tools => Add Camera Point");
 		RegisterKeyBind(	 MENU_CAMERA_TOOLS				,KeyCode.KC_LCONTROL	,KeyCode.KC_E		,"PluginCameraTools"	,"DeleteKeyframe"				,"[V]"							,"Recording Tools => Play Camera Line");
 
@@ -99,7 +106,7 @@ class PluginKeyBinding extends PluginBase
 		// TO DO: (Boris V.) Remove the following commented-out mouse binds when weapon particles can be implemented properly. Also remove the events they call.
 		//RegisterMouseBind( 	MENU_NONE			,MouseState.LEFT		,MB_EVENT_PRESS			,"PluginDeveloper"		,"MuzzleParticleTestStart"	,"[LMB] Hold"			,"Debug particle");
 		//RegisterMouseBind( 	MENU_NONE			,MouseState.LEFT		,MB_EVENT_RELEASE		,"PluginDeveloper"		,"MuzzleParticleTestEnd"	,"[LMB] Release"		,"Debug particle2");
-		
+		#endif
 		//--------------------------------------------------------------------------------------------------------------------------------------------------------------
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	}
@@ -133,7 +140,7 @@ class PluginKeyBinding extends PluginBase
 			
 			if ( key_binding.GetKey1() > -1 )
 			{
-				if( IsKeyPressed(key_binding.GetKey1()) )
+				if ( IsKeyPressed(key_binding.GetKey1()) )
 				{
 					// Key1 is down
 					key1_match = true;
@@ -147,7 +154,7 @@ class PluginKeyBinding extends PluginBase
 			
 			if ( key_binding.GetKey2() > -1 )
 			{
-				if( IsKeyPressed(key_binding.GetKey2()) )
+				if ( IsKeyPressed(key_binding.GetKey2()) )
 				{
 					// Key2 is down
 					key2_match = true;

@@ -2,7 +2,7 @@ Mission CreateMission(string path)
 {
 	Print("Creating Mission: "+ path);
 	
-	g_Game.SetMissionPath(path);
+	// g_Game.SetMissionPath(path); Done from C++ now
 
 	if (g_Game.IsMultiplayer() && g_Game.IsServer())
 	{

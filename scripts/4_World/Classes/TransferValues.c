@@ -1,5 +1,3 @@
-
-
 class TransferValues extends Managed
 {
 
@@ -49,12 +47,12 @@ class TransferValues extends Managed
 		#ifdef DEVELOPER
 		if ( DiagMenu.GetBool(DiagMenuIDs.DM_TRANSFER_VALUES_SHOW) )
 		{
-			if(GetGame().IsClient() || !GetGame().IsMultiplayer())
+			if(!GetGame().IsDedicatedServer())
 				ShowDebugValues(true);
 		}
 		else
 		{
-			if(GetGame().IsClient() || !GetGame().IsMultiplayer())
+			if(!GetGame().IsDedicatedServer())
 				ShowDebugValues(false);
 		}
 		#endif

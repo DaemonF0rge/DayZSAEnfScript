@@ -23,7 +23,8 @@ class ConstructionPart
 	
 	string GetName()
 	{
-		return m_Name;
+		string ret = Widget.TranslateString(m_Name);
+		return ret;
 	}
 	
 	string GetPartName()

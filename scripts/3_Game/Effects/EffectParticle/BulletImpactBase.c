@@ -57,6 +57,13 @@ class EffBulletImpactBase : EffectParticle
 		m_ParticleRicochet = id;
 	}
 	
+	void SetSingleParticle(int id)
+	{
+		SetEnterParticle(id);
+		SetExitParticle(id);
+		SetRicochetParticle(id);
+	}
+	
 	void SetAngledEnterValue(float f)
 	{
 		m_AngledEnter = f;
@@ -217,9 +224,11 @@ class EffBulletImpactBase : EffectParticle
 		vector particle_orientation;
 		float outSpeedf = m_OutSpeed.Length();
 		
+		ParticleManager gPM = ParticleManager.GetInstance();
+		
 		if ( m_ImpactType == ImpactTypes.RICOCHET )
 		{
-			p = Particle.PlayInWorld(m_ParticleRicochet, m_Pos);
+			p = gPM.PlayInWorld(m_ParticleRicochet, m_Pos);
 			
 			if (p)
 			{
@@ -232,10 +241,7 @@ class EffBulletImpactBase : EffectParticle
 		}
 		else
 		{
-			if (m_AmmoType != "MeleeFist"  &&  m_AmmoType != "MeleeFist_Heavy")
-			{
-				p = Particle.PlayInWorld(m_ParticleEnter, m_Pos );
-			}
+			p = gPM.PlayInWorld(m_ParticleEnter, m_Pos );
 			
 			if (p)
 			{
@@ -256,7 +262,7 @@ class EffBulletImpactBase : EffectParticle
 			
 			if (outSpeedf > 0  &&  m_SurfNormal != INVALID)
 			{
-				p = Particle.PlayInWorld(m_ParticleExit, m_ExitPos);
+				p = gPM.PlayInWorld(m_ParticleExit, m_ExitPos);
 				
 				if (p)
 				{
@@ -269,7 +275,7 @@ class EffBulletImpactBase : EffectParticle
 			}
 			else
 			{
-				if (m_SurfNormal != INVALID  &&  (m_AmmoType != "MeleeFist"  &&  m_AmmoType != "MeleeFist_Heavy"))
+				if (m_SurfNormal != INVALID)
 				{
 					vector surfNormalN = m_SurfNormal.Normalized();
 					vector inSpeedN = m_InSpeed.Normalized();
@@ -279,7 +285,7 @@ class EffBulletImpactBase : EffectParticle
 					
 					if ( dot > m_AngledEnter )
 					{
-						p = Particle.PlayInWorld(m_ParticleRicochet, m_Pos);
+						p = gPM.PlayInWorld(m_ParticleRicochet, m_Pos);
 			
 						if (p)
 						{
@@ -296,14 +302,13 @@ class EffBulletImpactBase : EffectParticle
 		
 		if (p)
 		{
-			SetParticle(p); 
-			//p.SetEffectHolder(this);
+			SetParticle(p);
 		}
 		
 		
 		// Additional impact particle over long ranges. It shows players where their bullets land
 		
-		if ( this.Type() != Hit_MeatBones )
+		if ( Type() != Hit_MeatBones )
 		{
 			vector camera_pos = GetGame().GetCurrentCameraPosition();
 			float distance = vector.Distance(camera_pos, m_Pos);
@@ -319,7 +324,7 @@ class EffBulletImpactBase : EffectParticle
 			
 			if (scaling_by_distance > 1.1)
 			{
-				Particle p_distant = Particle.PlayInWorld(ParticleList.IMPACT_DISTANT_DUST, m_Pos);
+				Particle p_distant = gPM.PlayInWorld(ParticleList.IMPACT_DISTANT_DUST, m_Pos);
 				
 				particle_orientation = m_SurfNormal.VectorToAngles();
 				particle_orientation[1] = particle_orientation[1] + 270;

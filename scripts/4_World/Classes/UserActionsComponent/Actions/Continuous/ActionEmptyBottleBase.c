@@ -5,7 +5,7 @@ class ActionEmptyBottleBaseCB : ActionContinuousBaseCB
 		float EmptiedQuantity;// = QUANTITY_EMPTIED_PER_SEC;
 		Bottle_Base bottle = Bottle_Base.Cast(m_ActionData.m_MainItem);
 		if (bottle)
-			EmptiedQuantity = bottle.GetLiquidEmptyRate();
+			EmptiedQuantity = bottle.GetLiquidEmptyRate() * bottle.GetLiquidThroughputCoef();
 		m_ActionData.m_ActionComponent = new CAContinuousEmpty(EmptiedQuantity);
 	}
 };
@@ -20,6 +20,7 @@ class ActionEmptyBottleBase: ActionContinuousBase
 		m_CallbackClass = ActionEmptyBottleBaseCB;
 		m_FullBody = false;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT | DayZPlayerConstants.STANCEMASK_CROUCH;
+		m_Text = "#empty";
 	}
 	
 	override void CreateConditionComponents()  
@@ -33,11 +34,6 @@ class ActionEmptyBottleBase: ActionContinuousBase
 		return false;
 	}
 
-	override string GetText()
-	{
-		return "#empty";
-	}
-
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
 	{
 		/*vector 	pos_cursor = target.GetCursorHitPos();
@@ -48,7 +44,7 @@ class ActionEmptyBottleBase: ActionContinuousBase
 		if ( GetGame().IsServer() && GetGame().IsMultiplayer() )
 			return true;
 		
-		if ( item.IsLiquidPresent() && player.IsCurrentCameraAimedAtGround() )
+		if ( item.IsLiquidPresent() /*&& player.IsCurrentCameraAimedAtGround()*/ )
 		{
 			return true;
 		}
@@ -74,7 +70,7 @@ class ActionEmptyBottleBase: ActionContinuousBase
 		}
 	}
 	
-	override void OnEndAnimationLoop( ActionData action_data )
+	override void OnEndServer( ActionData action_data )
 	{
 		if ( !GetGame().IsMultiplayer() || GetGame().IsServer() )
 		{

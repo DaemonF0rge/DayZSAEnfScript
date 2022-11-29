@@ -3,7 +3,7 @@ class MagazineShow extends WeaponStateBase
 	override void OnEntry (WeaponEventBase e)
 	{
 		super.OnEntry(e);
-		if(e)
+		if (e)
 			m_weapon.ShowMagazine();
 	}
 

@@ -16,17 +16,13 @@ class ActionDestroyCombinationLock: ActionContinuousBase
 		m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT;
 		m_SpecialtyWeight = UASoftSkillsWeight.ROUGH_MEDIUM;
+		m_Text = "#destroy_combination_lock";
 	}
 	
 	override void CreateConditionComponents()  
 	{	
 		m_ConditionTarget = new CCTNonRuined(UAMaxDistances.DEFAULT);
 		m_ConditionItem = new CCINonRuined;
-	}
-
-	override string GetText()
-	{
-		return "#destroy_combination_lock";
 	}
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

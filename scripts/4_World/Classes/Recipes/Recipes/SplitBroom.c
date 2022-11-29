@@ -58,7 +58,8 @@ class SplitBroom extends RecipeBase
 		InsertIngredient(1,"AK_Bayonet");
 		InsertIngredient(1,"M9A1_Bayonet");
 		InsertIngredient(1,"Mosin_Bayonet");
-		InsertIngredient(1,"SKS_Bayonet");	
+		InsertIngredient(1,"SKS_Bayonet");
+		InsertIngredient(1,"BoneKnife");	
 		
 		m_IngredientAddHealth[1] = -4;// 0 = do nothing
 		m_IngredientSetHealth[1] = -1; // -1 = do nothing
@@ -97,16 +98,20 @@ class SplitBroom extends RecipeBase
 
 	override bool CanDo(ItemBase ingredients[], PlayerBase player)//final check for recipe's validity
 	{
-		ItemBase ingredient1 = ingredients[0];
+		ItemBase broom = ingredients[0];
 		
-		if( ingredient1.IsEmpty() )
-		{
-			return true;
-		}
-		else
+		
+		if (broom.GetCompEM().IsWorking())
 		{
 			return false;
 		}
+		
+		if ( broom.IsEmpty() )
+		{
+			return true;
+		}
+		return false;
+
 	}
 
 	override void Do(ItemBase ingredients[], PlayerBase player,array<ItemBase> results, float specialty_weight)//gets called upon recipe's completion

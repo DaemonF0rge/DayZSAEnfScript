@@ -15,6 +15,8 @@ class BleedingCheckMdfr: ModifierBase
 		{
 			m_AdminLog 				= PluginAdminLog.Cast( GetPlugin(PluginAdminLog) );
 		}
+		
+		DisableDeactivateCheck();
 	}
 
 	override bool ActivateCondition(PlayerBase player)

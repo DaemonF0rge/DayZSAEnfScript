@@ -15,17 +15,13 @@ class ActionFoldBaseBuildingObject: ActionContinuousBase
 		m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_CROUCH;
 		m_SpecialtyWeight = UASoftSkillsWeight.ROUGH_HIGH;
+		m_Text = "#fold";
 	}
 	
 	override void CreateConditionComponents()  
 	{
 		m_ConditionTarget = new CCTNonRuined( UAMaxDistances.DEFAULT );
 		m_ConditionItem = new CCINotPresent;
-	}
-	
-	override string GetText()
-	{
-		return "#fold";
 	}
 	
 	override typename GetInputType()
@@ -54,15 +50,9 @@ class ActionFoldBaseBuildingObject: ActionContinuousBase
 	{
 		ItemBase item;
 		BaseBuildingBase base_building = BaseBuildingBase.Cast( action_data.m_Target.GetObject() );
-		item = base_building.FoldBaseBuildingObject();
-		if ( !GetGame().IsMultiplayer() )
-		{
-			action_data.m_Player.PredictiveTakeEntityToHands(item);
-		}
-		else
-		{
-			action_data.m_Player.ServerTakeEntityToHands(item);
-		}
+		
+		base_building.CreateConstructionKitInHands(action_data.m_Player);
+		base_building.DestroyConstruction();
 	}
 	
 	override string GetAdminLogMessage(ActionData action_data)

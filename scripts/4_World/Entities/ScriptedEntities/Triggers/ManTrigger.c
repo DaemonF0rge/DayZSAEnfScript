@@ -9,5 +9,7 @@ class ManTrigger : Trigger
 	override protected bool CanAddObjectAsInsider(Object object)
 	{
 		return object.IsMan();
-	}	
+	}
+	
+	
 };

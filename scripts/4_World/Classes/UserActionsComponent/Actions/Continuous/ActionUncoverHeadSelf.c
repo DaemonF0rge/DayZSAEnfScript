@@ -54,6 +54,8 @@ class ActionUncoverHeadSelf: ActionUncoverHeadBase
 		m_CallbackClass = ActionUncoverHeadSelfCB;
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONMOD_COVERHEAD_SELF;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT | DayZPlayerConstants.STANCEMASK_CROUCH;
+	
+		m_Text = "#uncover_head";
 	}
 	
 	override void CreateConditionComponents()  
@@ -65,11 +67,6 @@ class ActionUncoverHeadSelf: ActionUncoverHeadBase
 	override bool HasTarget()
 	{
 		return false;
-	}
-		
-	override string GetText()
-	{
-		return "#uncover_head";
 	}
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

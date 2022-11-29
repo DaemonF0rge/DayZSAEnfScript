@@ -173,10 +173,12 @@ class Fence extends BaseBuildingBase
 	}	
 	
 	// --- INVENTORY
-	override bool CanDisplayAttachmentSlot( string slot_name )
+	override bool CanDisplayAttachmentSlot( int slot_id )
 	{
-		if (!super.CanDisplayAttachmentSlot(slot_name))
+		if (!super.CanDisplayAttachmentSlot(slot_id))
 			return false;
+		
+		string slot_name = InventorySlots.GetSlotName(slot_id);
 		
 		if ( slot_name == "Att_CombinationLock" )
 		{
@@ -372,7 +374,7 @@ class Fence extends BaseBuildingBase
 			return false;
 		
 		//manage action initiator (AT_ATTACH_TO_CONSTRUCTION)
-		if ( !GetGame().IsMultiplayer() || GetGame().IsClient() )
+		if ( !GetGame().IsDedicatedServer() )
 		{
 			PlayerBase player = PlayerBase.Cast( GetGame().GetPlayer() );
 			if ( player )
@@ -474,7 +476,7 @@ class Fence extends BaseBuildingBase
 		}
 		
 		//client or single player
-		if ( !GetGame().IsMultiplayer() || GetGame().IsClient() )
+		if ( !GetGame().IsDedicatedServer() )
 		{
 			//play sound
 			SoundGateOpenStart();
@@ -516,7 +518,7 @@ class Fence extends BaseBuildingBase
 		}
 		
 		//client or single player
-		if ( !GetGame().IsMultiplayer() || GetGame().IsClient() )
+		if ( !GetGame().IsDedicatedServer() )
 		{
 			//play sound
 			SoundGateCloseStart();
@@ -545,7 +547,7 @@ class Fence extends BaseBuildingBase
 		if ( GetAnimationPhase( "Wall_Gate_Rotate" ) == 0 )			//animation finished - closed
 		{
 			//client or single player
-			if ( !GetGame().IsMultiplayer() || GetGame().IsClient() )
+			if ( !GetGame().IsDedicatedServer() )
 			{
 				//play sound
 				if ( this ) SoundGateCloseEnd();
@@ -728,7 +730,7 @@ class Fence extends BaseBuildingBase
 	protected void SoundGateOpenStart()
 	{
 		//client or single player
-		if ( !GetGame().IsMultiplayer() || GetGame().IsClient() )
+		if ( !GetGame().IsDedicatedServer() )
 		{
 			PlaySoundSet( m_SoundGate_Start, SOUND_GATE_OPEN_START, 0.1, 0.1 );
 		}
@@ -737,7 +739,7 @@ class Fence extends BaseBuildingBase
 	protected void SoundGateCloseStart()
 	{
 		//client or single player
-		if ( !GetGame().IsMultiplayer() || GetGame().IsClient() )
+		if ( !GetGame().IsDedicatedServer() )
 		{
 			PlaySoundSet( m_SoundGate_Start, SOUND_GATE_CLOSE_START, 0.1, 0.1 );
 		}
@@ -746,7 +748,7 @@ class Fence extends BaseBuildingBase
 	protected void SoundGateCloseEnd()
 	{
 		//client or single player
-		if ( !GetGame().IsMultiplayer() || GetGame().IsClient() )
+		if ( !GetGame().IsDedicatedServer() )
 		{
 			PlaySoundSet( m_SoundGate_End, SOUND_GATE_CLOSE_END, 0.1, 0.1 );
 		}
@@ -851,32 +853,56 @@ class Fence extends BaseBuildingBase
 		OnVariablesSynchronized();
 	}
 	*/
+	
+	//! Excludes certain parts from being built by OnDebugSpawn, uses Contains to compare
+	override array<string> OnDebugSpawnBuildExcludes()
+	{
+		array<string> excludes = {};
+		
+		#ifdef DEVELOPER
+		bool bWood = DiagMenu.GetBool(DiagMenuIDs.DM_BUILD_WOOD);
+		#else
+		bool bWood = false;
+		#endif
+		
+		if (bWood)
+		{
+			excludes.Insert("_metal_");
+		}
+		else
+		{
+			excludes.Insert("_wood_");
+		}
+		
+		#ifdef DEVELOPER
+		bool bGate = DiagMenu.GetBool(DiagMenuIDs.DM_BUILD_GATE);
+		#else
+		bool bGate = false;
+		#endif
+		
+		if (bGate)
+		{
+			excludes.Insert("platform");
+		}
+		else
+		{
+			excludes.Insert("gate");
+		}
+		
+		return excludes;
+	}
 			
 	//Debug menu Spawn Ground Special
 	override void OnDebugSpawn()
 	{
-		EntityAI entity;
-		if ( Class.CastTo(entity, this) )
-		{
-			ItemBase logs = ItemBase.Cast(entity.GetInventory().CreateInInventory( "WoodenLog" ));
- 			logs.SetQuantity(logs.GetQuantityMax());
+		super.OnDebugSpawn();
 		
-			entity.SpawnEntityOnGroundPos("Shovel", entity.GetPosition());
-			entity.SpawnEntityOnGroundPos("Hammer", entity.GetPosition());
-			entity.SpawnEntityOnGroundPos("Hammer", entity.GetPosition());
-			entity.SpawnEntityOnGroundPos("Pliers", entity.GetPosition());
-
-			entity.SpawnEntityOnGroundPos("Nail", entity.GetPosition());
-			entity.SpawnEntityOnGroundPos("CamoNet", entity.GetPosition());
-			entity.SpawnEntityOnGroundPos("BarbedWire", entity.GetPosition());
-			entity.SpawnEntityOnGroundPos("BarbedWire", entity.GetPosition());
-			entity.SpawnEntityOnGroundPos("MetalWire", entity.GetPosition());
-			entity.SpawnEntityOnGroundPos("CombinationLock", entity.GetPosition());
-			entity.SpawnEntityOnGroundPos("WoodenPlank", entity.GetPosition());
-			entity.SpawnEntityOnGroundPos("WoodenPlank", entity.GetPosition());
-			entity.SpawnEntityOnGroundPos("WoodenPlank", entity.GetPosition());
-			entity.SpawnEntityOnGroundPos("WoodenPlank", entity.GetPosition());
-			
+		GetInventory().CreateInInventory("CamoNet");
+		
+		for (int i = 0; i < 2; ++i)
+		{
+			BarbedWire wire = BarbedWire.Cast(GetInventory().CreateInInventory("BarbedWire"));		
+			wire.SetMountedState(true);
 		}
 	}
 }

@@ -13,13 +13,13 @@ class ActionWorldLiquidActionSwitch: ActionSingleUseBase
 		m_ConditionTarget = new CCTNonRuined(UAMaxDistances.DEFAULT);
 	}
 	
-	override string GetText()
+	/*override string GetText()
 	{
 		//return "#switch_to" + " " + m_switch_to;
 		if (!m_switch_to)
 			return  "#switch_to_liquid_drain";
 		return "#switch_to_liquid_pour";
-	}
+	}*/
 	
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
 	{

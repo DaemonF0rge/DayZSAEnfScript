@@ -15,6 +15,7 @@ class ActionTakeABite: ActionConsumeSingle
 		m_CallbackClass = ActionTakeABiteCB;
 		m_Sound = "EatingSoft_0";
 		//m_Animation = "eat";
+		m_Text = "#take_a_bite";
 	}
 	
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
@@ -26,10 +27,5 @@ class ActionTakeABite: ActionConsumeSingle
 	{	
 		m_ConditionItem = new CCINonRuined;
 		m_ConditionTarget = new CCTSelf;
-	}
-
-	override string GetText()
-	{
-		return "#take_a_bite";
 	}
 };

@@ -23,6 +23,20 @@ class ContentDLC
 	*/
 	proto native bool IsDLCInstalled(EDLCId dlcId);
 	
+	bool OwnsAllDLC()
+	{
+		const int length = EnumTools.GetEnumSize(EDLCId);
+		
+		// Start at 1, because 0 is DLC_UNKNOWN
+		for (int i = 1; i < length; ++i)
+		{
+			if (!IsDLCInstalled(EnumTools.GetEnumValue(EDLCId, i)))
+				return false;
+		}
+		
+		return true;
+	}
+	
 	/*!
 		Called from engine for notifing script after any change in additional 
 		content (installed, lost license). There should be check for current state of entitlements.
@@ -31,20 +45,6 @@ class ContentDLC
 	*/
 	void OnChange(EDLCId dlcId)
 	{
-		Print("ContentDLC: OnChange, id: " + dlcId);
-		
-		
-		
-		
-		//-----only-for-test--change-it----------
-		TIntArray ids = new TIntArray;
-		int count = GetEntitlements(ids);
-		Print("ContentDLC: User accessed " + count + " entitlements");
-		
-		for (int i = 0; i < ids.Count(); i++)
-		{
-			Print("    ->" + ids[i]);
-		}
-		//---------------------------------------
+
 	}
 };

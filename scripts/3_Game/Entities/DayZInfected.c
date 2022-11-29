@@ -25,7 +25,15 @@ enum DayZInfectedConstantsMovement
 	MOVEMENTSTATE_SPRINT
 }
 
-class DayZInfectedCommandMove
+enum DayZInfectedDeathAnims
+{
+	ANIM_DEATH_DEFAULT = 0,
+	ANIM_DEATH_IMPULSE = 1,
+	ANIM_DEATH_BACKSTAB = 2,
+	ANIM_DEATH_NECKSTAB = 3
+}
+
+class DayZInfectedCommandMove extends AnimCommandBase
 {
 	proto native void SetStanceVariation(int pStanceVariation);
 	proto native void SetIdleState(int pIdleState);
@@ -33,28 +41,42 @@ class DayZInfectedCommandMove
 	proto native bool IsTurning();
 }
 
-class DayZInfectedCommandVault
+class DayZInfectedCommandDeath extends AnimCommandBase
+{
+	
+}
+
+class DayZInfectedCommandHit   extends AnimCommandBase
+{
+
+}
+
+class DayZInfectedCommandAttack extends AnimCommandBase
+{
+	proto native bool WasHit();
+}
+class DayZInfectedCommandVault extends AnimCommandBase
 {
 	proto native bool WasLand();
 }
 
-class DayZInfectedCommandAttack
+class DayZInfectedCommandCrawl extends AnimCommandBase
 {
-	proto native bool WasHit();
+
 }
 
-class DayZInfectedCommandScript
+/**
+*\brief DayZInfectedCommandScript fully scriptable command
+*	\warning NON-MANAGED, will be managed by C++ once it is sent to the CommandHandler through DayZInfected.StartCommand_Script
+*	\note So ideally, it is best to set up the DayZInfectedCommandScript, not create any instances and start it through DayZInfected.StartCommand_ScriptInst
+*			In case an instance needs to be created, it needs manual deletion if not sent to the CommandHandler
+*			But deleting it while it is in the CommandHandler will cause crashes
+*/
+class DayZInfectedCommandScript extends AnimCommandBase
 {
 	//! constructor must have 1st parameter to be DayZInfected
-	// DayZInfectedCommandScript(DayZInfected pInfected);
-
-	//! virtual to be overridden
-	//! called when command starts
-	void 	OnActivate()	{ };
-
-	//! called when command ends
-	void 	OnDeactivate()	{ };
-
+	void DayZInfectedCommandScript(DayZInfected pInfected) {}
+	void ~DayZInfectedCommandScript() {}
 
 	//---------------------------------------------------------------
 	// usable everywhere
@@ -62,31 +84,10 @@ class DayZInfectedCommandScript
 	//! this terminates command script and shows CommandHandler(  ... pCurrentCommandFinished == true );
 	proto native void 	SetFlagFinished(bool pFinished);
 
-
-	//---------------------------------------------------------------
-	// PreAnim Update 
-
-	//! override this !
-	//! called before any animation is processed
-	//! here change animation values, add animation commands	
-	void 	PreAnimUpdate(float pDt);
-
-	//! function usable in PreAnimUpdate or in !!! OnActivate !!!
-	proto native 	void	PreAnim_CallCommand(int pCommand, int pParamInt, float pParamFloat);
-	proto native 	void	PreAnim_SetFloat(int pVar, float pFlt);
-	proto native 	void	PreAnim_SetInt(int pVar, int pInt);
-	proto native 	void	PreAnim_SetBool(int pVar, bool pBool);
-
 	//---------------------------------------------------------------
 	// PrePhys Update 
 
-	//! override this !
-	//! after animation is processed, before physics is processed
-	void 	PrePhysUpdate(float pDt);
-
 	//! script function usable in PrePhysUpdate
-	proto native 	bool	PrePhys_IsEvent(int pEvent);
-	proto native 	bool	PrePhys_IsTag(int pTag);
 	proto native 	bool	PrePhys_GetTranslation(out vector pOutTransl);		// vec3 in local space !
 	proto native 	bool	PrePhys_GetRotation(out float pOutRot[4]);         	// quaternion in local space !
 	proto native 	void	PrePhys_SetTranslation(vector pInTransl); 			// vec3 in local space !
@@ -238,6 +239,11 @@ class DayZInfected extends DayZCreatureAI
 		{
 			m_HeavyHitOverride = true;
 		}
+	}
+	
+	override int GetHideIconMask()
+	{
+		return EInventoryIconVisibility.HIDE_VICINITY;
 	}
 	
 	//void SetCrawlTransition(string zone) {}

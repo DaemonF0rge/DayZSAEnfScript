@@ -26,17 +26,13 @@ class ActionPickBerry: ActionInteractLoopBase
 		m_SpecialtyWeight = UASoftSkillsWeight.ROUGH_MEDIUM;
 		
 		m_CallbackClass = ActionPickBerryCB;
+		m_Text = "#harvest";
 	}
 
 	override void CreateConditionComponents()  
 	{
 		m_ConditionTarget = new CCTCursor(UAMaxDistances.DEFAULT);
 		m_ConditionItem = new CCINone;
-	}
-
-	override string GetText()
-	{
-		return "#harvest";
 	}
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

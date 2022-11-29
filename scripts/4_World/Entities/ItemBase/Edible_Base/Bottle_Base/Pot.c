@@ -55,7 +55,7 @@ class Pot extends Bottle_Base
 		if ( !super.CanPutInCargo( parent ) )
 			return false;
 		
-		if ( IsCargoException4x3( parent ) )
+		if ( parent && IsCargoException4x3( parent ) )
 			return false;
 		
 		return true;
@@ -111,15 +111,16 @@ class Pot extends Bottle_Base
 	{
 		super.SetActions();
 		
-		AddAction(ActionWorldLiquidActionSwitch);
-		AddAction(ActionFillGeneratorTank);
-		AddAction(ActionExtinguishFireplaceByLiquid);
+		RemoveAction(ActionDrink);
+		RemoveAction(ActionEmptyBottleBase);
+		AddAction(ActionDrinkCookingPot);
 		AddAction(ActionFillBottleBase);
 		AddAction(ActionWaterGardenSlot);
 		AddAction(ActionWaterPlant);
 		AddAction(ActionForceDrink);
-		AddAction(ActionTransferLiquid);
+		AddAction(ActionDrainLiquid);
+		AddAction(ActionPourLiquid);
+		//AddAction(ActionTransferLiquid);
 		AddAction(ActionEmptyCookingPot);
-		AddAction(ActionDrinkCookingPot);
 	}
 }

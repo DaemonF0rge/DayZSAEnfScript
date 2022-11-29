@@ -92,7 +92,7 @@ class GardenPlot extends GardenBase
 		//vector pos = player_base.GetLocalProjectionPosition();
 		//vector ori = player_base.GetLocalProjectionOrientation();
 			
-		if ( GetGame().IsMultiplayer()  &&  GetGame().IsServer() || !GetGame().IsMultiplayer() )
+		if ( GetGame().IsServer() )
 		{
 			// To properly move the clutter cutter from spawn position, it must be deleted and created again.
 			if (m_ClutterCutter)

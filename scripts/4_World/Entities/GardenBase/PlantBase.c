@@ -170,6 +170,12 @@ class PlantBase extends ItemBase
 		}
 	}
 	
+	string GetCropsType()
+	{
+		return m_CropsType;
+	}
+	
+	
 	bool OnStoreLoadCustom( ParamsReadContext ctx, int version )
 	{
 		int loadInt;

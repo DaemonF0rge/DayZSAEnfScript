@@ -12,47 +12,43 @@ class ActionCookOnStick: ActionContinuousBase
 {
 	void ActionCookOnStick()
 	{
-		m_CallbackClass = ActionCookOnStickCB;
-		m_CommandUID = DayZPlayerConstants.CMD_GESTUREFB_CAMPFIRE;
-		m_FullBody = true;
-		m_StanceMask = DayZPlayerConstants.STANCEMASK_CROUCH | DayZPlayerConstants.STANCEMASK_ERECT;
-		m_SpecialtyWeight = UASoftSkillsWeight.ROUGH_LOW;
+		m_CallbackClass 	= ActionCookOnStickCB;
+		m_CommandUID 		= DayZPlayerConstants.CMD_GESTUREFB_CAMPFIRE;
+		m_FullBody 			= true;
+		m_StanceMask 		= DayZPlayerConstants.STANCEMASK_CROUCH | DayZPlayerConstants.STANCEMASK_ERECT;
+		m_SpecialtyWeight 	= UASoftSkillsWeight.ROUGH_LOW;
 		
-		m_LockTargetOnUse = false;
+		m_LockTargetOnUse 	= false;
+		m_Text 				= "#cook_on_stick";
 	}
 	
 	override void CreateConditionComponents()  
 	{	
-		m_ConditionTarget = new CCTNonRuined(UAMaxDistances.DEFAULT);
-		m_ConditionItem = new CCINonRuined;
-	}
-		
-	override string GetText()
-	{
-		return "#cook_on_stick";
+		m_ConditionTarget	= new CCTNonRuined(UAMaxDistances.DEFAULT);
+		m_ConditionItem		= new CCINonRuined;
 	}
 
-	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
-	{	
-		FireplaceBase fireplace_target = FireplaceBase.Cast( target.GetObject() );
+	override bool ActionCondition(PlayerBase player, ActionTarget target, ItemBase item)
+	{
+		FireplaceBase fireplace_target = FireplaceBase.Cast(target.GetObject());
 		Object targetObject = target.GetObject();
-		Edible_Base item_on_stick = Edible_Base.Cast( item.GetAttachmentByType( Edible_Base ) );
-		if ( fireplace_target && item_on_stick && item_on_stick.CanBeCookedOnStick() )
+		Edible_Base item_on_stick = Edible_Base.Cast(item.GetAttachmentByType(Edible_Base));
+		if (fireplace_target && item_on_stick && item_on_stick.CanBeCookedOnStick())
 		{
 			//fireplace
-			if ( fireplace_target.IsBaseFireplace() )
+			if (fireplace_target.IsBaseFireplace())
 			{
-				Fireplace fireplace = Fireplace.Cast( fireplace_target );
-				if ( !fireplace.IsOven() && fireplace_target.CanCookOnStick() ) 
+				Fireplace fireplace = Fireplace.Cast(fireplace_target);
+				if (!fireplace.IsOven() && fireplace_target.CanCookOnStick())
 				{
 					return true;
 				}
 			}
 			
 			//fireplace indoor
-			if ( fireplace_target.IsFireplaceIndoor() )
+			if (fireplace_target.IsFireplaceIndoor())
 			{
-				if ( fireplace_target.CanCookOnStick() ) 
+				if (fireplace_target.CanCookOnStick()) 
 				{
 					return true;
 				}	
@@ -61,48 +57,17 @@ class ActionCookOnStick: ActionContinuousBase
 		
 		return false;
 	}
-
-	/*override void OnEndServer( ActionData action_data )
+	
+	override void OnEndServer(ActionData action_data)
 	{
-		super.OnEndServer( action_data );
+		super.OnEndServer(action_data);
 		
 		ItemBase stick = action_data.m_MainItem;
-		Edible_Base item_on_stick = Edible_Base.Cast( stick.GetAttachmentByType( Edible_Base ) );
+		Edible_Base item_on_stick = Edible_Base.Cast(stick.GetAttachmentByType(Edible_Base));
 
-		if ( item_on_stick )
-			item_on_stick.MakeSoundsOnClient( false );
+		if (item_on_stick)
+		{
+			item_on_stick.MakeSoundsOnClient(false);
+		}
 	}
-
-	override void OnEndClient( ActionData action_data )
-	{
-		super.OnEndClient( action_data );
-		
-		ItemBase stick = action_data.m_MainItem;
-		Edible_Base item_on_stick = Edible_Base.Cast( stick.GetAttachmentByType( Edible_Base ) );
-
-		if ( item_on_stick )
-			item_on_stick.MakeSoundsOnClient( false );
-	}
-
-	override void OnFinishProgressServer( ActionData action_data )
-	{
-		super.OnFinishProgressServer( action_data );
-
-		ItemBase stick = action_data.m_MainItem;
-		Edible_Base item_on_stick = Edible_Base.Cast( stick.GetAttachmentByType( Edible_Base ) );
-
-		if ( item_on_stick )
-			item_on_stick.MakeSoundsOnClient( false );
-	}
-
-	override void OnFinishProgressClient( ActionData action_data )
-	{
-		super.OnFinishProgressClient( action_data );
-
-		ItemBase stick = action_data.m_MainItem;
-		Edible_Base item_on_stick = Edible_Base.Cast( stick.GetAttachmentByType( Edible_Base ) );
-
-		if ( item_on_stick )
-			item_on_stick.MakeSoundsOnClient( false );
-	}*/
 };

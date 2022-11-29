@@ -5,17 +5,13 @@ class FirearmActionLoadBullet : FirearmActionBase
 	//-----------------------------------------------------
 	void FirearmActionLoadBullet() 
 	{
+		m_Text = "#load_bullet";
 	}	
 	
 	override int GetActionCategory()
 	{
 		return AC_SINGLE_USE;
 	}
-
-	override string GetText() //text game displays in HUD hint 
-	{
-		return "#load_bullet";
-	} 
 	
 	/*string GetTargetDescription()
 	{
@@ -116,7 +112,7 @@ class FirearmActionLoadBulletQuick : FirearmActionBase
 	{
 		if ( super.SetupAction( player, target, item, action_data, extra_data))
 		{
-			if ( GetGame().IsClient() || !GetGame().IsMultiplayer() )
+			if ( !GetGame().IsDedicatedServer() )
 			{
 				ActionTarget newTarget = new ActionTarget(player.GetWeaponManager().GetPreparedMagazine(), null, -1, vector.Zero, -1);
 				action_data.m_Target = newTarget;

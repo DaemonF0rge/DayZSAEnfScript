@@ -54,7 +54,7 @@ class FryingPan extends Inventory_Base
 		if ( !super.CanPutInCargo( parent ) )
 			return false;
 		
-		if ( IsCargoException4x3( parent ) )
+		if ( parent && IsCargoException4x3( parent ) )
 			return false;
 
 		return true;
@@ -203,19 +203,19 @@ class FryingPan extends Inventory_Base
 			ParticleCookingStop();
 			
 			//create new
-			if ( GetGame() && ( !GetGame().IsMultiplayer() || GetGame().IsClient() ) )
+			if ( GetGame() && ( !GetGame().IsDedicatedServer() ) )
 			{
 				vector local_pos = MiscGameplayFunctions.GetSteamPosition( GetHierarchyParent() );
 				//TODO set steam position to pot (proxy) memory point (new hierarchy needed)
 				//m_ParticleCooking = Particle.Create( particle_id, this, local_pos );
-				m_ParticleCooking = Particle.PlayInWorld( particle_id, local_pos );
+				m_ParticleCooking = ParticleManager.GetInstance().PlayInWorld( particle_id, local_pos );
 				m_ParticlePlaying = particle_id;
 			}
 		}
 	}
 	void ParticleCookingStop()
 	{
-		if ( m_ParticleCooking && GetGame() && ( !GetGame().IsMultiplayer() || GetGame().IsClient() ) )
+		if ( m_ParticleCooking && GetGame() && ( !GetGame().IsDedicatedServer() ) )
 		{
 			m_ParticleCooking.Stop();
 			m_ParticleCooking = NULL;
@@ -225,7 +225,7 @@ class FryingPan extends Inventory_Base
 
 	protected void SoundCookingStart( string sound_name )
 	{
-		if ( GetGame() && ( !GetGame().IsMultiplayer() || GetGame().IsClient() ) )
+		if ( GetGame() && ( !GetGame().IsDedicatedServer() ) )
 		{	
 			if ( m_SoundPlaying != sound_name )
 			{

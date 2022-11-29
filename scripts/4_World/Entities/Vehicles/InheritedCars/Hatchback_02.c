@@ -1,17 +1,78 @@
 class Hatchback_02 extends CarScript
 {
+	protected ref UniversalTemperatureSource m_UTSource;
+	protected ref UniversalTemperatureSourceSettings m_UTSSettings;
+	protected ref UniversalTemperatureSourceLambdaEngine m_UTSLEngine;
+
 	void Hatchback_02()
 	{
-		m_dmgContactCoef = 0.070;
+		m_dmgContactCoef		= 0.070;
 
-		m_EngineStartOK = "Hatchback_02_engine_start_SoundSet";
-		m_EngineStartBattery = "Hatchback_02_engine_failed_start_battery_SoundSet";
-		m_EngineStartPlug = "Hatchback_02_engine_failed_start_sparkplugs_SoundSet";
-		m_EngineStartFuel = "Hatchback_02_engine_failed_start_fuel_SoundSet";
-		m_EngineStopFuel = "offroad_engine_stop_fuel_SoundSet";
+		m_EngineStartOK			= "Hatchback_02_engine_start_SoundSet";
+		m_EngineStartBattery	= "Hatchback_02_engine_failed_start_battery_SoundSet";
+		m_EngineStartPlug		= "Hatchback_02_engine_failed_start_sparkplugs_SoundSet";
+		m_EngineStartFuel		= "Hatchback_02_engine_failed_start_fuel_SoundSet";
+		m_EngineStopFuel		= "offroad_engine_stop_fuel_SoundSet";
 		
-		m_CarDoorOpenSound = "offroad_door_open_SoundSet";
-		m_CarDoorCloseSound = "offroad_door_close_SoundSet";
+		m_CarDoorOpenSound		= "offroad_door_open_SoundSet";
+		m_CarDoorCloseSound		= "offroad_door_close_SoundSet";
+		
+		m_CarHornShortSoundName = "Hatchback_02_Horn_Short_SoundSet";
+		m_CarHornLongSoundName	= "Hatchback_02_Horn_SoundSet";
+		
+		SetEnginePos("0 0.7 1.4");
+	}
+
+	override void EEInit()
+	{		
+		super.EEInit();
+		
+		if (GetGame().IsServer() || !GetGame().IsMultiplayer())
+		{
+ 			m_UTSSettings 					= new UniversalTemperatureSourceSettings();
+			m_UTSSettings.m_ManualUpdate 	= true;
+			m_UTSSettings.m_TemperatureMin	= 0;
+			m_UTSSettings.m_TemperatureMax	= 30;
+			m_UTSSettings.m_RangeFull		= 0.5;
+			m_UTSSettings.m_RangeMax		= 2;
+			m_UTSSettings.m_TemperatureCap	= 25;
+			
+			m_UTSLEngine					= new UniversalTemperatureSourceLambdaEngine();
+			m_UTSource						= new UniversalTemperatureSource(this, m_UTSSettings, m_UTSLEngine);
+		}		
+	}
+	
+	override void OnEngineStart()
+	{
+		super.OnEngineStart();
+
+		if (GetGame().IsServer() || !GetGame().IsMultiplayer())
+		{
+			m_UTSource.SetDefferedActive(true, 20.0);
+		}
+	}
+	
+	override void OnEngineStop()
+	{
+		super.OnEngineStop();
+
+		if (GetGame().IsServer() || !GetGame().IsMultiplayer())
+		{
+			m_UTSource.SetDefferedActive(false, 10.0);
+		}
+	}
+	
+	override void EOnPostSimulate(IEntity other, float timeSlice)
+	{
+		super.EOnPostSimulate(other, timeSlice);
+		
+		if (GetGame().IsServer() || !GetGame().IsMultiplayer())
+		{
+			if (m_UTSource.IsActive())
+			{
+				m_UTSource.Update(m_UTSSettings, m_UTSLEngine);
+			}
+		}
 	}
 
 	override int GetAnimInstance()
@@ -19,9 +80,9 @@ class Hatchback_02 extends CarScript
 		return VehicleAnimInstances.GOLF;
 	}
 
-	override int GetSeatAnimationType( int posIdx )
+	override int GetSeatAnimationType(int posIdx)
 	{
-		switch( posIdx )
+		switch (posIdx)
 		{
 		case 0:
 			return DayZPlayerConstants.VEHICLESEAT_DRIVER;
@@ -39,29 +100,37 @@ class Hatchback_02 extends CarScript
 	// Override for car-specific light type
 	override CarRearLightBase CreateRearLight()
 	{
-		return CarRearLightBase.Cast( ScriptedLightBase.CreateLight(Hatchback_02RearLight) );
+		return CarRearLightBase.Cast(ScriptedLightBase.CreateLight(Hatchback_02RearLight));
 	}
 	
 	// Override for car-specific light type
 	override CarLightBase CreateFrontLight()
 	{
-		return CarLightBase.Cast( ScriptedLightBase.CreateLight(Hatchback_02FrontLight) );
+		return CarLightBase.Cast(ScriptedLightBase.CreateLight(Hatchback_02FrontLight));
 	}
 
-	override bool CanReleaseAttachment( EntityAI attachment )
+	override bool CanReleaseAttachment(EntityAI attachment)
 	{
-		if( !super.CanReleaseAttachment( attachment ) )
-			return false;
-		
-		string attType = attachment.GetType();
-		
-		if ( EngineIsOn() || GetCarDoorsState("Hatchback_02_Hood") == CarDoorState.DOORS_CLOSED )
+		if (!super.CanReleaseAttachment(attachment))
 		{
-			if ( attType == "CarRadiator" || attType == "CarBattery" || attType == "SparkPlug" )
+			return false;
+		}
+		
+		if (EngineIsOn() || GetCarDoorsState("Hatchback_02_Hood") == CarDoorState.DOORS_CLOSED)
+		{
+			string attType = attachment.GetType();
+			if (attType == "CarRadiator" || attType == "CarBattery" || attType == "SparkPlug")
+			{
 				return false;
+			}
 		}
 
 		return true;
+	}
+	
+	override protected bool CanManipulateSpareWheel(string slotSelectionName)
+	{
+		return GetCarDoorsState("Hatchback_02_Trunk") != CarDoorState.DOORS_CLOSED;
 	}
 
 	override bool CanDisplayAttachmentCategory( string category_name )
@@ -71,9 +140,7 @@ class Hatchback_02 extends CarScript
 		return false;
 		//
 	
-		category_name.ToLower();
-		PlayerBase player = PlayerBase.Cast( GetGame().GetPlayer() );
-		
+		category_name.ToLower();		
 		if ( category_name.Contains( "engine" ) )
 		{
 			if ( GetCarDoorsState("Hatchback_02_Hood") == CarDoorState.DOORS_CLOSED )
@@ -91,100 +158,79 @@ class Hatchback_02 extends CarScript
 		if ( GetCarDoorsState("Hatchback_02_Trunk") == CarDoorState.DOORS_CLOSED )
 			return false;
 		
-		return false;
+		return true;
 	}
 
-	override int GetCarDoorsState( string slotType )
+	override int GetCarDoorsState(string slotType)
 	{
 		CarDoor carDoor;
 
-		Class.CastTo( carDoor, FindAttachmentBySlotName( slotType ) );
-		if ( !carDoor )
-			return CarDoorState.DOORS_MISSING;
-	
-		switch( slotType )
+		Class.CastTo(carDoor, FindAttachmentBySlotName(slotType));
+		if (!carDoor)
 		{
-			case "Hatchback_02_Door_1_1":
-				if ( GetAnimationPhase("DoorsDriver") > 0.5 )
-					return CarDoorState.DOORS_OPEN;
-				else
-					return CarDoorState.DOORS_CLOSED;
-
-			break;
+			return CarDoorState.DOORS_MISSING;
+		}
+	
+		switch (slotType)
+		{
+		case "Hatchback_02_Door_1_1":
+			return TranslateAnimationPhaseToCarDoorState("DoorsDriver");
 			
-			case "Hatchback_02_Door_2_1":
-				if ( GetAnimationPhase("DoorsCoDriver") > 0.5 )
-					return CarDoorState.DOORS_OPEN;
-				else
-					return CarDoorState.DOORS_CLOSED;
-
-			break;
+		case "Hatchback_02_Door_2_1":
+			return TranslateAnimationPhaseToCarDoorState("DoorsCoDriver");
+		
+		case "Hatchback_02_Door_1_2":
+			return TranslateAnimationPhaseToCarDoorState("DoorsCargo1");
+		
+		case "Hatchback_02_Door_2_2":
+			return TranslateAnimationPhaseToCarDoorState("DoorsCargo2");
+		
+		case "Hatchback_02_Hood":
+			return TranslateAnimationPhaseToCarDoorState("DoorsHood");
 			
-			case "Hatchback_02_Door_1_2":
-				if ( GetAnimationPhase("DoorsCargo1") > 0.5 )
-					return CarDoorState.DOORS_OPEN;
-				else
-					return CarDoorState.DOORS_CLOSED;
-
-			break;
-			
-			case "Hatchback_02_Door_2_2":
-				if ( GetAnimationPhase("DoorsCargo2") > 0.5 )
-					return CarDoorState.DOORS_OPEN;
-				else
-					return CarDoorState.DOORS_CLOSED;
-			break;
-			
-			case "Hatchback_02_Hood":
-				if ( GetAnimationPhase("DoorsHood") > 0.5 )
-					return CarDoorState.DOORS_OPEN;
-				else
-					return CarDoorState.DOORS_CLOSED;
-				
-			case "Hatchback_02_Trunk":
-				if ( GetAnimationPhase("DoorsTrunk") > 0.5 )
-					return CarDoorState.DOORS_OPEN;
-				else
-					return CarDoorState.DOORS_CLOSED;
-
-			break;
+		case "Hatchback_02_Trunk":
+			return TranslateAnimationPhaseToCarDoorState("DoorsTrunk");
 		}
 
 		return CarDoorState.DOORS_MISSING;
 	}
 	
 
-	override bool CrewCanGetThrough( int posIdx )
+	override bool CrewCanGetThrough(int posIdx)
 	{
-		switch( posIdx )
+		switch (posIdx)
 		{
-			case 0:
-				if ( GetCarDoorsState( "Hatchback_02_Door_1_1" ) == CarDoorState.DOORS_CLOSED )
-					return false;
+		case 0:
+			if (GetCarDoorsState("Hatchback_02_Door_1_1") == CarDoorState.DOORS_CLOSED)
+			{
+				return false;
+			}
 
-				return true;
-			break;
-			
-			case 1:
-				if ( GetCarDoorsState( "Hatchback_02_Door_2_1" ) == CarDoorState.DOORS_CLOSED )
-					return false;
+			return true;
+		
+		case 1:
+			if (GetCarDoorsState("Hatchback_02_Door_2_1") == CarDoorState.DOORS_CLOSED)
+			{
+				return false;
+			}
 
-				return true;
-			break;
+			return true;
 
-			case 2:
-				if ( GetCarDoorsState( "Hatchback_02_Door_1_2" ) == CarDoorState.DOORS_CLOSED )
-					return false;
+		case 2:
+			if (GetCarDoorsState("Hatchback_02_Door_1_2") == CarDoorState.DOORS_CLOSED)
+			{
+				return false;
+			}
 
-				return true;
-			break;
+			return true;
 
-			case 3:
-				if ( GetCarDoorsState( "Hatchback_02_Door_2_2" ) == CarDoorState.DOORS_CLOSED )
-					return false;
+		case 3:
+			if (GetCarDoorsState("Hatchback_02_Door_2_2") == CarDoorState.DOORS_CLOSED)
+			{
+				return false;
+			}
 
-				return true;
-			break;
+			return true;
 		}
 
 		return false;
@@ -232,37 +278,37 @@ class Hatchback_02 extends CarScript
 		return super.GetDoorInvSlotNameFromSeatPos(posIdx);
 	}
 	
-	override float OnSound( CarSoundCtrl ctrl, float oldValue )
+	override float OnSound(CarSoundCtrl ctrl, float oldValue)
 	{
-		switch ( ctrl )
+		switch (ctrl)
 		{
-			case CarSoundCtrl.DOORS:
-				float newValue = 0;
-				
-				//-----
-				if ( GetCarDoorsState( "Hatchback_02_Door_1_1" ) == CarDoorState.DOORS_CLOSED )
-					newValue += 0.25;
+		case CarSoundCtrl.DOORS:
+			float newValue = 0;
+			if (GetCarDoorsState("Hatchback_02_Door_1_1") == CarDoorState.DOORS_CLOSED)
+			{
+				newValue += 0.25;
+			}
 
-				//-----
-				if ( GetCarDoorsState( "Hatchback_02_Door_2_1" ) == CarDoorState.DOORS_CLOSED )
-					newValue += 0.25;
-			
-				//-----
-				if ( GetCarDoorsState( "Hatchback_02_Door_1_2" ) == CarDoorState.DOORS_CLOSED )
-					newValue += 0.25;
+			if (GetCarDoorsState("Hatchback_02_Door_2_1") == CarDoorState.DOORS_CLOSED)
+			{
+				newValue += 0.25;
+			}
+		
+			if (GetCarDoorsState("Hatchback_02_Door_1_2") == CarDoorState.DOORS_CLOSED)
+			{
+				newValue += 0.25;
+			}
 
-				//-----
-				if ( GetCarDoorsState( "Hatchback_02_Door_2_2" ) == CarDoorState.DOORS_CLOSED )
-					newValue += 0.25;
-
-				if ( newValue > 1 )
-					newValue = 1;
-			
-				return newValue;
-			break;
+			if (GetCarDoorsState("Hatchback_02_Door_2_2") == CarDoorState.DOORS_CLOSED)
+			{
+				newValue += 0.25;
+			}
+		
+			return Math.Clamp(newValue, 0, 1);
+		break;
 		}
 
-		return oldValue;
+		return super.OnSound(ctrl, oldValue);
 	}
 	
 	override string GetAnimSourceFromSelection( string selection )
@@ -358,6 +404,8 @@ class Hatchback_02 extends CarScript
 	override void OnDebugSpawn()
 	{
 		EntityAI entity;
+		EntityAI ent;
+		ItemBase container;
 		
 		if ( Class.CastTo(entity, this) )
 		{
@@ -370,7 +418,7 @@ class Hatchback_02 extends CarScript
 			entity.GetInventory().CreateInInventory( "SparkPlug" );
 			entity.GetInventory().CreateInInventory( "CarRadiator" );
 
-			entity.GetInventory().CreateInInventory( "Hatchback_02_Door_1_1" );
+			//entity.GetInventory().CreateInInventory( "Hatchback_02_Door_1_1" );
 			entity.GetInventory().CreateInInventory( "Hatchback_02_Door_1_2" );
 			entity.GetInventory().CreateInInventory( "Hatchback_02_Door_2_1" );
 			entity.GetInventory().CreateInInventory( "Hatchback_02_Door_2_2" );
@@ -379,6 +427,28 @@ class Hatchback_02 extends CarScript
 
 			entity.GetInventory().CreateInInventory( "HeadlightH7" );
 			entity.GetInventory().CreateInInventory( "HeadlightH7" );
+			
+			//-----IN CAR CARGO
+			entity.GetInventory().CreateInInventory( "Hatchback_02_Wheel" );
+			entity.GetInventory().CreateInInventory( "CarBattery" );
+			entity.GetInventory().CreateInInventory( "SparkPlug" );
+			entity.GetInventory().CreateInInventory( "HeadlightH7" );
+			entity.GetInventory().CreateInInventory( "CarRadiator" );
+			//--
+			ent = entity.GetInventory().CreateInInventory( "Blowtorch" );
+			entity = ent.GetInventory().CreateInInventory( "LargeGasCanister" );
+			//--
+			entity.GetInventory().CreateInInventory( "CanisterGasoline" );
+			ent = entity.GetInventory().CreateInInventory( "CanisterGasoline" );
+			if ( Class.CastTo(container, ent) )
+			{
+				container.SetLiquidType(LIQUID_WATER, true);
+			}
+			ent = entity.GetInventory().CreateInInventory( "Blowtorch" );
+			if ( ent )
+			{
+				entity = ent.GetInventory().CreateInInventory( "LargeGasCanister" );
+			}
 		}
 
 		Fill( CarFluid.FUEL, 50 );
@@ -392,6 +462,8 @@ class Hatchback_02_Black extends Hatchback_02
 	override void OnDebugSpawn()
 	{
 		EntityAI entity;
+		EntityAI ent;
+		ItemBase container;
 		
 		if ( Class.CastTo(entity, this) )
 		{
@@ -404,7 +476,7 @@ class Hatchback_02_Black extends Hatchback_02
 			entity.GetInventory().CreateInInventory( "SparkPlug" );
 			entity.GetInventory().CreateInInventory( "CarRadiator" );
 
-			entity.GetInventory().CreateInInventory( "Hatchback_02_Door_1_1_Black" );
+			//entity.GetInventory().CreateInInventory( "Hatchback_02_Door_1_1_Black" );
 			entity.GetInventory().CreateInInventory( "Hatchback_02_Door_1_2_Black" );
 			entity.GetInventory().CreateInInventory( "Hatchback_02_Door_2_1_Black" );
 			entity.GetInventory().CreateInInventory( "Hatchback_02_Door_2_2_Black" );
@@ -413,6 +485,28 @@ class Hatchback_02_Black extends Hatchback_02
 
 			entity.GetInventory().CreateInInventory( "HeadlightH7" );
 			entity.GetInventory().CreateInInventory( "HeadlightH7" );
+			
+			//-----IN CAR CARGO
+			entity.GetInventory().CreateInInventory( "Hatchback_02_Wheel" );
+			entity.GetInventory().CreateInInventory( "CarBattery" );
+			entity.GetInventory().CreateInInventory( "SparkPlug" );
+			entity.GetInventory().CreateInInventory( "HeadlightH7" );
+			entity.GetInventory().CreateInInventory( "CarRadiator" );
+			//--
+			ent = entity.GetInventory().CreateInInventory( "Blowtorch" );
+			entity = ent.GetInventory().CreateInInventory( "LargeGasCanister" );
+			//--
+			entity.GetInventory().CreateInInventory( "CanisterGasoline" );
+			ent = entity.GetInventory().CreateInInventory( "CanisterGasoline" );
+			if ( Class.CastTo(container, ent) )
+			{
+				container.SetLiquidType(LIQUID_WATER, true);
+			}
+			ent = entity.GetInventory().CreateInInventory( "Blowtorch" );
+			if ( ent )
+			{
+				entity = ent.GetInventory().CreateInInventory( "LargeGasCanister" );
+			}
 		}
 
 		Fill( CarFluid.FUEL, 50 );
@@ -426,6 +520,8 @@ class Hatchback_02_Blue extends Hatchback_02
 	override void OnDebugSpawn()
 	{
 		EntityAI entity;
+		EntityAI ent;
+		ItemBase container;
 		
 		if ( Class.CastTo(entity, this) )
 		{
@@ -434,11 +530,12 @@ class Hatchback_02_Blue extends Hatchback_02
 			entity.GetInventory().CreateInInventory( "Hatchback_02_Wheel" );
 			entity.GetInventory().CreateInInventory( "Hatchback_02_Wheel" );
 
+
 			entity.GetInventory().CreateInInventory( "CarBattery" );
 			entity.GetInventory().CreateInInventory( "SparkPlug" );
 			entity.GetInventory().CreateInInventory( "CarRadiator" );
 
-			entity.GetInventory().CreateInInventory( "Hatchback_02_Door_1_1_Blue" );
+			//entity.GetInventory().CreateInInventory( "Hatchback_02_Door_1_1_Blue" );
 			entity.GetInventory().CreateInInventory( "Hatchback_02_Door_1_2_Blue" );
 			entity.GetInventory().CreateInInventory( "Hatchback_02_Door_2_1_Blue" );
 			entity.GetInventory().CreateInInventory( "Hatchback_02_Door_2_2_Blue" );
@@ -447,6 +544,28 @@ class Hatchback_02_Blue extends Hatchback_02
 
 			entity.GetInventory().CreateInInventory( "HeadlightH7" );
 			entity.GetInventory().CreateInInventory( "HeadlightH7" );
+
+			//-----IN CAR CARGO
+			entity.GetInventory().CreateInInventory( "Hatchback_02_Wheel" );
+			entity.GetInventory().CreateInInventory( "CarBattery" );
+			entity.GetInventory().CreateInInventory( "SparkPlug" );
+			entity.GetInventory().CreateInInventory( "HeadlightH7" );
+			entity.GetInventory().CreateInInventory( "CarRadiator" );
+			//--
+			ent = entity.GetInventory().CreateInInventory( "Blowtorch" );
+			entity = ent.GetInventory().CreateInInventory( "LargeGasCanister" );
+			//--
+			entity.GetInventory().CreateInInventory( "CanisterGasoline" );
+			ent = entity.GetInventory().CreateInInventory( "CanisterGasoline" );
+			if ( Class.CastTo(container, ent) )
+			{
+				container.SetLiquidType(LIQUID_WATER, true);
+			}
+			ent = entity.GetInventory().CreateInInventory( "Blowtorch" );
+			if ( ent )
+			{
+				entity = ent.GetInventory().CreateInInventory( "LargeGasCanister" );
+			}
 		}
 
 		Fill( CarFluid.FUEL, 50 );

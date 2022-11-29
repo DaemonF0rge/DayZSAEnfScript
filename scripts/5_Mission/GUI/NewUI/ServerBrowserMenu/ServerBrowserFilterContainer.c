@@ -106,8 +106,11 @@ class ServerBrowserFilterContainer extends ScriptedWidgetEventHandler
 	void LoadFilters()
 	{
 		string data;
-		if( m_Tab.GetTabType() == TabType.LAN )
+		if(m_Tab.GetTabType() == TabType.LAN || m_Tab.GetTabType() == TabType.FAVORITE)
+		{
 			return;
+		}
+		
 		GetGame().GetProfileString( "SB_Filter_" + m_Tab.GetTabType(), data );
 		
 		m_Options.Clear();
@@ -123,7 +126,6 @@ class ServerBrowserFilterContainer extends ScriptedWidgetEventHandler
 			m_DLCFilter.SetStringOption( m_Options.Get( "m_DLCFilter" ) );
 			m_RegionFilter.SetStringOption( m_Options.Get( "m_RegionFilter" ), false );
 			m_PingFilter.SetStringOption( m_Options.Get( "m_PingFilter" ), false );
-			m_FavoritedFilter.SetStringOption( m_Options.Get( "m_FavoritedFilter" ), false );
 			m_FriendsPlayingFilter.SetStringOption( m_Options.Get( "m_FriendsPlayingFilter" ), false );
 			m_PreviouslyPlayedFilter.SetStringOption( m_Options.Get( "m_PreviouslyPlayedFilter" ), false );
 			m_FullServerFilter.SetStringOption( m_Options.Get( "m_FullServerFilter" ), false );
@@ -133,6 +135,8 @@ class ServerBrowserFilterContainer extends ScriptedWidgetEventHandler
 			#ifdef PLATFORM_CONSOLE
 				m_SortingFilter.SetStringOption( m_Options.Get( "m_SortingFilter" ), false );
 				m_KeyboardFilter.SetStringOption( m_Options.Get( "m_KeyboardFilter" ), false );
+			#else
+				m_FavoritedFilter.SetStringOption( m_Options.Get( "m_FavoritedFilter" ), false );
 			#endif
 			
 			if( m_Options.Count() >= 12 )
@@ -160,7 +164,6 @@ class ServerBrowserFilterContainer extends ScriptedWidgetEventHandler
 		m_Options.Insert( "m_DLCFilter", m_DLCFilter.GetStringValue() );
 		m_Options.Insert( "m_RegionFilter", m_RegionFilter.GetStringValue() );
 		m_Options.Insert( "m_PingFilter", m_PingFilter.GetStringValue() );
-		m_Options.Insert( "m_FavoritedFilter", m_FavoritedFilter.GetStringValue() );
 		m_Options.Insert( "m_FriendsPlayingFilter", m_FriendsPlayingFilter.GetStringValue() );
 		m_Options.Insert( "m_PreviouslyPlayedFilter", m_PreviouslyPlayedFilter.GetStringValue() );
 		m_Options.Insert( "m_FullServerFilter", m_FullServerFilter.GetStringValue() );
@@ -170,6 +173,8 @@ class ServerBrowserFilterContainer extends ScriptedWidgetEventHandler
 		#ifdef PLATFORM_CONSOLE
 			m_Options.Insert( "m_SortingFilter", m_SortingFilter.GetStringValue() );
 			m_Options.Insert( "m_KeyboardFilter", m_KeyboardFilter.GetStringValue() );
+		#else
+			m_Options.Insert( "m_FavoritedFilter", m_FavoritedFilter.GetStringValue() );
 		#endif
 		
 		#ifdef PLATFORM_WINDOWS
@@ -580,12 +585,6 @@ class ServerBrowserFilterContainer extends ScriptedWidgetEventHandler
 		if( m_PingFilter.IsSet() )
 		{
 			input.SetPingFilter( m_PingFilter.GetStringValue().ToInt() );
-		}
-		if( m_FavoritedFilter.IsSet() )
-		{
-			#ifdef PLATFORM_CONSOLE
-			m_Tab.AddFavoritesToFilter( input );
-			#endif
 		}
 		if( m_FriendsPlayingFilter.IsSet() )
 		{

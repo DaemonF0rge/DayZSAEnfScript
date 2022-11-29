@@ -99,7 +99,7 @@ class HumanInventoryWithFSM : HumanInventory
 			#ifdef DEVELOPER
 			if ( LogManager.IsInventoryHFSMLogEnable() )
 			{
-				Debug.InventoryHFSMLog("STS=" + GetManOwner().GetSimulationTimeStamp() , e.ToString(), "ProcessHandEvent", e.m_Player.ToString() );
+				Debug.InventoryHFSMLog("STS = " + GetManOwner().GetSimulationTimeStamp() , e.ToString(), "ProcessHandEvent", e.m_Player.ToString() );
 			}
 			#endif
 			return true;
@@ -118,7 +118,7 @@ class HumanInventoryWithFSM : HumanInventory
 		m_FSM.ProcessAbortEvent(e, aa);
 		if (aa == ProcessEventResult.FSM_OK)
 		{
-			hndDebugSpam("[hndfsm]  STS=" + GetManOwner().GetSimulationTimeStamp() + " Processed event e=" + e.ToString());
+			hndDebugSpam("[hndfsm]  STS = " + GetManOwner().GetSimulationTimeStamp() + " Processed event e=" + e.ToString());
 			return true;
 		}
 		else

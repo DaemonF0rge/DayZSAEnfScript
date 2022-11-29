@@ -25,20 +25,17 @@ class ActionDigGardenPlot: ActionDeployObject
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT;
 		m_SpecialtyWeight = UASoftSkillsWeight.ROUGH_LOW;
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONFB_DIGMANIPULATE;
-	}
 		
-	override string GetText()
-	{
-		return "#make_garden_plot";
+		m_Text = "#make_garden_plot";
 	}
 	
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
 	{
 		//Client
-		if ( !GetGame().IsMultiplayer() || GetGame().IsClient() )
+		if ( !GetGame().IsDedicatedServer() )
 		{
 			//Action not allowed if player has broken legs
-			if (player.m_BrokenLegState == eBrokenLegs.BROKEN_LEGS)
+			if (player.GetBrokenLegs() == eBrokenLegs.BROKEN_LEGS)
 				return false;
 			
 			if ( player.IsPlacingLocal() )

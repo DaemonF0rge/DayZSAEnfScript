@@ -4,11 +4,7 @@ class ActionTurnOnWhileOnGround: ActionInteractBase
 	{
 		m_CommandUID        = DayZPlayerConstants.CMD_ACTIONMOD_OPENDOORFW;
 		m_StanceMask        = DayZPlayerConstants.STANCEMASK_CROUCH | DayZPlayerConstants.STANCEMASK_ERECT;
-	}
-
-	override string GetText()
-	{
-		return "#switch_on";
+		m_Text = "#switch_on";
 	}
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

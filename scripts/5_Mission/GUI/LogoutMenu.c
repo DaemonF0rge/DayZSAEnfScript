@@ -23,34 +23,23 @@ class LogoutMenu extends UIScriptedMenu
 	{
 		layoutRoot = GetGame().GetWorkspace().CreateWidgets("gui/layouts/day_z_logout_dialog.layout");
 		
-		m_LogoutTimeText = TextWidget.Cast( layoutRoot.FindAnyWidget("txtLogoutTime") );
-		m_DescriptionText = TextWidget.Cast( layoutRoot.FindAnyWidget("txtDescription") );
-		m_bLogoutNow = ButtonWidget.Cast( layoutRoot.FindAnyWidget("bLogoutNow") );
-		m_bCancel = ButtonWidget.Cast( layoutRoot.FindAnyWidget("bCancel") );
+		m_LogoutTimeText 	= TextWidget.Cast(layoutRoot.FindAnyWidget("txtLogoutTime"));
+		m_DescriptionText 	= TextWidget.Cast(layoutRoot.FindAnyWidget("txtDescription"));
+		m_bLogoutNow 		= ButtonWidget.Cast(layoutRoot.FindAnyWidget("bLogoutNow"));
+		m_bCancel 			= ButtonWidget.Cast(layoutRoot.FindAnyWidget("bCancel"));
 		
-#ifdef PLATFORM_CONSOLE
-		m_bCancel.Show( false );
-		m_bLogoutNow.Show( false );
+		#ifdef PLATFORM_CONSOLE
+		m_bCancel.Show(false);
+		m_bLogoutNow.Show(false);
 		
-		layoutRoot.FindAnyWidget("toolbar_bg").Show( true );
-		#ifdef PLATFORM_PS4
-			string back = "circle";
-			if( GetGame().GetInput().GetEnterButton() == GamepadButton.A )
-			{
-				back = "circle";
-			}
-			else
-			{
-				back = "cross";
-			}
-			ImageWidget toolbar_b = layoutRoot.FindAnyWidget( "BackIcon" );
-			toolbar_b.LoadImageFile( 0, "set:playstation_buttons image:" + back );
+		layoutRoot.FindAnyWidget("toolbar_bg").Show(true);
+		RichTextWidget toolbar_b = RichTextWidget.Cast(layoutRoot.FindAnyWidget("BackIcon"));
+		toolbar_b.SetText(InputUtils.GetRichtextButtonIconFromInputAction("UAUIBack", "", EUAINPUT_DEVICE_CONTROLLER, InputUtils.ICON_SCALE_TOOLBAR));
+		#else
+		m_bCancel.Show(true);
+		m_bLogoutNow.Show(true);
+		layoutRoot.FindAnyWidget("toolbar_bg").Show(false);
 		#endif
-#else
-		m_bCancel.Show( true );
-		m_bLogoutNow.Show( true );
-		layoutRoot.FindAnyWidget("toolbar_bg").Show( false );
-#endif
 		
 		UpdateInfo();
 		

@@ -37,7 +37,7 @@ class UpgradeTorchWithLard extends RecipeBase
 		
 		m_IngredientAddHealth[1] = 0;// 0 = do nothing
 		m_IngredientSetHealth[1] = -1; // -1 = do nothing
-		m_IngredientAddQuantity[1] = -1;// 0 = do nothing
+		m_IngredientAddQuantity[1] = 0;// 0 = do nothing
 		m_IngredientDestroy[1] = false;// false = do nothing
 		m_IngredientUseSoftSkills[1] = false;// set 'true' to allow modification of the values by softskills on this ingredient
 		//----------------------------------------------------------------------------------------------------------------------
@@ -57,34 +57,18 @@ class UpgradeTorchWithLard extends RecipeBase
 
 	override bool CanDo(ItemBase ingredients[], PlayerBase player)//final check for recipe's validity
 	{
-		Lard lard = Lard.Cast(ingredients[0]);
-		Torch torch = Torch.Cast(ingredients[1]);
-		
-		Rag rag_on_torch = Rag.Cast(  torch.GetRag()  );
-		
-		if (rag_on_torch) // Check if torch already has rag with 100% quantity
+		FlammableBase item = Torch.Cast(ingredients[1]);
+		if (item)
 		{
-			float quantity = rag_on_torch.GetQuantity();
-			if (quantity > 1  ||  (quantity >=1 && torch.IsIgnited()) )
-			{
-				return torch.CanReceiveUpgrade();
-			}
+		 	return item.CanReceiveUpgrade();
 		}
-		
 		return false;
 	}
 
 	override void Do(ItemBase ingredients[], PlayerBase player,array<ItemBase> results, float specialty_weight)//gets called upon recipe's completion
 	{
-		Torch torch = Torch.Cast(ingredients[1]);
-		Rag rag_on_torch = Rag.Cast(  torch.GetRag()  );
-		
-		if (rag_on_torch)
-		{
-			torch.ConsumeRag();
-			
-			Lard lard = Lard.Cast(ingredients[0]);
-			torch.ConsumeLard(lard);
-		}
+		FlammableBase item = Torch.Cast(ingredients[1]);
+		Lard lard = Lard.Cast(ingredients[0]);
+		item.Upgrade(lard);
 	}
 };

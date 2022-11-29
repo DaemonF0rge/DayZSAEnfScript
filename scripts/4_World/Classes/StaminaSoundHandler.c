@@ -62,6 +62,8 @@ class StaminaSoundHandlerBase extends SoundHandlerBase
 	{
 		eStaminaState stamina_state;
 		
+		zone = Math.Clamp(zone, eStaminaZones.ZONE0, eStaminaZones.ZONE2);
+		
 		if(zone == eStaminaZones.ZONE1 && tendency == eStaminaTendency.DOWN)
 		{
 			stamina_state = eStaminaState.ZONE1_DOWN;
@@ -105,7 +107,12 @@ class StaminaSoundHandlerServer extends StaminaSoundHandlerBase
 	float m_Stamina;
 	StaminaHandler m_StaminaHandler;
 	float m_StaminaLastValue;
+	int m_StaminaZoneOffset;
 	
+	void SetStaminaZoneOffset(int zone_offset)
+	{
+		m_StaminaZoneOffset = zone_offset;
+	}
 	
 	// ! Called from command handler
 	override void Update()
@@ -115,13 +122,13 @@ class StaminaSoundHandlerServer extends StaminaSoundHandlerBase
 		eStaminaTendency stamina_tendency;
 		eStaminaZones stamina_zone;
 		
-		if( stamina_delta == 0 ) return;
+		//if( stamina_delta == 0 ) return;
 		
 		if( stamina_delta > 0 )
 		{
 			stamina_tendency = eStaminaTendency.DOWN;
 		}
-		if( stamina_delta < 0 )
+		if( stamina_delta <= 0 )
 		{
 			stamina_tendency = eStaminaTendency.UP;
 		}
@@ -129,7 +136,7 @@ class StaminaSoundHandlerServer extends StaminaSoundHandlerBase
 		m_StaminaLastValue = m_Stamina;
 		
 		stamina_zone = GetZone(m_Stamina);
-		m_Player.SetStaminaState( GetStaminaState(stamina_tendency, stamina_zone) );
+		m_Player.SetStaminaState( GetStaminaState(stamina_tendency, stamina_zone + m_StaminaZoneOffset) );
 		
 		//EPlayerSoundEventID sound_event_id = GetPlayerSoundEventID();
 		/*
@@ -178,64 +185,21 @@ class StaminaSoundHandlerClient extends StaminaSoundHandlerBase
 	ref Timer m_ClientCharacterTick = new Timer;
 	ref Timer m_ClientCharacterDistanceCheck = new Timer;
 	
-	/*
-	void StaminaSoundHandlerClient(PlayerBase player)
-	{
-		if( GetGame().IsClient() || !GetGame().IsMultiplayer() ) 
-		{
-			m_ClientCharacterDistanceCheck.Run(2, this, "CheckAllowUpdate", null, true);
-		}
-	}
-	*/
-	
-/*
-	void SetAllowUpdate(bool enable)
-	{
-		if( enable )
-		{
-			m_UpdateTimerRunning = true;
-			m_ClientCharacterTick.Run(0.03, this, "ProcessClient", null, true);
-		}
-		else
-		{
-			m_UpdateTimerRunning = false;
-			m_ClientCharacterTick.Stop();
-		}
-	}
-*/
+
 	void PostponeStamina(float time)
 	{
 		m_PostponeTime = GetGame().GetTime() + time;
 	}
-	/*
-	void CheckAllowUpdate()
-	{
-		if( GetGame().GetPlayer() )
-		{
-			bool is_at_hearing_distance = vector.Distance(GetGame().GetPlayer().GetPosition(), m_Player.GetPosition()) < STAMINA_SOUNDS_HEARING_DISTANCE;
-			
-			if( m_UpdateTimerRunning && !is_at_hearing_distance )
-			{
-				SetAllowUpdate(false);
-			}
-			else if( !m_UpdateTimerRunning && is_at_hearing_distance )
-			{
-				SetAllowUpdate(true);
-			}
-			//PrintString("distance:" + vector.Distance(GetGame().GetPlayer().GetPosition(), m_Player.GetPosition()).ToString());
-		}
-	}
-	*/
+
 	
 	override void Update()
 	{
-		if( GetGame().GetTime() < m_PostponeTime )
+		if( GetGame().GetTime() < m_PostponeTime || m_Player.GetPlayerSoundEventHandler().m_CurrentState )
 		{
 			return;
 		}
-		
+		//Print(Math.RandomFloat01());	
 		eStaminaState stamina_state = m_Player.GetStaminaState();
-		
 		switch(stamina_state)
 		{
 			case eStaminaState.ZONE1_DOWN:

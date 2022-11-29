@@ -26,5 +26,7 @@ class SlicedPumpkin : Edible_Base
 		
 		AddAction(ActionForceFeed);
 		AddAction(ActionEatFruit);
+		AddAction(ActionCreateIndoorFireplace);
+		AddAction(ActionCreateIndoorOven);
 	}
 }

@@ -32,10 +32,13 @@ class ClientData
 			m_PlayerBaseList.RemoveItem( player );
 	}
 	
-	static void SyncEvent_OnRecievedPlayerList( ref SyncPlayerList player_list )
+	static void SyncEvent_OnRecievedPlayerList( SyncPlayerList player_list )
 	{
 		if (m_PlayerList && m_PlayerList.m_PlayerList)
-			Print(m_PlayerList.m_PlayerList.Count());
+		{
+			//Print("SyncEvent_OnRecievedPlayerList | " + m_PlayerList.m_PlayerList.Count());
+		}
+		
 		SyncPlayerList new_players = SyncPlayerList.Compare(m_PlayerList, player_list);
 		
 		if ( !m_LastNewPlayers )
@@ -63,7 +66,7 @@ class ClientData
 	}
 	static array<string> GetSimplePlayerList()
 	{
-		ref array<string> ids = new array<string>;
+		array<string> ids = new array<string>;
 		if( m_PlayerList && m_PlayerList.m_PlayerList )
 		{
 			for( int i = 0; i < m_PlayerList.m_PlayerList.Count(); i++ )
@@ -78,7 +81,7 @@ class ClientData
 	
 	static array<string> GetSimplePlayerList( SyncPlayerList list )
 	{
-		ref array<string> ids = new array<string>;
+		array<string> ids = new array<string>;
 		if( list )
 		{
 			for( int i = 0; i < list.m_PlayerList.Count(); i++ )

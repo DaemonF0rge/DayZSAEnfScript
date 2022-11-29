@@ -20,7 +20,7 @@ class InventoryMenu extends UIScriptedMenu
 	void InventoryMenu()
 	{
 		CheckWidth();
-		m_Inventory = new Inventory(NULL);
+		m_Inventory = new Inventory(null);
 		m_Inventory.Reset();
 		m_Inventory.UpdateInterval();
 		m_context_menu = new ContextMenu;
@@ -90,14 +90,23 @@ class InventoryMenu extends UIScriptedMenu
 	override void Update( float timeslice )
 	{
 		if( m_Inventory )
-			m_Inventory.UpdateInterval();
+		{
+			m_Inventory.Update(timeslice);
+		}
+	}
+	
+	override void Refresh()
+	{
+		super.Refresh();
+		
+		m_Inventory.UpdateConsoleToolbar();
 	}
 
 	override void OnShow()
 	{
 		super.OnShow();
 		m_IsOpened = true;
-		PPEffects.SetBlurInventory(0);
+		PPERequesterBank.GetRequester(PPERequesterBank.REQ_INVENTORYBLUR).Start();
 		VicinityItemManager.GetInstance().RefreshVicinityItems();
 		
 		if(m_Inventory)
@@ -132,8 +141,9 @@ class InventoryMenu extends UIScriptedMenu
 	override void OnHide()
 	{
 		super.OnHide();
+		m_context_menu.Hide();
 		m_IsOpened = false;
-		PPEffects.SetBlurInventory(0);
+		PPERequesterBank.GetRequester(PPERequesterBank.REQ_INVENTORYBLUR).Stop();
 		if(m_Inventory)
 			m_Inventory.OnHide();
 		MissionGameplay mission = MissionGameplay.Cast( GetGame().GetMission() );

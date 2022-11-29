@@ -4,11 +4,7 @@ class ActionTurnOffTransmitterOnGround: ActionInteractBase
 	{
 		m_CommandUID        = DayZPlayerConstants.CMD_ACTIONMOD_OPENDOORFW;
 		m_StanceMask        = DayZPlayerConstants.STANCEMASK_CROUCH | DayZPlayerConstants.STANCEMASK_ERECT;
-	}
-
-	override string GetText()
-	{
-		return "#turn_off";
+		m_Text = "#turn_off";
 	}
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

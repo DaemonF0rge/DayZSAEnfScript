@@ -13,6 +13,11 @@ class DogFoodCan : Edible_Base
 		
 		AddAction(ActionOpen);
 	}
+	
+	override bool IsOpen()
+	{
+		return false;
+	}
 }
 
 class DogFoodCan_Opened: Edible_Base
@@ -43,6 +48,11 @@ class CatFoodCan: DogFoodCan
 		//super.Open();
 		ReplaceEdibleWithNew("CatFoodCan_Opened");
 	}
+	
+	override bool IsOpen()
+	{
+		return false;
+	}
 }
 
 class CatFoodCan_Opened: DogFoodCan_Opened
@@ -64,6 +74,11 @@ class PorkCan : Edible_Base
 		super.SetActions();
 		
 		AddAction(ActionOpen);
+	}
+	
+	override bool IsOpen()
+	{
+		return false;
 	}
 }
 
@@ -103,6 +118,11 @@ class Lunchmeat : Edible_Base
 		
 		AddAction(ActionOpen);
 	}
+	
+	override bool IsOpen()
+	{
+		return false;
+	}
 }
 
 class Lunchmeat_Opened: Edible_Base
@@ -134,6 +154,11 @@ class UnknownFoodCan : Edible_Base
 		//super.Open();
 		ReplaceEdibleWithNew("UnknownFoodCan_Opened");
 	}
+	
+	override bool IsOpen()
+	{
+		return false;
+	}
 }
 
 class UnknownFoodCan_Opened: Edible_Base
@@ -160,6 +185,11 @@ class UnknownFoodCan_Opened: Edible_Base
 		AddAction(ActionForceFeedSmall);
 		AddAction(ActionEatSmallCan);
 	}
+	
+	override bool IsOpen()
+	{
+		return false;
+	}
 };
 
 //-------------Pajka-----------------------------------------------
@@ -176,6 +206,11 @@ class Pajka : Edible_Base
 		super.SetActions();
 		
 		AddAction(ActionOpen);
+	}
+	
+	override bool IsOpen()
+	{
+		return false;
 	}
 }
 
@@ -198,6 +233,11 @@ class Pajka_Opened: Edible_Base
 		AddAction(ActionForceFeedSmall);
 		AddAction(ActionEatSmallCan);
 	}
+	
+	override bool IsOpen()
+	{
+		return false;
+	}
 };
 
 //-------------Pate-----------------------------------------------
@@ -214,6 +254,11 @@ class Pate : Edible_Base
 		super.SetActions();
 		
 		AddAction(ActionOpen);
+	}
+	
+	override bool IsOpen()
+	{
+		return false;
 	}
 }
 
@@ -236,6 +281,11 @@ class Pate_Opened: Edible_Base
 		AddAction(ActionForceFeedSmall);
 		AddAction(ActionEatSmallCan);
 	}
+	
+	override bool IsOpen()
+	{
+		return false;
+	}
 };
 
 //-------------BrisketSpread-----------------------------------------------
@@ -252,6 +302,11 @@ class BrisketSpread : Edible_Base
 		super.SetActions();
 		
 		AddAction(ActionOpen);
+	}
+	
+	override bool IsOpen()
+	{
+		return false;
 	}
 }
 

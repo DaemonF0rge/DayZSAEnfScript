@@ -47,7 +47,7 @@ class Raycaster extends ItemBase
 			hit_normal[1] = hit_normal[1] + 90;
 			
 			// Generate result
-			Particle p = Particle.PlayInWorld(ParticleList.DEBUG_DOT, contact_pos);
+			Particle p = ParticleManager.GetInstance().PlayInWorld(ParticleList.DEBUG_DOT, contact_pos);
 			p.SetOrientation(hit_normal);
 		}
 	}

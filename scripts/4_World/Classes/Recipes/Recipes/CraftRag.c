@@ -50,6 +50,10 @@ class CraftRag extends RecipeBase
 		InsertIngredient(0,"M9A1_Bayonet");
 		InsertIngredient(0,"Mosin_Bayonet");
 		InsertIngredient(0,"SKS_Bayonet");	
+		InsertIngredient(0,"FarmingHoe");
+		InsertIngredient(0,"Shovel");
+		InsertIngredient(0,"FieldShovel");
+		InsertIngredient(0,"BoneKnife");	
 	
 		m_IngredientAddHealth[0] = -10;// 0 = do nothing
 		m_IngredientSetHealth[0] = -1; // -1 = do nothing

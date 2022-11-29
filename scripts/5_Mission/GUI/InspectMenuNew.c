@@ -68,7 +68,7 @@ class InspectMenuNew extends UIScriptedMenu
 			m_item_widget.SetItem(item);
 			m_item_widget.SetView( item.GetViewIndex() );
 			m_item_widget.SetModelPosition(Vector(0,0,1));
-			PPEffects.SetBlurInventory(1);
+			PPERequesterBank.GetRequester(PPERequester_InventoryBlur).Start();
 		}
 	}
 	
@@ -392,7 +392,7 @@ class InspectMenuNew extends UIScriptedMenu
 			
 			float quantity_ratio;
 			
-			if( max_quantity > 0 ) // Some items, like books, have max_quantity set to 0 => division by ZERO error in quantity_ratio
+			if( max_quantity > 0 && !item.IsInherited( ClothingBase )) // Some items, like books, have max_quantity set to 0 => division by ZERO error in quantity_ratio
 			{
 				string quantity_str;
 				if( item.ConfigGetString("stackedUnit") == "pc." )
@@ -483,34 +483,16 @@ class InspectMenuNew extends UIScriptedMenu
 	//--------------------------------------------------------------------------
 	static void UpdateItemInfoWeight(Widget root_widget, EntityAI item)
 	{
-		if ( item.IsInherited( ZombieBase ) || item.IsInherited( Car ) ) return;
+		if (!item.CanDisplayWeight())
+		{
+			WidgetTrySetText(root_widget, "ItemWeightWidget", "", Colors.COLOR_DEFAULT);
+			return;
+		}
 		
 		ItemBase item_IB = ItemBase.Cast( item );
 		if( item_IB )
 		{
-			// old calculation
-			/*
-			float quantity = 0;
-			float wetness = 0;
-			int confweight = item.ConfigGetInt("weight");
-			quantity = item_IB.GetQuantity();
-			wetness = item_IB.GetWet();
-			
-			float weight = 0;
-		
-			if (quantity > 0 && confweight != 0)
-			{
-				weight = Math.Round( (wetness + 1) * confweight * quantity );
-			}
-			else if (quantity > 0)
-			{
-				weight = Math.Round( (wetness + 1) * quantity );
-			}
-			else
-			{
-				weight=Math.Round( (wetness + 1) * confweight );
-			}
-			*/
+			item_IB.UpdateWeight();
 			int weight = item_IB.GetWeight();
 			
 			if (root_widget.GetName() != "BackPanelWidget")

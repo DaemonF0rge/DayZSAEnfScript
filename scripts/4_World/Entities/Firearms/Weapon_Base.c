@@ -8,6 +8,26 @@ class AbilityRecord
 	void AbilityRecord (int a, int at) { m_action = a; m_actionType = at; }
 };
 
+enum WeaponWithAmmoFlags
+{
+	//! Attached magazine will be full and no round will be chambered
+	NONE = 0,
+	//! Chambers bullets
+	CHAMBER = 1,
+	//! Maybe chambers bullets (sequential rng) example: 1 1 1 0 0 0
+	CHAMBER_RNG = 2,
+	//! Maybe chambers bullets (full random) example: 0 1 0 0 1 1 
+	CHAMBER_RNG_SPORADIC = 4,
+	//! Randomizes the quantity of the bullets in the spawned magazine
+	QUANTITY_RNG = 8,
+	//! Fully randomizes the ammo type instead of picking one random for the entire mag (needs to have type as empty string)
+	AMMO_MAG_RNG = 16,
+	//! Fully randomizes the ammo type instead of picking one random for all chambers (needs to have type as empty string)
+	AMMO_CHAMBER_RNG = 32,
+	//! Instead of randomizing when type is empty, it looks for the one which has the highest capacity
+	MAX_CAPACITY_MAG = 64,
+}
+
 typedef FSMTransition<WeaponStateBase, WeaponEventBase, WeaponActionBase, WeaponGuardBase> WeaponTransition; /// shorthand
 
 /**@class		Weapon_Base
@@ -17,6 +37,11 @@ typedef FSMTransition<WeaponStateBase, WeaponEventBase, WeaponActionBase, Weapon
  **/
 class Weapon_Base extends Weapon
 {
+	//! Full highest capacity magazine + chambered round
+	const int SAMF_DEFAULT = WeaponWithAmmoFlags.CHAMBER | WeaponWithAmmoFlags.MAX_CAPACITY_MAG;
+	//! Random bullet quantity + maybe chambered round
+	const int SAMF_RNG = WeaponWithAmmoFlags.CHAMBER_RNG | WeaponWithAmmoFlags.QUANTITY_RNG;
+	
 	protected const float DEFAULT_DAMAGE_ON_SHOT = 0.05;
 	protected ref array<ref AbilityRecord> m_abilities = new array<ref AbilityRecord>;		/// weapon abilities
 	protected ref WeaponFSM m_fsm;	/// weapon state machine
@@ -33,13 +58,13 @@ class Weapon_Base extends Weapon
 	protected float m_DmgPerShot = 0; //default is set to zero, since C++ solution has been implemented. See 'damageBarrel' and 'barrelArmor' in configs.
 	protected float m_WeaponLength;
 	ref array<int> m_bulletSelectionIndex = new array<int>;
-	ref array<float> m_DOFProperties = new array<float>;
+	ref array<float> m_DOFProperties;
 	ref array<float> m_ChanceToJam = new array<float>;
 	protected float m_ChanceToJamSync = 0;
 	protected ref PropertyModifiers m_PropertyModifierObject;
 	protected PhxInteractionLayers hit_mask = PhxInteractionLayers.CHARACTER | PhxInteractionLayers.BUILDING | PhxInteractionLayers.DOOR | PhxInteractionLayers.VEHICLE | PhxInteractionLayers.ROADWAY | PhxInteractionLayers.TERRAIN | PhxInteractionLayers.ITEM_SMALL | PhxInteractionLayers.ITEM_LARGE | PhxInteractionLayers.FENCE | PhxInteractionLayers.AI;
 
-	void Weapon_Base ()
+	void Weapon_Base()
 	{
 		//m_DmgPerShot		= ConfigGetFloat("damagePerShot");
 		m_BayonetAttached 	= false;
@@ -47,6 +72,7 @@ class Weapon_Base extends Weapon
 		m_BayonetAttachmentIdx = -1;
 		m_ButtstockAttachmentIdx = -1;
 		m_BurstCount = 0;
+		m_DOFProperties = new array<float>;
 		
 		if ( ConfigIsExisting("simpleHiddenSelections") )
 		{
@@ -56,14 +82,14 @@ class Weapon_Base extends Weapon
 			m_magazineSimpleSelectionIndex = selectionNames.Find("magazine");
 			
 			int bulletIndex = selectionNames.Find("bullet");
-			if( bulletIndex != -1 )
+			if ( bulletIndex != -1 )
 			{ 
 				m_bulletSelectionIndex.Insert(bulletIndex);
 			
-				for(int i = 2; i < 100; i++)
+				for (int i = 2; i < 100; i++)
 				{
 					bulletIndex = selectionNames.Find(string.Format("bullet%1",i));
-					if(bulletIndex != -1)
+					if (bulletIndex != -1)
 					{
 						m_bulletSelectionIndex.Insert(bulletIndex);
 					}
@@ -77,16 +103,26 @@ class Weapon_Base extends Weapon
 		
 		InitWeaponLength();
 		InitDOFProperties(m_DOFProperties);
-		if(GetGame().IsServer())
+		if (GetGame().IsServer())
 		{
 			InitReliability(m_ChanceToJam);
 		}
 		InitStateMachine();
 	}
 
-	void InitStateMachine () { }
+	void InitStateMachine() { }
+	
+	override void EEInit()
+	{
+		super.EEInit();
+		
+		GetGame().GetCallQueue( CALL_CATEGORY_GAMEPLAY ).Call( AssembleGun );
+	}
+	
+	//! override on weapons with some assembly required
+	void AssembleGun();
 
-	bool CanProcessAction (int action, int actionType)
+	bool CanProcessAction(int action, int actionType)
 	{
 		return false; // @TODO
 	}
@@ -96,7 +132,7 @@ class Weapon_Base extends Weapon
 	 * @param[in]	actionType	\p	one of Human.actionTypes (i.e. CHAMBERING_ONEBULLET_CLOSED, MECHANISM_CLOSED...)
 	 * @return	true if weapon supports operation
 	 **/
-	bool HasActionAbility (int action, int actionType)
+	bool HasActionAbility(int action, int actionType)
 	{
 		int count = GetAbilityCount();
 		for (int i = 0; i < count; ++i)
@@ -110,33 +146,33 @@ class Weapon_Base extends Weapon
 	/**@fn		GetAbilityCount
 	 * @return number of stored abilities
 	 **/
-	int GetAbilityCount () { return m_abilities.Count(); }
+	int GetAbilityCount() { return m_abilities.Count(); }
 	/**@fn		GetAbility
 	 * @param[in]	index	\p	index into m_abilities storage
 	 * @return ability record
 	 **/
-	AbilityRecord GetAbility (int index) { return m_abilities.Get(index); }
+	AbilityRecord GetAbility(int index) { return m_abilities.Get(index); }
 
 	/**@fn		CanProcessWeaponEvents
 	 * @return	true if weapon has running fsm
 	 **/
-	bool CanProcessWeaponEvents () { return m_fsm && m_fsm.IsRunning(); }
+	bool CanProcessWeaponEvents() { return m_fsm && m_fsm.IsRunning(); }
 
 	/**@fn		GetCurrentState
 	 * @brief		returns currently active state
 	 * @return	current state the FSM is in (or NULL)
 	 **/
-	WeaponStateBase GetCurrentState () { return m_fsm.GetCurrentState(); }
+	WeaponStateBase GetCurrentState() { return m_fsm.GetCurrentState(); }
 
 	/**@fn		IsWaitingForActionFinish
 	 * @brief	returns true if state machine started playing action/actionType and waits for finish
 	 **/
-	bool IsWaitingForActionFinish ()
+	bool IsWaitingForActionFinish()
 	{
 		return CanProcessWeaponEvents() && GetCurrentState().IsWaitingForActionFinish();
 	}
 
-	bool IsIdle ()
+	bool IsIdle()
 	{
 		return CanProcessWeaponEvents() && GetCurrentState().IsIdle();
 	}
@@ -145,7 +181,7 @@ class Weapon_Base extends Weapon
 	 * @brief	weapon's fsm handling of events
 	 * @NOTE: warning: ProcessWeaponEvent can be called only within DayZPlayer::HandleWeapons (or ::CommandHandler)
 	 **/
-	bool ProcessWeaponEvent (WeaponEventBase e)
+	bool ProcessWeaponEvent(WeaponEventBase e)
 	{
 		SyncEventToRemote(e);
 		
@@ -159,13 +195,13 @@ class Weapon_Base extends Weapon
 		if (m_fsm.ProcessEvent(e) == ProcessEventResult.FSM_OK)
 			return true;
 
-		//wpnDebugPrint("FSM refused to process event (no transition): src=" + GetCurrentState().ToString() + " event=" + e.ToString());
+		//if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("FSM refused to process event (no transition): src=" + GetCurrentState().ToString() + " event=" + e.ToString()); }
 		return false;
 	}
 	/**@fn	ProcessWeaponAbortEvent
 	 * @NOTE: warning: ProcessWeaponEvent can be called only within DayZPlayer::HandleWeapons (or ::CommandHandler)
 	 **/
-	bool ProcessWeaponAbortEvent (WeaponEventBase e)
+	bool ProcessWeaponAbortEvent(WeaponEventBase e)
 	{
 		SyncEventToRemote(e);
 		
@@ -174,27 +210,28 @@ class Weapon_Base extends Weapon
 		return aa == ProcessEventResult.FSM_OK;
 	}
 
-	bool CanChamberBullet (int muzzleIndex, Magazine mag)
+	bool CanChamberBullet(int muzzleIndex, Magazine mag)
 	{
 		return CanChamberFromMag(muzzleIndex, mag) && (!IsChamberFull(muzzleIndex) || IsChamberFiredOut(muzzleIndex) || !IsInternalMagazineFull(muzzleIndex));
 	}
 
-	void SetWeaponAnimState (int state)
+	void SetWeaponAnimState(int state)
 	{
 		m_weaponAnimState = state;
 	}
-	void ResetWeaponAnimState ()
+	void ResetWeaponAnimState()
 	{
 		fsmDebugSpam("[wpnfsm] " + Object.GetDebugName(this) + " resetting anim state: " + typename.EnumToString(PistolAnimState, m_weaponAnimState) + " --> " + typename.EnumToString(PistolAnimState, -1));
 		m_weaponAnimState = -1;
 	}
-	int GetWeaponAnimState () { return m_weaponAnimState; }
+	int GetWeaponAnimState() { return m_weaponAnimState; }
 
-	void EEFired (int muzzleType, int mode, string ammoType)
-	{
-		ItemBase suppressor = GetAttachedSuppressor();
-		if ( !GetGame().IsServer()  ||  !GetGame().IsMultiplayer() )
+	void EEFired(int muzzleType, int mode, string ammoType)
+	{		
+		if ( !GetGame().IsDedicatedServer() )
 		{
+			ItemBase suppressor = GetAttachedSuppressor();
+			
 			// Muzzle flash & overheating effects
 			ItemBase.PlayFireParticles(this, muzzleType, ammoType, this, suppressor, "CfgWeapons" );
 			IncreaseOverheating(this, ammoType, this, suppressor, "CfgWeapons");
@@ -222,7 +259,7 @@ class Weapon_Base extends Weapon
 		#endif
 	}
 	
-	bool JamCheck (int muzzleIndex )
+	bool JamCheck(int muzzleIndex )
 	{
 		PlayerBase player = PlayerBase.Cast(GetHierarchyRootPlayer());
 		if ( player )
@@ -237,7 +274,7 @@ class Weapon_Base extends Weapon
 	
 	void ShowBullet(int muzzleIndex)
 	{
-		if( m_bulletSelectionIndex.Count() > muzzleIndex )
+		if ( m_bulletSelectionIndex.Count() > muzzleIndex )
 		{
 			SetSimpleHiddenSelectionState(m_bulletSelectionIndex[muzzleIndex],1);
 		}
@@ -247,7 +284,7 @@ class Weapon_Base extends Weapon
 	
 	void HideBullet(int muzzleIndex)
 	{
-		if( m_bulletSelectionIndex.Count() > muzzleIndex )
+		if ( m_bulletSelectionIndex.Count() > muzzleIndex )
 		{
 			SetSimpleHiddenSelectionState(m_bulletSelectionIndex[muzzleIndex],0);
 		}
@@ -255,10 +292,10 @@ class Weapon_Base extends Weapon
 			SelectionBulletHide();
 	}
 	
-	bool IsJammed () { return m_isJammed; }
+	bool IsJammed() { return m_isJammed; }
 	bool CanEjectBullet() {return true;}
-	void SetJammed (bool value) { m_isJammed = value; }
-	float GetSyncChanceToJam () { return m_ChanceToJamSync; }
+	void SetJammed(bool value) { m_isJammed = value; }
+	float GetSyncChanceToJam() { return m_ChanceToJamSync; }
 	float GetChanceToJam()
 	{
 		int level = GetHealthLevel();
@@ -269,7 +306,7 @@ class Weapon_Base extends Weapon
 			return 0.0;
 	}
 	
-	void SyncSelectionState (bool has_bullet, bool has_mag)
+	void SyncSelectionState(bool has_bullet, bool has_mag)
 	{
 		if (has_bullet)
 			SelectionBulletShow();
@@ -281,8 +318,35 @@ class Weapon_Base extends Weapon
 		else
 			HideMagazine();
 	}
+	
+	void ForceSyncSelectionState()
+	{
+		int nMuzzles = GetMuzzleCount();
+		for (int i = 0; i < nMuzzles; ++i)
+		{
+			if (IsChamberFull(i))
+			{
+				ShowBullet(i);
+				float damage;
+				string ammoTypeName;
+				GetCartridgeInfo(i, damage, ammoTypeName);
+				EffectBulletShow(i, damage, ammoTypeName);
+			}
+			else
+			{
+				HideBullet(i);
+				EffectBulletHide(i);
+			}
+			
+			Magazine mag = GetMagazine(i);
+			if (mag)
+				ShowMagazine();
+			else
+				HideMagazine();
+		}
+	}
 
-	override bool OnStoreLoad (ParamsReadContext ctx, int version)
+	override bool OnStoreLoad(ParamsReadContext ctx, int version)
 	{
 		if ( !super.OnStoreLoad(ctx, version) )
 			return false;
@@ -321,7 +385,7 @@ class Weapon_Base extends Weapon
 					return false;
 				}
 				
-				wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(this) + " OnStoreLoad - loaded muzzle[" + m + "].mode = " + mode);
+				if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(this) + " OnStoreLoad - loaded muzzle[" + m + "].mode = " + mode); }
 				SetCurrentMode(m, mode);
 			}
 		}
@@ -337,25 +401,27 @@ class Weapon_Base extends Weapon
 
 		if (m_fsm)
 		{
-			if(!m_fsm.OnStoreLoad(ctx, version))
+			if (!m_fsm.OnStoreLoad(ctx, version))
 				return false;
 		}
 		else
 		{
 			int dummy = 0;
-			if(!ctx.Read(dummy))
+			if (!ctx.Read(dummy))
 				return false;
 		}
 
 		return true;
 	}
 
-	void SaveCurrentFSMState (ParamsWriteContext ctx)
+	void SaveCurrentFSMState(ParamsWriteContext ctx)
 	{
 		if (m_fsm && m_fsm.IsRunning())
 		{
 			if (m_fsm.SaveCurrentFSMState(ctx))
-				wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(this) + " Weapon=" + this + " state saved.");
+			{
+				if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(this) + " Weapon=" + this + " state saved."); }
+			}
 			else
 				Error("[wpnfsm] " + Object.GetDebugName(this) + " Weapon=" + this + " state NOT saved.");
 		}
@@ -363,7 +429,7 @@ class Weapon_Base extends Weapon
 			Error("[wpnfsm] " + Object.GetDebugName(this) + " Weapon.SaveCurrentFSMState: trying to save weapon without FSM (or uninitialized weapon) this=" + this + " type=" + GetType());
 	}
 
-	bool LoadCurrentFSMState (ParamsReadContext ctx, int version)
+	bool LoadCurrentFSMState(ParamsReadContext ctx, int version)
 	{
 		if (m_fsm)
 		{
@@ -374,12 +440,12 @@ class Weapon_Base extends Weapon
 				{
 					SyncSelectionState(state.HasBullet(), state.HasMagazine());
 					state.SyncAnimState();
-					wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(this) + " Weapon=" + this + " stable state loaded and synced.");
+					if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(this) + " Weapon=" + this + " stable state loaded and synced."); }
 					return true;
 				}
 				else
 				{
-					wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(this) + " Weapon=" + this + " unstable/error state loaded.");
+					if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(this) + " Weapon=" + this + " unstable/error state loaded."); }
 					return false;
 				}
 			}
@@ -396,7 +462,7 @@ class Weapon_Base extends Weapon
 		}
 	}
 
-	override void AfterStoreLoad ()
+	override void AfterStoreLoad()
 	{
 		if (m_fsm)
 		{
@@ -408,7 +474,7 @@ class Weapon_Base extends Weapon
 		}
 	}
 
-	override void OnStoreSave (ParamsWriteContext ctx)
+	override void OnStoreSave(ParamsWriteContext ctx)
 	{
 		super.OnStoreSave(ctx);
 		
@@ -436,7 +502,7 @@ class Weapon_Base extends Weapon
 	/**@fn		GetCurrentStateID
 	 * @brief	tries to return identifier of current state
 	 **/
-	int GetInternalStateID ()
+	int GetInternalStateID()
 	{
 		if (m_fsm)
 			return m_fsm.GetInternalStateID();
@@ -446,17 +512,20 @@ class Weapon_Base extends Weapon
 	/**@fn		GetCurrentStableStateID
 	 * @brief	tries to return identifier of current stable state (or nearest stable state if unstable state is currently running)
 	 **/
-	int GetCurrentStableStateID ()
+	int GetCurrentStableStateID()
 	{
 		if (m_fsm)
+		{
 			return m_fsm.GetCurrentStableStateID();
+		}
 		return 0;
 	}
 
 	/**@fn		RandomizeFSMState
-	 * @brief	Engine callback - loot randomization of FSM's state. not intended to direct use.
+	 * @brief	With the parameters given, selects a random suitable state for the FSM of the weapon
+	 * @WARNING:	Weapon_Base.Synchronize call might be needed, if this method is called while clients are connected
 	 **/
-	protected void RandomizeFSMState ()
+	void RandomizeFSMState()
 	{
 		if (m_fsm)
 		{
@@ -465,15 +534,311 @@ class Weapon_Base extends Weapon
 			bool has_mag = mag != null;
 			bool has_bullet = !IsChamberEmpty(mi);
 			bool has_jam = IsJammed();
-			m_fsm.RandomizeFSMState(has_bullet, has_mag, has_jam);
-			SyncSelectionState(has_bullet, has_mag);
+			array<MuzzleState> muzzleStates = GetMuzzleStates();
+			m_fsm.RandomizeFSMStateEx(muzzleStates, has_mag, has_jam);
+			ForceSyncSelectionState();
 		}
 	}
 
+	//! Helper method for RandomizeFSMState
+	protected array<MuzzleState> GetMuzzleStates()
+	{
+		array<MuzzleState> muzzleStates = new array<MuzzleState>;
+		
+		int nMuzzles = GetMuzzleCount();
+		for (int i = 0; i < nMuzzles; ++i)
+		{
+			MuzzleState state = MuzzleState.U;
+			if (IsChamberFiredOut(i))
+				state = MuzzleState.F;
+			else if (IsChamberFull(i))
+				state = MuzzleState.L;
+			else if (IsChamberEmpty(i))
+				state = MuzzleState.E;
+			else
+				ErrorEx(string.Format("Unable to identify chamber state of muzzle %1", i));
+			
+			muzzleStates.Insert(state);
+		}
+		
+		return muzzleStates;
+	}
+	
+	/** \name Weapon With Ammo
+	*	Helpers for spawning ammo/magazine in weapon
+	*	For the flags, either a combination of WeaponWithAmmoFlags can be used
+	*	Or one of the preset 'const int' with 'SAMF_' prefix (SAMF_DEFAULT, SAMF_RNG)
+	*/
+	//@{
+
+	/**@fn		CreateWeaponWithAmmo
+	 * @brief	Create weapon with ammo
+	 * @param[in]	weaponType		\p string	The weapon to create
+	 * @param[in]	magazineType	\p string	The magazine to attach or ammo to load, passing in empty string will select random
+	 * @param[in]	flags			\p int		Setup flags, please read WeaponWithAmmoFlags
+	 * @return	The created weapon
+	 **/
+	static Weapon_Base CreateWeaponWithAmmo( string weaponType, string magazineType = "", int flags = WeaponWithAmmoFlags.CHAMBER )
+    {   
+        Weapon_Base wpn = Weapon_Base.Cast(GetGame().CreateObjectEx( weaponType, vector.Zero, ECE_PLACE_ON_SURFACE ));
+    
+        if ( !wpn )
+		{
+			ErrorEx(string.Format("%1 does not exist or is not a weapon.", weaponType));
+            return null;
+		}
+    
+		wpn.SpawnAmmo(magazineType, flags);		
+		return wpn;
+    }
+	
+	/**@fn		SpawnAmmo
+	 * @brief	General method trying to attch magazine, fill inner magazine and fill chamber
+	 * @param[in]	magazineType	\p string	The magazine to attach or ammo to load, passing in empty string will select random
+	 * @param[in]	flags			\p int		Setup flags, please read WeaponWithAmmoFlags
+	 * @return	whether anything was spawned or done
+	 **/
+	bool SpawnAmmo( string magazineType = "", int flags = WeaponWithAmmoFlags.CHAMBER )
+	{
+		// Attempt internal mag
+		if ( HasInternalMagazine(-1) && FillInnerMagazine(magazineType, flags) )
+			return true;
+		
+		// Attempt mag attachment
+		if ( GetMagazineTypeCount(0) > 0 && SpawnAttachedMagazine(magazineType, flags) )
+			return true;
+		
+		// Attempt chamber
+		if ( FillChamber(magazineType, flags) )
+			return true;
+		
+		return false;
+	}
+	
+	/**@fn		SpawnAttachedMagazine
+	 * @brief	Try to spawn and attach a magazine
+	 * @param[in]	magazineType	\p string	The magazine to attach, passing in empty string will select random
+	 * @param[in]	flags			\p int		Setup flags, please read WeaponWithAmmoFlags
+	 * @return	The created magazine or null
+	 **/
+	Magazine SpawnAttachedMagazine( string magazineType = "", int flags = WeaponWithAmmoFlags.CHAMBER )
+	{
+		// Check if the gun has any magazines registered in config
+		if ( GetMagazineTypeCount(0) == 0 )
+		{
+			ErrorEx(string.Format("No 'magazines' config entry for %1.", this));
+			return null;
+		}
+		
+		// Randomize when no specific one is given
+		if ( magazineType == "" )
+		{
+			if ( flags & WeaponWithAmmoFlags.MAX_CAPACITY_MAG)
+				magazineType = GetMaxMagazineTypeName(0);
+			else
+				magazineType = GetRandomMagazineTypeName(0);
+		}
+		
+		EntityAI magAI = GetInventory().CreateAttachment(magazineType);
+		if (!magAI)
+		{
+			ErrorEx(string.Format("Failed to create and attach %1 to %2", GetDebugName(magAI), this));
+			return null;
+		}
+		
+		Magazine mag;
+		if (!CastTo(mag, magAI))
+		{
+			ErrorEx(string.Format("Expected magazine, created: %1", GetDebugName(magAI)));
+			return null;
+		}
+		
+		// Decide random quantity when enabled
+		if (flags & WeaponWithAmmoFlags.QUANTITY_RNG)
+			mag.ServerSetAmmoCount(Math.RandomIntInclusive(0, mag.GetAmmoMax()));
+		
+		// Fill chamber when flagged
+		bool chamberRng = (flags & WeaponWithAmmoFlags.CHAMBER_RNG);
+		bool chamber = (flags & WeaponWithAmmoFlags.CHAMBER) || chamberRng;		
+		if (chamber || chamberRng)
+		{
+			FillChamber(magazineType, flags);
+		}
+
+		// FSM cares about magazine state
+		RandomizeFSMState();
+		Synchronize();
+
+		return mag;
+	}
+
+	/**@fn		FillInnerMagazine
+	 * @brief	Try to fill the inner magazine
+	 * @param[in]	ammoType		\p string	The ammo to load, passing in empty string will select random
+	 * @note 		It is best to fill in the actual 'ammo', as in the ones usually prefixed by 'Bullet_', to skip searching for it
+	 * @param[in]	flags			\p int		Setup flags, please read WeaponWithAmmoFlags
+	 * @return	Whether any ammo was added to the gun or not
+	 **/
+	bool FillInnerMagazine( string ammoType = "", int flags = WeaponWithAmmoFlags.CHAMBER )
+	{
+		// Don't try to fill it when there are none
+		if (!HasInternalMagazine(-1))
+			return false;
+	
+		// Make sure the given ammoType is actually useable
+		if (ammoType != "")
+		{
+			if (!AmmoTypesAPI.MagazineTypeToAmmoType(ammoType, ammoType))
+				return false;
+		}
+		
+		
+		bool didSomething = false;		
+		int muzzCount = GetMuzzleCount();
+		
+		bool ammoRng = ammoType == "";
+		bool ammoFullRng = ammoRng && (flags & WeaponWithAmmoFlags.AMMO_MAG_RNG);
+		
+		// No full RNG flag, so pick one random and use only this one
+		if (ammoRng && !ammoFullRng)
+			ammoType = GetRandomChamberableAmmoTypeName(0);
+		
+		// Fill the internal magazine
+		for (int i = 0; i < muzzCount; ++i)
+		{
+			int ammoCount = GetInternalMagazineMaxCartridgeCount(i);
+			
+			// Decide random quantity when enabled
+			if ( flags & WeaponWithAmmoFlags.QUANTITY_RNG )
+				ammoCount = Math.RandomIntInclusive(0, ammoCount);
+			
+			// Only do the things when there is actually ammo to fill
+			if (ammoCount > 0)
+			{
+				// Push in the cartridges
+				for (int j = 0; j < ammoCount; ++j)
+				{
+					// Full random, decide a new one for every cartridge
+					if ( ammoFullRng )
+						ammoType = GetRandomChamberableAmmoTypeName(i);
+					
+					PushCartridgeToInternalMagazine(i, 0, ammoType);
+					didSomething = true;
+				}
+			}
+		}
+		
+		// Call the chamber method if asked for
+		bool chamber = (flags & WeaponWithAmmoFlags.CHAMBER) || (flags & WeaponWithAmmoFlags.CHAMBER_RNG);
+		if (chamber && FillChamber(ammoType, flags))
+		{
+			didSomething = true;
+		}
+		
+		// Does not need any FSM fixing, FSM does not care about inner magazines
+		
+		return didSomething;
+	}
+	
+	/**@fn		FillChamber
+	 * @brief	Try to fill the chamber
+	 * @param[in]	ammoType		\p string	The ammo to load, passing in empty string will select random
+	 * @note 		It is best to fill in the actual 'ammo', as in the ones usually prefixed by 'Bullet_', to skip searching for it
+	 * @param[in]	flags			\p int		Setup flags, please read WeaponWithAmmoFlags
+	 * @return	Whether any chamber was filled
+	 **/
+	bool FillChamber( string ammoType = "", int flags = WeaponWithAmmoFlags.CHAMBER )
+	{
+		// Quickly check if there are any chambers we can fill
+		int muzzCount = GetMuzzleCount();
+		bool anyEmpty = false;
+		
+		for (int m = 0; m < muzzCount; ++m)
+		{
+			if (IsChamberEmpty(m))
+			{
+				anyEmpty = true;
+				break;
+			}
+		}
+
+		if (!anyEmpty)
+			return false;
+		
+		// Make sure the given ammoType is actually useable
+		if (ammoType != "")
+			if (!AmmoTypesAPI.MagazineTypeToAmmoType(ammoType, ammoType))
+				return false;
+		
+		// Just so we don't '&' wastefully in a loop
+		bool didSomething = false;		
+		bool chamberFullRng = (flags & WeaponWithAmmoFlags.CHAMBER_RNG_SPORADIC);
+		bool chamberRng = (flags & WeaponWithAmmoFlags.CHAMBER_RNG);
+		bool chamber = (flags & WeaponWithAmmoFlags.CHAMBER);
+		
+		if (chamber || chamberRng || chamberFullRng)
+		{
+			int amountToChamber = muzzCount;
+			
+			// No need to do this for full rng, as that will roll for every muzzle
+			if (chamberRng)
+				amountToChamber = Math.RandomIntInclusive(0, muzzCount);
+			
+			bool chamberAmmoRng = (ammoType == "");
+			bool chamberAmmoFullRng = chamberAmmoRng && (flags & WeaponWithAmmoFlags.AMMO_CHAMBER_RNG);
+			
+			// No full RNG flag, so pick one random and use only this one
+			if (chamberAmmoRng && !chamberAmmoFullRng)
+				ammoType = GetRandomChamberableAmmoTypeName(0);
+			
+			for (int i = 0; i < muzzCount; ++i)
+			{
+				// Skip when there's already something in the chamber
+				if (!IsChamberEmpty(i))
+					continue;
+				
+				// Roll the rng when enabled
+				if (chamberFullRng)
+					chamber = Math.RandomIntInclusive(0, 1);
+				
+				// We chambering
+				if (chamber)
+				{
+					// Full random, decide a new one for every muzzle
+					if ( chamberAmmoFullRng )
+						ammoType = GetRandomChamberableAmmoTypeName(i);
+					
+					// Push it
+					PushCartridgeToChamber(i, 0, ammoType);
+					didSomething = true;
+					
+					// Stop chambering when we hit the desired amount
+					--amountToChamber;				
+					if (amountToChamber <= 0)
+						break;
+				}
+			}
+		}
+		
+		// Only fix the FSM and Synchronize when absolutely needed
+		if (!didSomething)
+			return false;
+		
+		// FSM cares about chamber state
+		RandomizeFSMState();		
+		Synchronize();
+		
+		return true;
+	}
+	
+	//@}
+	
+	
+	
 	/**
 	 * @brief Returns number of slots for attachments corrected for weapons
 	 **/
-	override int GetSlotsCountCorrect ()
+	override int GetSlotsCountCorrect()
 	{
 		int ac = GetInventory().AttachmentCount();
 		int	sc = GetInventory().GetAttachmentSlotsCount() + GetMuzzleCount();
@@ -483,7 +848,7 @@ class Weapon_Base extends Weapon
 
 	PropertyModifiers GetPropertyModifierObject() 
 	{
-		if(!m_PropertyModifierObject)
+		if (!m_PropertyModifierObject)
 		{
 			m_PropertyModifierObject = new PropertyModifiers(this);
 		}
@@ -497,15 +862,28 @@ class Weapon_Base extends Weapon
 	
 	void OnFireModeChange(int fireMode)
 	{
+		if ( !GetGame().IsDedicatedServer() )
+		{
+			EffectSound eff;
+			
+			if ( fireMode == 0 )
+				eff = SEffectManager.PlaySound("Fire_Mode_Switch_Marked_Click_SoundSet", GetPosition());
+			else
+				eff = SEffectManager.PlaySound("Fire_Mode_Switch_Simple_Click_SoundSet", GetPosition());
+			
+			eff.SetAutodestroy(true);
+		}
+		
 		ResetBurstCount();
 	}
 	
 	void ValidateAndRepair()
 	{
-		m_fsm.ValidateAndRepair();
+		if ( m_fsm )
+			m_fsm.ValidateAndRepair();
 	}
 	
-	override void OnInventoryEnter (Man player)
+	override void OnInventoryEnter(Man player)
 	{
 		m_PropertyModifierObject = null;
 
@@ -514,13 +892,13 @@ class Weapon_Base extends Weapon
 		super.OnInventoryEnter(player);
 	}
 	
-	override void OnInventoryExit (Man player)
+	override void OnInventoryExit(Man player)
 	{
 		m_PropertyModifierObject = null;
 		super.OnInventoryExit(player);
 	}
 
-	override void EEItemAttached (EntityAI item, string slot_name)
+	override void EEItemAttached(EntityAI item, string slot_name)
 	{
 		super.EEItemAttached(item, slot_name);
 
@@ -539,7 +917,7 @@ class Weapon_Base extends Weapon
 		}*/
 	}
 
-	override void EEItemDetached (EntityAI item, string slot_name)
+	override void EEItemDetached(EntityAI item, string slot_name)
 	{
 		super.EEItemDetached(item, slot_name);
 
@@ -591,16 +969,16 @@ class Weapon_Base extends Weapon
 	
 	override bool CanReleaseAttachment(EntityAI attachment)
 	{
-		if( !super.CanReleaseAttachment( attachment ) )
+		if ( !super.CanReleaseAttachment( attachment ) )
 			return false;
 		Magazine mag = Magazine.Cast(attachment);
-		if(mag)
+		if (mag)
 		{
 			PlayerBase player = PlayerBase.Cast( GetHierarchyRootPlayer() );
-			if( player )
+			if ( player )
 			{
-				if( player.GetItemInHands() == this )
-				return true;
+				if ( player.GetItemInHands() == this )
+					return true;
 			}
 			return false;
 		}
@@ -628,17 +1006,17 @@ class Weapon_Base extends Weapon
 	}*/
 	
 	
-	override bool CanRemoveFromHands (EntityAI parent)
+	override bool CanRemoveFromHands(EntityAI parent)
 	{
 		if (IsIdle())
 		{
 			return true;
 		}
-		wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(this) + " Weapon=" + this + " not in stable state=" + GetCurrentState().Type());
+		if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(this) + " Weapon=" + this + " not in stable state=" + GetCurrentState().Type()); }
 		return false; // do not allow removal of weapon while weapon is busy
 	}
 
-	bool IsRemoteWeapon ()
+	bool IsRemoteWeapon()
 	{
 		InventoryLocation il = new InventoryLocation;
 		if (GetInventory().GetCurrentInventoryLocation(il))
@@ -654,7 +1032,7 @@ class Weapon_Base extends Weapon
 		return true;
 	}
 
-	void SyncEventToRemote (WeaponEventBase e)
+	void SyncEventToRemote(WeaponEventBase e)
 	{
 		DayZPlayer p = DayZPlayer.Cast(GetHierarchyParent());
 		if (p && p.GetInstanceType() == DayZPlayerInstanceType.INSTANCETYPE_SERVER)
@@ -664,37 +1042,37 @@ class Weapon_Base extends Weapon
 			ctx.Write(INPUT_UDT_WEAPON_REMOTE_EVENT);
 			e.WriteToContext(ctx);
 
-			wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(this) + " send 2 remote: sending e=" + e + " id=" + e.GetEventID() + " p=" + e.m_player + "  m=" + e.m_magazine);
+			if (LogManager.IsWeaponLogEnable()) { wpnDebugPrint("[wpnfsm] " + Object.GetDebugName(this) + " send 2 remote: sending e=" + e + " id=" + e.GetEventID() + " p=" + e.m_player + "  m=" + e.m_magazine); }
 			p.StoreInputForRemotes(ctx);
 		}
 	}
 
 	
-	RecoilBase SpawnRecoilObject ()
+	RecoilBase SpawnRecoilObject()
 	{
 		return new DefaultRecoil(this);
 	}
 
-	int GetWeaponSpecificCommand (int weaponAction, int subCommand) { return subCommand; }
+	int GetWeaponSpecificCommand(int weaponAction, int subCommand) { return subCommand; }
 
-	bool CanFire ()
+	bool CanFire()
 	{
 		if (!IsChamberEmpty(GetCurrentMuzzle()) && !IsChamberFiredOut(GetCurrentMuzzle()) && !IsJammed() && !m_LiftWeapon)
 			return true;
 		return false;
 	}
 			
-	bool CanEnterIronsights ()
+	bool CanEnterIronsights()
 	{
 		ItemOptics optic = GetAttachedOptics();
-		if( !optic )
+		if ( !optic )
 			return true;
 		
 		return optic.HasWeaponIronsightsOverride();
 	}
 	
 	//! Initializes DOF properties for weapon's ironsight/optics cameras
-	bool InitDOFProperties (out array<float> temp_array)
+	bool InitDOFProperties(out array<float> temp_array)
 	{
 		if (GetGame().ConfigIsExisting("cfgWeapons " + GetType() + " PPDOFProperties"))
 		{
@@ -704,7 +1082,7 @@ class Weapon_Base extends Weapon
 		return false;
 	}
 	
-	bool InitReliability (out array<float> reliability_array)
+	bool InitReliability(out array<float> reliability_array)
 	{
 		if (GetGame().ConfigIsExisting("cfgWeapons " + GetType() + " Reliability ChanceToJam"))
 		{
@@ -726,13 +1104,13 @@ class Weapon_Base extends Weapon
 		return false;
 	}
 	
-	ref array<float> GetWeaponDOF ()
+	ref array<float> GetWeaponDOF()
 	{
 		return m_DOFProperties;
 	}
 	
 	// lifting weapon on obstcles
-	bool LiftWeaponCheck (PlayerBase player)
+	bool LiftWeaponCheck(PlayerBase player)
 	{
 		int idx;
 		float distance;
@@ -825,7 +1203,7 @@ class Weapon_Base extends Weapon
 	 * @param[out] ammoTypeName \p	 type name of the ejected ammo
 	 * @return	true if bullet removed from chamber
 	 **/
-	bool EjectCartridge (int muzzleIndex, out float ammoDamage, out string ammoTypeName)
+	bool EjectCartridge(int muzzleIndex, out float ammoDamage, out string ammoTypeName)
 	{
 		if (IsChamberEjectable(muzzleIndex))
 		{
@@ -840,7 +1218,7 @@ class Weapon_Base extends Weapon
 		return false;
 	}
 	
-	bool CopyWeaponStateFrom (notnull Weapon_Base src)
+	bool CopyWeaponStateFrom(notnull Weapon_Base src)
 	{
 		float damage = 0.0;
 		string type;
@@ -909,7 +1287,7 @@ class Weapon_Base extends Weapon
 	
 	void HideWeaponBarrel(bool state)
 	{
-		if ( !GetGame().IsMultiplayer() || GetGame().IsClient() )//hidden for client only
+		if ( !GetGame().IsDedicatedServer() )//hidden for client only
 		{
 			ItemOptics optics = GetAttachedOptics();
 			if ( optics && !optics.AllowsDOF() && m_weaponHideBarrelIdx != -1 )
@@ -939,7 +1317,7 @@ class Weapon_Base extends Weapon
 	{
 		EntityAI attachment;
 		
-		switch(mode)
+		switch (mode)
 		{
 			case 0:
 				super.ProcessMeleeItemDamage();
@@ -994,6 +1372,12 @@ class Weapon_Base extends Weapon
 
 		AddAction(FirearmActionAttachMagazineQuick); // Easy reload
 		AddAction(FirearmActionLoadBulletQuick); // Easy reload
+	}
+	
+	//Debug menu Spawn Ground Special
+	override void OnDebugSpawn()
+	{
+		SpawnAmmo("", SAMF_DEFAULT);
 	}
 };
 

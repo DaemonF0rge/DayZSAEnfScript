@@ -131,8 +131,6 @@ enum AnimRangedWeaponType
 }
 
 
-
-
 class AnimSoundEvent
 {
 	int m_iID;
@@ -145,22 +143,22 @@ class AnimSoundEvent
 	{
 		m_iID = GetGame().ConfigGetInt(soundPath + "id");
 
-		if(GetGame().IsClient() || !GetGame().IsMultiplayer())
+		if ( !GetGame().IsDedicatedServer() )
 		{
 			string soundSetName;
 			GetGame().ConfigGetText(soundPath + "soundSet", soundSetName);
 			m_SoundParams = new SoundParams(soundSetName);
-			if(m_SoundParams.IsValid())
+			if (m_SoundParams.IsValid())
 			{
 				m_SoundObjectBuilder = new SoundObjectBuilder(m_SoundParams);
 				m_IsValid = true;
 			}
 		}
 		
-		if(GetGame().IsServer() || !GetGame().IsMultiplayer())
+		if ( GetGame().IsServer() )
 		{
 			string noiseName;
-			if(GetGame().ConfigGetText(soundPath + "noise", noiseName))
+			if (GetGame().ConfigGetText(soundPath + "noise", noiseName))
 			{
 				m_NoiseParams = new NoiseParams();
 				m_NoiseParams.Load(noiseName);
@@ -202,22 +200,22 @@ class AnimSoundVoiceEvent
 	{
 		m_iID = GetGame().ConfigGetInt(soundPath + "id");
 
-		if(GetGame().IsClient() || !GetGame().IsMultiplayer())
+		if ( !GetGame().IsDedicatedServer() )
 		{
 			string soundSetName;
 			GetGame().ConfigGetText(soundPath + "soundSet", soundSetName);
 			m_SoundParams = new SoundParams(soundSetName);
-			if(m_SoundParams.IsValid())
+			if ( m_SoundParams.IsValid() )
 			{
 				m_SoundObjectBuilder = new SoundObjectBuilder(m_SoundParams);
 				m_IsValid = true;
 			}
 		}
 		
-		if(GetGame().IsServer() || !GetGame().IsMultiplayer())
+		if ( GetGame().IsServer() )
 		{
 			string noiseName;
-			if(GetGame().ConfigGetText(soundPath + "noise", noiseName))
+			if (GetGame().ConfigGetText(soundPath + "noise", noiseName))
 			{
 				m_NoiseParams = new NoiseParams();
 				m_NoiseParams.Load(noiseName);
@@ -259,16 +257,16 @@ class AnimStepEvent
 	{
 		m_iID = GetGame().ConfigGetInt(stepPath + "id");
 
-		if(GetGame().IsClient() || !GetGame().IsMultiplayer())
+		if ( !GetGame().IsDedicatedServer() )
 		{
 			GetGame().ConfigGetText(stepPath + "soundLookupTable", m_sSoundLookupTableName);
 			m_soundLookupTable = StepSoundLookupTable.Cast( AnimSoundLookupTableBank.GetInstance().GetStepTable(m_sSoundLookupTableName) );
 		}
 		
-		if(GetGame().IsServer() || !GetGame().IsMultiplayer())
+		if ( GetGame().IsServer() )
 		{
 			string noiseName;
-			if(GetGame().ConfigGetText(stepPath + "noise",noiseName))
+			if (GetGame().ConfigGetText(stepPath + "noise",noiseName))
 			{
 				m_NoiseParams = new NoiseParams();
 				m_NoiseParams.Load(noiseName);

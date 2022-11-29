@@ -6,11 +6,7 @@ class ActionAttachWheels: ActionAttach
 	void ActionAttachWheels()
 	{
 		m_wheel_hub = -1;
-	}
-		
-	override string GetText()
-	{
-		return "#attach";
+		m_Text = "#attach";
 	}
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

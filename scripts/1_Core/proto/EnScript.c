@@ -1,5 +1,8 @@
 /**
  * \defgroup Enforce Enforce script essentials
+ * \note \p float ftime; The deltaTime since last frame
+ * \note \p float FLT_MAX; The maximum value for float
+ * \note \p float FLT_MIN; The minimum value for float
  * @{
  */
 
@@ -33,6 +36,8 @@ class Class
 	*/
 	proto native owned external string ClassName();
 	
+	string GetDebugName() { return ClassName(); }
+	
 	/**
 	\brief Returns typename of object's class
 		\returns \p typename class-type
@@ -45,6 +50,30 @@ class Class
 		@endcode
 	*/
 	proto native external typename Type();
+	
+	/**
+	\brief Returns typename of object's reference
+		\returns \p typename class-type
+		@code
+			EntityAI e;
+			Print(e.StaticType());
+
+			>> 'EntityAI'
+		@endcode
+	*/	
+	proto external static typename StaticType();
+	
+	/**
+	\brief Returns typename of class even without a variable or instance
+		\returns \p typename class-type
+		@code
+			typename eAITypename = StaticGetType(EntityAI);
+		@endcode
+	*/
+	static typename StaticGetType(typename t)
+	{
+		return t;
+	}
 	
 	proto external string ToString();
 	
@@ -136,6 +165,9 @@ class ScriptModule
 
 class EnScript
 {
+	private void EnScript() {}
+	private void ~EnScript() {}
+	
 	/**
 	\brief Dynamic read of variable value by its name
 		\param inst When inst == NULL, it's for global variable, otherwise it's class member
@@ -417,6 +449,12 @@ class array<Class T>
 	If the `newSize` is higher than current Count missing elements are initialized to zero (null).
 	*/
 	proto native void Resize(int newSize);
+	
+	/*!
+	Resizes the array to given size internally.
+	Is used for optimization purposes when the approx. size is known beforehand
+	*/
+	proto native void Reserve(int newSize);
 
 	/*!
 	Swaps the contents of this and `other` arrays.
@@ -484,12 +522,11 @@ class array<Class T>
 	*/
 	void Debug()
 	{
-		PrintString( "Array count: " + this.Count().ToString() );
-		for ( int i = 0; i < Count(); i++ )
+		Print(string.Format("Array count: %1", Count()));
+		for (int i = 0; i < Count(); i++)
 		{
 			T item = Get(i);
-
-			PrintString( "["+i.ToString()+"] => " + string.ToString(item) );
+			Print(string.Format("[%1] => %2", i, item));
 		}
 	}
 
@@ -546,9 +583,9 @@ class array<Class T>
 	{
 		int left = 0;
 		int right = Count() - 1;
-		if( right > 1 )
+		if (right > 0)
 		{
-			while( left < right )
+			while (left < right)
 			{
 				T temp = Get(left);
 				Set(left++, Get(right));
@@ -604,7 +641,44 @@ class array<Class T>
 		return new_index;
 	}
 	
+	void ShuffleArray()
+	{
+		for (int i = 0; i < Count(); i++)
+		{
+			SwapItems(i,GetRandomIndex());
+		}
+	}
 	
+	/**
+	\brief Returns an index where 2 arrays start to differ from each other
+		\return \p int Index from where arrays differ
+		@code
+			array<int> arr1 = {0,1,2,3};
+			array<int> arr2 = {0,1,3,2};
+			int differsAt = arr1.DifferentAtPosition(arr2);
+			Print(differsAt);
+	
+			>> 2
+		@endcode
+	*/
+	int DifferentAtPosition(array<T> pOtherArray)
+	{
+		if (Count() != pOtherArray.Count())
+		{
+			ErrorEx("arrays are not the same size");
+			return -1;
+		}
+
+		for (int i = 0; i < pOtherArray.Count(); ++i)
+		{
+			if (Get(i) != pOtherArray.Get(i))
+			{
+				return i;
+			}
+		}
+		
+		return -1;
+	}
 };
 
 //force these to compile so we can link C++ methods to them
@@ -765,7 +839,7 @@ class map<Class TKey,Class TValue>
 	
 	array<TKey> GetKeyArray()
 	{
-		ref array<TKey> keys = new array<TKey>;
+		array<TKey> keys = new array<TKey>;
 		for (int i = 0; i < Count(); i++)
 		{
 			keys.Insert( GetKey( i ) );
@@ -775,7 +849,7 @@ class map<Class TKey,Class TValue>
 	
 	array<TValue> GetValueArray()
 	{
-		ref array<TValue> elements = new array<TValue>;
+		array<TValue> elements = new array<TValue>;
 		for (int i = 0; i < Count(); i++)
 		{
 			elements.Insert( GetElement( i ) );

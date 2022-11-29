@@ -15,6 +15,7 @@ class ActionCollectSampleSelf: ActionContinuousBase
 		m_FullBody = true;
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT | DayZPlayerConstants.STANCEMASK_CROUCH;
 		m_SpecialtyWeight = UASoftSkillsWeight.PRECISE_MEDIUM;
+		m_Text = "#collect_sample";
 	}
 	
 	override void CreateConditionComponents()  
@@ -26,11 +27,6 @@ class ActionCollectSampleSelf: ActionContinuousBase
 	override bool HasTarget()
 	{
 		return false;
-	}
-		
-	override string GetText()
-	{
-		return "#collect_sample";
 	}
 
 	override void OnEndServer( ActionData action_data )

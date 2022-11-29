@@ -16,18 +16,13 @@ class ActionDropItem: ActionSingleUseBase
 		m_CommandUID        = DayZPlayerConstants.CMD_ACTIONMOD_DROPITEM_HANDS;
 		m_CommandUIDProne	= DayZPlayerConstants.CMD_ACTIONFB_DROPITEM_HANDS;
 		m_CallbackClass 	= ActionDropItemCB;
-		//m_HUDCursorIcon     = CursorIcons.LootCorpse;
+		m_Text = "#drop_item";
 	}
 
 	override void CreateConditionComponents()  
 	{
 		m_ConditionItem = new CCINone;
 		m_ConditionTarget = new CCTNone;
-	}
-
-	override string GetText()
-	{
-		return "#drop_item";
 	}
 	
 	override typename GetInputType()

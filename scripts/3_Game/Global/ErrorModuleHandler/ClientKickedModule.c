@@ -23,6 +23,11 @@ enum EClientKicked
 	ADMIN_KICK,			// Kicked by admin
 	INVALID_ID,			// Player has an invalid ID
 	
+	INPUT_HACK,			// Player is sending more Inputs than possible
+	
+	QUIT,				// Player closed the game
+	LEAVE,				// Player pressed the Leave button
+	
 	// LoginMachine kicks (0x0030)
 	LOGIN_MACHINE_ERROR = 48,	// Generic LoginMachine error (fallback)
 	PLAYER_STATE_TIMEOUT,		// Player spent too much time in one state of the LoginMachine
@@ -83,6 +88,7 @@ enum EClientKicked
 	VE_M_SERVER_CORRUPT,		// Server installation is corrupt
 	VE_M_CLIENT_CORRUPT,		// Client installation is corrupt
 	VE_M_UNEXPECTED_SOURCE,		// The source of the Missing PBO could not be determined
+	VE_GPROJ,					// The Client and Server .gproj are not equal
 	
 	// PBO Mismatch (0x0090)
 	PBO_MISMATCH = 144,			// Server and Client are using different PBO
@@ -129,6 +135,14 @@ enum EClientKicked
 
 	// BattlEye Kicks (0x00F0)
 	BATTLEYE = 240,				// Kick administred by BattlEye (Can also be Admin Kick)
+	
+	// Unauthorized Network Message (0x0100)
+	UNM1 = 256,
+	UNM2,
+	UNM3,
+	UNM4,
+	UNM5,
+	UNM6,
 };
 
 #ifdef PLATFORM_WINDOWS
@@ -154,6 +168,8 @@ const string MODS = "\n"+"#STR_MODS0"+"\n"+"#STR_MODS1"+"\n";
 
 const string SERVER_MUST_UPDATE = "\n"+"#STR_S_UPDATE";
 const string CLIENT_MUST_UPDATE = "\n"+"#STR_C_UPDATE" + VERIFY;
+
+const string UNM_MESSAGE = "#STR_UNM_MESSAGE";
 
 class ClientKickedModule : ErrorHandlerModuleScript
 {
@@ -193,6 +209,11 @@ class ClientKickedModule : ErrorHandlerModuleScript
 		InsertSplitDialogueErrorProperties(EClientKicked.BANK_COUNT,					"#STR_bank_count" + VERIFY, "#STR_bank_count");
 		InsertDialogueErrorProperties(EClientKicked.ADMIN_KICK,							"#STR_admin_kick");
 		InsertDialogueErrorProperties(EClientKicked.INVALID_ID,							"#STR_invalid_ID");
+		
+		InsertDialogueErrorProperties(EClientKicked.INPUT_HACK,							"#STR_INPUT_HACK");
+		
+		InsertErrorProperties(EClientKicked.QUIT); // No handling, just register it exists
+		InsertErrorProperties(EClientKicked.LEAVE); // No handling, just register it exists
 
 		// LoginMachine kicks			
 		InsertExtendedPrefixDialogueErrorProperties(EClientKicked.LOGIN_MACHINE_ERROR,				"#server_browser_error_unknown", LOGIN_PREFIX);
@@ -254,6 +275,7 @@ class ClientKickedModule : ErrorHandlerModuleScript
 		InsertExtendedPrefixDialogueErrorProperties(EClientKicked.VE_M_SERVER_CORRUPT,			"#STR_ve_m_server_corrupt0"+"\n"+"#STR_ve_m_server_corrupt1"+"\n", VE_PREFIX);
 		InsertExtendedPrefixDialogueErrorProperties(EClientKicked.VE_M_CLIENT_CORRUPT,			"#STR_ve_m_client_corrupt0"+"\n"+"#STR_ve_m_client_corrupt1" + VERIFY, VE_PREFIX);
 		InsertExtendedPrefixDialogueErrorProperties(EClientKicked.VE_M_UNEXPECTED_SOURCE,		"#STR_ve_m_unexpected_source", VE_PREFIX);
+		InsertExtendedPrefixDialogueErrorProperties(EClientKicked.VE_GPROJ,						VERIFY + " (.gproj)", VE_PREFIX);
 		
 		// PBO Mismatch
 		InsertExtendedPrefixSplitDialogueErrorProperties(EClientKicked.PBO_MISMATCH,			"#STR_pbo_mismatch" + VERIFY, VE_PREFIX, "#STR_pbo_mismatch");
@@ -300,6 +322,14 @@ class ClientKickedModule : ErrorHandlerModuleScript
 
 		// BattlEye Kicks
 		InsertExtendedPrefixDialogueErrorProperties(EClientKicked.BATTLEYE,	"", "BattlEye\n");
+		
+		// Unauthorized Network Message
+		InsertDialogueErrorProperties(EClientKicked.UNM1, UNM_MESSAGE);
+		InsertDialogueErrorProperties(EClientKicked.UNM2, UNM_MESSAGE);
+		InsertDialogueErrorProperties(EClientKicked.UNM3, UNM_MESSAGE);
+		InsertDialogueErrorProperties(EClientKicked.UNM4, UNM_MESSAGE);
+		InsertDialogueErrorProperties(EClientKicked.UNM5, UNM_MESSAGE);
+		InsertDialogueErrorProperties(EClientKicked.UNM6, UNM_MESSAGE);
 	}
 }
 

@@ -100,16 +100,6 @@ class AttachmentsOutOfReach
 		
 		GetGame().ConfigGetTextArray(cfg_path, cfg_attachments);
 		
-		if(cfg_attachments)
-		{
-			for(int g = 0; g < cfg_attachments.Count(); g++)
-			{
-				Print("" + g + ") - " + cfg_attachments[g]);
-			}
-		
-		}
-		
-		
 		int child_count = GetGame().ConfigGetChildrenCount("CfgNonAIVehicles");
 		
 		for ( int x = 0; x < child_count; ++x )
@@ -120,30 +110,25 @@ class AttachmentsOutOfReach
 			string inventory_slot_name;
 			GetGame().ConfigGetText("CfgNonAIVehicles "+ child_name +" inventorySlot", inventory_slot_name);
 			
-			int a = 0;
-			Print("---" + x + "] - " + child_name);
-			if(child_name == "Truck_01_WoodenLogs")
-				a++;
-			
 			if ( cfg_attachments.Find( inventory_slot_name ) > 0 )
 			{
 				string model_path;
 				GetGame().ConfigGetText("CfgNonAIVehicles "+ child_name +" model", model_path);
 				
 				if ( model_path.Length() > 5 )
-				{
-					model_path = model_path.Substring(0, model_path.Length() - 4);
+				{										
+					LOD lod = entity.GetLODByName(LOD.NAME_VIEW);
 					
-					array<Selection> selections = new array<Selection>();
-					LOD lod = entity.GetLODByName("geometryView");
-					
-					if( lod )
+					if ( lod )
 					{
+						model_path = model_path.Substring(0, model_path.Length() - 4);
+						model_path.ToLower();
+						
+						array<Selection> selections = new array<Selection>();
 						lod.GetSelections(selections);
 						
 						for ( int i = 0; i < selections.Count(); ++i )
-						{
-							model_path.ToLower();
+						{							
 							string selection = selections[i].GetName();
 							selection.ToLower();
 							

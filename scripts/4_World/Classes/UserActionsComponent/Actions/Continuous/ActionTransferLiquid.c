@@ -66,7 +66,7 @@ class ActionTransferLiquid: ActionContinuousBase
 			}
 			else if (!can_pour && can_drain)
 			{
-				if ( (!GetGame().IsMultiplayer() || GetGame().IsClient()) && !player.GetLiquidTendencyDrain() )
+				if ( (!GetGame().IsDedicatedServer()) && !player.GetLiquidTendencyDrain() )
 				{
 					player.SetLiquidTendencyDrain(true);
 					return false;
@@ -78,7 +78,7 @@ class ActionTransferLiquid: ActionContinuousBase
 			}
 			else if (!can_drain && can_pour)
 			{
-				if ( (!GetGame().IsMultiplayer() || GetGame().IsClient()) && player.GetLiquidTendencyDrain() )
+				if ( (!GetGame().IsDedicatedServer()) && player.GetLiquidTendencyDrain() )
 				{
 					player.SetLiquidTendencyDrain(false);
 					return false;

@@ -16,17 +16,13 @@ class ActionWaterPlant: ActionContinuousBase
 		m_CommandUID = DayZPlayerConstants.CMD_ACTIONFB_EMPTY_VESSEL;
 		m_FullBody = true;
 		m_SpecialtyWeight = UASoftSkillsWeight.ROUGH_LOW;
+		m_Text = "#water_plant";
 	}
 	
 	override void CreateConditionComponents()  
 	{	
 		m_ConditionTarget = new CCTNonRuined(UAMaxDistances.DEFAULT);
 		m_ConditionItem = new CCINotRuinedAndEmpty;
-	}
-		
-	override string GetText()
-	{
-		return "#water_plant";
 	}
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )

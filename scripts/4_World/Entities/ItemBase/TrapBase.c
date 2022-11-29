@@ -5,6 +5,15 @@ enum SoundTypeTrap
 
 class TrapBase extends ItemBase
 {
+	#ifdef SERVER
+	protected const int SPAWN_FLAGS 				= ECE_CREATEPHYSICS;
+	#else
+	protected const int SPAWN_FLAGS 				= ECE_LOCAL;
+	#endif
+	
+	protected const int DAMAGE_TRIGGER_MINE 		= 75;
+	protected const float UPDATE_TIMER_INTERVAL 	= 0.05;
+
 	int   m_InitWaitTime; 			//After this time after deployment, the trap is activated
 	bool m_NeedActivation;			//If activation of trap is needed
 	float m_DefectRate; 			//Added damage after trap activation
@@ -15,7 +24,8 @@ class TrapBase extends ItemBase
 	bool m_AddDeactivationDefect;	// Damage trap after deactivation
 	protected bool m_IsActive;		// True means that the trap is ready to detonate
 	protected bool m_IsInProgress;
-	protected bool m_Disarmed = false; //Used for explosive traps to prevent detonation after destroying through disarm action
+
+	protected bool m_Disarmed = false; //! DEPRECATED Used for explosive traps to prevent detonation after destroying through disarm action
 
 	bool m_WasActivatedOrDeactivated;
 
@@ -30,11 +40,11 @@ class TrapBase extends ItemBase
 	string m_InfoActivationTime;
 
 	protected ref Timer m_Timer;
+	protected ref Timer m_UpdateTimer;
 	protected TrapTrigger m_TrapTrigger;
-
-	ref protected EffectSound 	m_DeployLoopSound;	
 	
-	protected const int DAMAGE_TRIGGER_MINE = 75;
+	protected ref array<int> m_ClothingDmg;
+	protected ref EffectSound 	m_DeployLoopSound;	
 	
 	void TrapBase()
 	{
@@ -43,7 +53,7 @@ class TrapBase extends ItemBase
 		m_InitWaitTime = 5; 			//After this time after deployment, the trap is activated
 		m_DefectRate = 15; 				//Added damage after trap activation
 		m_DamagePlayers = 25; 			//How much damage player gets when caught
-		m_DamageOthers = 100; 			//How much damage player gets when caught
+		m_DamageOthers = 100; 			//How much damage others gets when caught
 		
 		m_AddActivationDefect = false;
 		m_AddDeactivationDefect = false;
@@ -60,7 +70,7 @@ class TrapBase extends ItemBase
 		m_InfoDamage =				"#STR_TrapBase3";
 		m_InfoActivationTime = 		"#STR_TrapBase4" + m_InitWaitTime.ToString() + "#STR_TrapBase5";
 		
-		m_DeployLoopSound = new EffectSound;
+		m_UpdateTimer				= new ref Timer();	//! timer calling OnUpdate in configured interval
 		
 		RegisterNetSyncVariableBool("m_IsActive");
 		RegisterNetSyncVariableBool("m_IsInProgress");
@@ -70,11 +80,10 @@ class TrapBase extends ItemBase
 	
 	void ~TrapBase()
 	{
-		if ( m_DeployLoopSound )
-		{
-			SEffectManager.DestroySound( m_DeployLoopSound );
-		}
+		SEffectManager.DestroyEffect( m_DeployLoopSound );
 	}
+	
+	void OnUpdate(EntityAI victim);
 	
 	//! this event is called all variables are synchronized on client
     override void OnVariablesSynchronized()
@@ -98,14 +107,14 @@ class TrapBase extends ItemBase
 		
 		if ( GetGame().IsMultiplayer() )
 		{
-			if ( m_IsActive )
+			if (m_IsActive)
 			{
 				SetActive();
 			}
-		
-			if (m_IsInProgress  &&  !m_IsActive)
+			
+			if (m_IsInProgress && !m_IsActive)
 			{
-				StartActivate( NULL );
+				StartActivate(null);
 			}
 		}
 	}
@@ -113,22 +122,22 @@ class TrapBase extends ItemBase
 	override void EEDelete(EntityAI parent)
 	{
 		super.EEDelete(parent);
-		
+
 		//GetGame() can be sometimes NULL when turning off server
 		if ( GetGame() && m_TrapTrigger )
 		{
 			GetGame().ObjectDelete( m_TrapTrigger );
 			m_TrapTrigger = NULL;
-		}		
+		}
 	}
 
 	override void OnStoreSave(ParamsWriteContext ctx)
 	{
 		super.OnStoreSave(ctx);
 		
-		ctx.Write( m_IsActive );
+		ctx.Write(m_IsActive);
 		
-		ctx.Write( m_IsInProgress );
+		ctx.Write(m_IsInProgress);
 	}
 	
 	//----------------------------------------------------------------
@@ -152,7 +161,7 @@ class TrapBase extends ItemBase
 		
 		if (b_is_in_progress &&  !b_is_active)
 		{
-			StartActivate( NULL );
+			StartActivate(null);
 		}
 
 		return true;
@@ -160,20 +169,12 @@ class TrapBase extends ItemBase
 	
 	bool IsActive()
 	{
-		if ( m_IsActive && m_IsInProgress == false && this.GetHierarchyRootPlayer() == NULL )
-		{
-			return true;
-		}
-		return false;
+		return m_IsActive && m_IsInProgress == false && GetHierarchyRootPlayer() == null;
 	}
 
 	bool IsInactive()
 	{
-		if ( m_IsActive == false && m_IsInProgress == false && this.GetHierarchyRootPlayer() == NULL )
-		{
-			return true;
-		}
-		return false;
+		return !IsActive() && m_IsInProgress == false && GetHierarchyRootPlayer() == null;
 	}
 
 	// trap cannot be taken when is activated
@@ -189,24 +190,19 @@ class TrapBase extends ItemBase
 
 	bool IsActivable()
 	{
-		if ( m_IsActive == false && this.GetHierarchyRootPlayer() == NULL && this.GetHierarchyParent() == NULL && m_IsInProgress == false && !this.IsRuined() && m_NeedActivation )
-		{
-			return true;
-		}
-		
-		return false;
+		return !IsActive() && GetHierarchyRootPlayer() == null && GetHierarchyParent() == null && m_IsInProgress == false && !IsRuined() && m_NeedActivation;
 	}
 
 	bool IsPlaceable()
 	{
-		if ( this.GetHierarchyRootPlayer() != NULL && this.GetHierarchyRootPlayer().GetHumanInventory().GetEntityInHands() == this )
+		if ( GetHierarchyRootPlayer() != null && GetHierarchyRootPlayer().GetHumanInventory().GetEntityInHands() == this )
 		{
-			PlayerBase player = PlayerBase.Cast( this.GetHierarchyRootPlayer() );
+			PlayerBase player = PlayerBase.Cast( GetHierarchyRootPlayer() );
 			
 			vector player_pos = player.GetPosition();
 			vector aim_pos = player.GetAimPosition();
 							
-			if ( vector.Distance(player_pos, aim_pos) <= 1.5 )
+			if ( vector.DistanceSq( player_pos, aim_pos ) <= ( Math.SqrFloat( 1.5 ) ) )
 			{
 				return IsPlaceableAtPosition( aim_pos );
 			}
@@ -229,37 +225,47 @@ class TrapBase extends ItemBase
 		return true;
 	}
 	
-	void SnapOnObject( EntityAI victim )
+	void Disarm()
 	{
-		if ( g_Game.IsServer() )
+		SetInactive(false);
+		RefreshState();
+		GetGame().RPCSingleParam(this, ERPCs.RPC_TRAP_DISARM, null, true);
+
+		OnDisarm();
+	}
+	
+	//! also called from RPC on client
+	void OnDisarm();
+	
+	void SnapOnObject(EntityAI victim)
+	{
+		if ( GetGame().IsServer() )
 		{
 			if ( m_Timer )
 			{
 				m_Timer.Stop();
 			}
 			
-			this.RefreshState();
+			RefreshState();
 
 			if (m_DamagePlayers > 0)
 			{
 				if (victim)
 				{
-					if ( victim.IsInherited(SurvivorBase) )
+					if ( victim.IsInherited(SurvivorBase))
 					{
-						victim.DecreaseHealth( "", "", m_DamagePlayers );
-						//PlayerBase player = PlayerBase.Cast( victim );
-						//player.MessageStatus( m_InfoDamage );
+						victim.DecreaseHealth("", "", m_DamagePlayers);
 					}
-					else if (victim.IsInherited(DayZCreatureAI) )
+					else if (victim.IsInherited(DayZCreatureAI))
 					{
-						victim.DecreaseHealth( "", "", m_DamageOthers );
+						victim.DecreaseHealth("", "", m_DamageOthers);
 					}
-					else if (victim.IsInherited(ItemBase) )
+					else if (victim.IsInherited(ItemBase))
 					{
-						ItemBase victim_item = ItemBase.Cast( victim );
+						ItemBase victim_item = ItemBase.Cast(victim);
 						float damage_coef = 1;
 						
-						if ( victim_item.HasQuantity()  &&  victim_item.GetQuantityMax() != 0 && victim_item.GetQuantity() > 0)
+						if (victim_item.HasQuantity() && victim_item.GetQuantityMax() != 0 && victim_item.GetQuantity() > 0)
 						{
 							damage_coef = victim_item.GetQuantityMax() / victim_item.GetQuantity(); // Lower quantity increases damage exposure
 						}
@@ -268,43 +274,48 @@ class TrapBase extends ItemBase
 						{
 							int item_size_x = 1;
 							int item_size_y = 1;
-							
 							GetGame().GetInventoryItemSize(victim_item, item_size_x, item_size_y);
-
-							int item_size = item_size_x * item_size_y;
 							
-							if (item_size == 0)
-								item_size = 1;
-							
-							float add_damage = 300*damage_coef/item_size;
-							victim_item.DecreaseHealth( "", "", add_damage );
+							float add_damage = 300 * damage_coef / Math.Clamp(item_size_x * item_size_y, 1, int.MAX);
+							victim_item.DecreaseHealth("", "", add_damage);
 						}
 					}
 				}
 			}
-			
-			SetInactive( false );
-			AddDefect();
-		}
 		
+			Synch(victim);
+		}
+
 		OnSteppedOn(victim);
-		Synch(victim);
+	}
+	
+	void RemoveFromObject(EntityAI victim)
+	{
+		OnSteppedOut(victim);
+		Synch(null);
 	}
 	
 	void OnSteppedOn(EntityAI victim)
 	{
-		
+		SetInactive(false);
 	}
+	
+	void OnSteppedOut(EntityAI victim); 	//! keeping "step" here for consistency only
 
 	// Synchronizes states
 	protected void Synch(EntityAI victim)
 	{
-		if ( GetGame().IsServer() )
+		if (GetGame().IsServer())
 		{
 			SetSynchDirty();
-			
-			Param1<EntityAI> p = new Param1<EntityAI>( victim );
-			GetGame().RPCSingleParam( this, ERPCs.RPC_TRAP_VICTIM, p, true );
+
+			if (victim && !victim.GetAllowDamage())
+			{
+				return;
+			}
+
+			Param1<EntityAI> p = new Param1<EntityAI>(victim);
+			GetGame().RPCSingleParam(this, ERPCs.RPC_TRAP_VICTIM, p, true);
 		}
 		
 	}	
@@ -314,9 +325,9 @@ class TrapBase extends ItemBase
 	{
 		super.OnRPC(sender, rpc_type, ctx);
 		
-		if ( GetGame().IsClient() || !GetGame().IsMultiplayer() )
+		if ( !GetGame().IsDedicatedServer() )
 		{
-			switch(rpc_type)
+			switch (rpc_type)
 			{
 				case ERPCs.RPC_TRAP_VICTIM:
 				
@@ -330,6 +341,10 @@ class TrapBase extends ItemBase
 						}
 					}
 					
+				break;
+				
+				case ERPCs.RPC_TRAP_DISARM:
+					OnDisarm();
 				break;
 				
 				case SoundTypeTrap.ACTIVATING:
@@ -363,42 +378,42 @@ class TrapBase extends ItemBase
 			return;
 		}
 		
-		if ( g_Game.IsServer() )
+		if ( GetGame().IsServer() )
 		{
 			// item is owned by player
-			if ( this.GetHierarchyRootPlayer() != NULL && m_AnimationPhaseGrounded != "" )
+			if ( GetHierarchyRootPlayer() != NULL && m_AnimationPhaseGrounded != "" )
 			{
-				this.SetAnimationPhase( m_AnimationPhaseSet, 1 );
+				SetAnimationPhase( m_AnimationPhaseSet, 1 );
 				if ( m_AnimationPhaseTriggered != m_AnimationPhaseGrounded ) 
 				{
-					this.SetAnimationPhase( m_AnimationPhaseTriggered, 1 );
+					SetAnimationPhase( m_AnimationPhaseTriggered, 1 );
 				}
-				this.SetAnimationPhase( m_AnimationPhaseGrounded, 0 );
+				SetAnimationPhase( m_AnimationPhaseGrounded, 0 );
 			}
 			// item is set active
-			else if ( this.IsActive() )
+			else if ( IsActive() )
 			{
 				if ( m_AnimationPhaseGrounded != "" )
 				{
-					this.SetAnimationPhase( m_AnimationPhaseGrounded, 1 );
+					SetAnimationPhase( m_AnimationPhaseGrounded, 1 );
 				}
 				if ( m_AnimationPhaseSet != "" && m_AnimationPhaseTriggered != "" )
 				{
-					this.SetAnimationPhase( m_AnimationPhaseTriggered, 1 );
-					this.SetAnimationPhase( m_AnimationPhaseSet, 0 );
+					SetAnimationPhase( m_AnimationPhaseTriggered, 1 );
+					SetAnimationPhase( m_AnimationPhaseSet, 0 );
 				}
 			}
 			// item is inactive and not owned by player (on the ground)
-			else if ( this.IsInactive() )
+			else if ( IsInactive() )
 			{
 				if ( m_AnimationPhaseGrounded != "" &&  m_AnimationPhaseTriggered != m_AnimationPhaseGrounded )
 				{
-					this.SetAnimationPhase( m_AnimationPhaseGrounded, 1 );
+					SetAnimationPhase( m_AnimationPhaseGrounded, 1 );
 				}
 				if ( m_AnimationPhaseSet != "" && m_AnimationPhaseTriggered != "" )
 				{
-					this.SetAnimationPhase( m_AnimationPhaseSet, 1 );
-					this.SetAnimationPhase( m_AnimationPhaseTriggered, 0 );
+					SetAnimationPhase( m_AnimationPhaseSet, 1 );
+					SetAnimationPhase( m_AnimationPhaseTriggered, 0 );
 				}
 			}
 		}
@@ -408,9 +423,9 @@ class TrapBase extends ItemBase
 	{ 
 		if ( GetGame().IsServer() )
 		{
-			if ( this.GetHierarchyRootPlayer() && this.GetHierarchyRootPlayer().CanDropEntity( this) )  // kvoli desyncu
+			if ( GetHierarchyRootPlayer() && GetHierarchyRootPlayer().CanDropEntity( this ) )  // kvoli desyncu
 			{
-				SetupTrapPlayer( PlayerBase.Cast( this.GetHierarchyRootPlayer() ) );
+				SetupTrapPlayer( PlayerBase.Cast( GetHierarchyRootPlayer() ) );
 			}
 		}
 	}
@@ -426,12 +441,12 @@ class TrapBase extends ItemBase
 				
 				vector trapPos = ( player.GetDirection() ) * 1.5;
 				trapPos[1] = 0;
-				this.SetPosition( player.GetPosition() + trapPos );
+				SetPosition( player.GetPosition() + trapPos );
 			}
 					
 			if ( m_NeedActivation == false )
 			{
-				this.SetActive();
+				SetActive();
 			}
 			//player.MessageStatus( m_InfoSetup );
 		}
@@ -439,9 +454,9 @@ class TrapBase extends ItemBase
 
 	void AddDefect()
 	{
-		if ( g_Game.IsServer() )
+		if ( GetGame().IsServer() )
 		{
-			this.DecreaseHealth( "", "", m_DefectRate );
+			DecreaseHealth( "", "", m_DefectRate );
 		}
 	}
 	
@@ -452,29 +467,26 @@ class TrapBase extends ItemBase
 		m_IsInProgress = false;
 		m_IsActive = true;
 	
-		if ( m_AddActivationDefect )
+		if (m_AddActivationDefect)
 		{
-			this.AddDefect();
+			AddDefect();
 		}
 			
-		if ( g_Game.IsServer() )
+		if (GetGame().IsServer())
 		{
-			RefreshState();
 			CreateTrigger();
-			Synch(NULL);
+			RefreshState();
+			Synch(null);
 		}
 		
 		OnActivate();
 	}
 
-	void OnActivate()
-	{
-		
-	}
+	void OnActivate();
 
 	void StartActivate( PlayerBase player )
 	{
-		if ( GetGame().IsServer() || !GetGame().IsMultiplayer() )
+		if ( GetGame().IsServer() )
 		{
 			m_Timer = new Timer( CALL_CATEGORY_SYSTEM );
 			HideSelection("safety_pin");
@@ -484,7 +496,7 @@ class TrapBase extends ItemBase
 				m_IsInProgress = true;
 				m_Timer.Run( m_InitWaitTime, this, "SetActive" );
 			
-			Synch(NULL);
+				Synch(null);
 			}
 			else
 			{
@@ -493,82 +505,65 @@ class TrapBase extends ItemBase
 		}
 	}
 	
-	void StartDeactivate( PlayerBase player )
-	{
-		if ( g_Game.IsServer() )
-		{
-			//player.MessageStatus( m_InfoDeactivated );
-			this.SetInactive();
-		}
-	}
+	void StartDeactivate(PlayerBase player);
 
-	void SetInactive( bool stop_timer = true )
+	void SetInactive(bool stop_timer = true)
 	{
 		m_WasActivatedOrDeactivated = true;
 		
 		m_IsActive = false;
-		if ( m_Timer && stop_timer )
+		if (m_Timer && stop_timer)
 		{
 			m_Timer.Stop();
 		}
-		//Print("Delete trap trigger");
-		//Print(m_TrapTrigger);
-		g_Game.ObjectDelete( m_TrapTrigger );
-		m_TrapTrigger = NULL;
 		
-		if ( m_AddDeactivationDefect )
+		if (m_AddDeactivationDefect)
 		{
-			this.AddDefect();
+			AddDefect();
 		}
-
-		// de-attach attachments after "activating them"
-		int attachments = GetInventory().AttachmentCount();
-		if ( attachments > 0 )
-		{
-			EntityAI attachment = GetInventory().GetAttachmentFromIndex(0);
-			if ( attachment )
-			{
-				ItemBase.Cast( attachment ).OnActivatedByTripWire();
-				GetInventory().DropEntity( InventoryMode.LOCAL, this, attachment );
-			}
-		}
-
-		this.RefreshState();
-		Synch(NULL);
+		
+		DeleteTrigger();
+		RefreshState();
+		Synch(null);
 	}
 	
 	void CreateTrigger()
 	{
-		m_TrapTrigger = TrapTrigger.Cast( g_Game.CreateObject( "TrapTrigger", this.GetPosition(), false ) );
-		vector mins = "-0.01 -0.05 -0.01";
-		vector maxs = "0.01 0.50 0.01";
-		m_TrapTrigger.SetOrientation( this.GetOrientation() );
-		m_TrapTrigger.SetExtents(mins, maxs);	
-		m_TrapTrigger.SetParentObject( this );
+		if (Class.CastTo(m_TrapTrigger, GetGame().CreateObjectEx("TrapTrigger", GetPosition(), SPAWN_FLAGS)))
+		{
+			vector mins = "-0.01 -0.05 -0.01";
+			vector maxs = "0.01 0.5 0.01";
+			m_TrapTrigger.SetOrientation(GetOrientation());
+			m_TrapTrigger.SetExtents(mins, maxs);
+			m_TrapTrigger.SetParentObject(this);
+		}
+	}
+	
+	void DeleteTrigger()
+	{
+		GetGame().ObjectDelete(m_TrapTrigger);
+		m_TrapTrigger = null;
 	}
 
-	override void OnItemLocationChanged( EntityAI old_owner, EntityAI new_owner ) 
+	override void OnItemLocationChanged(EntityAI old_owner, EntityAI new_owner) 
 	{
 		super.OnItemLocationChanged(old_owner, new_owner);
 		
-		if ( g_Game.IsServer() )
+		if (GetGame().IsServer())
 		{
-			this.RefreshState();
+			RefreshState();
 
 			// TAKE ACTIVE TRAP FROM VICINITY 
-			if ( old_owner == NULL && new_owner != NULL && IsActive() )  // !!! lebo nefunguju zlozene podmienky v if-e
+			if (old_owner == NULL && new_owner != NULL && IsActive())
 			{
 				// TAKE INTO HANDS
-				if ( new_owner.ClassName() == "PlayerBase" )
+				if ( new_owner.IsPlayer() )
 				{
-					SnapOnObject( new_owner );
+					SnapOnObject(new_owner);
 				}
-				else // TAKE INTO BACKPACK, ETC ...  // !!! lebo nefunguje elseif
-				{	
-					if ( new_owner.GetHierarchyRootPlayer().ClassName() == "PlayerBase" )
-					{
-						SnapOnObject( new_owner.GetHierarchyRootPlayer() );
-					}
+				else if (new_owner.GetHierarchyRootPlayer())
+				{
+					SnapOnObject(new_owner.GetHierarchyRootPlayer());
 				}
 			}
 		}
@@ -579,9 +574,9 @@ class TrapBase extends ItemBase
 	{
 		super.EEItemAttached(item, slot_name);
 		
-		if ( g_Game.IsServer() )
+		if ( GetGame().IsServer() )
 		{
-			this.RefreshState();
+			RefreshState();
 		}
 	}	
 	
@@ -589,15 +584,19 @@ class TrapBase extends ItemBase
 	{
 		super.EEItemDetached(item, slot_name);
 		
-		if ( g_Game.IsServer() )
+		if ( GetGame().IsServer() )
 		{
-			this.RefreshState();
+			RefreshState();
 		}
 	}
 	
 	override bool CanPutInCargo( EntityAI parent )
 	{
-		if ( !super.CanPutInCargo(parent) ) {return false;}
+		if ( !super.CanPutInCargo(parent) )
+		{
+			return false;
+		}
+
 		return IsTakeable();
 	}
 	
@@ -607,6 +606,7 @@ class TrapBase extends ItemBase
 		{
 			return false;
 		}
+
 		return IsTakeable();
 	}
 
@@ -625,23 +625,25 @@ class TrapBase extends ItemBase
 		return "Trap can't be placed on this surface type.";
 	}
 	
-	//Set if trap can be disarmed using ActionClapBearTrapWithThisItem
+	//! DEPRECATED Set if trap can be disarmed using ActionClapBearTrapWithThisItem
 	bool CanBeClapped()
 	{
 		return true;
 	}
 	
-	//Set if trap can be disarmed using ActionDisarmMine
+	//Set if trap can be disarmed using trap-specific action
 	bool CanBeDisarmed()
 	{
 		return false;
 	}
 	
+	//! DEPRECATED
 	void SetDisarmed( bool disarmed )
 	{
 		m_Disarmed = disarmed;
 	}
 	
+	//! DEPRECATED
 	bool GetDisarmed()
 	{
 		return m_Disarmed;
@@ -653,22 +655,23 @@ class TrapBase extends ItemBase
 		
 	void PlayDeployLoopSound()
 	{		
-		if ( GetGame().IsMultiplayer() && GetGame().IsClient() || !GetGame().IsMultiplayer() )
-		{		
-			if ( !m_DeployLoopSound.IsSoundPlaying() )
-			{
-				m_DeployLoopSound = SEffectManager.PlaySound( GetLoopDeploySoundset(), GetPosition() );
-			}
+		#ifndef SERVER
+		if (!m_DeployLoopSound || !m_DeployLoopSound.IsSoundPlaying())
+		{
+			m_DeployLoopSound = SEffectManager.PlaySound(GetLoopDeploySoundset(), GetPosition());
 		}
+		#endif
 	}
 	
 	void StopDeployLoopSound()
 	{
-		if ( GetGame().IsMultiplayer() && GetGame().IsClient() || !GetGame().IsMultiplayer() )
-		{	
+		#ifndef SERVER
+		if (m_DeployLoopSound)
+		{
 			m_DeployLoopSound.SetSoundFadeOut(0.5);
 			m_DeployLoopSound.SoundStop();
 		}
+		#endif
 	}
 	
 	override void SetActions()
@@ -676,5 +679,74 @@ class TrapBase extends ItemBase
 		super.SetActions();
 		
 		AddAction(ActionActivateTrap);
+	}
+	
+	// HELPERS
+	protected EntityAI GetClosestCarWheel(EntityAI victim)
+	{
+		//! carscript specific handling (not all traps are uses this)
+		vector trapPosXZ = GetPosition();
+		trapPosXZ[1] = 0;
+
+		GameInventory inv = victim.GetInventory();
+		for (int i = 0; i < inv.AttachmentCount(); i++)
+		{
+			//! ruined wheel, bail out
+			EntityAI wheelEntity = inv.GetAttachmentFromIndex(i);
+			if (wheelEntity && wheelEntity.Type() == CarWheel_Ruined)
+			{
+				continue;
+			}
+			
+			//! ignore all spare wheel
+			int slotId;
+			string slotName;		
+			wheelEntity.GetInventory().GetCurrentAttachmentSlotInfo(slotId, slotName);
+			slotName.ToLower();
+			if (slotName.Contains("spare"))
+			{
+				continue
+			}
+
+			//! actual, healthy wheel, let it pass
+			if (wheelEntity && wheelEntity.IsInherited(CarWheel))
+			{
+				vector entPosXZ = wheelEntity.GetPosition();
+				entPosXZ[1] = 0;
+				if (vector.Distance(trapPosXZ, entPosXZ) < 1)
+				{
+					return wheelEntity;
+				}
+			}
+		}
+		
+		return null;
+	}
+	
+	protected void DamageClothing(PlayerBase player)
+	{
+		//Array used to find all relevant information about currently equipped clothes
+		array<ClothingBase> equippedClothes = new array<ClothingBase>;
+
+		equippedClothes.Insert(ClothingBase.Cast(player.GetItemOnSlot("LEGS")));
+		equippedClothes.Insert(ClothingBase.Cast(player.GetItemOnSlot("BACK")));
+		equippedClothes.Insert(ClothingBase.Cast(player.GetItemOnSlot("VEST")));
+		equippedClothes.Insert(ClothingBase.Cast(player.GetItemOnSlot("HeadGear")));
+		equippedClothes.Insert(ClothingBase.Cast(player.GetItemOnSlot("Mask")));
+		equippedClothes.Insert(ClothingBase.Cast(player.GetItemOnSlot("BODY")));
+		equippedClothes.Insert(ClothingBase.Cast(player.GetItemOnSlot("FEET")));
+		equippedClothes.Insert(ClothingBase.Cast(player.GetItemOnSlot("GLOVES")));
+
+		//Damage all currently equipped clothes
+		for (int i = 0; i < equippedClothes.Count(); i++)
+		{
+			//If no item is equipped on slot, slot is ignored
+			if (equippedClothes[i] == null)
+			{
+				continue;
+			}
+
+			equippedClothes[i].DecreaseHealth(m_ClothingDmg[i], false);
+		}
 	}
 }

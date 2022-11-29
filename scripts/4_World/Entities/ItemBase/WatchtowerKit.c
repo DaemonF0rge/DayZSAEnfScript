@@ -52,4 +52,40 @@ class WatchtowerKit extends KitBase
 			CreateRope(rope);
 		}
 	}
+	
+	//Debug menu Spawn Ground Special
+	override void OnDebugSpawn()
+	{
+		SpawnEntityOnGroundPos("Shovel", GetPosition());
+		SpawnEntityOnGroundPos("Hammer", GetPosition());
+		SpawnEntityOnGroundPos("Hammer", GetPosition());
+		SpawnEntityOnGroundPos("Hammer", GetPosition());
+		SpawnEntityOnGroundPos("Hammer", GetPosition());
+		SpawnEntityOnGroundPos("Pliers", GetPosition());
+
+		for (int i0 = 0; i0 < 30; i0++)
+		{
+			SpawnEntityOnGroundPos("WoodenPlank", GetPosition());
+		}
+		
+		for (int i1 = 0; i1 < 10; i1++)
+		{
+			SpawnEntityOnGroundPos("WoodenLog", GetPosition());
+		}
+		
+		for (int i2 = 0; i2 < 15; i2++)
+		{
+			SpawnEntityOnGroundPos("Nail", GetPosition());
+		}	
+		
+		for (int i3 = 0; i3 < 9; i3++)
+		{
+			SpawnEntityOnGroundPos("CamoNet", GetPosition());
+		}	
+		
+		for (int i4 = 0; i4 < 6; i4++)
+		{
+			SpawnEntityOnGroundPos("BarbedWire", GetPosition());
+		}
+	}
 }

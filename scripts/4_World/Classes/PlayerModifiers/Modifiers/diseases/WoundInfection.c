@@ -29,6 +29,7 @@ class WoundInfectStage1Mdfr: ModifierBase
 		m_ID 					= eModifiers.MDF_WOUND_INFECTION1;
 		m_TickIntervalInactive 	= DEFAULT_TICK_TIME_INACTIVE;
 		m_TickIntervalActive 	= DEFAULT_TICK_TIME_ACTIVE;
+		m_SyncID				= eModifierSyncIDs.MODIFIER_SYNC_WOUND_INFECT_1;
 	}
 	
 	override string GetDebugText()

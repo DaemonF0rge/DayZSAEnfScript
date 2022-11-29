@@ -27,7 +27,7 @@ class LaughterSymptom extends SymptomBase
 	{
 		if (LogManager.IsSymptomLogEnable()) Debug.SymptomLog("n/a", this.ToString(), "n/a", "OnGetActivated", m_Player.ToString());
 		PlaySound(EPlayerSoundEventID.SYMPTOM_LAUGHTER);
-		player.SpreadAgents();
+		player.SpreadAgentsEx(3);
 	}
 
 	//!gets called once on a Symptom which is being activated

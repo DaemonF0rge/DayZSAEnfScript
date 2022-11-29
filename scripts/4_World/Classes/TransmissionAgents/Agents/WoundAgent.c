@@ -1,7 +1,7 @@
 class WoundAgent extends AgentBase
 {
 	static const float RESISTANCE_STAGE_1 = 1;
-	static const float RESISTANCE_STAGE_2 = 0.5;//killrate 0.4166666 agents for second
+	static const float RESISTANCE_STAGE_2 = 0.5;
 	
 	override void Init()
 	{

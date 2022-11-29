@@ -8,7 +8,7 @@ class DayZIntroScene : Managed
 	protected Weather					m_Weather;	
 	protected vector 					m_Target;
 
-	protected ref OptionsMenu	m_OptionsMenu = new OptionsMenu;
+	protected ref OptionsMenu	m_OptionsMenu;
 
 	void DayZIntroScene()
 	{
@@ -94,12 +94,16 @@ class DayZIntroScene : Managed
 		m_Character = new IntroSceneCharacter();
 		m_Character.LoadCharacterData(m_CharacterPos, m_CharacterRot);
 		
-		PPEffects.Init();
-		PPEffects.DisableBurlapSackBlindness(); //HOTFIX
-		//Vignette
-		//PPEffects.SetVignette(0.3, 0,0,0);
+		PPEffects.Init(); //Deprecated, left in for legacy purposes only
+		
+		GetGame().GetCallQueue(CALL_CATEGORY_GUI).Call(SetInitPostprocesses);
 	}
 	
+	void ~DayZIntroScene()
+	{
+		if (PPEManagerStatic.GetPPEManager())
+			PPEManagerStatic.GetPPEManager().StopAllEffects(PPERequesterCategory.ALL);
+	}
 	
 	//==============================================
 	// GetIntroSceneCharacter
@@ -127,6 +131,12 @@ class DayZIntroScene : Managed
 			GetIntroCamera().LookAt( GetIntroCharacter().GetPosition() + Vector( 0, 1, 0 ) );
 			//GetGame().GetCallQueue(CALL_CATEGORY_GAMEPLAY).CallLater( SceneCharacterSetPos, 250 );			
 		}
+	}
+	
+	//! Since this can get created at the same time as DayZGame, non-static postprocesses need to be deffered 
+	protected void SetInitPostprocesses()
+	{
+		PPERequesterBank.GetRequester(PPERequester_BurlapSackEffects).Stop();
 	}
 	
 	protected void GetSelectedUserName()

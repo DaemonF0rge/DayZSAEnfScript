@@ -46,6 +46,7 @@ class ActionRepairPart: ActionDismantlePart
 		m_StanceMask = DayZPlayerConstants.STANCEMASK_ERECT;	
 		
 		m_SpecialtyWeight = UASoftSkillsWeight.ROUGH_HIGH;
+		m_Text = "#repair";
 	}
 	
 	override void CreateConditionComponents()  
@@ -53,7 +54,13 @@ class ActionRepairPart: ActionDismantlePart
 		m_ConditionItem = new CCINonRuined;
 		m_ConditionTarget = new CCTNonRuined( UAMaxDistances.BASEBUILDING );
 	}
-		
+	
+	override void OnActionInfoUpdate( PlayerBase player, ActionTarget target, ItemBase item )
+	{
+		ConstructionActionData construction_action_data = player.GetConstructionActionData();
+		m_Text = "#repair " + construction_action_data.GetTargetPart().GetName();
+	}
+	
 	override string GetText()
 	{
 		PlayerBase player = PlayerBase.Cast( GetGame().GetPlayer() );
@@ -68,13 +75,13 @@ class ActionRepairPart: ActionDismantlePart
 			}
 		}
 		
-		return "ERROR, INVALID PART";
+		return "";
 	}
 
 	override bool ActionCondition( PlayerBase player, ActionTarget target, ItemBase item )
 	{	
 		//Action not allowed if player has broken legs
-		if (player.m_BrokenLegState == eBrokenLegs.BROKEN_LEGS)
+		if (player.GetBrokenLegs() == eBrokenLegs.BROKEN_LEGS)
 			return false;
 		
 		return RepairCondition( player, target, item, true );
@@ -178,51 +185,48 @@ class ActionRepairPart: ActionDismantlePart
 	{
 		string zone_name;
 		
-		if ( player && !player.IsLeaning() )
+		Object target_object = target.GetObject();
+		if ( target_object && target_object.CanUseConstruction() )
 		{
-			Object target_object = target.GetObject();
-			if ( target_object && target_object.CanUseConstruction() )
+			string part_name = target_object.GetActionComponentName( target.GetComponentIndex() );
+			
+			BaseBuildingBase base_building = BaseBuildingBase.Cast( target_object );
+			Construction construction = base_building.GetConstruction();
+			ConstructionPart construction_part = construction.GetConstructionPart( part_name );
+			
+			if ( construction_part )
 			{
-				string part_name = target_object.GetActionComponentName( target.GetComponentIndex() );
-				
-				BaseBuildingBase base_building = BaseBuildingBase.Cast( target_object );
-				Construction construction = base_building.GetConstruction();
-				ConstructionPart construction_part = construction.GetConstructionPart( part_name );
-				
-				if ( construction_part )
+				//camera and position checks
+				if ( !base_building.IsFacingPlayer( player, part_name ) && !player.GetInputController().CameraIsFreeLook() && base_building.HasProperDistance( construction_part.GetMainPartName(), player ) )
 				{
-					//camera and position checks
-					if ( !base_building.IsFacingPlayer( player, part_name ) && !player.GetInputController().CameraIsFreeLook() && base_building.HasProperDistance( construction_part.GetMainPartName(), player ) )
+					//Camera check (client-only)
+					if ( camera_check )
 					{
-						//Camera check (client-only)
-						if ( camera_check )
+						if ( GetGame() && ( !GetGame().IsDedicatedServer() ) )
 						{
-							if ( GetGame() && ( !GetGame().IsMultiplayer() || GetGame().IsClient() ) )
+							if ( base_building.IsFacingCamera( part_name ) )
 							{
-								if ( base_building.IsFacingCamera( part_name ) )
-								{
-									return false;
-								}
+								return false;
 							}
 						}
-						
-						//damage check
-						DamageSystem.GetDamageZoneFromComponentName(base_building,part_name,zone_name);
-						if ( base_building.GetHealthLevel(zone_name) < GameConstants.STATE_WORN || base_building.GetHealthLevel(zone_name) == GameConstants.STATE_RUINED )
-						{
-							return false;
-						}
-						
-						//materials check
-						if ( !construction.HasMaterials(part_name,true) )
-						{
-							return false;
-						}
-						
-						ConstructionActionData construction_action_data = player.GetConstructionActionData();
-						construction_action_data.SetTargetPart( construction_part );
-						return true;
 					}
+					
+					//damage check
+					DamageSystem.GetDamageZoneFromComponentName(base_building,part_name,zone_name);
+					if ( base_building.GetHealthLevel(zone_name) < GameConstants.STATE_WORN || base_building.GetHealthLevel(zone_name) == GameConstants.STATE_RUINED )
+					{
+						return false;
+					}
+					
+					//materials check
+					if ( !construction.HasMaterials(part_name,true) )
+					{
+						return false;
+					}
+					
+					ConstructionActionData construction_action_data = player.GetConstructionActionData();
+					construction_action_data.SetTargetPart( construction_part );
+					return true;
 				}
 			}
 		}

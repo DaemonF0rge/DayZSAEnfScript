@@ -2,42 +2,49 @@ class Trap_RabbitSnare extends TrapSpawnBase
 {
 	void Trap_RabbitSnare()
 	{
-		//m_InitWaitTime = 120 + Math.RandomInt( 0, 300 );
-		m_InitWaitTime = 2;
-		//m_UpdateWaitTime = 15;
-		m_UpdateWaitTime = 1;
-		m_BaitNeeded = false;
-		m_IsFoldable = true;
-		m_IsUsable = true;
-		m_MinimalDistanceFromPlayersToCatch = 1;
+		m_DefectRate = 15; 			//Added damage after trap activation
+		
+		m_InitWaitTime 							= Math.RandomInt(900, 1500);
+		m_UpdateWaitTime 						= 30;
+		m_IsFoldable 							= true;
+		m_IsUsable 								= true;
+		m_MinimalDistanceFromPlayersToCatch 	= 30;
+		
+		m_BaitCatchProb 						= 85;
+		m_NoBaitCatchProb						= 15;
 
-		m_AnimationPhaseSet = "inventory";
-		m_AnimationPhaseTriggered = "placing";
-		m_AnimationPhaseUsed = "rabbit_snare_used";
+		m_AnimationPhaseSet 					= "inventory";
+		m_AnimationPhaseTriggered 				= "placing";
+		m_AnimationPhaseUsed 					= "triggered";
 
 		m_WaterSurfaceForSetup = false;
 		
-		m_CatchesPond = new multiMap<string, float>;
-		
-		m_CatchesSea = new multiMap<string, float>;
-		
 		m_CatchesGroundAnimal = new multiMap<string, float>;
-		m_CatchesGroundAnimal.Insert("Animal_GallusGallusDomesticusF_Brown",1);
-		//m_CatchesGroundAnimal.Insert("Animal_GallusGallusDomesticusF_Spotted",1);
-		//m_CatchesGroundAnimal.Insert("Animal_GallusGallusDomesticusF_White",1);
-		//m_CatchesGroundAnimal.Insert("Animal_LepusEuropaeus",1); Temporarily removed because rabbits don't sppawn now. Used Gallus Gallus as a placeholder.
+		m_CatchesGroundAnimal.Insert("DeadRooster", 1);
+		m_CatchesGroundAnimal.Insert("DeadChicken_White", 1);
+		m_CatchesGroundAnimal.Insert("DeadChicken_Spotted", 1);
+		m_CatchesGroundAnimal.Insert("DeadChicken_Brown", 1);
+		// ALWAYS keep rabbit last as that is how it gets the rabbit in case of rabbit specific bait
+		m_CatchesGroundAnimal.Insert("DeadRabbit", 1);
 	}
 	
-	/*override bool IsOneHandedBehaviour()
+	override bool CanBePlaced(Man player, vector position)
 	{
-		return true;
-	}*/
+		if (m_IsBeingPlaced)
+			return true;
+
+		int liquidType;
+		string surfaceType;
+		g_Game.SurfaceUnderObject(PlayerBase.Cast(player).GetHologramLocal().GetProjectionEntity(), surfaceType, liquidType);
+
+		return g_Game.IsSurfaceDigable(surfaceType);
+	}
 	
 	override void OnVariablesSynchronized()
 	{
 		super.OnVariablesSynchronized();
 				
-		if ( IsPlaceSound() )
+		if (IsPlaceSound())
 		{
 			PlayPlaceSound();
 		}
@@ -45,48 +52,98 @@ class Trap_RabbitSnare extends TrapSpawnBase
 	
 	override void SetupTrap()
 	{
-		if ( g_Game.IsServer() )
+		if ( GetGame().IsServer() )
 		{
-			if ( this.GetHierarchyRootPlayer().CanDropEntity( this) )
+			if ( GetHierarchyRootPlayer().CanDropEntity( this ) )
 			{
-				if ( this.IsRuined() ) 
+				if ( IsRuined() ) 
 				{
-					PlayerBase player = PlayerBase.Cast( this.GetHierarchyRootPlayer() );
-					player.MessageImportant( "The trap is ruined." );
+					PlayerBase player = PlayerBase.Cast( GetHierarchyRootPlayer() );
 				}
 				else
 				{
-					PlayerBase owner_player = PlayerBase.Cast( this.GetHierarchyRootPlayer() );
-					Error("Mojmir: TODO");
-					owner_player.LocalDropEntity( this );
-
-					//GetDirection
-					vector trapPos = ( owner_player.GetDirection() ); // * 0.5;
-					trapPos[1] = 0;
-					this.SetPosition( owner_player.GetPosition() + trapPos );
+					PlayerBase owner_player = PlayerBase.Cast( GetHierarchyRootPlayer() );
 					
-					owner_player.MessageStatus( m_InfoSetup );
+					//GetDirection
+					vector trapPos = owner_player.GetDirection();
+					trapPos[1] = 0;
+					SetPosition( owner_player.GetPosition() + trapPos );
 
 					SetActive();
 					
-					this.SetOrientation( owner_player.GetOrientation() );
+					SetOrientation( owner_player.GetOrientation() );
 				}
 			}
 		}
 	}
 	
-	override void AlignCatch( ItemBase obj, string catch_name )
+	override void SpawnCatch()
 	{
-		if ( catch_name == "Animal_LepusEuropaeus" )
+		super.SpawnCatch();
+		
+		if ( m_CanCatch )
 		{
-			obj.SetOrientation( this.GetOrientation() );
+			multiMap<string, float>	catches;
 			
-			vector forward_vec = this.GetDirection();
-			vector side_vec = forward_vec.Perpend(  ) * -0.22;
-			forward_vec = forward_vec * -0.3;
+			// We read the relevant catch map
+			ItemBase catch;
+			catches = m_CatchesGroundAnimal;
+
+			// The catch map contains data
+			if ( catches && catches.Count() > 0 )
+			{
+				// select random object from catches
+				int count = catches.Count() - 1;
+				int randomCatchIndex = Math.RandomInt( 0, count );
 			
-			vector chatch_pos = obj.GetPosition() + forward_vec + side_vec;
-			obj.SetPosition( chatch_pos );
+				if ( Math.RandomFloat(0, 100) < m_FinalCatchProb )
+				{
+					if ( m_Bait )
+					{
+						if ( m_Bait.IsInherited( Worm ) )
+						{
+							// We can only catch chicken, so exclude the rabbit
+							randomCatchIndex = Math.RandomInt( 0, count - 1 );
+							catch = ItemBase.Cast( GetGame().CreateObjectEx( catches.GetKeyByIndex( randomCatchIndex ), m_PreyPos, ECE_PLACE_ON_SURFACE ) );
+						}
+						else	
+						{
+							// Get the last index, which is the rabbit
+							randomCatchIndex = count;
+							catch = ItemBase.Cast( GetGame().CreateObjectEx( catches.GetKeyByIndex( randomCatchIndex ), m_PreyPos, ECE_PLACE_ON_SURFACE ) );
+						}
+					}
+					else
+					{
+						// No bait, 50 / 50 rabbit
+						randomCatchIndex = Math.RandomIntInclusive( 0, 1 );
+						if ( randomCatchIndex == 0 )
+						{
+							randomCatchIndex = Math.RandomInt( 0, count - 1 );
+							catch = ItemBase.Cast( GetGame().CreateObjectEx( catches.GetKeyByIndex( randomCatchIndex ), m_PreyPos, ECE_PLACE_ON_SURFACE ) );
+						}
+						else
+						{
+							randomCatchIndex = count;
+							catch = ItemBase.Cast( GetGame().CreateObjectEx( catches.GetKeyByIndex( randomCatchIndex ), m_PreyPos, ECE_PLACE_ON_SURFACE ) );
+						}
+					}
+					
+					// We set quantity of prey
+					if ( catch )
+						CatchSetQuant( catch );
+				}
+				
+				// We update the state
+				SetUsed();
+				
+				// We remove the bait from this trap
+				if ( m_Bait )
+					m_Bait.Delete();
+			}
+			
+			// We damage the trap
+			AddDefect();
 		}
 	}
 	
@@ -120,8 +177,30 @@ class Trap_RabbitSnare extends TrapSpawnBase
 	{
 		super.SetActions();
 		
+		// We remove the hunting trap deploy action in order to all advanced placement
+		RemoveAction(ActionDeployHuntingTrap);
+		
 		AddAction(ActionTogglePlaceObject);
 		AddAction(ActionDeployObject);
+	}
+	
+	// ===============================================================
+	// =====================  DEPRECATED  ============================
+	// ===============================================================
+	
+	override void AlignCatch( ItemBase obj, string catch_name )
+	{
+		if ( catch_name == "Animal_LepusEuropaeus" )
+		{
+			obj.SetOrientation( GetOrientation() );
+			
+			vector forward_vec = GetDirection();
+			vector side_vec = forward_vec.Perpend(  ) * -0.22;
+			forward_vec = forward_vec * -0.3;
+			
+			vector chatch_pos = obj.GetPosition() + forward_vec + side_vec;
+			obj.SetPosition( chatch_pos );
+		}
 	}
 }
 

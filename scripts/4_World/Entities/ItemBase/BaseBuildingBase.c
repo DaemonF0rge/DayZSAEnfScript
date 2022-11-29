@@ -74,6 +74,11 @@ class BaseBuildingBase extends ItemBase
 	{
 		return true;
 	}
+	
+	override int GetHideIconMask()
+	{
+		return EInventoryIconVisibility.HIDE_VICINITY;
+	}
 
 	// --- SYNCHRONIZATION
 	void SynchronizeBaseState()
@@ -344,6 +349,15 @@ class BaseBuildingBase extends ItemBase
 		return construction_kit;
 	}
 	
+	void CreateConstructionKitInHands(notnull PlayerBase player)
+	{
+		ItemBase construction_kit = ItemBase.Cast(player.GetHumanInventory().CreateInHands(GetConstructionKitType()));
+		if ( m_ConstructionKitHealth > 0 )
+		{
+			construction_kit.SetHealth( m_ConstructionKitHealth );
+		}
+	}
+	
 	protected vector GetKitSpawnPosition()
 	{
 		return GetPosition();
@@ -439,19 +453,19 @@ class BaseBuildingBase extends ItemBase
 	
 	override void EEHealthLevelChanged(int oldLevel, int newLevel, string zone)
 	{
-		if(m_FixDamageSystemInit)
+		if (m_FixDamageSystemInit)
 			return;
 		
 		super.EEHealthLevelChanged(oldLevel,newLevel,zone);
 		
-		if(GetGame().IsMultiplayer() && !GetGame().IsServer())
+		if (GetGame().IsMultiplayer() && !GetGame().IsServer())
 			return;
 		
 		Construction construction = GetConstruction();
 		string part_name = zone;
 		part_name.ToLower();
 		
-		if( newLevel == GameConstants.STATE_RUINED )
+		if ( newLevel == GameConstants.STATE_RUINED )
 		{
 			ConstructionPart construction_part = construction.GetConstructionPart( part_name );
 			
@@ -462,7 +476,7 @@ class BaseBuildingBase extends ItemBase
 			}
 			
 			//barbed wire handling (hack-ish)
-			if( part_name.Contains("barbed") )
+			if ( part_name.Contains("barbed") )
 			{
 				BarbedWire barbed_wire = BarbedWire.Cast( FindAttachmentBySlotName( zone ) );
 				if (barbed_wire)
@@ -489,24 +503,23 @@ class BaseBuildingBase extends ItemBase
 		InitBaseState();
 		
 		//debug
-		if ( GetGame().IsDebug() ) 
-		{
-			DebugCustomState();
-		}
+		#ifdef DEVELOPER
+		DebugCustomState();
+		#endif
 	}
 
-	override void EEItemAttached ( EntityAI item, string slot_name )
+	override void EEItemAttached( EntityAI item, string slot_name )
 	{
-		super.EEItemAttached ( item, slot_name );
+		super.EEItemAttached( item, slot_name );
 		
 		CheckForHybridAttachments( item, slot_name );
 		UpdateVisuals();
 		UpdateAttachmentPhysics( slot_name, false );
 	}
 	
-	override void EEItemDetached ( EntityAI item, string slot_name )
+	override void EEItemDetached( EntityAI item, string slot_name )
 	{
-		super.EEItemDetached ( item, slot_name );
+		super.EEItemDetached( item, slot_name );
 
 		UpdateVisuals();
 		UpdateAttachmentPhysics( slot_name, false );
@@ -773,7 +786,7 @@ class BaseBuildingBase extends ItemBase
 	void UpdateAttachmentPhysics( string slot_name, bool is_locked )
 	{
 		//checks for invalid appends; hotfix
-		if( !m_Mountables || m_Mountables.Find(slot_name) == -1 )
+		if ( !m_Mountables || m_Mountables.Find(slot_name) == -1 )
 			return;
 		//----------------------------------
 		string slot_name_mounted = slot_name + "_Mounted";
@@ -1089,7 +1102,7 @@ class BaseBuildingBase extends ItemBase
 	{
 		ConstructionMaterialType material_type = GetConstruction().GetMaterialType( part_name );
 		
-		switch( material_type )
+		switch ( material_type )
 		{
 			case ConstructionMaterialType.MATERIAL_LOG: 	return SOUND_BUILD_WOOD_LOG;
 			case ConstructionMaterialType.MATERIAL_WOOD: 	return SOUND_BUILD_WOOD_PLANK;
@@ -1105,7 +1118,7 @@ class BaseBuildingBase extends ItemBase
 	{
 		ConstructionMaterialType material_type = GetConstruction().GetMaterialType( part_name );
 		
-		switch( material_type )
+		switch ( material_type )
 		{
 			case ConstructionMaterialType.MATERIAL_LOG: 	return SOUND_DISMANTLE_WOOD_LOG;
 			case ConstructionMaterialType.MATERIAL_WOOD: 	return SOUND_DISMANTLE_WOOD_PLANK;
@@ -1118,7 +1131,7 @@ class BaseBuildingBase extends ItemBase
 	}
 	
 	//misc
-	void CheckForHybridAttachments ( EntityAI item, string slot_name )
+	void CheckForHybridAttachments( EntityAI item, string slot_name )
 	{
 		if (!GetGame().IsMultiplayer() || GetGame().IsServer())
 		{
@@ -1139,9 +1152,11 @@ class BaseBuildingBase extends ItemBase
 	{
 		super.SetActions();
 		
-		AddAction(ActionTakeHybridAttachment);
-		AddAction(ActionTakeHybridAttachmentToHands);
+		AddAction(ActionDetachFromTarget);
+		//AddAction(ActionTakeHybridAttachment);
+		//AddAction(ActionTakeHybridAttachmentToHands);
 		RemoveAction(ActionTakeItem);
+		RemoveAction(ActionTakeItemToHands);
 	}
 	
 	//================================================================
@@ -1149,6 +1164,58 @@ class BaseBuildingBase extends ItemBase
 	//================================================================	
 	protected void DebugCustomState()
 	{
+	}
+	
+	//! Excludes certain parts from being built by OnDebugSpawn, uses Contains to compare
+	array<string> OnDebugSpawnBuildExcludes()
+	{
+		return null;
+	}
+	
+	override void OnDebugSpawn()
+	{
+		FullyBuild();
+	}
+	
+	void FullyBuild()
+	{
+		array<string> excludes = OnDebugSpawnBuildExcludes();
+		array<ConstructionPart> parts = GetConstruction().GetConstructionParts().GetValueArray();
+		
+		Man p;
+		
+		#ifdef SERVER
+		array<Man> players = new array<Man>;
+		GetGame().GetWorld().GetPlayerList(players);
+		if (players.Count())
+			p = players[0];
+		#else
+		p = GetGame().GetPlayer();
+		#endif
+		
+		foreach (ConstructionPart part : parts)
+		{
+			bool excluded = false;
+			string partName = part.GetPartName();
+			if (excludes)
+			{
+				foreach (string exclude : excludes)
+				{
+					if (partName.Contains(exclude))
+					{
+						excluded = true;
+						break;
+					}
+				}
+			}
+			
+			if (!excluded)
+			{
+				OnPartBuiltServer(p, partName, AT_BUILD_PART);
+			}
+		}
+		
+		GetConstruction().UpdateVisuals();
 	}
 }
 

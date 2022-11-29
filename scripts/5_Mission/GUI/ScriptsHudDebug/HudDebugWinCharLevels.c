@@ -122,20 +122,6 @@ class HudDebugWinCharLevels extends HudDebugWinBase
 		m_WgtValues.SetItem( index, value2, NULL, 2 );
 	}
 	
-	/*
-	string ValueToBar(float value)
-	{
-		string bar = "[----------]";
-		string mark = "x";
-		int length = bar.Length() - 2;
-		float index = Math.Lerp(0,length, value);
-		index = Math.Round(index);
-		index = Math.Clamp(index,0,length);
-		
-		return InsertAtPos(bar,mark,index);
-	}
-	*/
-	
 	void ClearValues()
 	{
 		m_WgtValues.ClearItems();
@@ -143,6 +129,6 @@ class HudDebugWinCharLevels extends HudDebugWinBase
 
 	void FitWindow()
 	{
-		FitWindowByContent( m_WgtValues );
+		//FitWindowByContent( m_WgtValues );
 	}
 }

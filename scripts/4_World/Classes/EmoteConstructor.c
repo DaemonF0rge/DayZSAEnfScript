@@ -1,6 +1,6 @@
 class EmoteConstructor
 {
-	bool ConstructEmotes( PlayerBase player, out map<int, ref EmoteBase> emoteMap )
+	bool ConstructEmotes(PlayerBase player, out map<int, ref EmoteBase> emoteMap)
 	{
 		TTypenameArray emote_array_names = new TTypenameArray;
 		RegisterEmotes(emote_array_names);
@@ -9,25 +9,25 @@ class EmoteConstructor
 		emoteMap = new map<int, ref EmoteBase>;
 		ref EmoteBase new_emote;
 		
-		for(int i = 0; i < emote_array_names.Count(); i++)
+		for (int i = 0; i < emote_array_names.Count(); i++)
 		{
 			new_emote = EmoteBase.Cast(emote_array_names[i].Spawn());
-			if(new_emote)
+			if (new_emote)
 			{
-				if (new_emote.m_ID < 0) //redundant?
+				if (new_emote.GetID() < 0)
 				{
-					Error("Emote " + emote_array_names[i].ToString() + " has an invalid ID, registation failed!");
+					ErrorEx("Emote " + emote_array_names[i].ToString() + " has an invalid ID, registation failed!");
+					return false;
 				}
-				else if (emoteMap.Contains(new_emote.m_ID))
+				else if (emoteMap.Contains(new_emote.GetID()))
 				{
-					Error("Emote " + emote_array_names[i].ToString() + " has a duplicate ID, registation failed!");
+					ErrorEx("Emote " + emote_array_names[i].ToString() + " has a duplicate ID, registation failed!");
+					return false;
 				}
 				else
 				{
-					new_emote.m_Player = player; 
-					emoteMap.Insert(new_emote.m_ID, new_emote);
-					//Print("new_emote.m_ID " + new_emote.m_ID);
-					//Print("type: " + new_emote.Type().ToString());
+					new_emote.SetOwnerPlayer(player); 
+					emoteMap.Insert(new_emote.GetID(), new_emote);
 				}
 			}
 		}
@@ -50,7 +50,7 @@ class EmoteConstructor
 		emotes.Insert(EmoteDance);
 		emotes.Insert(EmoteSalute);
 		emotes.Insert(EmoteTimeout);
-		emotes.Insert(EmoteDabbing);
+		//emotes.Insert(EmoteDabbing);
 		emotes.Insert(EmoteFacepalm);
 		emotes.Insert(EmoteClap);
 		emotes.Insert(EmoteSilent);
@@ -63,7 +63,7 @@ class EmoteConstructor
 		emotes.Insert(EmoteMove);
 		emotes.Insert(EmoteGetDown);
 		emotes.Insert(EmoteCome);
-		//emotes.Insert(EmoteSurrender); //exception, handled directly via EmoteManager
+		emotes.Insert(EmoteSurrender); //exception, partially handled in EmoteManager directly (..)
 		emotes.Insert(EmoteCampfireSit);
 		emotes.Insert(EmoteSitA);
 		emotes.Insert(EmoteSitB);
@@ -75,6 +75,6 @@ class EmoteConstructor
 		emotes.Insert(EmoteShake);
 		emotes.Insert(EmoteShrug);
 		emotes.Insert(EmoteSuicide);
-		//emotes.Insert(EmoteVomit); //exception, handled directly via EmoteManager
+		emotes.Insert(EmoteVomit);
 	}
 }
